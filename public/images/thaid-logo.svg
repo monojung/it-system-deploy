@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <defs>
+    <linearGradient id="thaidBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="50%" stop-color="#0369a1" />
+      <stop offset="100%" stop-color="#0c4a6e" />
+    </linearGradient>
+    <linearGradient id="thaidCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+  </defs>
+  <!-- Background rounded squircle -->
+  <rect width="48" height="48" rx="12" fill="url(#thaidBg)" />
+  <!-- Inner circular badge -->
+  <circle cx="24" cy="24" r="19" fill="#082f49" opacity="0.4" />
+  <!-- Stylized ThaID Digital Identity Emblem -->
+  <path d="M24 10C24 10 26 14 26 16C26 17.5 24.5 18 24 18C23.5 18 22 17.5 22 16C22 14 24 10 24 10Z" fill="#38bdf8" />
+  <path d="M19 19C15 22 14 27 16 31C18 35 22 37 26 37C31 37 34 33 34 29C34 25 31 22 28 22C25 22 24 24 24 26C24 28 25.5 29 27 29C28.5 29 29 28 29 27" fill="none" stroke="url(#thaidCyan)" stroke-width="3" stroke-linecap="round" />
+  <!-- Inner white fingerprint curve -->
+  <path d="M21 24C20 26 20 29 22 31C24 33 27 33 29 31" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" />
+  <!-- Network dots -->
+  <circle cx="34" cy="18" r="2" fill="#38bdf8" />
+  <circle cx="37" cy="24" r="1.5" fill="#bae6fd" />
+  <line x1="34" y1="18" x2="37" y2="24" stroke="#38bdf8" stroke-width="1" stroke-dasharray="1 1" />
+  <circle cx="13" cy="26" r="1.5" fill="#38bdf8" />
+</svg>

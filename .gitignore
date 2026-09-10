@@ -1,0 +1,62 @@
+# Environment & Secrets (NEVER commit to prevent leaks and git pull conflicts on production)
+.env
+.env.backup
+.env.production
+.env.*.local
+
+# Database SQLite & Backups
+/database/*.sqlite*
+*.sql
+*.sql.gz
+*.bak
+
+# Storage Framework & Runtime
+/storage/app/backups/*
+!/storage/app/backups/.gitkeep
+/storage/app/private/*
+!/storage/app/private/.gitkeep
+/storage/app/public/*
+!/storage/app/public/.gitkeep
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitkeep
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitkeep
+/storage/framework/testing/*
+!/storage/framework/testing/.gitkeep
+/storage/framework/views/*
+!/storage/framework/views/.gitkeep
+/storage/logs/*
+!/storage/logs/.gitkeep
+
+# User Uploaded Files (preserve directory structure via .gitkeep)
+/uploads/assets/*
+!/uploads/assets/.gitkeep
+/uploads/avatars/*
+!/uploads/avatars/.gitkeep
+/uploads/data_requests/*
+!/uploads/data_requests/.gitkeep
+/uploads/data_requests_samples/*
+!/uploads/data_requests_samples/.gitkeep
+/uploads/repairs/*
+!/uploads/repairs/.gitkeep
+
+/public/uploads/assets/*
+!/public/uploads/assets/.gitkeep
+/public/uploads/avatars/*
+!/public/uploads/avatars/.gitkeep
+/public/uploads/data_requests/*
+!/public/uploads/data_requests/.gitkeep
+/public/uploads/data_requests_samples/*
+!/public/uploads/data_requests_samples/.gitkeep
+/public/uploads/repairs/*
+!/public/uploads/repairs/.gitkeep
+
+# Temporary diagnostics / scripts
+info_test.php
+
+# OS and Editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
