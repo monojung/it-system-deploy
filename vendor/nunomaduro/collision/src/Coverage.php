@@ -7,7 +7,6 @@ namespace NunoMaduro\Collision;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Node\Directory;
 use SebastianBergmann\CodeCoverage\Node\File;
-use SebastianBergmann\CodeCoverage\Report\Facade;
 use SebastianBergmann\Environment\Runtime;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -68,7 +67,7 @@ final class Coverage
      * Reports the code coverage report to the
      * console and returns the result in float.
      */
-    public static function report(OutputInterface $output, bool $hideFullCoverage = false): float
+    public static function report(OutputInterface $output): float
     {
         if (! file_exists($reportPath = self::getPath())) {
             if (self::usingXdebug()) {
@@ -90,19 +89,10 @@ final class Coverage
         $codeCoverage = require $reportPath;
         unlink($reportPath);
 
-        // @phpstan-ignore-next-line
-        if (is_array($codeCoverage)) {
-            /** @var Facade $test */
-            $facade = Facade::fromSerializedData($codeCoverage); // @phpstan-ignore-line
+        $totalCoverage = $codeCoverage->getReport()->percentageOfExecutedLines();
 
-            /** @var Directory<File|Directory> $report */
-            $report = (fn () => $this->report)->call($facade); // @phpstan-ignore-line
-        } else {
-            /** @var Directory<File|Directory> $report */
-            $report = $codeCoverage->getReport();
-        }
-
-        $totalCoverage = $report->percentageOfExecutedLines();
+        /** @var Directory<File|Directory> $report */
+        $report = $codeCoverage->getReport();
 
         foreach ($report->getIterator() as $file) {
             if (! $file instanceof File) {
@@ -119,10 +109,6 @@ final class Coverage
             $percentage = $file->numberOfExecutableLines() === 0
                 ? '100.0'
                 : number_format($file->percentageOfExecutedLines()->asFloat(), 1, '.', '');
-
-            if ($percentage === '100.0' && $hideFullCoverage) {
-                continue;
-            }
 
             $uncoveredLines = '';
 

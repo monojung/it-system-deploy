@@ -22,12 +22,9 @@ class BackupLog extends Model
         'notes',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'file_size' => 'integer',
-        ];
-    }
+    protected $casts = [
+        'file_size' => 'integer',
+    ];
 
     public function creator(): BelongsTo
     {

@@ -25,12 +25,13 @@ class Reader
 {
     private static array $anchoredPatterns = [];
 
+    private string $source;
     private int $length;
     private int $position = 0;
 
-    public function __construct(
-        private string $source,
-    ) {
+    public function __construct(string $source)
+    {
+        $this->source = $source;
         $this->length = \strlen($source);
     }
 
@@ -54,7 +55,10 @@ class Reader
         return substr($this->source, $this->position + $offset, $length);
     }
 
-    public function getOffset(string $string): int|false
+    /**
+     * @return int|false
+     */
+    public function getOffset(string $string): int|bool
     {
         $position = strpos($this->source, $string, $this->position);
 

@@ -41,12 +41,12 @@ final class MockMethod
     use TemplateLoader;
 
     /**
-     * @var class-string
+     * @psalm-var class-string
      */
     private readonly string $className;
 
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
     private readonly string $methodName;
     private readonly bool $cloneArguments;
@@ -60,12 +60,12 @@ final class MockMethod
     private readonly ?string $deprecation;
 
     /**
-     * @var array<int, mixed>
+     * @psalm-var array<int, mixed>
      */
     private readonly array $defaultParameterValues;
 
     /**
-     * @var non-negative-int
+     * @psalm-var non-negative-int
      */
     private readonly int $numberOfParameters;
 
@@ -143,10 +143,10 @@ final class MockMethod
     }
 
     /**
-     * @param class-string      $className
-     * @param non-empty-string  $methodName
-     * @param array<int, mixed> $defaultParameterValues
-     * @param non-negative-int  $numberOfParameters
+     * @psalm-param class-string $className
+     * @psalm-param non-empty-string $methodName
+     * @psalm-param array<int, mixed> $defaultParameterValues
+     * @psalm-param non-negative-int $numberOfParameters
      */
     private function __construct(string $className, string $methodName, bool $cloneArguments, string $modifier, string $argumentsForDeclaration, string $argumentsForCall, array $defaultParameterValues, int $numberOfParameters, Type $returnType, string $reference, bool $callOriginalMethod, bool $static, ?string $deprecation)
     {
@@ -166,7 +166,7 @@ final class MockMethod
     }
 
     /**
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     public function methodName(): string
     {
@@ -227,13 +227,13 @@ EOT;
                 'arguments_call'     => $this->argumentsForCall,
                 'return_declaration' => !empty($this->returnType->asString()) ? (': ' . $this->returnType->asString()) : '',
                 'return_type'        => $this->returnType->asString(),
-                'arguments_count'    => (string) $argumentsCount,
+                'arguments_count'    => $argumentsCount,
                 'class_name'         => $this->className,
                 'method_name'        => $this->methodName,
                 'modifier'           => $this->modifier,
                 'reference'          => $this->reference,
                 'clone_arguments'    => $this->cloneArguments ? 'true' : 'false',
-                'deprecation'        => $deprecation ?? '',
+                'deprecation'        => $deprecation,
                 'return_result'      => $returnResult,
             ],
         );
@@ -247,7 +247,7 @@ EOT;
     }
 
     /**
-     * @return array<int, mixed>
+     * @psalm-return array<int, mixed>
      */
     public function defaultParameterValues(): array
     {
@@ -255,7 +255,7 @@ EOT;
     }
 
     /**
-     * @return non-negative-int
+     * @psalm-return non-negative-int
      */
     public function numberOfParameters(): int
     {
@@ -388,7 +388,7 @@ EOT;
     }
 
     /**
-     * @return array<int, mixed>
+     * @psalm-return array<int, mixed>
      */
     private static function methodParametersDefaultValues(ReflectionMethod $method): array
     {

@@ -41,26 +41,30 @@ use Symfony\Component\Routing\RequestContextAwareInterface;
  */
 class RouterListener implements EventSubscriberInterface
 {
+    private RequestMatcherInterface|UrlMatcherInterface $matcher;
     private RequestContext $context;
+    private ?LoggerInterface $logger;
+    private RequestStack $requestStack;
+    private ?string $projectDir;
+    private bool $debug;
 
     /**
      * @param RequestContext|null $context The RequestContext (can be null when $matcher implements RequestContextAwareInterface)
      *
      * @throws \InvalidArgumentException
      */
-    public function __construct(
-        private UrlMatcherInterface|RequestMatcherInterface $matcher,
-        private RequestStack $requestStack,
-        ?RequestContext $context = null,
-        private ?LoggerInterface $logger = null,
-        private ?string $projectDir = null,
-        private bool $debug = true,
-    ) {
+    public function __construct(UrlMatcherInterface|RequestMatcherInterface $matcher, RequestStack $requestStack, ?RequestContext $context = null, ?LoggerInterface $logger = null, ?string $projectDir = null, bool $debug = true)
+    {
         if (null === $context && !$matcher instanceof RequestContextAwareInterface) {
             throw new \InvalidArgumentException('You must either pass a RequestContext or the matcher must implement RequestContextAwareInterface.');
         }
 
+        $this->matcher = $matcher;
         $this->context = $context ?? $matcher->getContext();
+        $this->requestStack = $requestStack;
+        $this->logger = $logger;
+        $this->projectDir = $projectDir;
+        $this->debug = $debug;
     }
 
     private function setCurrentRequest(?Request $request): void
@@ -110,40 +114,7 @@ class RouterListener implements EventSubscriberInterface
                 'method' => $request->getMethod(),
             ]);
 
-            $attributes = $parameters;
-            if ($mapping = $parameters['_route_mapping'] ?? false) {
-                unset($parameters['_route_mapping']);
-                $mappedAttributes = [];
-                $attributes = [];
-
-                foreach ($parameters as $parameter => $value) {
-                    if (!isset($mapping[$parameter])) {
-                        $attribute = $parameter;
-                    } elseif (\is_array($mapping[$parameter])) {
-                        [$attribute, $parameter] = $mapping[$parameter];
-                        $mappedAttributes[$attribute] = '';
-                    } else {
-                        $attribute = $mapping[$parameter];
-                    }
-
-                    if (!isset($mappedAttributes[$attribute])) {
-                        $attributes[$attribute] = $value;
-                        $mappedAttributes[$attribute] = $parameter;
-                    } elseif ('' !== $mappedAttributes[$attribute]) {
-                        $attributes[$attribute] = [
-                            $mappedAttributes[$attribute] => $attributes[$attribute],
-                            $parameter => $value,
-                        ];
-                        $mappedAttributes[$attribute] = '';
-                    } else {
-                        $attributes[$attribute][$parameter] = $value;
-                    }
-                }
-
-                $attributes['_route_mapping'] = $mapping;
-            }
-
-            $request->attributes->add($attributes);
+            $request->attributes->add($parameters);
             unset($parameters['_route'], $parameters['_controller']);
             $request->attributes->set('_route_params', $parameters);
         } catch (ResourceNotFoundException $e) {
@@ -183,8 +154,9 @@ class RouterListener implements EventSubscriberInterface
 
     private function createWelcomeResponse(): Response
     {
+        $version = Kernel::VERSION;
         $projectDir = realpath((string) $this->projectDir).\DIRECTORY_SEPARATOR;
-        $version = $docVersion = Kernel::MAJOR_VERSION.'.'.Kernel::MINOR_VERSION;
+        $docVersion = substr(Kernel::VERSION, 0, 3);
 
         ob_start();
         include \dirname(__DIR__).'/Resources/welcome.html.php';

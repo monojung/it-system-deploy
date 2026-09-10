@@ -24,12 +24,9 @@ class RepairLog extends Model
         'created_at',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'created_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'created_at' => 'datetime',
+    ];
 
     public function repair(): BelongsTo
     {

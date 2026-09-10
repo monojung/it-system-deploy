@@ -42,9 +42,9 @@ class CollisionServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole() && ! $this->app->runningUnitTests()) {
             $this->app->bind(Provider::class, function () {
-                if ($this->app->has(SolutionProviderRepository::class)) { // @phpstan-ignore-line
+                if ($this->app->has(SolutionProviderRepository::class)) {
                     /** @var SolutionProviderRepository $solutionProviderRepository */
-                    $solutionProviderRepository = $this->app->get(SolutionProviderRepository::class); // @phpstan-ignore-line
+                    $solutionProviderRepository = $this->app->get(SolutionProviderRepository::class);
 
                     $solutionsRepository = new IgnitionSolutionsRepository($solutionProviderRepository);
                 } else {
@@ -57,7 +57,7 @@ class CollisionServiceProvider extends ServiceProvider
                 return new Provider(null, $handler);
             });
 
-            /** @var ExceptionHandlerContract $appExceptionHandler */
+            /** @var \Illuminate\Contracts\Debug\ExceptionHandler $appExceptionHandler */
             $appExceptionHandler = $this->app->make(ExceptionHandlerContract::class);
 
             $this->app->singleton(

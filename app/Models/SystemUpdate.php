@@ -28,17 +28,14 @@ class SystemUpdate extends Model
         'completed_at',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'started_at' => 'datetime',
-            'completed_at' => 'datetime',
-            'duration_seconds' => 'integer',
-            'commits_count' => 'integer',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'started_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'duration_seconds' => 'integer',
+        'commits_count' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
     public function triggeredBy(): BelongsTo
     {

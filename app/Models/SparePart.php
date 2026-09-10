@@ -25,14 +25,11 @@ class SparePart extends Model
         'notes',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'stock_quantity' => 'integer',
-            'minimum_quantity' => 'integer',
-            'unit_price' => 'decimal:2',
-        ];
-    }
+    protected $casts = [
+        'stock_quantity' => 'integer',
+        'minimum_quantity' => 'integer',
+        'unit_price' => 'decimal:2',
+    ];
 
     public function repairParts(): HasMany
     {

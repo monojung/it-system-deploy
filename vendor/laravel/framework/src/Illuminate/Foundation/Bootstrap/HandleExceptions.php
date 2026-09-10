@@ -9,9 +9,6 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Log\LogManager;
 use Illuminate\Support\Env;
 use Monolog\Handler\NullHandler;
-use PHPUnit\Framework\TestCase;
-use PHPUnit\Runner\ErrorHandler;
-use PHPUnit\Runner\Version;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\ErrorHandler\Error\FatalError;
 use Throwable;
@@ -40,7 +37,7 @@ class HandleExceptions
      */
     public function bootstrap(Application $app)
     {
-        static::$reservedMemory = str_repeat('x', 32768);
+        self::$reservedMemory = str_repeat('x', 32768);
 
         static::$app = $app;
 
@@ -92,29 +89,25 @@ class HandleExceptions
             return;
         }
 
-        if (! static::$app->bound('config')) {
-            return;
-        }
-
         try {
             $logger = static::$app->make(LogManager::class);
-
-            $this->ensureDeprecationLoggerIsConfigured();
-
-            $options = static::$app['config']->get('logging.deprecations') ?? [];
-
-            with($logger->channel('deprecations'), function ($log) use ($message, $file, $line, $level, $options) {
-                if ($options['trace'] ?? false) {
-                    $log->warning((string) new ErrorException($message, 0, $level, $file, $line));
-                } else {
-                    $log->warning(sprintf('%s in %s on line %s',
-                        $message, $file, $line
-                    ));
-                }
-            });
-        } catch (Throwable) {
+        } catch (Exception) {
             return;
         }
+
+        $this->ensureDeprecationLoggerIsConfigured();
+
+        $options = static::$app['config']->get('logging.deprecations') ?? [];
+
+        with($logger->channel('deprecations'), function ($log) use ($message, $file, $line, $level, $options) {
+            if ($options['trace'] ?? false) {
+                $log->warning((string) new ErrorException($message, 0, $level, $file, $line));
+            } else {
+                $log->warning(sprintf('%s in %s on line %s',
+                    $message, $file, $line
+                ));
+            }
+        });
     }
 
     /**
@@ -136,21 +129,21 @@ class HandleExceptions
      */
     protected function ensureDeprecationLoggerIsConfigured()
     {
-        $config = static::$app['config'];
+        with(static::$app['config'], function ($config) {
+            if ($config->get('logging.channels.deprecations')) {
+                return;
+            }
 
-        if ($config->get('logging.channels.deprecations')) {
-            return;
-        }
+            $this->ensureNullLogDriverIsConfigured();
 
-        $this->ensureNullLogDriverIsConfigured();
+            if (is_array($options = $config->get('logging.deprecations'))) {
+                $driver = $options['channel'] ?? 'null';
+            } else {
+                $driver = $options ?? 'null';
+            }
 
-        if (is_array($options = $config->get('logging.deprecations'))) {
-            $driver = $options['channel'] ?? 'null';
-        } else {
-            $driver = $options ?? 'null';
-        }
-
-        $config->set('logging.channels.deprecations', $config->get("logging.channels.{$driver}"));
+            $config->set('logging.channels.deprecations', $config->get("logging.channels.{$driver}"));
+        });
     }
 
     /**
@@ -160,16 +153,16 @@ class HandleExceptions
      */
     protected function ensureNullLogDriverIsConfigured()
     {
-        $config = static::$app['config'];
+        with(static::$app['config'], function ($config) {
+            if ($config->get('logging.channels.null')) {
+                return;
+            }
 
-        if ($config->get('logging.channels.null')) {
-            return;
-        }
-
-        $config->set('logging.channels.null', [
-            'driver' => 'monolog',
-            'handler' => NullHandler::class,
-        ]);
+            $config->set('logging.channels.null', [
+                'driver' => 'monolog',
+                'handler' => NullHandler::class,
+            ]);
+        });
     }
 
     /**
@@ -184,7 +177,7 @@ class HandleExceptions
      */
     public function handleException(Throwable $e)
     {
-        static::$reservedMemory = null;
+        self::$reservedMemory = null;
 
         try {
             $this->getExceptionHandler()->report($e);
@@ -232,7 +225,7 @@ class HandleExceptions
      */
     public function handleShutdown()
     {
-        static::$reservedMemory = null;
+        self::$reservedMemory = null;
 
         if (! is_null($error = error_get_last()) && $this->isFatal($error['type'])) {
             $this->handleException($this->fatalErrorFromPhpError($error, 0));
@@ -299,61 +292,9 @@ class HandleExceptions
      * Clear the local application instance from memory.
      *
      * @return void
-     *
-     * @deprecated This method will be removed in a future Laravel version.
      */
     public static function forgetApp()
     {
         static::$app = null;
-    }
-
-    /**
-     * Flush the bootstrapper's global state.
-     *
-     * @param  \PHPUnit\Framework\TestCase|null  $testCase
-     * @return void
-     */
-    public static function flushState(?TestCase $testCase = null)
-    {
-        if (is_null(static::$app)) {
-            return;
-        }
-
-        static::flushHandlersState($testCase);
-
-        static::$app = null;
-
-        static::$reservedMemory = null;
-    }
-
-    /**
-     * Flush the bootstrapper's global handlers state.
-     *
-     * @param  \PHPUnit\Framework\TestCase|null  $testCase
-     * @return void
-     */
-    public static function flushHandlersState(?TestCase $testCase = null)
-    {
-        while (get_exception_handler() !== null) {
-            restore_exception_handler();
-        }
-
-        while (get_error_handler() !== null) {
-            restore_error_handler();
-        }
-
-        if (class_exists(ErrorHandler::class)) {
-            $instance = ErrorHandler::instance();
-
-            if ((fn () => $this->enabled ?? false)->call($instance)) {
-                $instance->disable();
-
-                if (version_compare(Version::id(), '12.3.4', '>=')) {
-                    $instance->enable($testCase);
-                } else {
-                    $instance->enable();
-                }
-            }
-        }
     }
 }
