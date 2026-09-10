@@ -78,6 +78,93 @@ class SystemUpdateService
     }
 
     /**
+     * Check if git CLI is executable on this server environment
+     */
+    public function isGitCliAvailable(): bool
+    {
+        try {
+            $process = new Process(['git', '--version'], base_path());
+            $process->setTimeout(5);
+            $process->run();
+            return $process->isSuccessful();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Initialize Git repository and connect to deploy repository
+     */
+    public function initializeGitRepository(?string $customRepoUrl = null): array
+    {
+        @set_time_limit(180);
+        @ini_set('max_execution_time', '180');
+        @ini_set('memory_limit', '256M');
+
+        $basePath = base_path();
+        $config = $this->getUpdateConfig();
+        $repoUrl = trim($customRepoUrl ?: $config['repo_url']);
+        $branch = trim($config['branch'] ?: 'main');
+
+        $logs = [];
+
+        if (!$this->isGitCliAvailable()) {
+            throw new Exception('ไม่พบโปรแกรม Git บนเซิร์ฟเวอร์นี้ (Git CLI is not installed or not in PATH) กรุณาใช้วิธี Manual Patch ZIP หรือติดตั้ง Git บนเซิร์ฟเวอร์');
+        }
+
+        // 1. git init if needed
+        if (!File::isDirectory($basePath . DIRECTORY_SEPARATOR . '.git')) {
+            $logs[] = $this->runProcess(['git', 'init'], 10);
+        } else {
+            $logs[] = 'พบโฟลเดอร์ .git อยู่แล้ว ดำเนินการเชื่อมโยง Remote ต่อไป';
+        }
+
+        // 2. Add safe.directory to avoid dubious ownership errors
+        try {
+            $this->runProcess(['git', 'config', '--global', '--add', 'safe.directory', str_replace('\\', '/', $basePath)], 10);
+        } catch (Exception $e) {
+            // Non-fatal if global config cannot be written by web server
+        }
+
+        // 3. Ensure remote exists pointing to target repo
+        $remoteName = $this->ensureUpdateRemote();
+        $logs[] = "กำหนด Remote [{$remoteName}] -> {$repoUrl}";
+
+        // 4. Fetch target branch
+        $logs[] = "กำลังดึงข้อมูล Commit จาก {$remoteName}/{$branch}...";
+        $fetchOut = $this->runProcess(['git', 'fetch', $remoteName, $branch], 90);
+        if ($fetchOut) {
+            $logs[] = $fetchOut;
+        }
+
+        // 5. Checkout / switch branch to main
+        try {
+            $this->runProcess(['git', 'checkout', '-B', $branch], 10);
+        } catch (Exception $e) {
+            // ignore if already on branch
+        }
+
+        // 6. Reset index to match remote commit without touching modified working files
+        $resetOut = $this->runProcess(['git', 'reset', '--mixed', "{$remoteName}/{$branch}"], 30);
+        if ($resetOut) {
+            $logs[] = $resetOut;
+        }
+
+        // 7. Track upstream branch
+        try {
+            $this->runProcess(['git', 'branch', "--set-upstream-to={$remoteName}/{$branch}", $branch], 10);
+        } catch (Exception $e) {
+            // ignore
+        }
+
+        return [
+            'success' => true,
+            'message' => "ติดตั้งและเชื่อมต่อ Git Repository กับ {$repoUrl} สำเร็จเรียบร้อยแล้ว!",
+            'log' => implode("\n", array_filter($logs)),
+        ];
+    }
+
+    /**
      * Check if git is available and get repository update status from target deploy repo
      */
     public function checkRemoteUpdates(): array
@@ -92,6 +179,7 @@ class SystemUpdateService
             return [
                 'success' => false,
                 'is_git_repo' => false,
+                'git_cli_available' => $this->isGitCliAvailable(),
                 'target_repo' => $targetRepoUrl,
                 'target_branch' => $targetBranch,
                 'remote_name' => 'none',

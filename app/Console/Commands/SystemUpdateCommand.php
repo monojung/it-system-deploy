@@ -15,6 +15,7 @@ class SystemUpdateCommand extends Command
      */
     protected $signature = 'system:update
                             {--check : ตรวจสอบรายการอัปเดตล่าสุดจาก Git โดยไม่ติดตั้ง}
+                            {--init-git : ติดตั้งและเชื่อมต่อ Git Repository เข้ากับ GitHub Deploy Repository อัตโนมัติ}
                             {--force : บังคับรันอัปเดตทันทีโดยไม่ต้องถามยืนยัน}';
 
     /**
@@ -33,6 +34,21 @@ class SystemUpdateCommand extends Command
         $this->info('  Thung Hua Chang Hospital - System Auto-Updater   ');
         $this->info('====================================================');
 
+        if ($this->option('init-git')) {
+            $this->info('กำลังเริ่มต้นสร้างและเชื่อมต่อ Git Repository กับ GitHub...');
+            try {
+                $res = $updateService->initializeGitRepository();
+                $this->info('✅ ' . $res['message']);
+                if (!empty($res['log'])) {
+                    $this->line($res['log']);
+                }
+                return 0;
+            } catch (Throwable $e) {
+                $this->error('❌ ล้มเหลว: ' . $e->getMessage());
+                return 1;
+            }
+        }
+
         $isCheckOnly = $this->option('check');
         $isForce = $this->option('force');
 
@@ -41,6 +57,7 @@ class SystemUpdateCommand extends Command
 
         if (!$check['is_git_repo']) {
             $this->error('ข้อผิดพลาด: ' . ($check['message'] ?? 'โปรเจกต์นี้ไม่ได้อยู่ใน Git repository'));
+            $this->comment('คำแนะนำ: รันคำสั่ง [php artisan system:update --init-git] เพื่อสร้างและเชื่อมต่อ Git Repository อัตโนมัติ');
             return 1;
         }
 
