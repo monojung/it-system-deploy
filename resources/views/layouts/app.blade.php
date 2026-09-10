@@ -45,15 +45,23 @@
             --radius-lg: 16px;
             --radius-full: 9999px;
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
             --shadow-glow: 0 0 20px rgba(13, 148, 136, 0.15);
+            --ease-fluid: cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* Modern Slim Scrollbar (ระบบเลื่อนหน้าจอและแถบเลื่อน) */
@@ -71,7 +79,7 @@
             background: #cbd5e1;
             border-radius: 9999px;
             border: 1px solid #f1f5f9;
-            transition: background 0.2s;
+            transition: background 0.2s ease;
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -105,6 +113,51 @@
             overflow-x: hidden;
         }
 
+        /* Global Top Loading Progress Bar (Linear SPA Feeling) */
+        .global-progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, #0d9488 0%, #0284c7 60%, #38bdf8 100%);
+            box-shadow: 0 0 10px rgba(13, 148, 136, 0.7), 0 0 5px rgba(2, 132, 199, 0.5);
+            z-index: 999999;
+            pointer-events: none;
+            opacity: 0;
+            transition: width 0.3s var(--ease-fluid), opacity 0.3s ease;
+        }
+
+        .global-progress-bar.active {
+            opacity: 1;
+        }
+
+        .global-progress-bar.finished {
+            width: 100% !important;
+            opacity: 0;
+            transition: width 0.15s ease, opacity 0.35s ease 0.1s;
+        }
+
+        /* Mobile Sidebar Backdrop (Glassmorphism Blur) */
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 95;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s var(--ease-fluid);
+        }
+
+        .sidebar-backdrop.show {
+            display: block;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
         /* Layout Structure */
         .app-container {
             display: flex;
@@ -123,8 +176,9 @@
             bottom: 0;
             left: 0;
             z-index: 100;
-            transition: all 0.3s ease;
+            transition: transform 0.3s var(--ease-fluid), width 0.3s var(--ease-fluid);
             box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+            will-change: transform;
         }
 
         .sidebar-brand {
@@ -190,13 +244,18 @@
             text-decoration: none;
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.2s ease;
+            transition: transform 0.2s var(--ease-fluid), background-color 0.2s ease, color 0.2s ease;
+            position: relative;
         }
 
         .nav-item:hover {
             background-color: var(--sidebar-hover);
             color: #ffffff;
-            transform: translateX(3px);
+            transform: translateX(4px);
+        }
+
+        .nav-item:hover i {
+            transform: scale(1.1);
         }
 
         .nav-item.active {
@@ -210,6 +269,7 @@
             font-size: 18px;
             width: 22px;
             text-align: center;
+            transition: transform 0.2s var(--ease-fluid);
         }
 
         .nav-badge {
@@ -289,6 +349,7 @@
             flex-direction: column;
             min-height: 100vh;
             width: calc(100% - 280px);
+            transition: margin-left 0.3s var(--ease-fluid), width 0.3s var(--ease-fluid);
         }
 
         /* Top Navbar */
@@ -304,6 +365,7 @@
             top: 0;
             z-index: 90;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03);
+            backdrop-filter: blur(8px);
         }
 
         .topbar-left {
@@ -320,6 +382,16 @@
             color: var(--text-main);
             cursor: pointer;
             padding: 6px;
+            border-radius: 8px;
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+
+        .mobile-menu-btn:hover {
+            background: #f1f5f9;
+        }
+
+        .mobile-menu-btn:active {
+            transform: scale(0.92);
         }
 
         .page-title-box {
@@ -358,13 +430,19 @@
             font-weight: 500;
             text-decoration: none;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: transform 0.2s var(--ease-fluid), box-shadow 0.2s var(--ease-fluid), border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+            user-select: none;
         }
 
         .topbar-btn:hover {
             border-color: var(--primary);
             color: var(--primary);
             background: var(--primary-light);
+            transform: translateY(-1px);
+        }
+
+        .topbar-btn:active {
+            transform: scale(0.96) translateY(0) !important;
         }
 
         .topbar-btn-primary {
@@ -377,6 +455,7 @@
         .topbar-btn-primary:hover {
             opacity: 0.95;
             transform: translateY(-1px);
+            box-shadow: 0 4px 14px var(--primary-glow);
         }
 
         .topbar-btn-secondary {
@@ -389,6 +468,7 @@
         .topbar-btn-secondary:hover {
             opacity: 0.95;
             transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
         }
 
         /* Version Modal Styles */
@@ -398,14 +478,18 @@
             inset: 0;
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             z-index: 99999;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            opacity: 0;
+            transition: opacity 0.25s var(--ease-fluid);
         }
 
         .version-modal-overlay.active {
             display: flex;
+            opacity: 1;
         }
 
         .version-modal-card {
@@ -418,19 +502,31 @@
             flex-direction: column;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             border: 1px solid var(--border);
-            animation: modalSlideUp 0.2s ease-out;
+            transform: translateY(12px) scale(0.97);
+            transition: transform 0.25s var(--ease-fluid);
             overflow: hidden;
         }
 
-        @keyframes modalSlideUp {
-            from { opacity: 0; transform: translateY(12px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+        .version-modal-overlay.active .version-modal-card {
+            transform: translateY(0) scale(1);
         }
 
-        /* Content Area */
+        /* Content Area & Seamless Fade-and-Rise Entrance */
+        @keyframes pageContentFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .content-body {
             padding: 28px;
             flex: 1;
+            animation: pageContentFadeIn 0.25s var(--ease-fluid) forwards;
         }
 
         /* Flash Messages */
@@ -442,7 +538,41 @@
             align-items: center;
             gap: 12px;
             font-size: 14px;
-            animation: slideDown 0.3s ease-out;
+            animation: slideDown 0.25s var(--ease-fluid);
+            transition: opacity 0.25s ease, max-height 0.25s ease, margin 0.25s ease, padding 0.25s ease;
+            overflow: hidden;
+        }
+
+        .alert-box.dismissed {
+            opacity: 0;
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-bottom: 0;
+            pointer-events: none;
+        }
+
+        .alert-dismiss-btn {
+            margin-left: auto;
+            background: transparent;
+            border: none;
+            color: inherit;
+            opacity: 0.55;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0 4px;
+            border-radius: 4px;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        .alert-dismiss-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .alert-dismiss-btn:active {
+            transform: scale(0.9);
         }
 
         @keyframes slideDown {
@@ -482,11 +612,12 @@
             box-shadow: var(--shadow-sm);
             overflow: hidden;
             margin-bottom: 24px;
-            transition: box-shadow 0.2s;
+            transition: transform 0.25s var(--ease-fluid), box-shadow 0.25s var(--ease-fluid), border-color 0.2s ease;
         }
 
         .card:hover {
             box-shadow: var(--shadow-md);
+            border-color: rgba(13, 148, 136, 0.22);
         }
 
         .card-header {
@@ -511,7 +642,7 @@
             padding: 24px;
         }
 
-        /* Buttons */
+        /* Buttons & Micro-interactions */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -524,13 +655,45 @@
             font-family: inherit;
             cursor: pointer;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: transform 0.2s var(--ease-fluid), box-shadow 0.2s var(--ease-fluid), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
             border: 1px solid transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: scale(0.96) !important;
+            transition: transform 0.05s ease !important;
         }
 
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Auto-Loading State for Form Submissions */
+        .btn-is-loading {
+            position: relative;
+            pointer-events: none !important;
+            opacity: 0.82 !important;
+        }
+
+        .btn-spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: btnSpin 0.6s linear infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes btnSpin {
+            to { transform: rotate(360deg); }
         }
 
         .btn-primary {
@@ -540,8 +703,8 @@
         }
 
         .btn-primary:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px var(--primary-glow);
+            transform: translateY(-1.5px);
+            box-shadow: 0 4px 14px var(--primary-glow);
         }
 
         .btn-secondary {
@@ -550,35 +713,45 @@
             border-color: var(--border);
         }
 
-        .btn-secondary:hover {
+        .btn-secondary:hover:not(:disabled) {
             background: #e2e8f0;
+            transform: translateY(-1px);
         }
 
         .btn-success {
             background: #10b981;
             color: white;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
         }
 
-        .btn-success:hover {
+        .btn-success:hover:not(:disabled) {
             background: #059669;
+            transform: translateY(-1.5px);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
         }
 
         .btn-danger {
             background: #ef4444;
             color: white;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
         }
 
-        .btn-danger:hover {
+        .btn-danger:hover:not(:disabled) {
             background: #dc2626;
+            transform: translateY(-1.5px);
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
         }
 
         .btn-warning {
             background: #f59e0b;
             color: white;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
         }
 
-        .btn-warning:hover {
+        .btn-warning:hover:not(:disabled) {
             background: #d97706;
+            transform: translateY(-1.5px);
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
         }
 
         .btn-sm {
@@ -603,6 +776,7 @@
             font-size: 12px;
             font-weight: 500;
             line-height: 1;
+            transition: background 0.15s ease, transform 0.15s ease;
         }
 
         .badge-warning { background: #fef3c7; color: #92400e; }
@@ -623,6 +797,7 @@
         .table-responsive {
             width: 100%;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .table {
@@ -645,10 +820,15 @@
             padding: 14px 16px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
+            transition: background-color 0.15s ease;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.15s ease;
         }
 
         .table tbody tr:hover {
-            background-color: #f8fafc;
+            background-color: #f1fdfb;
         }
 
         /* Pagination */
@@ -675,13 +855,14 @@
             font-size: 13px;
             font-weight: 500;
             text-decoration: none;
-            transition: all 0.2s ease;
+            transition: transform 0.15s var(--ease-fluid), background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
         }
 
         .page-item .page-link:hover:not(.disabled) {
             background: #f1f5f9;
             border-color: #cbd5e1;
             color: var(--primary);
+            transform: translateY(-1px);
         }
 
         .page-item.active .page-link {
@@ -727,13 +908,14 @@
             font-family: inherit;
             font-size: 14px;
             color: var(--text-main);
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: border-color 0.2s var(--ease-fluid), box-shadow 0.2s var(--ease-fluid), transform 0.2s var(--ease-fluid);
         }
 
         .form-control:focus, .form-select:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-glow);
+            box-shadow: 0 0 0 3.5px var(--primary-glow);
+            transform: translateY(-1px);
         }
 
         .form-text {
@@ -758,6 +940,45 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        /* Floating Back to Top Button */
+        .back-to-top-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 80;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(12px) scale(0.9);
+            transition: opacity 0.25s var(--ease-fluid), transform 0.25s var(--ease-fluid), visibility 0.25s, box-shadow 0.2s;
+        }
+
+        .back-to-top-btn.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .back-to-top-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.5);
+        }
+
+        .back-to-top-btn:active {
+            transform: translateY(0) scale(0.95);
         }
 
         /* Pulse Animation */
@@ -788,11 +1009,18 @@
                 padding-left: 16px;
                 padding-right: 16px;
             }
+            .back-to-top-btn {
+                bottom: 16px;
+                right: 16px;
+                width: 38px;
+                height: 38px;
+                font-size: 16px;
+            }
         }
 
         /* Print Style */
         @media print {
-            .sidebar, .topbar, .app-footer, .no-print, .btn {
+            .sidebar, .topbar, .app-footer, .no-print, .btn, .back-to-top-btn, .global-progress-bar {
                 display: none !important;
             }
             .main-wrapper {
@@ -811,6 +1039,17 @@
     @stack('styles')
 </head>
 <body>
+    <!-- Global Top Loading Progress Bar (Linear SPA Feeling) -->
+    <div class="global-progress-bar" id="globalProgressBar"></div>
+
+    <!-- Mobile Sidebar Backdrop (Glassmorphism Blur) -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+    <!-- Floating Back to Top Button -->
+    <button type="button" id="backToTopBtn" class="back-to-top-btn" onclick="scrollToTop()" title="กลับสู่ด้านบน" aria-label="กลับสู่ด้านบน">
+        <i class="bi bi-chevron-up"></i>
+    </button>
+
     <div class="app-container">
         <!-- Sidebar Navigation -->
         <aside class="sidebar" id="sidebar">
@@ -980,30 +1219,34 @@
             <main class="content-body">
                 <!-- Flash Alerts -->
                 @if(session('success'))
-                <div class="alert-box alert-success">
+                <div class="alert-box alert-success" id="flashSuccessAlert">
                     <i class="bi bi-check-circle-fill" style="font-size: 18px;"></i>
-                    <div>{{ session('success') }}</div>
+                    <div style="flex: 1;">{{ session('success') }}</div>
+                    <button type="button" class="alert-dismiss-btn" onclick="dismissAlert(this)" title="ปิดการแจ้งเตือน" aria-label="Close">&times;</button>
                 </div>
                 @endif
 
                 @if(session('error'))
-                <div class="alert-box alert-error">
+                <div class="alert-box alert-error" id="flashErrorAlert">
                     <i class="bi bi-exclamation-triangle-fill" style="font-size: 18px;"></i>
-                    <div>{{ session('error') }}</div>
+                    <div style="flex: 1;">{{ session('error') }}</div>
+                    <button type="button" class="alert-dismiss-btn" onclick="dismissAlert(this)" title="ปิดการแจ้งเตือน" aria-label="Close">&times;</button>
                 </div>
                 @endif
 
                 @if(session('warning'))
-                <div class="alert-box alert-warning">
+                <div class="alert-box alert-warning" id="flashWarningAlert">
                     <i class="bi bi-exclamation-circle-fill" style="font-size: 18px;"></i>
-                    <div>{{ session('warning') }}</div>
+                    <div style="flex: 1;">{{ session('warning') }}</div>
+                    <button type="button" class="alert-dismiss-btn" onclick="dismissAlert(this)" title="ปิดการแจ้งเตือน" aria-label="Close">&times;</button>
                 </div>
                 @endif
 
                 @if(session('info'))
-                <div class="alert-box alert-info">
+                <div class="alert-box alert-info" id="flashInfoAlert">
                     <i class="bi bi-info-circle-fill" style="font-size: 18px;"></i>
-                    <div>{{ session('info') }}</div>
+                    <div style="flex: 1;">{{ session('info') }}</div>
+                    <button type="button" class="alert-dismiss-btn" onclick="dismissAlert(this)" title="ปิดการแจ้งเตือน" aria-label="Close">&times;</button>
                 </div>
                 @endif
 
@@ -1129,10 +1372,22 @@
     </div>
 
     <script>
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('show');
+        // Sidebar Toggle with Mobile Backdrop
+        function toggleSidebar(forceState) {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (!sidebar) return;
+            const isShow = typeof forceState === 'boolean' ? forceState : !sidebar.classList.contains('show');
+            if (isShow) {
+                sidebar.classList.add('show');
+                if (backdrop) backdrop.classList.add('show');
+            } else {
+                sidebar.classList.remove('show');
+                if (backdrop) backdrop.classList.remove('show');
+            }
         }
 
+        // Version Modal Controls
         function openVersionModal() {
             document.getElementById('versionModal').classList.add('active');
         }
@@ -1147,10 +1402,36 @@
             }
         }
 
-        // Close version modal on Escape key
+        // Dismiss Flash Alerts Smoothly
+        function dismissAlert(btn) {
+            const box = btn.closest('.alert-box');
+            if (box) {
+                box.classList.add('dismissed');
+                setTimeout(() => { box.remove(); }, 260);
+            }
+        }
+
+        // Floating Back to Top Button
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        window.addEventListener('scroll', function() {
+            const btn = document.getElementById('backToTopBtn');
+            if (btn) {
+                if (window.scrollY > 240) {
+                    btn.classList.add('show');
+                } else {
+                    btn.classList.remove('show');
+                }
+            }
+        }, { passive: true });
+
+        // Global Keydown (Escape key handlers)
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeVersionModal();
+                toggleSidebar(false);
             }
         });
 
@@ -1175,8 +1456,97 @@
             const url = new URL(window.location.href);
             url.searchParams.set('per_page', val);
             url.searchParams.set('page', 1);
+            if (window.ProgressBar) window.ProgressBar.start();
             window.location.href = url.toString();
         }
+
+        // Global Top Loading Progress Bar Controller (Linear SPA Feeling)
+        const ProgressBar = {
+            bar: null,
+            timer: null,
+            init: function() {
+                this.bar = document.getElementById('globalProgressBar');
+                this.bindEvents();
+            },
+            start: function() {
+                if (!this.bar) return;
+                clearTimeout(this.timer);
+                this.bar.classList.remove('finished');
+                this.bar.classList.add('active');
+                this.bar.style.width = '28%';
+                
+                this.timer = setTimeout(() => {
+                    if (this.bar && this.bar.classList.contains('active')) {
+                        this.bar.style.width = '72%';
+                        this.timer = setTimeout(() => {
+                            if (this.bar && this.bar.classList.contains('active')) {
+                                this.bar.style.width = '88%';
+                            }
+                        }, 280);
+                    }
+                }, 90);
+            },
+            finish: function() {
+                if (!this.bar) return;
+                clearTimeout(this.timer);
+                this.bar.style.width = '100%';
+                this.bar.classList.add('finished');
+                setTimeout(() => {
+                    if (this.bar) {
+                        this.bar.classList.remove('active', 'finished');
+                        this.bar.style.width = '0%';
+                    }
+                }, 350);
+            },
+            bindEvents: function() {
+                // On internal navigation link clicks
+                document.addEventListener('click', function(e) {
+                    const link = e.target.closest('a');
+                    if (!link) return;
+                    const href = link.getAttribute('href');
+                    if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.getAttribute('target') === '_blank' || link.hasAttribute('download') || link.getAttribute('role') === 'button') {
+                        return;
+                    }
+                    if (link.getAttribute('onclick') && (link.getAttribute('onclick').includes('Modal') || link.getAttribute('onclick').includes('toggleSidebar'))) {
+                        return;
+                    }
+                    ProgressBar.start();
+                });
+
+                // On form submission
+                document.addEventListener('submit', function(e) {
+                    const form = e.target;
+                    if (form.hasAttribute('data-no-progress')) return;
+                    
+                    if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+                        return;
+                    }
+
+                    ProgressBar.start();
+
+                    // Add smooth loading spinner to submit button to prevent double-clicks
+                    const submitBtn = form.querySelector('button[type="submit"]:not([data-no-loading]), input[type="submit"]:not([data-no-loading])');
+                    if (submitBtn && !submitBtn.classList.contains('btn-is-loading')) {
+                        submitBtn.classList.add('btn-is-loading');
+                        const spinner = document.createElement('span');
+                        spinner.className = 'btn-spinner';
+                        spinner.style.marginRight = '6px';
+                        submitBtn.prepend(spinner);
+                    }
+                });
+            }
+        };
+
+        window.ProgressBar = ProgressBar;
+
+        // Auto initialize on DOM readiness
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => ProgressBar.init());
+        } else {
+            ProgressBar.init();
+        }
+        window.addEventListener('pageshow', (e) => { if (e.persisted) ProgressBar.finish(); });
+        window.addEventListener('load', () => ProgressBar.finish());
     </script>
     @stack('scripts')
 </body>

@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.2.3'),
+    'version' => env('APP_VERSION', '2.2.4'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-11',
-    'build' => '20260911.1',
+    'build' => '20260911.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,21 @@ return [
     |
     */
     'changelog' => [
+        '2.2.4' => [
+            'date' => '2026-09-11',
+            'badge' => 'UI/UX Fluidity & Micro-Interactions',
+            'badge_color' => '#0d9488',
+            'title' => 'ปรับปรุงระบบการแสดงผลและส่วนต่อประสานผู้ใช้ให้สมูท ไหลลื่น รวดเร็ว ไร้รอยต่อ',
+            'highlights' => [
+                'ติดตั้ง Global Slim Top Progress Bar (สไตล์ Linear/SPA) ตอบสนองทันทีเมื่อคลิกลิงก์เปลี่ยนหน้าหรือค้นหาข้อมูล ลดความรู้สึกหน่วง',
+                'เพิ่มสัมผัสตอบสนองแบบ Tactile Micro-interaction (Active Scale) บนปุ่มกดและเมนูทั่วทั้งระบบ',
+                'เพิ่มระบบ Auto-Loading Spinner บนปุ่ม Submit ของฟอร์มทุกหน้าเพื่อป้องกันการกดย้ำซ้ำซ้อนและแจ้งสถานะการประมวลผล',
+                'ปรับปรุงการเปิด/ปิด Sidebar บนมือถือและแท็บเล็ต ด้วย Glassmorphism Backdrop พร้อม Gesture แตะที่ว่างหรือกด Esc เพื่อปิด',
+                'กำหนด Scroll Behavior เป็น Smooth, เพิ่ม Font Smoothing (Antialiased) และ Page Content Fade-in Entrance ป้องกันหน้าจอกระตุก',
+                'เพิ่มปุ่มลอยเลื่อนกลับด้านบน (Floating Back-to-Top Button) พร้อมแอนิเมชันนุ่มนวลเมื่อเลื่อนหน้าจอยาว',
+                'ยกระดับการโต้ตอบของ Cards, Table Rows, Inputs Focus Ring, และ Flash Alerts ให้มีปุ่มกดปิด (Dismiss) ได้อย่างราบรื่น',
+            ],
+        ],
         '2.2.3' => [
             'date' => '2026-09-11',
             'badge' => 'Maintenance & Storage Optimization',

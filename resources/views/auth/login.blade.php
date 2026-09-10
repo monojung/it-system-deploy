@@ -77,6 +77,17 @@
             filter: blur(40px);
         }
 
+        @keyframes authCardEnter {
+            from {
+                opacity: 0;
+                transform: translateY(16px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
         .auth-container {
             width: 100%;
             max-width: 480px;
@@ -86,6 +97,7 @@
             overflow: hidden;
             position: relative;
             z-index: 10;
+            animation: authCardEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         /* Header */
@@ -309,7 +321,7 @@
         }
 
         .btn-submit-main:active {
-            transform: translateY(0);
+            transform: scale(0.97) translateY(0) !important;
         }
 
         /* Divider */
@@ -355,11 +367,16 @@
             gap: 14px;
             transition: all 0.25s ease;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+            user-select: none;
         }
 
         .btn-sso:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-sso:active {
+            transform: scale(0.97) translateY(0) !important;
         }
 
         .btn-google {
@@ -582,7 +599,7 @@
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" class="btn-submit-main">
+                <button type="submit" class="btn-submit-main" id="loginSubmitBtn">
                     <i class="bi bi-box-arrow-in-right" style="font-size: 18px;"></i>
                     เข้าสู่ระบบด้วยอีเมล
                 </button>
@@ -779,6 +796,25 @@
             if (event.target === thaidModal) closeThaidModal();
             if (event.target === googleModal) closeGoogleModal();
         };
+
+        // Form Submit Loading Feedback
+        const loginForm = document.querySelector('form[action="{{ route('login.post') }}"]');
+        if (loginForm) {
+            loginForm.addEventListener('submit', function() {
+                const btn = document.getElementById('loginSubmitBtn');
+                if (btn && !btn.disabled) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.85';
+                    btn.style.pointerEvents = 'none';
+                    btn.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid #fff;border-right-color:transparent;border-radius:50%;animation:loginSpin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> กำลังเข้าสู่ระบบ...';
+                }
+            });
+        }
     </script>
+    <style>
+        @keyframes loginSpin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </body>
 </html>
