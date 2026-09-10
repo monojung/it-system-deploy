@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\DB;
 use App\Models\BackupLog;
 use App\Models\AuditLog;
+use App\Models\SystemSetting;
 use Carbon\Carbon;
 use PDO;
 use Exception;
@@ -241,6 +242,28 @@ class BackupController extends Controller
         }
 
         return redirect()->route('backups.index')->with('info', 'ไม่พบไฟล์สำรองตกค้างในพื้นที่จัดเก็บ');
+    }
+
+    /**
+     * Toggle Auto-Backup system enabled status
+     */
+    public function toggleAutoBackup()
+    {
+        $current = (bool) setting('backup_auto_enabled', false);
+        $new = !$current;
+
+        SystemSetting::set(
+            'backup_auto_enabled',
+            $new,
+            'security',
+            'boolean',
+            'เปิดใช้งานระบบสำรองฐานข้อมูลอัตโนมัติ (Auto-Backup)'
+        );
+
+        $actionText = $new ? 'เปิดใช้งาน' : 'ปิดใช้งาน';
+        AuditLog::record('update', 'backups', "{$actionText}ระบบสำรองฐานข้อมูลอัตโนมัติ (Auto-Backup)");
+
+        return redirect()->route('backups.index')->with('success', "ปรับปรุงสถานะระบบ Auto-Backup เป็น{$actionText}เรียบร้อยแล้ว");
     }
 
     private function performDump(string $outputPath, string $scope): bool

@@ -146,6 +146,7 @@ Route::middleware(['auth'])->group(function () {
         // Backup & Restore
         Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
         Route::post('/backups', [BackupController::class, 'create'])->name('backups.create');
+        Route::post('/backups/toggle-auto', [BackupController::class, 'toggleAutoBackup'])->name('backups.toggle-auto');
         Route::post('/backups/clean-orphans', [BackupController::class, 'cleanOrphans'])->name('backups.clean-orphans');
         Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
         Route::post('/backups/restore', [BackupController::class, 'restore'])->name('backups.restore');

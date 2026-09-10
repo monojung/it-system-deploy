@@ -126,19 +126,42 @@
     </div>
 
     <div class="card" style="margin-bottom: 0; padding: 18px 22px; border-radius: 14px;">
-        <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: {{ $autoBackupEnabled ? '#ecfdf5' : '#f1f5f9' }}; color: {{ $autoBackupEnabled ? '#059669' : '#64748b' }}; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                <i class="bi {{ $autoBackupEnabled ? 'bi-shield-check' : 'bi-shield-slash' }}"></i>
-            </div>
-            <div>
-                <div style="font-size: 12.5px; color: var(--text-muted);">ความปลอดภัยของข้อมูล</div>
-                <div style="font-size: 16px; font-weight: 700; color: {{ $autoBackupEnabled ? '#065f46' : '#334155' }};">
-                    {{ $autoBackupEnabled ? 'ระบบ Auto-Backup: เปิดใช้งาน' : 'ระบบ Auto-Backup: ปิดใช้งาน' }}
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: {{ $autoBackupEnabled ? '#ecfdf5' : '#f1f5f9' }}; color: {{ $autoBackupEnabled ? '#059669' : '#64748b' }}; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                    <i class="bi {{ $autoBackupEnabled ? 'bi-shield-check' : 'bi-shield-slash' }}"></i>
                 </div>
-                <div style="font-size: 11.5px; color: var(--text-muted);">
-                    {{ $autoBackupEnabled ? 'สำรองอัตโนมัติก่อน Restore ทุกครั้ง' : 'ไม่มีการสำรองอัตโนมัติ (ประหยัดพื้นที่จัดเก็บ)' }}
+                <div>
+                    <div style="font-size: 12.5px; color: var(--text-muted);">ความปลอดภัยของข้อมูล</div>
+                    <div style="font-size: 16px; font-weight: 700; color: {{ $autoBackupEnabled ? '#065f46' : '#334155' }}; display: flex; align-items: center; gap: 6px;">
+                        <span>ระบบ Auto-Backup:</span>
+                        @if($autoBackupEnabled)
+                            <span class="badge" style="background: #10b981; color: white; font-size: 11.5px; padding: 2px 8px; border-radius: 6px;">เปิดใช้งาน</span>
+                        @else
+                            <span class="badge" style="background: #64748b; color: white; font-size: 11.5px; padding: 2px 8px; border-radius: 6px;">ปิดใช้งาน</span>
+                        @endif
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                        {{ $autoBackupEnabled ? 'สำรองอัตโนมัติก่อน Restore ทุกครั้ง' : 'ไม่มีการสำรองอัตโนมัติ (ประหยัดพื้นที่)' }}
+                    </div>
                 </div>
             </div>
+
+            <!-- Auto-Backup Toggle Button -->
+            <form action="{{ route('backups.toggle-auto') }}" method="POST" style="margin: 0;">
+                @csrf
+                @if($autoBackupEnabled)
+                    <button type="submit" class="btn btn-outline-danger btn-sm" style="font-size: 12.5px; font-weight: 600; padding: 7px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;" title="คลิกเพื่อปิดการทำงานระบบ Auto-Backup">
+                        <i class="bi bi-power"></i>
+                        <span>ปิดใช้งาน Auto-Backup</span>
+                    </button>
+                @else
+                    <button type="submit" class="btn btn-success btn-sm" style="font-size: 12.5px; font-weight: 600; padding: 7px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);" title="คลิกเพื่อเปิดการทำงานระบบ Auto-Backup">
+                        <i class="bi bi-power"></i>
+                        <span>เปิดใช้งาน Auto-Backup</span>
+                    </button>
+                @endif
+            </form>
         </div>
     </div>
 </div>
