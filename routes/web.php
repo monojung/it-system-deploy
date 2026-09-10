@@ -15,6 +15,10 @@ use App\Http\Controllers\DataRequestController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\SystemResetController;
 use App\Http\Controllers\SystemUpdateController;
+use App\Http\Controllers\ServerInitController;
+
+// Initial Server Setup Route (Storage link, cache clear, migrations)
+Route::get('/server-init', [ServerInitController::class, 'init'])->name('server.init');
 
 // Authentication Routes (Email, Registration, Google & ThaID)
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
