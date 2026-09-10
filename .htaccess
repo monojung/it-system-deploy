@@ -7,8 +7,13 @@
 
     # 1. เธเนเธญเธเธเธฑเธเนเธเธฅเนเธเธงเธฒเธกเธเธฅเธญเธ”เธ เธฑเธขเธชเธนเธ เนเธกเนเนเธซเนเนเธเธฃเธ”เธฒเธงเธเนเนเธซเธฅเธ”เธซเธฃเธทเธญเน€เธเธดเธ”เธ”เธนเนเธ”เนเน€เธ”เนเธ”เธเธฒเธ”
     <FilesMatch "(^\.env|\.git|composer\.(json|lock)|package\.json|package-lock\.json|artisan|phpunit\.xml|vite\.config\.js)$">
-        Order allow,deny
-        Deny from all
+        <IfModule mod_authz_core.c>
+            Require all denied
+        </IfModule>
+        <IfModule !mod_authz_core.c>
+            Order allow,deny
+            Deny from all
+        </IfModule>
     </FilesMatch>
 
     # 2. เธเนเธญเธเธเธฑเธเธเธฒเธฃเน€เธเนเธฒเธ–เธถเธเนเธเธฅเน€เธ”เธญเธฃเนเธฃเธฐเธเธเธ เธฒเธขเนเธเนเธ”เธขเธ•เธฃเธ
@@ -18,12 +23,16 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # 4. Redirect Trailing Slashes If Not A Folder...
+    # 4. Handle X-XSRF-Token Header
+    RewriteCond %{HTTP:x-xsrf-token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # 5. Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # 5. เธชเนเธเธเธณเธเธญเธ—เธฑเนเธเธซเธกเธ”เน€เธเนเธฒเธชเธนเน index.php เธซเธฒเธเนเธกเนเนเธเนเนเธเธฅเนเธเธฃเธดเธ
+    # 6. เธชเนเธเธเธณเธเธญเธ—เธฑเนเธเธซเธกเธ”เน€เธเนเธฒเธชเธนเน index.php เธซเธฒเธเนเธกเนเนเธเนเนเธเธฅเนเธเธฃเธดเธ
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]

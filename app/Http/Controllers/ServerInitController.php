@@ -37,79 +37,127 @@ class ServerInitController extends Controller
         $logs = [];
         $hasErrors = false;
 
-        // 1. Storage Link
-        $storageLinkStatus = 'สำเร็จ (Linked)';
         try {
-            $publicStorage = public_path('storage');
-            $targetStorage = storage_path('app/public');
-
-            if (!File::exists($targetStorage)) {
-                File::makeDirectory($targetStorage, 0777, true, true);
+            // 0. Ensure Storage & Cache Directory Structure
+            $foldersToEnsure = [
+                storage_path('app/public'),
+                storage_path('framework/cache/data'),
+                storage_path('framework/sessions'),
+                storage_path('framework/views'),
+                storage_path('logs'),
+                base_path('bootstrap/cache'),
+            ];
+            foreach ($foldersToEnsure as $folder) {
+                if (!File::exists($folder)) {
+                    @File::makeDirectory($folder, 0777, true, true);
+                }
             }
 
-            Artisan::call('storage:link');
-            $linkOutput = trim(Artisan::output());
-            $logs[] = "[Storage Link]: " . ($linkOutput ?: 'เชื่อมโยง public/storage เรียบร้อยแล้ว');
-        } catch (Throwable $e) {
-            $storageLinkStatus = 'แจ้งเตือน (Symlink Exception)';
-            $logs[] = "[Storage Link Warning]: " . $e->getMessage() . " (หากเซิร์ฟเวอร์ปิดฟังก์ชัน symlink กรุณาตรวจสอบการเข้าถึง storage ผ่าน Document Root)";
-        }
-
-        // 2. Optimize Clear
-        $optimizeStatus = 'สำเร็จ (Cleared)';
-        try {
-            Artisan::call('optimize:clear');
-            $clearOutput = trim(Artisan::output());
-            $logs[] = "[Optimize Clear]:\n" . ($clearOutput ?: 'ล้างแคชการตั้งค่าและ View สำเร็จ');
-        } catch (Throwable $e) {
-            $optimizeStatus = 'ข้อผิดพลาด (Failed)';
-            $hasErrors = true;
-            $logs[] = "[Optimize Clear Error]: " . $e->getMessage();
-        }
-
-        // 3. Database Check & Optional Migration
-        $dbStatus = 'ตรวจสอบสำเร็จ (Connected)';
-        $migrateStatus = 'ข้าม (ไม่ได้ระบุ &migrate=1)';
-        try {
-            DB::connection()->getPdo();
-            $dbName = DB::connection()->getDatabaseName();
-            $logs[] = "[Database Connection]: เชื่อมต่อฐานข้อมูล '{$dbName}' สำเร็จ";
-
-            if ($request->query('migrate') === '1') {
-                Artisan::call('migrate', ['--force' => true]);
-                $migrateOutput = trim(Artisan::output());
-                $migrateStatus = 'สำเร็จ (Migrated)';
-                $logs[] = "[Database Migration]:\n" . ($migrateOutput ?: 'ตารางฐานข้อมูลเป็นเวอร์ชันล่าสุดแล้ว');
+            // 1. Application Key Check & Generation
+            $appKeyStatus = 'พร้อมใช้งาน (Configured)';
+            try {
+                if (empty(config('app.key'))) {
+                    Artisan::call('key:generate', ['--force' => true]);
+                    $appKeyStatus = 'สร้างใหม่อัตโนมัติ (Generated)';
+                    $logs[] = "[Application Key]: ตรวจพบ APP_KEY ว่างเปล่า -> ทำการ Generate คีย์ใหม่และบันทึกลงไฟล์ .env เรียบร้อยแล้ว";
+                } else {
+                    $logs[] = "[Application Key]: ตรวจพบ APP_KEY มีความพร้อมสมบูรณ์";
+                }
+            } catch (Throwable $e) {
+                $appKeyStatus = 'แจ้งเตือน (Key Warning)';
+                $logs[] = "[Application Key Warning]: " . $e->getMessage();
             }
 
-            if ($request->query('seed') === '1') {
-                Artisan::call('db:seed', ['--force' => true]);
-                $seedOutput = trim(Artisan::output());
-                $logs[] = "[Database Seeder]:\n" . ($seedOutput ?: 'ข้อมูลเริ่มต้นนำเข้าสำเร็จ');
+            // 2. Storage Link
+            $storageLinkStatus = 'สำเร็จ (Linked)';
+            try {
+                $publicStorage = public_path('storage');
+                $targetStorage = storage_path('app/public');
+
+                if (!File::exists($targetStorage)) {
+                    File::makeDirectory($targetStorage, 0777, true, true);
+                }
+
+                Artisan::call('storage:link');
+                $linkOutput = trim(Artisan::output());
+                $logs[] = "[Storage Link]: " . ($linkOutput ?: 'เชื่อมโยง public/storage เรียบร้อยแล้ว');
+            } catch (Throwable $e) {
+                $storageLinkStatus = 'แจ้งเตือน (Symlink Exception)';
+                $logs[] = "[Storage Link Warning]: " . $e->getMessage() . " (หากเซิร์ฟเวอร์ปิดฟังก์ชัน symlink กรุณาตรวจสอบการเข้าถึง storage ผ่าน Document Root)";
             }
-        } catch (Throwable $e) {
-            $dbStatus = 'ข้อผิดพลาด (Connection Error)';
-            $hasErrors = true;
-            $logs[] = "[Database Error]: " . $e->getMessage();
+
+            // 3. Optimize Clear
+            $optimizeStatus = 'สำเร็จ (Cleared)';
+            try {
+                Artisan::call('optimize:clear');
+                $clearOutput = trim(Artisan::output());
+                $logs[] = "[Optimize Clear]:\n" . ($clearOutput ?: 'ล้างแคชการตั้งค่าและ View สำเร็จ');
+            } catch (Throwable $e) {
+                $optimizeStatus = 'ข้อผิดพลาด (Failed)';
+                $hasErrors = true;
+                $logs[] = "[Optimize Clear Error]: " . $e->getMessage();
+            }
+
+            // 4. Database Check & Optional Migration
+            $dbStatus = 'ตรวจสอบสำเร็จ (Connected)';
+            $migrateStatus = 'ข้าม (ไม่ได้ระบุ &migrate=1)';
+            try {
+                DB::connection()->getPdo();
+                $dbName = DB::connection()->getDatabaseName();
+                $logs[] = "[Database Connection]: เชื่อมต่อฐานข้อมูล '{$dbName}' สำเร็จ";
+
+                if ($request->query('migrate') === '1') {
+                    Artisan::call('migrate', ['--force' => true]);
+                    $migrateOutput = trim(Artisan::output());
+                    $migrateStatus = 'สำเร็จ (Migrated)';
+                    $logs[] = "[Database Migration]:\n" . ($migrateOutput ?: 'ตารางฐานข้อมูลเป็นเวอร์ชันล่าสุดแล้ว');
+                }
+
+                if ($request->query('seed') === '1') {
+                    Artisan::call('db:seed', ['--force' => true]);
+                    $seedOutput = trim(Artisan::output());
+                    $logs[] = "[Database Seeder]:\n" . ($seedOutput ?: 'ข้อมูลเริ่มต้นนำเข้าสำเร็จ');
+                }
+            } catch (Throwable $e) {
+                $dbStatus = 'ข้อผิดพลาด (Connection Error)';
+                $hasErrors = true;
+                $logs[] = "[Database Error]: " . $e->getMessage();
+            }
+
+            $summary = [
+                'PHP Version' => PHP_VERSION,
+                'Laravel Version' => app()->version(),
+                'Application Key' => $appKeyStatus,
+                'Storage Link' => $storageLinkStatus,
+                'Optimize Clear' => $optimizeStatus,
+                'Database' => $dbStatus,
+                'Migration' => $migrateStatus,
+            ];
+
+            $html = $this->renderHtml(
+                '🚀 เริ่มต้นระบบสารสนเทศ (Server Initialized)',
+                $hasErrors ? 'warning' : 'success',
+                $summary,
+                implode("\n\n", $logs)
+            );
+
+            return response()->make($html, 200, ['Content-Type' => 'text/html; charset=utf-8']);
+        } catch (Throwable $fatal) {
+            $fatalHtml = $this->renderHtml(
+                '❌ เกิดข้อผิดพลาดร้ายแรง (Fatal Server Error)',
+                'error',
+                [
+                    'PHP Version' => PHP_VERSION,
+                    'Laravel Version' => app()->version(),
+                    'Error Type' => get_class($fatal),
+                    'Error Message' => $fatal->getMessage(),
+                    'File & Line' => basename($fatal->getFile()) . ':' . $fatal->getLine(),
+                ],
+                "Stack Trace:\n" . $fatal->getTraceAsString()
+            );
+
+            return response()->make($fatalHtml, 200, ['Content-Type' => 'text/html; charset=utf-8']);
         }
-
-        $summary = [
-            'PHP Version' => PHP_VERSION,
-            'Laravel Version' => app()->version(),
-            'Storage Link' => $storageLinkStatus,
-            'Optimize Clear' => $optimizeStatus,
-            'Database' => $dbStatus,
-            'Migration' => $migrateStatus,
-        ];
-
-        $html = $this->renderHtml(
-            '🚀 เริ่มต้นระบบสารสนเทศ (Server Initialized)',
-            $hasErrors ? 'warning' : 'success',
-            $summary,
-            implode("\n\n", $logs)
-        );
-
-        return response()->make($html, 200, ['Content-Type' => 'text/html; charset=utf-8']);
     }
 
     /**

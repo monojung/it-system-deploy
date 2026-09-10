@@ -18,7 +18,15 @@ use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\ServerInitController;
 
 // Initial Server Setup Route (Storage link, cache clear, migrations)
-Route::get('/server-init', [ServerInitController::class, 'init'])->name('server.init');
+Route::get('/server-init', [ServerInitController::class, 'init'])
+    ->withoutMiddleware([
+        \App\Http\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \App\Http\Middleware\VerifyCsrfToken::class,
+    ])
+    ->name('server.init');
 
 // Authentication Routes (Email, Registration, Google & ThaID)
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
