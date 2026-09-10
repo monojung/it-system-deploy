@@ -582,54 +582,12 @@
             <!-- Dynamic Status Banner -->
             <div id="statusBannerContainer">
                 @if(!($gitStatus['is_git_repo'] ?? false))
-                    <div class="status-banner git-error" style="background: #f8fafc; border-color: #cbd5e1; color: #1e293b;">
-                        <div class="status-banner-icon" style="color: #64748b;"><i class="bi bi-git"></i></div>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                                ยังไม่ได้เชื่อมต่อ Git Repository บนเซิร์ฟเวอร์นี้
-                                <span style="background: #e2e8f0; color: #475569; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 700;">NO .GIT FOLDER</span>
-                            </div>
-                            <div style="font-size: 13px; color: #475569; margin-bottom: 12px; line-height: 1.5;">
-                                โฟลเดอร์ของโปรเจกต์นี้ไม่ได้ถูก clone ผ่าน Git หรือถูกแตกไฟล์มาจาก ZIP โดยตรง ทำให้ยังไม่มีโฟลเดอร์ <code>.git</code> สำหรับดึงอัปเดตอัตโนมัติ
-                            </div>
-
-                            @if($gitStatus['git_cli_available'] ?? true)
-                            <div style="background: #ffffff; border: 1px solid #99f6e4; border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-                                <div>
-                                    <div style="font-weight: 700; color: #0f766e; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
-                                        <i class="bi bi-check-circle-fill" style="color: #0d9488;"></i> ตรวจพบโปรแกรม Git พร้อมทำงานบนเซิร์ฟเวอร์!
-                                    </div>
-                                    <div style="font-size: 12.5px; color: #334155; margin-top: 2px;">
-                                        คุณสามารถกดปุ่มเชื่อมต่อ Git กับ <code>{{ $targetRepoUrl }}</code> เพื่อเริ่มใช้งานระบบอัปเดตอัตโนมัติได้ทันที
-                                    </div>
-                                </div>
-                                <button type="button" onclick="connectGitRepository()" class="btn btn-primary" style="background: #0d9488; border-color: #0d9488; font-size: 13px; font-weight: 700; padding: 8px 18px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
-                                    <i class="bi bi-lightning-charge-fill"></i>
-                                    <span>เชื่อมต่อ Git Repository ทันที</span>
-                                </button>
-                            </div>
-                            @else
-                            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; font-size: 12.5px; color: #92400e;">
-                                <i class="bi bi-exclamation-triangle-fill" style="color: #d97706;"></i> <strong>เซิร์ฟเวอร์นี้ไม่มีโปรแกรม Git (Git CLI is not installed):</strong> แนะนำให้ใช้ฟังก์ชัน <strong>"อัปเดตระบบด้วยไฟล์แพตช์ ZIP"</strong> ด้านล่างแทน
-                            </div>
-                            @endif
-
-                            <!-- Manual SSH command instructions collapsible -->
-                            <details style="background: #0f172a; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #94a3b8;">
-                                <summary style="cursor: pointer; font-weight: 600; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-                                    <i class="bi bi-terminal"></i> คลิกดูคำสั่ง Terminal / SSH สำหรับติดตั้ง Git Repository ด้วยตนเอง
-                                </summary>
-                                <div style="margin-top: 10px;">
-                                    <p style="margin: 0 0 6px 0; color: #cbd5e1;">เปิด Terminal / SSH บนเซิร์ฟเวอร์ เข้าไปยังโฟลเดอร์โปรเจกต์ แล้วรันคำสั่งต่อไปนี้:</p>
-                                    <pre style="background: #020617; border: 1px solid #334155; color: #38bdf8; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; line-height: 1.6; margin: 0; white-space: pre-wrap;">git init
-git config --global --add safe.directory "*"
-git remote add origin {{ $targetRepoUrl }}
-git fetch origin {{ $targetBranch }}
-git checkout -B {{ $targetBranch }}
-git reset --mixed origin/{{ $targetBranch }}
-git branch --set-upstream-to=origin/{{ $targetBranch }} {{ $targetBranch }}</pre>
-                                </div>
-                            </details>
+                    <div class="status-banner git-error">
+                        <div class="status-banner-icon"><i class="bi bi-exclamation-octagon-fill"></i></div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">ไม่พบ Git Repository บนเซิร์ฟเวอร์</div>
+                            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">{{ $gitStatus['message'] ?? 'โปรเจกต์นี้ไม่ได้ถูกติดตั้งผ่าน Git หรือไม่มีโฟลเดอร์ .git' }}</div>
+                            <div style="font-size: 12.5px;">คุณสามารถใช้งานฟังก์ชัน <strong>"อัปเดตระบบด้วยไฟล์แพตช์ ZIP (Manual Patch Upload)"</strong> ด้านล่างเพื่ออัปเดตระบบได้ทันที</div>
                         </div>
                     </div>
                 @elseif(!($gitStatus['success'] ?? true))
@@ -746,13 +704,7 @@ git branch --set-upstream-to=origin/{{ $targetBranch }} {{ $targetBranch }}</pre
                 </div>
                 <div style="display: flex; gap: 10px;">
                     @if(!($gitStatus['is_git_repo'] ?? false))
-                        @if($gitStatus['git_cli_available'] ?? true)
-                            <button type="button" onclick="connectGitRepository()" class="btn btn-primary" style="padding: 9px 18px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-sm); background: #0d9488; border-color: #0d9488;">
-                                <i class="bi bi-lightning-charge-fill"></i>
-                                <span>เชื่อมต่อ Git Repository</span>
-                            </button>
-                        @endif
-                        <a href="#patchUploadForm" class="btn btn-secondary" style="padding: 9px 18px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-sm);">
+                        <a href="#patchUploadForm" class="btn btn-primary" style="padding: 9px 18px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-sm); background: #0284c7; border-color: #0284c7;">
                             <i class="bi bi-file-earmark-zip-fill"></i>
                             <span>อัปเดตด้วยไฟล์ ZIP ด้านล่าง</span>
                         </a>
@@ -1184,69 +1136,6 @@ git branch --set-upstream-to=origin/{{ $targetBranch }} {{ $targetBranch }}</pre
 
     function closeTerminalModal() {
         document.getElementById('terminalModal').style.display = 'none';
-    }
-
-    function connectGitRepository() {
-        Swal.fire({
-            title: 'เชื่อมต่อ Git Repository?',
-            text: 'ระบบจะทำการรันคำสั่ง git init และเชื่อมโยงกับ {{ $targetRepoUrl }} (branch: {{ $targetBranch }}) โดยไม่กระทบไฟล์ตั้งค่า .env หรือข้อมูลในระบบ',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: '⚡ ยืนยันเชื่อมต่อ Git ทันที',
-            cancelButtonText: 'ยกเลิก',
-            confirmButtonColor: '#0d9488',
-            cancelButtonColor: '#64748b'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                Swal.fire({
-                    title: 'กำลังเชื่อมต่อ Git Repository...',
-                    html: 'กำลังดึงประวัติ Commit จาก GitHub กรุณารอสักครู่ (ประมาณ 5-30 วินาที)...',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
-                fetch('{{ route("system-updates.init-git") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        Swal.fire({
-                            title: 'เชื่อมต่อ Git สำเร็จ!',
-                            text: data.message,
-                            icon: 'success',
-                            confirmButtonColor: '#0d9488',
-                            confirmButtonText: 'ตกลง'
-                        }).then(() => {
-                            window.location.reload();
-                        });
-                    } else {
-                        Swal.fire({
-                            title: 'ไม่สามารถเชื่อมต่อ Git ได้',
-                            html: `<div style="text-align:left;font-size:13px;color:#ef4444;background:#fef2f2;padding:12px;border-radius:6px;margin-bottom:10px;">${data.message}</div><p style="font-size:12px;color:#64748b;">หากเซิร์ฟเวอร์ไม่มี Git กรุณาใช้วิธี Manual Patch ZIP ด้านล่างแทน</p>`,
-                            icon: 'error',
-                            confirmButtonColor: '#64748b'
-                        });
-                    }
-                })
-                .catch(err => {
-                    Swal.fire({
-                        title: 'เกิดข้อผิดพลาดในการส่งคำสั่ง',
-                        text: err.message,
-                        icon: 'error',
-                        confirmButtonColor: '#ef4444'
-                    });
-                });
-            }
-        });
     }
 </script>
 @endsection

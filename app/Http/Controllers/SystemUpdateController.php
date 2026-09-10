@@ -61,35 +61,6 @@ class SystemUpdateController extends Controller
     }
 
     /**
-     * Initialize Git repository and link to target deploy remote
-     */
-    public function initGit(Request $request): JsonResponse|RedirectResponse
-    {
-        try {
-            $result = $this->updateService->initializeGitRepository();
-
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => $result['message'],
-                    'log' => $result['log'],
-                ]);
-            }
-
-            return redirect()->route('system-updates.index')->with('success', $result['message']);
-        } catch (Throwable $e) {
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'เกิดข้อผิดพลาดในการเชื่อมต่อ Git: ' . $e->getMessage(),
-                ], 500);
-            }
-
-            return redirect()->route('system-updates.index')->with('error', 'เกิดข้อผิดพลาดในการเชื่อมต่อ Git: ' . $e->getMessage());
-        }
-    }
-
-    /**
      * Execute system update pipeline
      */
     public function apply(Request $request): JsonResponse|RedirectResponse

@@ -153,27 +153,6 @@ if ($app) {
     }
 }
 
-// 9. Git Repository Check & Initialization
-$gitDirExists = is_dir(__DIR__ . '/.git');
-if (isset($_GET['init_git']) && $_GET['init_git'] === '1') {
-    if ($app) {
-        try {
-            $updateService = $app->make(\App\Services\SystemUpdateService::class);
-            $gitInitRes = $updateService->initializeGitRepository();
-            $logs[] = "[Git Repository Initialization]:\n" . $gitInitRes['message'] . "\n" . ($gitInitRes['log'] ?? '');
-            $gitDirExists = true;
-        } catch (Throwable $e) {
-            $logs[] = "[Git Initialization Error]: " . $e->getMessage();
-        }
-    }
-} else {
-    if ($gitDirExists) {
-        $logs[] = "[Git Repository]: ตรวจพบโฟลเดอร์ .git พร้อมสำหรับการอัปเดตระบบอัตโนมัติ";
-    } else {
-        $logs[] = "[Git Repository]: ไม่พบโฟลเดอร์ .git (คลิกปุ่ม 'เชื่อมต่อ Git Repository' ด้านล่างเพื่อเริ่มใช้งาน)";
-    }
-}
-
 $themeColor = $hasErrors ? '#ef4444' : '#10b981';
 $statusTitle = $hasErrors ? '⚠️ เริ่มต้นระบบ (มีข้อความแจ้งเตือนหรือข้อผิดพลาด)' : '🚀 เริ่มต้นระบบสำเร็จสมบูรณ์ (Server Initialized)';
 ?>
@@ -213,9 +192,6 @@ $statusTitle = $hasErrors ? '⚠️ เริ่มต้นระบบ (มี
         <pre><?= htmlspecialchars(implode("\n\n", $logs)) ?></pre>
 
         <div class="actions">
-            <?php if (!$gitDirExists): ?>
-                <a href="server_init.php?key=<?= urlencode($key) ?>&migrate=1&init_git=1" class="btn" style="background:#0284c7;color:#fff;">⚡ เชื่อมต่อ Git Repository</a>
-            <?php endif; ?>
             <?php if ($hasErrors): ?>
                 <a href="server_init.php?key=<?= urlencode($key) ?>&migrate=1" class="btn btn-secondary">🔄 ลองใหม่อีกครั้ง (Retry)</a>
             <?php endif; ?>

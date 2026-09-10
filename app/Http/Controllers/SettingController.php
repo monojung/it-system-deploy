@@ -57,6 +57,7 @@ class SettingController extends Controller
             // Security & Auth
             'allow_thai_id_login' => setting('allow_thai_id_login', true),
             'enforce_mfa_all' => setting('enforce_mfa_all', false),
+            'backup_auto_enabled' => setting('backup_auto_enabled', false),
             'backup_retention_days' => setting('backup_retention_days', 30),
             'audit_log_retention_days' => setting('audit_log_retention_days', 90),
             'google_client_id' => setting('google_client_id', ''),
@@ -159,11 +160,13 @@ class SettingController extends Controller
         } elseif ($group === 'security') {
             $allowThaiId = $request->boolean('allow_thai_id_login');
             $enforceMfa = $request->boolean('enforce_mfa_all');
+            $backupAuto = $request->boolean('backup_auto_enabled');
             $backupRetention = (int) $request->input('backup_retention_days', 30);
             $auditRetention = (int) $request->input('audit_log_retention_days', 90);
 
             SystemSetting::set('allow_thai_id_login', $allowThaiId, 'security', 'boolean');
             SystemSetting::set('enforce_mfa_all', $enforceMfa, 'security', 'boolean');
+            SystemSetting::set('backup_auto_enabled', $backupAuto, 'security', 'boolean');
             SystemSetting::set('backup_retention_days', $backupRetention, 'security', 'integer');
             SystemSetting::set('audit_log_retention_days', $auditRetention, 'security', 'integer');
 

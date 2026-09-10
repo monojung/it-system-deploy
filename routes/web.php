@@ -146,6 +146,7 @@ Route::middleware(['auth'])->group(function () {
         // Backup & Restore
         Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
         Route::post('/backups', [BackupController::class, 'create'])->name('backups.create');
+        Route::post('/backups/clean-orphans', [BackupController::class, 'cleanOrphans'])->name('backups.clean-orphans');
         Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
         Route::post('/backups/restore', [BackupController::class, 'restore'])->name('backups.restore');
         Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
@@ -188,7 +189,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/system-updates', [SystemUpdateController::class, 'index'])->name('system-updates.index');
         Route::post('/system-updates/check', [SystemUpdateController::class, 'check'])->name('system-updates.check');
         Route::post('/system-updates/apply', [SystemUpdateController::class, 'apply'])->name('system-updates.apply');
-        Route::post('/system-updates/init-git', [SystemUpdateController::class, 'initGit'])->name('system-updates.init-git');
         Route::post('/system-updates/upload-patch', [SystemUpdateController::class, 'uploadPatch'])->name('system-updates.upload-patch');
         Route::get('/system-updates/{id}/log', [SystemUpdateController::class, 'log'])->name('system-updates.log');
     });

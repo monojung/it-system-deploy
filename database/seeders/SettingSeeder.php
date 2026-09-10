@@ -36,6 +36,7 @@ class SettingSeeder extends Seeder
 
             // Security & Auth
             ['key' => 'allow_thai_id_login', 'value' => '1', 'group' => 'security', 'type' => 'boolean', 'description' => 'อนุญาตให้เข้าสู่ระบบด้วย ThaID / เลขบัตรประชาชน 13 หลัก'],
+            ['key' => 'backup_auto_enabled', 'value' => '0', 'group' => 'security', 'type' => 'boolean', 'description' => 'เปิดใช้งานระบบสำรองฐานข้อมูลอัตโนมัติ (Auto-Backup)'],
             ['key' => 'backup_retention_days', 'value' => '30', 'group' => 'security', 'type' => 'integer', 'description' => 'ระยะเวลาเก็บไฟล์สำรองข้อมูล (วัน)'],
             ['key' => 'google_client_id', 'value' => '', 'group' => 'security', 'type' => 'text', 'description' => 'Google Client ID สำหรับ Google Sign-In'],
             ['key' => 'google_client_secret', 'value' => '', 'group' => 'security', 'type' => 'text', 'description' => 'Google Client Secret'],

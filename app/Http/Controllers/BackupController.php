@@ -44,12 +44,27 @@ class BackupController extends Controller
 
         $formattedStorage = $this->formatBytes($totalStorageBytes);
 
+        // Auto-backup status and orphan files detection
+        $autoBackupEnabled = (bool) setting('backup_auto_enabled', false);
+        $allDbFilenames = BackupLog::pluck('filename')->toArray();
+        $orphanCount = 0;
+        $orphanSizeBytes = 0;
+        if (File::exists($this->backupDir)) {
+            foreach (File::files($this->backupDir) as $file) {
+                if (!in_array($file->getFilename(), $allDbFilenames)) {
+                    $orphanCount++;
+                    $orphanSizeBytes += $file->getSize();
+                }
+            }
+        }
+        $orphanSizeFormatted = $this->formatBytes($orphanSizeBytes);
+
         // Database connection info
         $dbHost = config('database.connections.mysql.host');
         $dbName = config('database.connections.mysql.database');
         $dbUser = config('database.connections.mysql.username');
 
-        return view('backups.index', compact('backups', 'allBackups', 'formattedStorage', 'dbHost', 'dbName', 'dbUser'));
+        return view('backups.index', compact('backups', 'allBackups', 'formattedStorage', 'dbHost', 'dbName', 'dbUser', 'autoBackupEnabled', 'orphanCount', 'orphanSizeFormatted'));
     }
 
     public function create(Request $request)
@@ -142,21 +157,26 @@ class BackupController extends Controller
                 return back()->with('error', 'ไม่พบไฟล์สำหรับการกู้คืน');
             }
 
-            // SAFETY STEP: Auto-backup before restoring!
-            $preRestoreFilename = 'pre_restore_auto_' . Carbon::now()->format('Y-m-d_His') . '.sql';
-            $preRestorePath = $this->backupDir . DIRECTORY_SEPARATOR . $preRestoreFilename;
-            $this->performDump($preRestorePath, 'it_tables');
+            // Auto-backup before restore only if enabled in system settings or explicitly requested
+            $shouldAutoBackup = (bool) setting('backup_auto_enabled', false) || $request->boolean('auto_backup', false);
+            $preRestoreFilename = null;
 
-            if (File::exists($preRestorePath)) {
-                BackupLog::create([
-                    'filename' => $preRestoreFilename,
-                    'file_path' => $preRestorePath,
-                    'file_size' => File::size($preRestorePath),
-                    'type' => 'pre_restore',
-                    'status' => 'completed',
-                    'created_by' => Auth::id(),
-                    'notes' => 'สำรองข้อมูลอัตโนมัติก่อนทำ Restore',
-                ]);
+            if ($shouldAutoBackup) {
+                $preRestoreFilename = 'pre_restore_auto_' . Carbon::now()->format('Y-m-d_His') . '.sql';
+                $preRestorePath = $this->backupDir . DIRECTORY_SEPARATOR . $preRestoreFilename;
+                $this->performDump($preRestorePath, 'it_tables');
+
+                if (File::exists($preRestorePath)) {
+                    BackupLog::create([
+                        'filename' => $preRestoreFilename,
+                        'file_path' => $preRestorePath,
+                        'file_size' => File::size($preRestorePath),
+                        'type' => 'pre_restore',
+                        'status' => 'completed',
+                        'created_by' => Auth::id(),
+                        'notes' => 'สำรองข้อมูลอัตโนมัติก่อนทำ Restore',
+                    ]);
+                }
             }
 
             // Execute SQL Restore
@@ -167,7 +187,12 @@ class BackupController extends Controller
                 'auto_backup' => $preRestoreFilename ?? null,
             ]);
 
-            return redirect()->route('backups.index')->with('success', 'กู้คืนฐานข้อมูลสำเร็จเรียบร้อยแล้ว (ระบบได้สำรองข้อมูลก่อนหน้าไว้ที่ ' . $preRestoreFilename . ' เพื่อความปลอดภัย)');
+            $successMsg = 'กู้คืนฐานข้อมูลสำเร็จเรียบร้อยแล้ว';
+            if ($preRestoreFilename) {
+                $successMsg .= ' (ระบบได้สำรองข้อมูลก่อนหน้าไว้ที่ ' . $preRestoreFilename . ' เพื่อความปลอดภัย)';
+            }
+
+            return redirect()->route('backups.index')->with('success', $successMsg);
         } catch (Exception $e) {
             return back()->with('error', 'เกิดข้อผิดพลาดในการกู้คืน: ' . $e->getMessage());
         }
@@ -175,8 +200,13 @@ class BackupController extends Controller
 
     public function destroy(BackupLog $backup)
     {
-        if (File::exists($backup->file_path)) {
-            File::delete($backup->file_path);
+        $filePath = $backup->file_path;
+        $fallbackPath = $this->backupDir . DIRECTORY_SEPARATOR . $backup->filename;
+
+        if ($filePath && File::exists($filePath)) {
+            File::delete($filePath);
+        } elseif (File::exists($fallbackPath)) {
+            File::delete($fallbackPath);
         }
 
         $filename = $backup->filename;
@@ -184,6 +214,33 @@ class BackupController extends Controller
         $backup->delete();
 
         return redirect()->route('backups.index')->with('success', "ลบไฟล์สำรอง {$filename} เรียบร้อยแล้ว");
+    }
+
+    /**
+     * Clean up orphan backup files on disk that do not exist in database
+     */
+    public function cleanOrphans()
+    {
+        $allDbFilenames = BackupLog::pluck('filename')->toArray();
+        $deletedCount = 0;
+        $freedBytes = 0;
+
+        if (File::exists($this->backupDir)) {
+            foreach (File::files($this->backupDir) as $file) {
+                if (!in_array($file->getFilename(), $allDbFilenames)) {
+                    $freedBytes += $file->getSize();
+                    File::delete($file->getPathname());
+                    $deletedCount++;
+                }
+            }
+        }
+
+        if ($deletedCount > 0) {
+            AuditLog::record('clear_old', 'backups', "ล้างไฟล์สำรองตกค้างที่ไม่มีในฐานข้อมูลจำนวน {$deletedCount} ไฟล์ (คืนพื้นที่ {$this->formatBytes($freedBytes)})");
+            return redirect()->route('backups.index')->with('success', "ล้างไฟล์สำรองตกค้างเรียบร้อยแล้ว {$deletedCount} ไฟล์ (คืนพื้นที่จัดเก็บ {$this->formatBytes($freedBytes)})");
+        }
+
+        return redirect()->route('backups.index')->with('info', 'ไม่พบไฟล์สำรองตกค้างในพื้นที่จัดเก็บ');
     }
 
     private function performDump(string $outputPath, string $scope): bool

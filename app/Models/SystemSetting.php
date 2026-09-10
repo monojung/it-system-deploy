@@ -22,21 +22,17 @@ class SystemSetting extends Model
 
     public static function get(string $key, mixed $default = null): mixed
     {
-        try {
-            $setting = static::where('key', $key)->first();
-            if (!$setting) {
-                return $default;
-            }
-
-            return match ($setting->type) {
-                'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
-                'integer' => (int) $setting->value,
-                'json' => json_decode($setting->value, true) ?: $default,
-                default => $setting->value,
-            };
-        } catch (\Throwable $e) {
+        $setting = static::where('key', $key)->first();
+        if (!$setting) {
             return $default;
         }
+
+        return match ($setting->type) {
+            'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
+            'integer' => (int) $setting->value,
+            'json' => json_decode($setting->value, true) ?: $default,
+            default => $setting->value,
+        };
     }
 
     public static function set(string $key, mixed $value, string $group = 'general', string $type = 'text', ?string $description = null): static

@@ -895,6 +895,14 @@
                                 <div style="font-size: 12px; color: #64748b; margin-top: 1px;">เพิ่มความปลอดภัยสูงสุดตามมาตรฐานความมั่นคงปลอดภัยไซเบอร์โรงพยาบาล</div>
                             </div>
                         </label>
+
+                        <label style="border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; cursor: pointer; display: flex; align-items: center; gap: 14px; background: #ffffff;">
+                            <input type="checkbox" name="backup_auto_enabled" value="1" {{ !empty($settings['backup_auto_enabled']) ? 'checked' : '' }} style="width: 20px; height: 20px; accent-color: #0d9488;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 14px; color: #0f172a;">ระบบสำรองฐานข้อมูลอัตโนมัติ (Auto-Backup)</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 1px;">เปิดการสำรองข้อมูลอัตโนมัติก่อนเริ่มกู้คืน (Restore) หรืออัปเดตระบบ (ปิดไว้เพื่อประหยัดพื้นที่และทำงานได้รวดเร็ว)</div>
+                            </div>
+                        </label>
                     </div>
 
                     <div class="form-row">

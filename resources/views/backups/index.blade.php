@@ -103,27 +103,41 @@
     </div>
 
     <div class="card" style="margin-bottom: 0; padding: 18px 22px; border-radius: 14px;">
-        <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                <i class="bi bi-hdd-fill"></i>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                    <i class="bi bi-hdd-fill"></i>
+                </div>
+                <div>
+                    <div style="font-size: 12.5px; color: var(--text-muted);">พื้นที่จัดเก็บไฟล์สำรอง</div>
+                    <div style="font-size: 18px; font-weight: 700; color: #0369a1;">{{ $formattedStorage }}</div>
+                    <div style="font-size: 11.5px; color: var(--text-muted);">storage/app/backups/</div>
+                </div>
             </div>
-            <div>
-                <div style="font-size: 12.5px; color: var(--text-muted);">พื้นที่จัดเก็บไฟล์สำรอง</div>
-                <div style="font-size: 18px; font-weight: 700; color: #0369a1;">{{ $formattedStorage }}</div>
-                <div style="font-size: 11.5px; color: var(--text-muted);">storage/app/backups/</div>
-            </div>
+            @if(isset($orphanCount) && $orphanCount > 0)
+                <form action="{{ route('backups.clean-orphans') }}" method="POST" onsubmit="return confirm('ยืนยันล้างไฟล์สำรองตกค้างที่ไม่มีในระบบ {{ $orphanCount }} ไฟล์ ({{ $orphanSizeFormatted }}) เพื่อคืนพื้นที่จัดเก็บหรือไม่?')">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-danger btn-sm" style="font-size: 11.5px; padding: 5px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;" title="ล้างไฟล์ตกค้างบนเซิร์ฟเวอร์ที่ไม่มีประวัติในฐานข้อมูล">
+                        <i class="bi bi-trash3"></i> ล้างไฟล์ตกค้าง ({{ $orphanCount }})
+                    </button>
+                </form>
+            @endif
         </div>
     </div>
 
     <div class="card" style="margin-bottom: 0; padding: 18px 22px; border-radius: 14px;">
         <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                <i class="bi bi-shield-check"></i>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: {{ $autoBackupEnabled ? '#ecfdf5' : '#f1f5f9' }}; color: {{ $autoBackupEnabled ? '#059669' : '#64748b' }}; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                <i class="bi {{ $autoBackupEnabled ? 'bi-shield-check' : 'bi-shield-slash' }}"></i>
             </div>
             <div>
                 <div style="font-size: 12.5px; color: var(--text-muted);">ความปลอดภัยของข้อมูล</div>
-                <div style="font-size: 16px; font-weight: 700; color: #92400e;">ระบบ Auto-Backup</div>
-                <div style="font-size: 11.5px; color: var(--text-muted);">สำรองอัตโนมัติก่อน Restore ทุกครั้ง</div>
+                <div style="font-size: 16px; font-weight: 700; color: {{ $autoBackupEnabled ? '#065f46' : '#334155' }};">
+                    {{ $autoBackupEnabled ? 'ระบบ Auto-Backup: เปิดใช้งาน' : 'ระบบ Auto-Backup: ปิดใช้งาน' }}
+                </div>
+                <div style="font-size: 11.5px; color: var(--text-muted);">
+                    {{ $autoBackupEnabled ? 'สำรองอัตโนมัติก่อน Restore ทุกครั้ง' : 'ไม่มีการสำรองอัตโนมัติ (ประหยัดพื้นที่จัดเก็บ)' }}
+                </div>
             </div>
         </div>
     </div>
@@ -198,7 +212,12 @@
                 <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #92400e; display: flex; align-items: flex-start; gap: 10px;">
                     <i class="bi bi-shield-exclamation" style="font-size: 18px; color: #d97706; margin-top: 1px;"></i>
                     <div>
-                        <strong>คำเตือน:</strong> การกู้คืนฐานข้อมูลจะเขียนทับข้อมูลเดิม ระบบจะทำการสำรองข้อมูลอัตโนมัติ (Pre-restore snapshot) ไว้ให้ก่อนเริ่มการกู้คืนเสมอ
+                        <strong>คำเตือน:</strong> การกู้คืนฐานข้อมูลจะเขียนทับข้อมูลเดิมในตารางที่ถูกระบุในไฟล์
+                        @if($autoBackupEnabled)
+                            (ระบบเปิด Auto-Backup ไว้ จะทำการสำรอง Snapshot ให้อัตโนมัติก่อนเริ่มกู้คืน)
+                        @else
+                            (ระบบ Auto-Backup ปิดอยู่ หากต้องการทำ Snapshot สำรองฉุกเฉินก่อนกู้คืน สามารถติ๊กเลือกด้านล่างได้)
+                        @endif
                     </div>
                 </div>
 
@@ -234,6 +253,14 @@
                             รองรับไฟล์ .sql ขนาดสูงสุด 100MB
                         </span>
                     </div>
+                </div>
+
+                <!-- Optional Pre-restore Auto-Backup Toggle -->
+                <div style="margin-bottom: 16px;">
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #475569; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);">
+                        <input type="checkbox" name="auto_backup" value="1" {{ $autoBackupEnabled ? 'checked' : '' }} style="accent-color: #0d9488; width: 16px; height: 16px;">
+                        <span>สำรองข้อมูลฉุกเฉินอัตโนมัติก่อนกู้คืน (Pre-restore Snapshot)</span>
+                    </label>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 20px;">
@@ -471,7 +498,7 @@
     // Modern Delete Confirmation Modal Handlers
     function openDeleteBackupModal(id, filename, size, date, creator, notes) {
         const form = document.getElementById('deleteBackupForm');
-        form.action = `/backups/${id}`;
+        form.action = `{{ url('/backups') }}/${id}`;
 
         document.getElementById('modal_del_filename').textContent = filename;
         document.getElementById('modal_del_size').textContent = size;

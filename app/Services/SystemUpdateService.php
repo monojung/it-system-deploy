@@ -78,93 +78,6 @@ class SystemUpdateService
     }
 
     /**
-     * Check if git CLI is executable on this server environment
-     */
-    public function isGitCliAvailable(): bool
-    {
-        try {
-            $process = new Process(['git', '--version'], base_path());
-            $process->setTimeout(5);
-            $process->run();
-            return $process->isSuccessful();
-        } catch (\Throwable $e) {
-            return false;
-        }
-    }
-
-    /**
-     * Initialize Git repository and connect to deploy repository
-     */
-    public function initializeGitRepository(?string $customRepoUrl = null): array
-    {
-        @set_time_limit(180);
-        @ini_set('max_execution_time', '180');
-        @ini_set('memory_limit', '256M');
-
-        $basePath = base_path();
-        $config = $this->getUpdateConfig();
-        $repoUrl = trim($customRepoUrl ?: $config['repo_url']);
-        $branch = trim($config['branch'] ?: 'main');
-
-        $logs = [];
-
-        if (!$this->isGitCliAvailable()) {
-            throw new Exception('ไม่พบโปรแกรม Git บนเซิร์ฟเวอร์นี้ (Git CLI is not installed or not in PATH) กรุณาใช้วิธี Manual Patch ZIP หรือติดตั้ง Git บนเซิร์ฟเวอร์');
-        }
-
-        // 1. git init if needed
-        if (!File::isDirectory($basePath . DIRECTORY_SEPARATOR . '.git')) {
-            $logs[] = $this->runProcess(['git', 'init'], 10);
-        } else {
-            $logs[] = 'พบโฟลเดอร์ .git อยู่แล้ว ดำเนินการเชื่อมโยง Remote ต่อไป';
-        }
-
-        // 2. Add safe.directory to avoid dubious ownership errors
-        try {
-            $this->runProcess(['git', 'config', '--global', '--add', 'safe.directory', str_replace('\\', '/', $basePath)], 10);
-        } catch (Exception $e) {
-            // Non-fatal if global config cannot be written by web server
-        }
-
-        // 3. Ensure remote exists pointing to target repo
-        $remoteName = $this->ensureUpdateRemote();
-        $logs[] = "กำหนด Remote [{$remoteName}] -> {$repoUrl}";
-
-        // 4. Fetch target branch
-        $logs[] = "กำลังดึงข้อมูล Commit จาก {$remoteName}/{$branch}...";
-        $fetchOut = $this->runProcess(['git', 'fetch', $remoteName, $branch], 90);
-        if ($fetchOut) {
-            $logs[] = $fetchOut;
-        }
-
-        // 5. Checkout / switch branch to main
-        try {
-            $this->runProcess(['git', 'checkout', '-B', $branch], 10);
-        } catch (Exception $e) {
-            // ignore if already on branch
-        }
-
-        // 6. Reset index to match remote commit cleanly (preserves .env and storage via .gitignore)
-        $resetOut = $this->runProcess(['git', 'reset', '--hard', "{$remoteName}/{$branch}"], 30);
-        if ($resetOut) {
-            $logs[] = $resetOut;
-        }
-
-        // 7. Track upstream branch
-        try {
-            $this->runProcess(['git', 'branch', "--set-upstream-to={$remoteName}/{$branch}", $branch], 10);
-        } catch (Exception $e) {
-            // ignore
-        }
-
-        return [
-            'success' => true,
-            'message' => "ติดตั้งและเชื่อมต่อ Git Repository กับ {$repoUrl} สำเร็จเรียบร้อยแล้ว!",
-            'log' => implode("\n", array_filter($logs)),
-        ];
-    }
-
-    /**
      * Check if git is available and get repository update status from target deploy repo
      */
     public function checkRemoteUpdates(): array
@@ -179,7 +92,6 @@ class SystemUpdateService
             return [
                 'success' => false,
                 'is_git_repo' => false,
-                'git_cli_available' => $this->isGitCliAvailable(),
                 'target_repo' => $targetRepoUrl,
                 'target_branch' => $targetBranch,
                 'remote_name' => 'none',
@@ -436,17 +348,22 @@ class SystemUpdateService
                 $appendLog("Warning on artisan down: " . $e->getMessage());
             }
 
-            // STEP 2: Automatic Database Backup
-            $notify(2, 'สำรองฐานข้อมูลอัตโนมัติ (Auto-Backup)', 'กำลังสำรองโครงสร้างและข้อมูลตาราง it_*');
+            // STEP 2: Automatic Database Backup (if enabled)
             $backupFile = null;
-            try {
-                $backupController = app(BackupController::class);
-                $backupLog = $backupController->executeBackup('it_tables', 'Auto-backup ก่อนอัปเดตระบบอัตโนมัติ', 'pre_update');
-                $backupFile = $backupLog->filename;
-                $updateRecord->update(['backup_file' => $backupFile]);
-                $appendLog("Database auto-backup created successfully: {$backupFile} (" . number_format($backupLog->file_size) . " bytes)");
-            } catch (Exception $e) {
-                $appendLog("Warning on database backup: " . $e->getMessage() . " (ดำเนินการต่อ)");
+            if (setting('backup_auto_enabled', false)) {
+                $notify(2, 'สำรองฐานข้อมูลอัตโนมัติ (Auto-Backup)', 'กำลังสำรองโครงสร้างและข้อมูลตาราง it_*');
+                try {
+                    $backupController = app(BackupController::class);
+                    $backupLog = $backupController->executeBackup('it_tables', 'Auto-backup ก่อนอัปเดตระบบอัตโนมัติ', 'pre_update');
+                    $backupFile = $backupLog->filename;
+                    $updateRecord->update(['backup_file' => $backupFile]);
+                    $appendLog("Database auto-backup created successfully: {$backupFile} (" . number_format($backupLog->file_size) . " bytes)");
+                } catch (Exception $e) {
+                    $appendLog("Warning on database backup: " . $e->getMessage() . " (ดำเนินการต่อ)");
+                }
+            } else {
+                $notify(2, 'ข้ามขั้นตอนสำรองฐานข้อมูลอัตโนมัติ', 'ระบบปิดการสำรองข้อมูลอัตโนมัติไว้ (Auto-Backup Disabled)');
+                $appendLog("Step 2 skipped: Auto-backup is disabled in system settings.");
             }
 
             // STEP 3: Git Pull / Fetch & Reset to latest
@@ -457,42 +374,22 @@ class SystemUpdateService
             $notify(3, 'ดึงโค้ดล่าสุดจาก Git Deploy Repository', "กำลังดึงโค้ดจาก {$remoteName}/{$targetBranch}");
             $gitOutput = '';
             try {
-                // First fetch with 60s timeout
-                $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 60);
+                // First fetch with 30s timeout
+                $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 30);
 
-                // Attempt standard pull, with automatic fallback to git reset --hard if untracked/divergent files exist
+                // Then pull with 30s timeout
                 try {
                     $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', $remoteName, $targetBranch], 30);
                 } catch (Exception $pullEx) {
-                    $pullErrorMsg = $pullEx->getMessage();
-                    $appendLog("Pull note: " . $pullErrorMsg);
-
-                    if (str_contains($pullErrorMsg, 'unrelated histories')) {
-                        try {
-                            $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', '--allow-unrelated-histories', $remoteName, $targetBranch], 30);
-                        } catch (Exception $unrelatedEx) {
-                            $appendLog("Unrelated pull failed. Syncing via git reset --hard {$remoteName}/{$targetBranch}");
-                            $gitOutput = $this->runProcess(['git', 'reset', '--hard', "{$remoteName}/{$targetBranch}"], 30);
-                        }
-                    } elseif (str_contains($pullErrorMsg, 'untracked working tree files') || str_contains($pullErrorMsg, 'divergent') || str_contains($pullErrorMsg, 'overwritten by merge')) {
-                        $appendLog("Overcoming untracked files: Syncing cleanly via git reset --hard {$remoteName}/{$targetBranch}");
-                        $gitOutput = $this->runProcess(['git', 'reset', '--hard', "{$remoteName}/{$targetBranch}"], 30);
+                    if (str_contains($pullEx->getMessage(), 'unrelated histories')) {
+                        $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', '--allow-unrelated-histories', $remoteName, $targetBranch], 30);
                     } else {
-                        // General fallback for production deployment
-                        $appendLog("Attempting deployment fallback via git reset --hard {$remoteName}/{$targetBranch}");
-                        $gitOutput = $this->runProcess(['git', 'reset', '--hard', "{$remoteName}/{$targetBranch}"], 30);
+                        throw $pullEx;
                     }
                 }
                 $appendLog("Git output:\n" . $gitOutput);
             } catch (Exception $e) {
-                // Final safety attempt: reset --hard directly
-                try {
-                    $appendLog("Emergency recovery: Forcing git reset --hard {$remoteName}/{$targetBranch}");
-                    $gitOutput = $this->runProcess(['git', 'reset', '--hard', "{$remoteName}/{$targetBranch}"], 30);
-                    $appendLog("Git output:\n" . $gitOutput);
-                } catch (Exception $emergencyEx) {
-                    throw new Exception("ไม่สามารถดึงโค้ดจาก Git Deploy Repository ได้: " . $e->getMessage());
-                }
+                throw new Exception("ไม่สามารถดึงโค้ดจาก Git Deploy Repository ได้: " . $e->getMessage());
             }
 
             // STEP 4: Database Migration
@@ -642,17 +539,22 @@ class SystemUpdateService
                 $appendLog("Warning on artisan down: " . $e->getMessage());
             }
 
-            // STEP 2: Automatic Database Backup
-            $notify(2, 'สำรองฐานข้อมูลอัตโนมัติ (Auto-Backup)', 'กำลังสำรองข้อมูลก่อนเริ่มติดตั้งแพตช์');
+            // STEP 2: Automatic Database Backup (if enabled)
             $backupFile = null;
-            try {
-                $backupController = app(BackupController::class);
-                $backupLog = $backupController->executeBackup('it_tables', 'Auto-backup ก่อนติดตั้ง Patch ZIP', 'pre_update');
-                $backupFile = $backupLog->filename;
-                $updateRecord->update(['backup_file' => $backupFile]);
-                $appendLog("Database auto-backup created: {$backupFile}");
-            } catch (Exception $e) {
-                $appendLog("Warning on database backup: " . $e->getMessage() . " (ดำเนินการต่อ)");
+            if (setting('backup_auto_enabled', false)) {
+                $notify(2, 'สำรองฐานข้อมูลอัตโนมัติ (Auto-Backup)', 'กำลังสำรองข้อมูลก่อนเริ่มติดตั้งแพตช์');
+                try {
+                    $backupController = app(BackupController::class);
+                    $backupLog = $backupController->executeBackup('it_tables', 'Auto-backup ก่อนติดตั้ง Patch ZIP', 'pre_update');
+                    $backupFile = $backupLog->filename;
+                    $updateRecord->update(['backup_file' => $backupFile]);
+                    $appendLog("Database auto-backup created: {$backupFile}");
+                } catch (Exception $e) {
+                    $appendLog("Warning on database backup: " . $e->getMessage() . " (ดำเนินการต่อ)");
+                }
+            } else {
+                $notify(2, 'ข้ามขั้นตอนสำรองฐานข้อมูลอัตโนมัติ', 'ระบบปิดการสำรองข้อมูลอัตโนมัติไว้ (Auto-Backup Disabled)');
+                $appendLog("Step 2 skipped: Auto-backup is disabled in system settings.");
             }
 
             // STEP 3: Extract Patch ZIP over base_path
