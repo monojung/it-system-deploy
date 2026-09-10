@@ -1,7 +1,7 @@
 <?php
 /**
  * unzip.php: สคริปต์แตกไฟล์ระบบสารสนเทศ รักษาโครงสร้างโฟลเดอร์สมบูรณ์ 100%
- * รองรับทั้ง Windows (\) และ Linux (/) พร้อมระบบตรวจสอบความสมบูรณ์ของโครงสร้าง
+ * แตกไฟล์ตรงตามโครงสร้าง โฟลเดอร์หลัก โฟลเดอร์ย่อย 100% ไม่มีตัดทอนเส้นทาง
  * กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลทุ่งหัวช้าง จ.ลำพูน
  */
 
@@ -31,7 +31,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'cleanup') {
     .btn{display:inline-block;background:#0d9488;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin-top:20px;}</style>
     </head><body><div class="card"><h2 style="color:#34d399;">🧹 ลบไฟล์ติดตั้งเรียบร้อยแล้ว</h2>
     <p style="color:#94a3b8;">ลบไฟล์: ' . implode(', ', $deleted) . ' ออกจากเซิร์ฟเวอร์เพื่อความปลอดภัยแล้ว</p>
-    <a href="./server-init?key=thc11143&migrate=1" class="btn">ไปยังขั้นตอนเริ่มต้นระบบ (Server Init) &rarr;</a>
+    <a href="./server_init.php?key=thc11143&migrate=1" class="btn">ไปยังขั้นตอนเริ่มต้นระบบ (Server Init) &rarr;</a>
     </div></body></html>';
     exit;
 }
@@ -47,7 +47,6 @@ $zipName = isset($_GET['file']) ? basename($_GET['file']) : $defaultZip;
 $zipPath = $targetDir . '/' . $zipName;
 
 if (!file_exists($zipPath)) {
-    // ค้นหาไฟล์ .zip อื่นๆ ในโฟลเดอร์
     $availableZips = glob($targetDir . '/*.zip');
     $zipListHtml = '';
     if (!empty($availableZips)) {
@@ -72,30 +71,6 @@ if ($openRes !== true) {
 $startTime = microtime(true);
 $numFiles = $zip->numFiles;
 
-// ตรวจสอบว่าใน ZIP มี Root Wrapper Folder เดียวคลุมอยู่หรือไม่ (เช่น it-system/...)
-$commonPrefix = null;
-$firstSlashPos = -1;
-
-for ($i = 0; $i < min($numFiles, 50); $i++) {
-    $entry = str_replace('\\', '/', $zip->getNameIndex($i));
-    $entry = ltrim($entry, '/');
-    $slash = strpos($entry, '/');
-    if ($slash !== false) {
-        $prefix = substr($entry, 0, $slash + 1);
-        if ($commonPrefix === null) {
-            $commonPrefix = $prefix;
-        } elseif ($commonPrefix !== $prefix) {
-            $commonPrefix = '';
-            break;
-        }
-    } else {
-        $commonPrefix = '';
-        break;
-    }
-}
-
-$stripPrefix = !empty($commonPrefix) ? $commonPrefix : '';
-
 $extractedCount = 0;
 $createdDirs = 0;
 $totalBytes = 0;
@@ -106,49 +81,46 @@ for ($i = 0; $i < $numFiles; $i++) {
     $stat = $zip->statIndex($i);
     $rawName = $stat['name'];
 
-    // 1. แปลง Backslash (\) ทั้งหมดเป็น Forward Slash (/) ตามมาตรฐานโครงสร้างโฟลเดอร์
+    // 1. แปลง Backslash (\) ทั้งหมดเป็น Forward Slash (/) ตามมาตรฐาน Posix ป้องกันโฟลเดอร์เพี้ยน
     $normalized = str_replace('\\', '/', $rawName);
     $normalized = ltrim($normalized, '/');
 
     // 2. ป้องกัน Directory Traversal
     $normalized = str_replace('../', '', $normalized);
 
-    // 3. ตัด Single Root Wrapper Folder หากมี (เพื่อให้แตกออกมาที่รูทโฟลเดอร์เป้าหมายทันที)
-    if (!empty($stripPrefix) && str_starts_with($normalized, $stripPrefix)) {
-        $normalized = substr($normalized, strlen($stripPrefix));
-    }
-
-    if (empty($normalized)) {
+    if ($normalized === '' || $normalized === '.') {
         continue;
     }
 
     $destPath = $targetDir . '/' . $normalized;
 
-    // บันทึกโฟลเดอร์ระดับบนสุด (Top-level Directory) สำหรับรายงานผล
+    // บันทึกโฟลเดอร์หลักสำหรับรายงานผล
     $parts = explode('/', $normalized);
     if (count($parts) > 1 && !in_array($parts[0], $topDirs)) {
         $topDirs[] = $parts[0];
     }
 
-    // 4. กรณีเป็นโฟลเดอร์ (ลงท้ายด้วย / หรือ \ ในไฟล์ zip)
-    if (str_ends_with($normalized, '/') || substr($rawName, -1) === '\\') {
+    // 3. กรณีเป็นไดเรกทอรี (ลงท้ายด้วย / หรือ \ ใน zip)
+    $isDir = str_ends_with($normalized, '/') || substr($rawName, -1) === '\\' || substr($rawName, -1) === '/';
+    if ($isDir) {
         if (!is_dir($destPath)) {
-            if (@mkdir($destPath, 0755, true)) {
+            if (@mkdir($destPath, 0777, true)) {
                 $createdDirs++;
             }
         }
+        @chmod($destPath, 0755);
         continue;
     }
 
-    // 5. กรณีเป็นไฟล์: ตรวจสอบและสร้างโฟลเดอร์ลำดับชั้น (Parent Directories) ให้ครบถ้วนก่อนเขียนไฟล์
+    // 4. กรณีเป็นไฟล์: ตรวจสอบและสร้างโฟลเดอร์แม่ (Parent Directory) ให้ตรงตามโครงสร้าง 100% ก่อนเขียนไฟล์
     $parentDir = dirname($destPath);
     if (!is_dir($parentDir)) {
-        if (@mkdir($parentDir, 0755, true)) {
+        if (@mkdir($parentDir, 0777, true)) {
             $createdDirs++;
         }
     }
 
-    // 6. แตกไฟล์ด้วย Stream Copy เพื่อประหยัด Memory
+    // 5. แตกไฟล์ด้วย Stream Copy เพื่อประหยัด Memory และรวดเร็ว
     $srcStream = $zip->getStream($rawName);
     if ($srcStream) {
         $destStream = @fopen($destPath, 'wb');
@@ -159,38 +131,58 @@ for ($i = 0; $i < $numFiles; $i++) {
             $extractedCount++;
             @chmod($destPath, 0644);
         } else {
-            $errors[] = "ไม่สามารถเขียนไฟล์: {$normalized}";
+            // Fallback: file_put_contents
+            $content = $zip->getFromIndex($i);
+            if ($content !== false && @file_put_contents($destPath, $content) !== false) {
+                $totalBytes += strlen($content);
+                $extractedCount++;
+                @chmod($destPath, 0644);
+            } else {
+                $errors[] = "ไม่สามารถเขียนไฟล์: {$normalized}";
+            }
         }
         fclose($srcStream);
     } else {
-        $errors[] = "ไม่สามารถอ่านสตรีมไฟล์: {$rawName}";
+        // Fallback: getFromIndex
+        $content = $zip->getFromIndex($i);
+        if ($content !== false && @file_put_contents($destPath, $content) !== false) {
+            $totalBytes += strlen($content);
+            $extractedCount++;
+            @chmod($destPath, 0644);
+        } else {
+            $errors[] = "ไม่สามารถอ่านไฟล์จาก ZIP: {$rawName}";
+        }
     }
 }
 
 $zip->close();
 $duration = round(microtime(true) - $startTime, 2);
 
-// ตรวจสอบความสมบูรณ์ของไฟล์สำคัญของระบบหลังแตกไฟล์
+// ตรวจสอบความสมบูรณ์ของไฟล์สำคัญของระบบหลังแตกไฟล์ (ตรงตามโครงสร้าง Laravel 10)
 $checks = [
+    'app/Http/Kernel.php (HTTP Kernel)' => file_exists($targetDir . '/app/Http/Kernel.php'),
+    'app/Models/User.php (Core Models)' => file_exists($targetDir . '/app/Models/User.php'),
+    'bootstrap/app.php (Kernel Bootstrapper)' => file_exists($targetDir . '/bootstrap/app.php'),
+    'config/app.php (Application Config)' => file_exists($targetDir . '/config/app.php'),
+    'vendor/autoload.php (Composer Dependencies)' => file_exists($targetDir . '/vendor/autoload.php'),
     'index.php (Web Entry Point)' => file_exists($targetDir . '/index.php'),
     'artisan (Laravel CLI)' => file_exists($targetDir . '/artisan'),
     '.htaccess (Security Rules)' => file_exists($targetDir . '/.htaccess'),
-    'bootstrap/app.php (Kernel Bootstrapper)' => file_exists($targetDir . '/bootstrap/app.php'),
-    'vendor/autoload.php (Composer Dependencies)' => file_exists($targetDir . '/vendor/autoload.php'),
     '.env หรือ .env.example (Configuration)' => file_exists($targetDir . '/.env') || file_exists($targetDir . '/.env.example'),
+    'server_init.php (Server Initializer)' => file_exists($targetDir . '/server_init.php'),
 ];
 
 $allPassed = !in_array(false, $checks, true);
 $checkRows = '';
 foreach ($checks as $title => $passed) {
-    $icon = $passed ? '<span style="color:#34d399;">✔ ตรวจพบ</span>' : '<span style="color:#f87171;">✖ ไม่พบ</span>';
+    $icon = $passed ? '<span style="color:#34d399;font-weight:600;">✔ ตรวจพบตรงโครงสร้าง</span>' : '<span style="color:#f87171;font-weight:600;">✖ ไม่พบ</span>';
     $checkRows .= "<tr><td style=\"padding:8px 12px;color:#94a3b8;border-bottom:1px solid #334155;\">{$title}</td><td style=\"padding:8px 12px;text-align:right;border-bottom:1px solid #334155;\">{$icon}</td></tr>";
 }
 
 $topDirsBadges = '';
 sort($topDirs);
 foreach ($topDirs as $td) {
-    $topDirsBadges .= "<span style=\"display:inline-block;background:#0369a1;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;margin:2px 4px 2px 0;\">📁 {$td}/</span>";
+    $topDirsBadges .= "<span style=\"display:inline-block;background:#0369a1;color:#fff;padding:4px 12px;border-radius:12px;font-size:12.5px;margin:2px 4px 2px 0;font-weight:500;\">📁 {$td}/</span>";
 }
 
 $errorSection = '';
@@ -218,41 +210,37 @@ echo '<!DOCTYPE html>
     <style>
         body {
             font-family: "Prompt", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
+            background: #0b1120;
+            color: #f1f5f9;
             margin: 0;
             padding: 30px 16px;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            box-sizing: border-box;
         }
         .card {
             background: #1e293b;
             border: 1px solid #334155;
-            border-radius: 16px;
+            border-radius: 14px;
+            padding: 32px;
             max-width: 780px;
             width: 100%;
-            padding: 32px;
-            box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
         }
         .header {
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
             border-bottom: 1px solid #334155;
             padding-bottom: 20px;
             margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
         }
         .title h1 {
             font-size: 22px;
             font-weight: 700;
+            color: #f8fafc;
             margin: 0 0 6px 0;
-            color: #38bdf8;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
         .title p {
             margin: 0;
@@ -260,12 +248,13 @@ echo '<!DOCTYPE html>
             color: #94a3b8;
         }
         .badge-success {
-            background: #10b981;
-            color: #fff;
+            background: #059669;
+            color: #ffffff;
             padding: 6px 14px;
             border-radius: 9999px;
             font-size: 13px;
             font-weight: 600;
+            white-space: nowrap;
         }
         .metrics-grid {
             display: grid;
@@ -283,11 +272,11 @@ echo '<!DOCTYPE html>
         .metric-value {
             font-size: 22px;
             font-weight: 700;
-            color: #34d399;
+            color: #38bdf8;
             margin-bottom: 4px;
         }
         .metric-label {
-            font-size: 12px;
+            font-size: 12.5px;
             color: #94a3b8;
         }
         table {
@@ -301,18 +290,18 @@ echo '<!DOCTYPE html>
             margin-bottom: 20px;
         }
         .actions {
+            margin-top: 28px;
             display: flex;
             gap: 12px;
             align-items: center;
             justify-content: flex-end;
-            margin-top: 28px;
             flex-wrap: wrap;
         }
         .btn-primary {
-            background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
+            background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
             color: #ffffff;
             text-decoration: none;
-            padding: 12px 22px;
+            padding: 12px 24px;
             border-radius: 10px;
             font-size: 14px;
             font-weight: 600;
@@ -320,6 +309,20 @@ echo '<!DOCTYPE html>
             align-items: center;
             gap: 8px;
             box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: #0284c7;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
         }
         .btn-danger {
             background: #dc2626;
@@ -346,10 +349,10 @@ echo '<!DOCTYPE html>
 <div class="card">
     <div class="header">
         <div class="title">
-            <h1>📦 แตกไฟล์ระบบสารสนเทศสำเร็จ</h1>
+            <h1>📦 แตกไฟล์ระบบสารสนเทศสำเร็จ 100%</h1>
             <p>กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลทุ่งหัวช้าง จ.ลำพูน</p>
         </div>
-        <div class="badge-success">แตกไฟล์ 100%</div>
+        <div class="badge-success">ตรงตามโครงสร้าง 100%</div>
     </div>
 
     <div class="metrics-grid">
@@ -372,7 +375,7 @@ echo '<!DOCTYPE html>
     </div>
 
     <div style="margin-bottom:20px;">
-        <h3 style="font-size:14px;color:#38bdf8;margin:0 0 10px 0;">โครงสร้างโฟลเดอร์หลักที่สร้างขึ้น:</h3>
+        <h3 style="font-size:14px;color:#38bdf8;margin:0 0 10px 0;">โครงสร้างโฟลเดอร์หลักที่สร้างขึ้น (ตรงตาม ZIP 100%):</h3>
         <div>' . $topDirsBadges . '</div>
     </div>
 
@@ -386,11 +389,11 @@ echo '<!DOCTYPE html>
     ' . $errorSection . '
 
     <div class="warn-card">
-        <strong>⚠️ ข้อควรปฏิบัติต่อไปเพื่อความปลอดภัยและเริ่มใช้งาน:</strong>
+        <strong>⚠️ ขั้นตอนต่อไปในการเริ่มต้นใช้งานระบบ:</strong>
         <ol style="margin:8px 0 0 18px;padding:0;">
-            <li>หากยังไม่ได้ตั้งค่าฐานข้อมูล ให้คัดลอก <code>.env.example</code> เป็น <code>.env</code> แล้วใส่ข้อมูล DB</li>
-            <li>กดปุ่ม <strong>"เริ่มต้นระบบ (Server Init & Migrate)"</strong> ด้านล่างเพื่อเชื่อมต่อ Storage Link และรัน Migration</li>
-            <li>กดปุ่ม <strong>"ลบไฟล์ unzip.php"</strong> เพื่อลบไฟล์ช่วยติดตั้งออกจากเซิร์ฟเวอร์</li>
+            <li>หากยังไม่ได้ตั้งค่าฐานข้อมูล ให้คัดลอก <code>.env.example</code> เป็น <code>.env</code> แล้วระบุค่าฐานข้อมูล</li>
+            <li>กดปุ่ม <strong>"เริ่มต้นระบบ (Server Init & Migrate)"</strong> เพื่อ Generate APP_KEY, Storage Link, และ Migration</li>
+            <li>หลังระบบทำงานได้แล้ว ให้กดปุ่ม <strong>"ลบไฟล์ unzip.php"</strong> เพื่อความปลอดภัย</li>
         </ol>
     </div>
 
@@ -398,8 +401,8 @@ echo '<!DOCTYPE html>
         <a href="?action=cleanup" class="btn-danger" onclick="return confirm(\'คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์ unzip.php และ it-system.zip ออกจากเซิร์ฟเวอร์?\');">
             🗑️ ลบไฟล์ unzip.php & it-system.zip
         </a>
-        <a href="./server-init?key=thc11143&migrate=1" class="btn-primary">
-            <span>ไปยังขั้นตอนเริ่มต้นระบบ (Server Init)</span>
+        <a href="./server_init.php?key=thc11143&migrate=1" class="btn-primary">
+            <span>🚀 เริ่มต้นระบบ (Server Init & Migrate)</span>
             <span>&rarr;</span>
         </a>
     </div>
