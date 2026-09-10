@@ -144,8 +144,8 @@ class SystemUpdateService
             // ignore if already on branch
         }
 
-        // 6. Reset index to match remote commit without touching modified working files
-        $resetOut = $this->runProcess(['git', 'reset', '--mixed', "{$remoteName}/{$branch}"], 30);
+        // 6. Reset index to match remote commit cleanly (preserves .env and storage via .gitignore)
+        $resetOut = $this->runProcess(['git', 'reset', '--hard', "{$remoteName}/{$branch}"], 30);
         if ($resetOut) {
             $logs[] = $resetOut;
         }
@@ -457,22 +457,42 @@ class SystemUpdateService
             $notify(3, 'ดึงโค้ดล่าสุดจาก Git Deploy Repository', "กำลังดึงโค้ดจาก {$remoteName}/{$targetBranch}");
             $gitOutput = '';
             try {
-                // First fetch with 30s timeout
-                $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 30);
+                // First fetch with 60s timeout
+                $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 60);
 
-                // Then pull with 30s timeout
+                // Attempt standard pull, with automatic fallback to git reset --hard if untracked/divergent files exist
                 try {
                     $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', $remoteName, $targetBranch], 30);
                 } catch (Exception $pullEx) {
-                    if (str_contains($pullEx->getMessage(), 'unrelated histories')) {
-                        $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', '--allow-unrelated-histories', $remoteName, $targetBranch], 30);
+                    $pullErrorMsg = $pullEx->getMessage();
+                    $appendLog("Pull note: " . $pullErrorMsg);
+
+                    if (str_contains($pullErrorMsg, 'unrelated histories')) {
+                        try {
+                            $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', '--allow-unrelated-histories', $remoteName, $targetBranch], 30);
+                        } catch (Exception $unrelatedEx) {
+                            $appendLog("Unrelated pull failed. Syncing via git reset --hard {$remoteName}/{$targetBranch}");
+                            $gitOutput = $this->runProcess(['git', 'reset', '--hard', "{$remoteName}/{$targetBranch}"], 30);
+                        }
+                    } elseif (str_contains($pullErrorMsg, 'untracked working tree files') || str_contains($pullErrorMsg, 'divergent') || str_contains($pullErrorMsg, 'overwritten by merge')) {
+                        $appendLog("Overcoming untracked files: Syncing cleanly via git reset --hard {$remoteName}/{$targetBranch}");
+                        $gitOutput = $this->runProcess(['git', 'reset', '--hard', "{$remoteName}/{$targetBranch}"], 30);
                     } else {
-                        throw $pullEx;
+                        // General fallback for production deployment
+                        $appendLog("Attempting deployment fallback via git reset --hard {$remoteName}/{$targetBranch}");
+                        $gitOutput = $this->runProcess(['git', 'reset', '--hard', "{$remoteName}/{$targetBranch}"], 30);
                     }
                 }
                 $appendLog("Git output:\n" . $gitOutput);
             } catch (Exception $e) {
-                throw new Exception("ไม่สามารถดึงโค้ดจาก Git Deploy Repository ได้: " . $e->getMessage());
+                // Final safety attempt: reset --hard directly
+                try {
+                    $appendLog("Emergency recovery: Forcing git reset --hard {$remoteName}/{$targetBranch}");
+                    $gitOutput = $this->runProcess(['git', 'reset', '--hard', "{$remoteName}/{$targetBranch}"], 30);
+                    $appendLog("Git output:\n" . $gitOutput);
+                } catch (Exception $emergencyEx) {
+                    throw new Exception("ไม่สามารถดึงโค้ดจาก Git Deploy Repository ได้: " . $e->getMessage());
+                }
             }
 
             // STEP 4: Database Migration
