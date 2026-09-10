@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'ระบบบริหารจัดการสารสนเทศ') - {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }} {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</title>
 
@@ -991,6 +991,90 @@
         }
 
         /* Responsive Mobile */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 62px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+            z-index: 990;
+            padding: 0 6px;
+            padding-bottom: env(safe-area-inset-bottom, 0);
+            justify-content: space-around;
+            align-items: center;
+        }
+        .mobile-bottom-nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 2px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: 500;
+            position: relative;
+            border-radius: 8px;
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 48px;
+        }
+        .mobile-bottom-nav-item i {
+            font-size: 20px;
+            line-height: 1;
+            margin-bottom: 3px;
+        }
+        .mobile-bottom-nav-item.active {
+            color: var(--primary);
+            font-weight: 700;
+        }
+        .mobile-bottom-nav-item.active i {
+            transform: scale(1.1);
+        }
+        .mobile-bottom-nav-item .mobile-nav-badge {
+            position: absolute;
+            top: 2px;
+            right: calc(50% - 16px);
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: 700;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
+        }
+        .mobile-nav-action-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: #ffffff !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.4);
+            margin-top: -18px;
+            border: 3px solid #ffffff;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mobile-nav-action-btn:active {
+            transform: scale(0.92);
+        }
+
         @media (max-width: 992px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -1006,15 +1090,67 @@
                 display: block;
             }
             .topbar, .content-body, .app-footer {
-                padding-left: 16px;
-                padding-right: 16px;
+                padding-left: 14px;
+                padding-right: 14px;
+            }
+            .mobile-bottom-nav {
+                display: flex;
+            }
+            .content-body {
+                padding-bottom: 84px !important;
             }
             .back-to-top-btn {
-                bottom: 16px;
+                bottom: 74px !important;
                 right: 16px;
                 width: 38px;
                 height: 38px;
                 font-size: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            /* Prevent iOS Safari auto-zoom on text inputs */
+            input[type="text"],
+            input[type="password"],
+            input[type="email"],
+            input[type="number"],
+            input[type="search"],
+            input[type="tel"],
+            input[type="url"],
+            input[type="date"],
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+            .topbar {
+                height: 56px;
+                padding: 0 10px;
+            }
+            .topbar-right {
+                gap: 6px;
+            }
+            .topbar-btn {
+                padding: 7px 10px;
+                font-size: 13px;
+            }
+            .topbar-btn span {
+                display: none;
+            }
+            .page-title {
+                font-size: 15px;
+                max-width: 135px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .page-breadcrumb {
+                display: none;
+            }
+            .content-body {
+                padding: 10px 10px 84px 10px !important;
+            }
+            .table-responsive {
+                -webkit-overflow-scrolling: touch;
             }
         }
 
@@ -1267,6 +1403,38 @@
             </footer>
         </div>
     </div>
+
+    <!-- Mobile Bottom Application Navigation Bar -->
+    <nav class="mobile-bottom-nav no-print" aria-label="Mobile Navigation">
+        <a href="{{ route('dashboard') }}" class="mobile-bottom-nav-item {{ request()->routeIs('dashboard') || request()->is('/') ? 'active' : '' }}" title="แดชบอร์ด">
+            <i class="bi bi-speedometer2"></i>
+            <span>แดชบอร์ด</span>
+        </a>
+        <a href="{{ route('repairs.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('repairs.index') || request()->routeIs('repairs.show') ? 'active' : '' }}" title="รายการแจ้งซ่อม">
+            <i class="bi bi-tools"></i>
+            <span>งานซ่อม</span>
+            @if(!empty($navPendingRepairs) && $navPendingRepairs > 0)
+                <span class="mobile-nav-badge">{{ $navPendingRepairs }}</span>
+            @endif
+        </a>
+        <a href="{{ route('repairs.create') }}" class="mobile-bottom-nav-item" title="แจ้งซ่อมด่วน">
+            <div class="mobile-nav-action-btn">
+                <i class="bi bi-plus-lg"></i>
+            </div>
+            <span style="font-weight: 600; color: var(--primary);">แจ้งซ่อม</span>
+        </a>
+        <a href="{{ route('data-requests.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('data-requests.*') ? 'active' : '' }}" title="คำขอข้อมูล">
+            <i class="bi bi-file-earmark-bar-graph"></i>
+            <span>ขอข้อมูล</span>
+            @if(!empty($navPendingDr) && $navPendingDr > 0)
+                <span class="mobile-nav-badge">{{ $navPendingDr }}</span>
+            @endif
+        </a>
+        <a href="javascript:void(0)" onclick="toggleSidebar()" class="mobile-bottom-nav-item" title="เปิดเมนูทั้งหมด">
+            <i class="bi bi-grid-fill"></i>
+            <span>เมนู</span>
+        </a>
+    </nav>
 
     <!-- System Version & Changelog Modal -->
     @php

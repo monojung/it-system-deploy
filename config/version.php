@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.2.4'),
+    'version' => env('APP_VERSION', '2.2.5'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-11',
-    'build' => '20260911.2',
+    'build' => '20260911.3',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,20 @@ return [
     |
     */
     'changelog' => [
+        '2.2.5' => [
+            'date' => '2026-09-11',
+            'badge' => 'Mobile Experience & LAN Access Optimization',
+            'badge_color' => '#0d9488',
+            'title' => 'ปรับปรุงการเข้าใช้งานผ่านสมาร์ตโฟนบนเครือข่าย และออกแบบ Mobile App Navigation Bar',
+            'highlights' => [
+                'ปลดล็อกการเข้าใช้งานจากมือถือ/แท็บเล็ตผ่าน Wi-Fi และเครือข่าย LAN ภายในโรงพยาบาล (Binding 0.0.0.0 และเปิด Windows Firewall TCP Port 8000)',
+                'เพิ่มแถบเมนูลอยด้านล่างสไตล์แอปมือถือ (Mobile Bottom Application Navigation Bar) 5 เมนูหลัก พร้อมปุ่มลอยแจ้งซ่อมด่วนตรงกลาง',
+                'ปรับปรุง Topbar บนหน้าจอมือถือให้กะทัดรัด ซ่อนข้อความยาวเหลือเฉพาะไอคอนเพื่อป้องกันเนื้อหาล้นจอ',
+                'แก้ปัญหา iOS Safari Auto-Zoom โดยควบคุมขนาดตัวอักษร 16px บนช่องกรอกข้อมูลและฟอร์มทั้งหมดบนอุปกรณ์พกพา',
+                'ปรับปรุงหน้า Login ให้รองรับ Responsive จอมือถือขนาดเล็ก และรองรับขอบจอโค้ง (Viewport-Fit Safe Area Insets)',
+                'สร้างสคริปต์ run_mobile_server.bat สำหรับเริ่มรันเซิร์ฟเวอร์แบบรองรับการเข้าถึงจากมือถือได้ทันทีในคลิกเดียว',
+            ],
+        ],
         '2.2.4' => [
             'date' => '2026-09-11',
             'badge' => 'UI/UX Fluidity & Micro-Interactions',

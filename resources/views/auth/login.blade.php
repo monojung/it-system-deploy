@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>เข้าสู่ระบบ - กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลทุ่งหัวช้าง</title>
     
     <!-- Google Fonts: Prompt & Inter -->
@@ -521,6 +521,70 @@
         .qr-frame img {
             width: 100%;
             height: 100%;
+        }
+
+        /* Responsive Mobile */
+        @media (max-width: 480px) {
+            body {
+                padding: 12px 10px;
+                align-items: flex-start;
+                padding-top: max(16px, env(safe-area-inset-top));
+                padding-bottom: max(16px, env(safe-area-inset-bottom));
+            }
+
+            .auth-container {
+                border-radius: 18px;
+                box-shadow: 0 15px 35px -8px rgba(0, 0, 0, 0.45);
+            }
+
+            .auth-header {
+                padding: 24px 18px 18px 18px;
+            }
+
+            .hospital-icon-wrapper {
+                width: 52px;
+                height: 52px;
+                font-size: 24px;
+                border-radius: 14px;
+                margin-bottom: 12px;
+            }
+
+            .auth-title {
+                font-size: 18px;
+            }
+
+            .auth-subtitle {
+                font-size: 12px;
+            }
+
+            .auth-body {
+                padding: 20px 16px;
+            }
+
+            /* Prevent iOS auto-zoom on input focus */
+            .form-control-custom,
+            input[type="text"],
+            input[type="password"] {
+                font-size: 16px !important;
+                height: 46px;
+            }
+
+            .btn-submit {
+                height: 46px;
+                font-size: 15px;
+            }
+
+            .btn-sso {
+                padding: 9px 12px;
+            }
+
+            .btn-main-text {
+                font-size: 13.5px;
+            }
+
+            .btn-sub-text {
+                font-size: 10.5px;
+            }
         }
     </style>
 </head>
