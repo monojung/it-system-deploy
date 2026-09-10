@@ -45,15 +45,18 @@ class User extends Authenticatable
         'password_setup_token',
     ];
 
-    protected $casts = [
-        'password' => 'hashed',
-        'is_active' => 'boolean',
-        'mfa_enabled' => 'boolean',
-        'mfa_enforced' => 'boolean',
-        'mfa_enrolled_at' => 'datetime',
-        'email_verified_at' => 'datetime',
-        'password_setup_expires_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'password' => 'hashed',
+            'is_active' => 'boolean',
+            'mfa_enabled' => 'boolean',
+            'mfa_enforced' => 'boolean',
+            'mfa_enrolled_at' => 'datetime',
+            'email_verified_at' => 'datetime',
+            'password_setup_expires_at' => 'datetime',
+        ];
+    }
 
     public function department(): BelongsTo
     {

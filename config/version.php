@@ -19,6 +19,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Remote Update Repository Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Target Git repository and branch used to check for system updates and
+    | deploy releases for Thung Hua Chang Hospital IT Platform.
+    |
+    */
+    'update_repo_url' => env('SYSTEM_UPDATE_REPO_URL', 'https://github.com/monojung/it-system-deploy.git'),
+    'update_branch' => env('SYSTEM_UPDATE_BRANCH', 'main'),
+    'update_remote_name' => env('SYSTEM_UPDATE_REMOTE_NAME', 'deploy'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Changelog & Release History
     |--------------------------------------------------------------------------
     |

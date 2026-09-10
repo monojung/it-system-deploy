@@ -15,73 +15,207 @@ use Symfony\Component\Process\Process;
 class SystemUpdateService
 {
     /**
-     * Check if git is available and get repository update status
+     * Get configured update repository settings
+     */
+    public function getUpdateConfig(): array
+    {
+        return [
+            'repo_url' => config('version.update_repo_url', env('SYSTEM_UPDATE_REPO_URL', 'https://github.com/monojung/it-system-deploy.git')),
+            'branch' => config('version.update_branch', env('SYSTEM_UPDATE_BRANCH', 'main')),
+            'remote_name' => config('version.update_remote_name', env('SYSTEM_UPDATE_REMOTE_NAME', 'deploy')),
+        ];
+    }
+
+    /**
+     * Ensure a git remote exists pointing to the target update repository.
+     * Returns the name of the remote to use (e.g. 'deploy' or 'origin').
+     */
+    public function ensureUpdateRemote(): string
+    {
+        $config = $this->getUpdateConfig();
+        $targetUrl = trim($config['repo_url']);
+        $preferredRemote = trim($config['remote_name'] ?: 'deploy');
+
+        try {
+            $remotesOutput = $this->runProcess(['git', 'remote', '-v'], 10);
+            $lines = explode("\n", trim($remotesOutput));
+
+            // Check if any existing remote already points to targetUrl
+            foreach ($lines as $line) {
+                if (preg_match('/^(\S+)\s+(\S+)\s+\(fetch\)$/', trim($line), $matches)) {
+                    $name = $matches[1];
+                    $url = $matches[2];
+                    $cleanTarget = rtrim($targetUrl, '.git');
+                    $cleanCurrent = rtrim($url, '.git');
+                    if ($cleanCurrent === $cleanTarget) {
+                        return $name;
+                    }
+                }
+            }
+
+            // If not found, check if preferredRemote exists
+            $preferredExists = false;
+            foreach ($lines as $line) {
+                if (preg_match('/^(\S+)\s+/', trim($line), $matches)) {
+                    if ($matches[1] === $preferredRemote) {
+                        $preferredExists = true;
+                        break;
+                    }
+                }
+            }
+
+            if ($preferredExists) {
+                $this->runProcess(['git', 'remote', 'set-url', $preferredRemote, $targetUrl], 10);
+            } else {
+                $this->runProcess(['git', 'remote', 'add', $preferredRemote, $targetUrl], 10);
+            }
+
+            return $preferredRemote;
+        } catch (Exception $e) {
+            Log::warning('SystemUpdateService::ensureUpdateRemote failed: ' . $e->getMessage());
+            return $preferredRemote;
+        }
+    }
+
+    /**
+     * Check if git is available and get repository update status from target deploy repo
      */
     public function checkRemoteUpdates(): array
     {
         $basePath = base_path();
+        $config = $this->getUpdateConfig();
+        $targetRepoUrl = $config['repo_url'];
+        $targetBranch = $config['branch'];
 
         // 1. Verify if .git directory exists
         if (!File::isDirectory($basePath . DIRECTORY_SEPARATOR . '.git')) {
             return [
                 'success' => false,
                 'is_git_repo' => false,
+                'target_repo' => $targetRepoUrl,
+                'target_branch' => $targetBranch,
+                'remote_name' => 'none',
                 'has_update' => false,
-                'message' => 'ไม่พบโฟลเดอร์ .git ในโปรเจกต์ (ไม่ได้ติดตั้งผ่าน Git repository)',
+                'message' => 'ไม่พบโฟลเดอร์ .git ในโปรเจกต์ (เซิร์ฟเวอร์นี้ไม่ได้ติดตั้งผ่าน Git repository)',
                 'last_checked_at' => now()->toDateTimeString(),
             ];
         }
 
         try {
-            // Get current branch
-            $currentBranch = trim($this->runProcess(['git', 'rev-parse', '--abbrev-ref', 'HEAD']));
+            // Ensure remote points to the deploy repository
+            $remoteName = $this->ensureUpdateRemote();
+
+            // Get current local branch
+            $currentBranch = trim($this->runProcess(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], 5));
             if (empty($currentBranch) || $currentBranch === 'HEAD') {
                 $currentBranch = 'main';
             }
 
             // Get local commit
-            $localCommit = trim($this->runProcess(['git', 'rev-parse', 'HEAD']));
+            $localCommit = trim($this->runProcess(['git', 'rev-parse', 'HEAD'], 5));
             $shortLocalCommit = substr($localCommit, 0, 7);
 
-            // Fetch remote changes (with 30s timeout)
-            $fetchOutput = $this->runProcess(['git', 'fetch', 'origin', $currentBranch], 30);
+            // Fetch remote changes from target deploy repository (30s timeout)
+            $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 30);
 
-            // Get tracking branch or default to origin/{branch}
-            $remoteRef = "origin/{$currentBranch}";
+            // Get target remote commit
+            $remoteRef = "{$remoteName}/{$targetBranch}";
             $remoteCommit = '';
             try {
-                $remoteCommit = trim($this->runProcess(['git', 'rev-parse', $remoteRef]));
+                $remoteCommit = trim($this->runProcess(['git', 'rev-parse', $remoteRef], 5));
             } catch (Exception $e) {
-                // Fallback to origin/main
-                $remoteCommit = trim($this->runProcess(['git', 'rev-parse', 'origin/main']));
-                $remoteRef = 'origin/main';
+                // If direct ref parse fails, try fallback
+                $remoteCommit = '';
             }
 
-            $shortRemoteCommit = substr($remoteCommit, 0, 7);
+            $shortRemoteCommit = $remoteCommit ? substr($remoteCommit, 0, 7) : 'unknown';
 
-            // Count commits behind
-            $behindCountOutput = trim($this->runProcess(['git', 'rev-list', '--count', "HEAD..{$remoteRef}"]));
-            $commitsBehind = is_numeric($behindCountOutput) ? (int) $behindCountOutput : 0;
-
-            // Get changelog list of new commits
+            // Compare local commit vs remote commit
+            $commitsBehind = 0;
             $commits = [];
-            if ($commitsBehind > 0) {
-                $logOutput = $this->runProcess([
-                    'git', 'log', "HEAD..{$remoteRef}",
-                    '--pretty=format:%h||%an||%ad||%s',
-                    '--date=short'
-                ]);
+            $hasUpdate = false;
 
-                $lines = array_filter(explode("\n", trim($logOutput)));
-                foreach ($lines as $line) {
-                    $parts = explode('||', $line);
-                    if (count($parts) >= 4) {
-                        $commits[] = [
-                            'hash' => trim($parts[0]),
-                            'author' => trim($parts[1]),
-                            'date' => trim($parts[2]),
-                            'message' => trim($parts[3]),
-                        ];
+            if ($remoteCommit && $localCommit === $remoteCommit) {
+                // Exactly matched
+                $hasUpdate = false;
+                $commitsBehind = 0;
+            } elseif ($remoteCommit) {
+                // Commits differ, check if history is related or not
+                try {
+                    $behindCountOutput = trim($this->runProcess(['git', 'rev-list', '--count', "HEAD..{$remoteRef}"], 5));
+                    $commitsBehind = is_numeric($behindCountOutput) ? (int) $behindCountOutput : 0;
+                } catch (Exception $ex) {
+                    $commitsBehind = 1;
+                }
+
+                if ($commitsBehind > 0) {
+                    $hasUpdate = true;
+                    try {
+                        $logOutput = $this->runProcess([
+                            'git', 'log', "HEAD..{$remoteRef}",
+                            '--pretty=format:%h||%an||%ad||%s',
+                            '--date=short'
+                        ], 10);
+
+                        $lines = array_filter(explode("\n", trim($logOutput)));
+                        foreach ($lines as $line) {
+                            $parts = explode('||', $line);
+                            if (count($parts) >= 4) {
+                                $commits[] = [
+                                    'hash' => trim($parts[0]),
+                                    'author' => trim($parts[1]),
+                                    'date' => trim($parts[2]),
+                                    'message' => trim($parts[3]),
+                                ];
+                            }
+                        }
+                    } catch (Exception $ex) {
+                        // In case of unrelated history, fetch recent commits on remoteRef
+                        try {
+                            $logOutput = $this->runProcess([
+                                'git', 'log', '-n', '5', $remoteRef,
+                                '--pretty=format:%h||%an||%ad||%s',
+                                '--date=short'
+                            ], 10);
+                            $lines = array_filter(explode("\n", trim($logOutput)));
+                            foreach ($lines as $line) {
+                                $parts = explode('||', $line);
+                                if (count($parts) >= 4) {
+                                    $commits[] = [
+                                        'hash' => trim($parts[0]),
+                                        'author' => trim($parts[1]),
+                                        'date' => trim($parts[2]),
+                                        'message' => trim($parts[3]),
+                                    ];
+                                }
+                            }
+                        } catch (Exception $ex2) {
+                            // ignore
+                        }
+                    }
+                } else {
+                    if ($localCommit !== $remoteCommit) {
+                        $hasUpdate = true;
+                        $commitsBehind = 1;
+                        // Fetch the latest remote commit info
+                        try {
+                            $logOutput = $this->runProcess([
+                                'git', 'log', '-1', $remoteRef,
+                                '--pretty=format:%h||%an||%ad||%s',
+                                '--date=short'
+                            ], 5);
+                            $parts = explode('||', trim($logOutput));
+                            if (count($parts) >= 4) {
+                                $commits[] = [
+                                    'hash' => trim($parts[0]),
+                                    'author' => trim($parts[1]),
+                                    'date' => trim($parts[2]),
+                                    'message' => trim($parts[3]),
+                                ];
+                            }
+                        } catch (Exception $ex3) {
+                            // ignore
+                        }
                     }
                 }
             }
@@ -89,15 +223,18 @@ class SystemUpdateService
             return [
                 'success' => true,
                 'is_git_repo' => true,
+                'target_repo' => $targetRepoUrl,
+                'target_branch' => $targetBranch,
+                'remote_name' => $remoteName,
                 'branch' => $currentBranch,
                 'local_commit' => $localCommit,
                 'short_local_commit' => $shortLocalCommit,
                 'remote_commit' => $remoteCommit,
                 'short_remote_commit' => $shortRemoteCommit,
                 'commits_behind' => $commitsBehind,
-                'has_update' => $commitsBehind > 0,
+                'has_update' => $hasUpdate,
                 'commits' => $commits,
-                'current_version' => function_exists('app_version') ? app_version() : config('version.version', '2.2.1'),
+                'current_version' => function_exists('app_version') ? app_version() : config('version.version', '2.2.2'),
                 'last_checked_at' => now()->toDateTimeString(),
             ];
 
@@ -107,7 +244,7 @@ class SystemUpdateService
             // Provide partial info even if remote fetch failed (e.g. offline)
             $localCommit = '';
             try {
-                $localCommit = trim($this->runProcess(['git', 'rev-parse', 'HEAD']));
+                $localCommit = trim($this->runProcess(['git', 'rev-parse', 'HEAD'], 5));
             } catch (Exception $ex) {
                 // ignore
             }
@@ -130,13 +267,16 @@ class SystemUpdateService
             return [
                 'success' => false,
                 'is_git_repo' => true,
+                'target_repo' => $targetRepoUrl,
+                'target_branch' => $targetBranch,
+                'remote_name' => $remoteName ?? 'deploy',
                 'has_update' => false,
                 'local_commit' => $localCommit,
                 'short_local_commit' => substr($localCommit, 0, 7),
                 'error' => $rawError,
                 'error_type' => $errorType,
                 'hint' => $hint,
-                'message' => "ไม่สามารถเชื่อมต่อกับ Git Remote ได้ ({$errorType}): {$hint}",
+                'message' => "ไม่สามารถเชื่อมต่อกับ Git Remote [{$targetRepoUrl}] ได้ ({$errorType}): {$hint}",
                 'raw_error' => $rawError,
                 'last_checked_at' => now()->toDateTimeString(),
             ];
@@ -222,23 +362,29 @@ class SystemUpdateService
             }
 
             // STEP 3: Git Pull / Fetch & Reset to latest
-            $notify(3, 'ดึงโค้ดล่าสุดจาก Git Repository', 'กำลังดำเนินการ git pull origin main');
+            $remoteName = $this->ensureUpdateRemote();
+            $updateConfig = $this->getUpdateConfig();
+            $targetBranch = $updateConfig['branch'] ?? 'main';
+
+            $notify(3, 'ดึงโค้ดล่าสุดจาก Git Deploy Repository', "กำลังดึงโค้ดจาก {$remoteName}/{$targetBranch}");
             $gitOutput = '';
             try {
-                // Get current branch
-                $branch = trim($this->runProcess(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], 10));
-                if (empty($branch) || $branch === 'HEAD') {
-                    $branch = 'main';
+                // First fetch with 30s timeout
+                $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 30);
+
+                // Then pull with 30s timeout
+                try {
+                    $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', $remoteName, $targetBranch], 30);
+                } catch (Exception $pullEx) {
+                    if (str_contains($pullEx->getMessage(), 'unrelated histories')) {
+                        $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', '--allow-unrelated-histories', $remoteName, $targetBranch], 30);
+                    } else {
+                        throw $pullEx;
+                    }
                 }
-
-                // First fetch with 10s timeout
-                $this->runProcess(['git', 'fetch', 'origin', $branch], 10);
-
-                // Then pull with 15s timeout
-                $gitOutput = $this->runProcess(['git', 'pull', 'origin', $branch], 15);
                 $appendLog("Git output:\n" . $gitOutput);
             } catch (Exception $e) {
-                throw new Exception("ไม่สามารถดึงโค้ดจาก Git ได้: " . $e->getMessage());
+                throw new Exception("ไม่สามารถดึงโค้ดจาก Git Deploy Repository ได้: " . $e->getMessage());
             }
 
             // STEP 4: Database Migration

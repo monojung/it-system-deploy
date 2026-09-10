@@ -38,12 +38,14 @@ class SystemUpdateController extends Controller
 
         // System environment info
         $envInfo = [
-            'app_version' => function_exists('app_version') ? app_version() : config('version.version', '2.2.1'),
+            'app_version' => function_exists('app_version') ? app_version() : config('version.version', '2.2.2'),
             'php_version' => PHP_VERSION,
             'laravel_version' => app()->version(),
             'environment' => config('app.env', 'production'),
             'os' => PHP_OS_FAMILY,
             'disk_free' => disk_free_space(base_path()) ? $this->formatBytes(disk_free_space(base_path())) : 'ไม่ระบุ',
+            'target_repo' => config('version.update_repo_url', 'https://github.com/monojung/it-system-deploy.git'),
+            'target_branch' => config('version.update_branch', 'main'),
         ];
 
         return view('system_updates.index', compact('gitStatus', 'updates', 'envInfo'));

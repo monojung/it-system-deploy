@@ -20,11 +20,14 @@ class RepairPart extends Model
         'total_price',
     ];
 
-    protected $casts = [
-        'quantity' => 'integer',
-        'unit_price' => 'decimal:2',
-        'total_price' => 'decimal:2',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'quantity' => 'integer',
+            'unit_price' => 'decimal:2',
+            'total_price' => 'decimal:2',
+        ];
+    }
 
     public function repair(): BelongsTo
     {

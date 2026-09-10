@@ -49,12 +49,15 @@ class Asset extends Model
         'notes',
     ];
 
-    protected $casts = [
-        'purchase_date' => 'date',
-        'warranty_expire_date' => 'date',
-        'price' => 'decimal:2',
-        'ram_capacity' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'purchase_date' => 'date',
+            'warranty_expire_date' => 'date',
+            'price' => 'decimal:2',
+            'ram_capacity' => 'integer',
+        ];
+    }
 
     public function deviceType(): BelongsTo
     {

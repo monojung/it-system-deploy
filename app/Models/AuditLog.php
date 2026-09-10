@@ -33,12 +33,15 @@ class AuditLog extends Model
         'method',
     ];
 
-    protected $casts = [
-        'old_values' => 'array',
-        'new_values' => 'array',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'old_values' => 'array',
+            'new_values' => 'array',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+        ];
+    }
 
     public function user(): BelongsTo
     {

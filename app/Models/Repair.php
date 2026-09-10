@@ -39,12 +39,15 @@ class Repair extends Model
         'attachment_image',
     ];
 
-    protected $casts = [
-        'received_at' => 'datetime',
-        'completed_at' => 'datetime',
-        'total_cost' => 'decimal:2',
-        'satisfaction_score' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'received_at' => 'datetime',
+            'completed_at' => 'datetime',
+            'total_cost' => 'decimal:2',
+            'satisfaction_score' => 'integer',
+        ];
+    }
 
     public function asset(): BelongsTo
     {

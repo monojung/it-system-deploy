@@ -48,9 +48,11 @@ class SystemUpdateCommand extends Command
             ['รายการ', 'รายละเอียด'],
             [
                 ['เวอร์ชันปัจจุบัน', $check['current_version'] ?? '-'],
-                ['Branch ปัจจุบัน', $check['branch'] ?? '-'],
+                ['Remote Repository ปลายทาง', $check['target_repo'] ?? config('version.update_repo_url', 'https://github.com/monojung/it-system-deploy.git')],
+                ['Branch ปลายทาง / Remote', ($check['target_branch'] ?? 'main') . ' (' . ($check['remote_name'] ?? 'deploy') . ')'],
+                ['Branch ปัจจุบันในเครื่อง', $check['branch'] ?? '-'],
                 ['Commit ในเครื่อง (Local)', $check['short_local_commit'] ?? '-'],
-                ['Commit ล่าสุด (Remote)', $check['short_remote_commit'] ?? '-'],
+                ['Commit ล่าสุด (Deploy Remote)', $check['short_remote_commit'] ?? '-'],
                 ['จำนวน Commit ที่ตามหลัง', $check['commits_behind'] ?? 0],
                 ['สถานะการอัปเดต', ($check['has_update'] ?? false) ? '🟡 มีเวอร์ชันใหม่พร้อมอัปเดต' : '🟢 ระบบเป็นเวอร์ชันล่าสุดแล้ว'],
             ]
