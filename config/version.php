@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.2.5'),
+    'version' => env('APP_VERSION', '2.2.6'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-11',
-    'build' => '20260911.3',
+    'build' => '20260911.4',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,19 @@ return [
     |
     */
     'changelog' => [
+        '2.2.6' => [
+            'date' => '2026-09-11',
+            'badge' => 'Subdirectory Route Resolution & Flare Fix',
+            'badge_color' => '#0d9488',
+            'title' => 'แก้ไขข้อผิดพลาด Route บน Subdirectory (/it-system/) และป้องกันปัญหา Route Cache',
+            'highlights' => [
+                'แก้ไขข้อยกเว้น MethodNotAllowedHttpException: The GET method is not supported for route /. Supported methods: HEAD. จากรายงาน Flare บนโฮสติ้งเซิร์ฟเวอร์จริง',
+                'เพิ่ม Route Alias สำหรับ Subdirectory (/it-system และ /it-system/) ให้เชื่อมตรงเข้าสู่ Dashboard/Login อัตโนมัติ ป้องกันความคลาดเคลื่อนของ Route Resolver',
+                'ปรับปรุงการตรวจสอบ Base URL และ Trailing Slash Normalization ใน index.php ป้องกัน Symfony Request ตัด Directory Prefix ผิดพลาด',
+                'ปรับปรุงสคริปต์ deploy_new.ps1 และ update.php ให้ล้าง bootstrap/cache ทุกไฟล์อย่างหมดจดก่อนแพ็กและหลังแตกไฟล์',
+                'ผ่านการทดสอบอัตโนมัติ 96/96 Tests สมบูรณ์แบบทั้งบนโฮสต์หลัก (Root) และโฮสต์โฟลเดอร์ย่อย (Subdirectory)',
+            ],
+        ],
         '2.2.5' => [
             'date' => '2026-09-11',
             'badge' => 'Mobile Experience & LAN Access Optimization',

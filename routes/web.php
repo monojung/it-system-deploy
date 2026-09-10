@@ -54,6 +54,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth'])->group(function () {
     // Dashboard & Profile
     Route::get('/', [DashboardController::class, 'index'])->name('home');
+    Route::get('', [DashboardController::class, 'index']);
+    Route::get('/it-system', [DashboardController::class, 'index']);
+    Route::get('/it-system/', [DashboardController::class, 'index']);
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
     Route::put('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');

@@ -5,6 +5,19 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
+// Subdirectory URI normalization: Ensure trailing slash if accessed at base subdirectory (e.g. /it-system -> /it-system/)
+if (isset($_SERVER['SCRIPT_NAME']) && isset($_SERVER['REQUEST_URI'])) {
+    $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+    if ($scriptDir !== '/' && $scriptDir !== '' && $scriptDir !== '.') {
+        $reqParts = explode('?', $_SERVER['REQUEST_URI'], 2);
+        if ($reqParts[0] === $scriptDir) {
+            $queryString = isset($reqParts[1]) ? '?' . $reqParts[1] : '';
+            header('Location: ' . $scriptDir . '/' . $queryString, true, 301);
+            exit;
+        }
+    }
+}
+
 if (file_exists($maintenance = __DIR__.'/storage/framework/maintenance.php')) {
     require $maintenance;
 }
