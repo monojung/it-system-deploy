@@ -5,13 +5,23 @@
             <span>สเปคฮาร์ดแวร์คอมพิวเตอร์ (Hardware Specifications)</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="btn-detect-specs" onclick="autoDetectAndApplySpecsInstant()" id="btnDetectHardwareSpecs"
-                    title="อ่านค่าสเปคฮาร์ดแวร์จากเครื่องที่เข้าใช้งานนี้ และนำลงฟอร์มทันทีในคลิกเดียว ไม่ต้องใช้ PowerShell">
-                <i class="bi bi-lightning-charge-fill text-warning"></i>
-                <span>⚡ อ่านสเปคจากเครื่องนี้ (คลิกเดียวจบ)</span>
+            <button type="button" class="btn btn-sm btn-primary" onclick="openClientHardwareModal('deep')" id="btnOpenDeepScanModal"
+                    style="font-size: 12.5px; font-weight: 600; padding: 6px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none; box-shadow: 0 2px 4px rgba(13,148,136,0.25);"
+                    title="สแกนอ่านค่าจริงตรงเป๊ะ 100% จาก BIOS/WMI (ทั้งรุ่น CPU จริง, RAM จริง, SSD จริง และ Serial Number)">
+                <i class="bi bi-shield-check"></i>
+                <span>⚡ สแกนสเปคจริง 100% (ตรงเครื่องเป๊ะ)</span>
             </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openClientHardwareModal()" style="font-size: 11.5px; border-radius: 6px; padding: 4px 8px;" title="เปิดหน้าต่างดูรายละเอียดสเปคเชิงลึก">
-                <i class="bi bi-sliders"></i> ดูรายละเอียด
+            <button type="button" class="btn btn-sm btn-success" onclick="pasteHardwareSpecsFromClipboard()" id="btnQuickPasteSpecs"
+                    style="font-size: 12.5px; font-weight: 600; padding: 6px 13px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px;"
+                    title="คลิกเดียวเพื่อนำข้อมูลสเปคที่สแกนแล้วจากคลิปบอร์ดใส่ในฟอร์มทันที">
+                <i class="bi bi-clipboard-check"></i>
+                <span>📋 วางสเปคจากคลิปบอร์ด</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-light border" onclick="autoDetectAndApplySpecsInstant()" id="btnDetectHardwareSpecs"
+                    style="font-size: 11.5px; padding: 5px 10px; border-radius: 7px; color: #475569;"
+                    title="อ่านสเปคจากเครื่องนี้ผ่านเบราว์เซอร์ (หมายเหตุ: เบราว์เซอร์มีระบบความปลอดภัยล็อก RAM สูงสุด 8GB และไม่เปิดเผยชื่อ CPU จริง ค่าอาจคลาดเคลื่อน)">
+                <i class="bi bi-globe"></i>
+                <span>🌐 อ่านสเปคด่วนผ่านเว็บ (โดยประมาณ)</span>
             </button>
             <span style="font-size: 12px; color: #64748b; background: #e2e8f0; padding: 2px 8px; border-radius: 6px;">
                 สำหรับ PC, โน้ตบุ๊ก, All-in-One และ Server
@@ -255,11 +265,11 @@
 
         {{-- Tab Navigation --}}
         <div style="display: flex; border-bottom: 1px solid #e2e8f0; background: #f8fafc; padding: 0 16px; flex-shrink: 0;">
-            <button type="button" id="tabBtnWebDetect" onclick="switchHwTab('web')" style="padding: 12px 16px; font-size: 13px; font-weight: 600; border: none; background: transparent; border-bottom: 2.5px solid #0d9488; color: #0f766e; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                <i class="bi bi-lightning-charge-fill text-warning"></i> ตรวจจับผ่านเบราว์เซอร์ทันที (Web Scan)
+            <button type="button" id="tabBtnDeepScan" onclick="switchHwTab('deep')" style="padding: 12px 16px; font-size: 13px; font-weight: 600; border: none; background: transparent; border-bottom: 2.5px solid #0d9488; color: #0f766e; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <i class="bi bi-shield-check text-success"></i> สแกนลึกระดับฮาร์ดแวร์ 100% (PowerShell - แนะนำ)
             </button>
-            <button type="button" id="tabBtnDeepScan" onclick="switchHwTab('deep')" style="padding: 12px 16px; font-size: 13px; font-weight: 600; border: none; background: transparent; border-bottom: 2.5px solid transparent; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                <i class="bi bi-terminal-fill text-primary"></i> สแกนลึกระดับฮาร์ดแวร์ 100% (PowerShell)
+            <button type="button" id="tabBtnWebDetect" onclick="switchHwTab('web')" style="padding: 12px 16px; font-size: 13px; font-weight: 600; border: none; background: transparent; border-bottom: 2.5px solid transparent; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <i class="bi bi-globe text-primary"></i> ตรวจจับผ่านเบราว์เซอร์ทันที (Web Scan - โดยประมาณ)
             </button>
         </div>
 
@@ -267,10 +277,18 @@
         <div style="padding: 20px; overflow-y: auto; flex: 1;">
             
             {{-- TAB 1: Web Auto-Detect --}}
-            <div id="tabContentWebDetect">
+            <div id="tabContentWebDetect" style="display: none;">
+                {{-- Browser Sandbox Notice --}}
+                <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 12px; color: #92400e; line-height: 1.5; display: flex; align-items: flex-start; gap: 8px;">
+                    <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 16px; margin-top: 1px; flex-shrink: 0;"></i>
+                    <div>
+                        <strong>ข้อจำกัดความปลอดภัยของเบราว์เซอร์ (Browser Sandbox):</strong> เบราว์เซอร์ (Chrome / Edge / Firefox) มีระบบรักษาความเป็นส่วนตัว จึง<strong>ไม่อนุญาตให้หน้าเว็บอ่านข้อมูลฮาร์ดแวร์จริงจาก OS/BIOS</strong> เช่น ล็อก RAM สูงสุดไว้ที่ 8GB และไม่เปิดเผยชื่อรุ่น CPU แท้หรือ Serial Number หากต้องการค่าที่<strong>ตรงกับเครื่องจริง 100%</strong> กรุณาใช้แท็บ <strong>"สแกนลึกระดับฮาร์ดแวร์ 100% (PowerShell)"</strong>
+                    </div>
+                </div>
+
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; background: #f0fdfa; border: 1px solid #99f6e4; padding: 10px 14px; border-radius: 8px;">
                     <div style="font-size: 12.5px; color: #0f766e; font-weight: 500;">
-                        <i class="bi bi-info-circle-fill text-teal me-1"></i> ตรวจพบคุณลักษณะของอุปกรณ์ปัจจุบันที่กำลังเปิดใช้งานหน้านี้
+                        <i class="bi bi-info-circle-fill text-teal me-1"></i> ตรวจพบคุณลักษณะของอุปกรณ์ปัจจุบันที่กำลังเปิดใช้งานหน้านี้ (ค่าประมาณการ)
                     </div>
                     <button type="button" class="btn btn-sm btn-light border py-0 px-2" onclick="detectClientHardwareInstant(true)" style="font-size: 11.5px; font-weight: 600; border-radius: 5px;">
                         <i class="bi bi-arrow-clockwise"></i> สแกนใหม่
@@ -353,52 +371,74 @@
             </div>
 
             {{-- TAB 2: Deep WMI PowerShell Scan --}}
-            <div id="tabContentDeepScan" style="display: none;">
+            <div id="tabContentDeepScan">
                 <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 12.5px; color: #92400e; line-height: 1.5;">
                     <strong><i class="bi bi-shield-check"></i> สแกนลึกระดับฮาร์ดแวร์โรงงาน 100%:</strong>
                     อ่านค่าตรงจาก BIOS/WMI ในเครื่อง ได้ข้อมูลครบถ้วนทั้ง <strong>Serial Number (S/N)</strong>, ยี่ห้อ, รุ่น, รหัส CPU เต็ม, ความเร็ว, บัสแรม DDR4/DDR5, ชนิดไดรฟ์ SSD NVMe M.2 และ MAC Address
                 </div>
 
-                {{-- Step 1: Run Command --}}
-                <div style="margin-bottom: 16px;">
-                    <label style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px; display: block;">
-                        ขั้นตอนที่ 1: คัดลอกคำสั่งนี้ แล้วกดวางใน PowerShell บนเครื่องนี้ (ทางเลือกกรณีต้องการ S/N เมนบอร์ด)
+                {{-- Step 1: Run Command or Download Script --}}
+                <div style="margin-bottom: 18px;">
+                    <label style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 8px; display: block;">
+                        ขั้นตอนที่ 1: เลือกวิธีสแกนสเปคฮาร์ดแวร์จริงจากเครื่องนี้ (100% ตรงเครื่องเป๊ะ)
                     </label>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                        <a href="{{ asset('scripts/scan_spec.bat') }}" download class="btn btn-outline-primary" 
+                           style="padding: 10px 12px; border-radius: 9px; text-align: left; display: flex; flex-direction: column; gap: 4px; border: 1.5px solid #0284c7; background: #f0f9ff; text-decoration: none;">
+                            <div style="font-weight: 700; font-size: 13px; color: #0369a1; display: flex; align-items: center; gap: 6px;">
+                                <i class="bi bi-download"></i> วิธีที่ 1: ดับเบิลคลิกไฟล์ .bat (แนะนำ)
+                            </div>
+                            <div style="font-size: 11.5px; color: #475569;">
+                                ดาวน์โหลด <strong>scan_spec.bat</strong> แล้วกดเปิด สคริปต์จะสแกนและคัดลอกสเปคลงคลิปบอร์ดทันที
+                            </div>
+                        </a>
+
+                        <div style="border: 1.5px solid #cbd5e1; border-radius: 9px; padding: 10px 12px; background: #f8fafc; display: flex; flex-direction: column; gap: 4px;">
+                            <div style="font-weight: 700; font-size: 13px; color: #334155; display: flex; align-items: center; justify-content: space-between;">
+                                <span><i class="bi bi-terminal-fill text-dark"></i> วิธีที่ 2: รันคำสั่งสั้น</span>
+                                <button type="button" class="btn btn-sm btn-dark py-0 px-2" onclick="copyPowerShellCommand()" style="font-size: 11px; border-radius: 5px;" id="btnCopyPsCmd">
+                                    <i class="bi bi-clipboard"></i> คัดลอก
+                                </button>
+                            </div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+                                กด <code>Win + X</code> เลือก <strong>Terminal</strong> / <strong>PowerShell</strong> แล้วกดวางคำสั่ง
+                            </div>
+                        </div>
+                    </div>
+
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="cmdPowerShellScan" class="form-control" readonly
                                value="irm &quot;{{ url('/scripts/scan_spec.ps1') }}&quot; | iex"
-                               style="font-family: Consolas, monospace; font-size: 12.5px; background: #0f172a; color: #38bdf8; border: 1px solid #334155;">
-                        <button type="button" class="btn btn-dark" onclick="copyPowerShellCommand()" style="flex-shrink: 0; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" id="btnCopyPsCmd">
+                               style="font-family: Consolas, monospace; font-size: 12px; background: #0f172a; color: #38bdf8; border: 1px solid #334155;">
+                        <button type="button" class="btn btn-dark" onclick="copyPowerShellCommand()" style="flex-shrink: 0; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
                             <i class="bi bi-clipboard"></i> คัดลอก
                         </button>
-                        <a href="{{ asset('scripts/scan_spec.bat') }}" download class="btn btn-outline-secondary" style="flex-shrink: 0; font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px;" title="ดาวน์โหลดไฟล์ .bat ไปดับเบิลคลิก">
-                            <i class="bi bi-download"></i> .bat
-                        </a>
-                    </div>
-                    <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
-                        (กดปุ่ม Windows + X แล้วเลือก Windows PowerShell หรือ Terminal แล้วกดวางคำสั่ง)
                     </div>
                 </div>
 
                 {{-- Step 2: Paste / Import --}}
-                <div style="margin-bottom: 16px;">
-                    <label style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px; display: block;">
-                        ขั้นตอนที่ 2: เมื่อคำสั่งรันเสร็จ (ระบบจะคัดลอกสเปคลงคลิปบอร์ดให้อัตโนมัติ)
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; margin-bottom: 12px;">
+                    <label style="font-size: 13px; font-weight: 700; color: #166534; margin-bottom: 6px; display: block;">
+                        <i class="bi bi-check2-circle"></i> ขั้นตอนที่ 2: นำสเปคเข้าสู่แบบฟอร์ม
                     </label>
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-success" onclick="pasteHardwareSpecsFromClipboard()" style="font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px;">
-                            <i class="bi bi-clipboard-check"></i> วางข้อมูลจากคลิปบอร์ดทันที (Paste from Clipboard)
-                        </button>
-                        <span style="font-size: 12px; color: #64748b; align-self: center;">หรือกด Ctrl+V ในช่องด้านล่าง:</span>
+                    <div style="font-size: 12px; color: #15803d; margin-bottom: 10px; line-height: 1.4;">
+                        เมื่อสคริปต์สแกนเสร็จ ข้อมูลจะถูกคัดลอกลงคลิปบอร์ดแล้ว ให้กดปุ่มด้านล่างนี้เพื่อใส่ข้อมูลลงในแบบฟอร์มทันที:
                     </div>
-                    <textarea id="hwPasteJsonArea" class="form-control" rows="2" placeholder="กด Ctrl+V เพื่อวางข้อมูลสเปค JSON ที่นี่..." style="font-family: Consolas, monospace; font-size: 12px; resize: vertical;"></textarea>
-                </div>
-
-                {{-- Action Button --}}
-                <div style="text-align: right;">
-                    <button type="button" class="btn btn-primary" onclick="applyPastedSpecs()" style="font-weight: 600; padding: 7px 20px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none;">
-                        <i class="bi bi-magic"></i> นำเข้าข้อมูลสเปคและข้อมูลเครื่องทั้งหมด
-                    </button>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-success" onclick="pasteHardwareSpecsFromClipboard()" style="font-weight: 700; font-size: 13.5px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 8px; box-shadow: 0 2px 4px rgba(22, 101, 52, 0.2);">
+                            <i class="bi bi-clipboard-check" style="font-size: 16px;"></i> วางสเปคจากคลิปบอร์ดทันที (Paste Scan)
+                        </button>
+                    </div>
+                    <details style="margin-top: 10px;">
+                        <summary style="font-size: 11.5px; color: #64748b; cursor: pointer;">หรือกด Ctrl+V ในช่องข้อความนี้ด้วยตนเอง</summary>
+                        <textarea id="hwPasteJsonArea" class="form-control mt-2" rows="2" placeholder="กด Ctrl+V เพื่อวางข้อมูลสเปค JSON ที่นี่..." style="font-family: Consolas, monospace; font-size: 11.5px; resize: vertical;"></textarea>
+                        <div style="text-align: right; margin-top: 6px;">
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="applyPastedSpecs()">
+                                นำเข้าจากช่องข้อความ
+                            </button>
+                        </div>
+                    </details>
                 </div>
             </div>
 
@@ -514,11 +554,14 @@
     }
 
     // Modal Controls
-    function openClientHardwareModal() {
+    function openClientHardwareModal(defaultTab = 'deep') {
         const modal = document.getElementById('clientHardwareModal');
         if (modal) {
             modal.style.display = 'flex';
-            detectClientHardwareInstant();
+            switchHwTab(defaultTab);
+            if (defaultTab === 'web') {
+                detectClientHardwareInstant();
+            }
         }
     }
 
@@ -963,18 +1006,32 @@
     function pasteHardwareSpecsFromClipboard() {
         if (navigator.clipboard && navigator.clipboard.readText) {
             navigator.clipboard.readText().then(text => {
-                if (text) {
+                if (text && (text.includes('cpu_model') || text.includes('powershell_wmi_audit'))) {
                     const area = document.getElementById('hwPasteJsonArea');
                     if (area) area.value = text;
                     applyDeepAuditJson(text);
+                } else if (text) {
+                    try {
+                        const parsed = JSON.parse(text);
+                        applyDeepAuditJson(parsed);
+                    } catch (e) {
+                        openClientHardwareModal('deep');
+                        const area = document.getElementById('hwPasteJsonArea');
+                        if (area) {
+                            area.value = text;
+                            area.focus();
+                        }
+                    }
+                } else {
+                    openClientHardwareModal('deep');
                 }
             }).catch(() => {
-                alert('เบราว์เซอร์ไม่อนุญาตให้อ่านคลิปบอร์ดอัตโนมัติ กรุณากดคลิกในช่องข้อความแล้วกดปุ่ม Ctrl+V เพื่อวางข้อมูล');
+                openClientHardwareModal('deep');
                 const area = document.getElementById('hwPasteJsonArea');
                 if (area) area.focus();
             });
         } else {
-            alert('กรุณากดคลิกในช่องข้อความแล้วกด Ctrl+V เพื่อวางข้อมูล');
+            openClientHardwareModal('deep');
             const area = document.getElementById('hwPasteJsonArea');
             if (area) area.focus();
         }
@@ -1062,5 +1119,17 @@
                 }
             });
         }
+
+        // Auto-detect scan JSON when user returns focus to this browser tab
+        window.addEventListener('focus', function() {
+            if (modal && modal.style.display === 'flex' && navigator.clipboard && navigator.clipboard.readText) {
+                navigator.clipboard.readText().then(text => {
+                    if (text && text.includes('powershell_wmi_audit') && window._lastImportedSpec !== text) {
+                        window._lastImportedSpec = text;
+                        applyDeepAuditJson(text);
+                    }
+                }).catch(() => {});
+            }
+        });
     });
 </script>

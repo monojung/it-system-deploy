@@ -426,8 +426,11 @@
                     <span>2. คุณลักษณะและสเปคฮาร์ดแวร์ (Hardware Specifications)</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="autoDetectAndApplySpecsInstant()" style="font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; background: #ffffff;">
-                        <i class="bi bi-lightning-charge-fill text-warning"></i> ⚡ อ่านสเปคจากเครื่องนี้ (คลิกเดียวจบ)
+                    <button type="button" class="btn btn-sm btn-primary" onclick="openClientHardwareModal('deep')" style="font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none;">
+                        <i class="bi bi-shield-check"></i> ⚡ สแกนสเปคจริง 100%
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="pasteHardwareSpecsFromClipboard()" style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 7px; display: inline-flex; align-items: center; gap: 4px; background: #ffffff;">
+                        <i class="bi bi-clipboard-check"></i> วางสเปค
                     </button>
                     <span style="font-size: 11.5px; color: #0f766e; background: #e6fffa; border: 1px solid #99f6e4; padding: 2px 8px; border-radius: 6px;">
                         สำหรับ PC, โน้ตบุ๊ก, All-in-One, Server
