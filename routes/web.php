@@ -16,6 +16,7 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\SystemResetController;
 use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\ServerInitController;
+use App\Http\Controllers\HardwareAuditController;
 
 // Initial Server Setup Route (Storage link, cache clear, migrations)
 Route::get('/server-init', [ServerInitController::class, 'init'])
@@ -49,6 +50,10 @@ Route::get('/auth/thaid/callback', [AuthController::class, 'handleThaIDCallback'
 Route::get('/auth/mfa-challenge', [AuthController::class, 'showMfaChallenge'])->name('auth.mfa-challenge');
 Route::post('/auth/mfa-verify', [AuthController::class, 'verifyMfaChallenge'])->name('auth.mfa-verify');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Public Hardware Audit API Endpoint (for embedded client PowerShell Agent)
+Route::post('/api/hardware-audit/submit', [HardwareAuditController::class, 'submit'])->name('hardware-audit.submit');
+Route::post('/hardware-audit/submit', [HardwareAuditController::class, 'submit']);
 
 // Authenticated Routes
 Route::middleware(['auth'])->group(function () {
@@ -138,10 +143,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/assets', [ReportController::class, 'assets'])->name('reports.assets');
     Route::get('/reports/export/{type}', [ReportController::class, 'exportCsv'])->name('reports.export');
 
-    // Admin & Technician only for overview reports
+    // Admin & Technician only for overview reports & hardware audits
     Route::middleware(['role:admin,technician'])->group(function () {
         Route::get('/reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
         Route::get('/reports/quarterly', [ReportController::class, 'quarterly'])->name('reports.quarterly');
+
+        // Hardware Audit & Monitor Dashboard (สำรวจสเปคคอมพิวเตอร์ประจำปีงบประมาณ)
+        Route::get('/hardware-audits', [HardwareAuditController::class, 'index'])->name('hardware-audits.index');
+        Route::post('/hardware-audits/{id}/approve', [HardwareAuditController::class, 'approve'])->name('hardware-audits.approve');
+        Route::post('/hardware-audits/batch-approve', [HardwareAuditController::class, 'batchApprove'])->name('hardware-audits.batch-approve');
+        Route::post('/hardware-audits/{id}/reject', [HardwareAuditController::class, 'reject'])->name('hardware-audits.reject');
+        Route::get('/hardware-audits/print-report', [HardwareAuditController::class, 'printAnnualReport'])->name('hardware-audits.print-report');
+        Route::get('/hardware-audits/export-csv', [HardwareAuditController::class, 'exportCsv'])->name('hardware-audits.export-csv');
     });
 
     // Admin Only: Backup & Restore, User Management, Department Management

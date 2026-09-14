@@ -1232,6 +1232,18 @@
                     <span>คลังคอมพิวเตอร์ & ครุภัณฑ์</span>
                 </a>
                 @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician()))
+                <a href="{{ route('hardware-audits.index') }}" class="nav-item {{ request()->routeIs('hardware-audits.*') ? 'active' : '' }}">
+                    <i class="bi bi-cpu-fill"></i>
+                    <span>ติดตามสเปค & ตรวจนับรายปี</span>
+                    @php
+                        $navPendingHwAudits = \App\Models\HardwareAudit::where('status', 'pending')->count();
+                    @endphp
+                    @if($navPendingHwAudits > 0)
+                        <span class="nav-badge" style="background: #f59e0b;" title="{{ $navPendingHwAudits }} รายการรออนุมัติสเปค">{{ $navPendingHwAudits }}</span>
+                    @endif
+                </a>
+                @endif
+                @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician()))
                 <a href="{{ route('spare-parts.index') }}" class="nav-item {{ request()->routeIs('spare-parts.*') ? 'active' : '' }}">
                     <i class="bi bi-box-seam"></i>
                     <span>คลังอะไหล่ & พัสดุ IT</span>

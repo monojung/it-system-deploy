@@ -47,6 +47,8 @@ class Asset extends Model
         'budget_year',
         'image',
         'notes',
+        'last_audited_at',
+        'last_audited_fiscal_year',
     ];
 
     protected $casts = [
@@ -54,6 +56,8 @@ class Asset extends Model
         'warranty_expire_date' => 'date',
         'price' => 'decimal:2',
         'ram_capacity' => 'integer',
+        'last_audited_at' => 'datetime',
+        'last_audited_fiscal_year' => 'integer',
     ];
 
     public function deviceType(): BelongsTo
@@ -69,6 +73,24 @@ class Asset extends Model
     public function repairs(): HasMany
     {
         return $this->hasMany(Repair::class, 'asset_id')->latest();
+    }
+
+    public function hardwareAudits(): HasMany
+    {
+        return $this->hasMany(HardwareAudit::class, 'asset_id')->latest();
+    }
+
+    public function scopeAuditedInFiscalYear($query, int $fiscalYear)
+    {
+        return $query->where('last_audited_fiscal_year', $fiscalYear);
+    }
+
+    public function scopePendingAuditInFiscalYear($query, int $fiscalYear)
+    {
+        return $query->where(function ($q) use ($fiscalYear) {
+            $q->whereNull('last_audited_fiscal_year')
+              ->orWhere('last_audited_fiscal_year', '<', $fiscalYear);
+        });
     }
 
     public function getStatusLabelAttribute(): string

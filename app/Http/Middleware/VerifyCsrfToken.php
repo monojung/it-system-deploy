@@ -14,5 +14,7 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         'system-updates/apply',
         'system-updates/upload-patch',
+        'api/hardware-audit/*',
+        'hardware-audit/submit',
     ];
 }
