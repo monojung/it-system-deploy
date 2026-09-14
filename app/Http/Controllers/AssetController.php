@@ -67,6 +67,29 @@ class AssetController extends Controller
             $query->where('storage_capacity', 'like', "%{$request->storage_capacity}%");
         }
 
+        // Annual Fiscal Year Hardware Audit Filtering
+        if ($request->filled('audited_fiscal_year')) {
+            $fy = (int)$request->audited_fiscal_year;
+            if ($request->input('audit_status') === 'not_audited') {
+                $query->where(function ($q) use ($fy) {
+                    $q->whereNull('last_audited_fiscal_year')
+                      ->orWhere('last_audited_fiscal_year', '<', $fy);
+                });
+            } else {
+                $query->where('last_audited_fiscal_year', $fy);
+            }
+        } elseif ($request->filled('audit_status')) {
+            $calcFY = (now()->month >= 10) ? now()->year + 544 : now()->year + 543;
+            if ($request->audit_status === 'audited') {
+                $query->where('last_audited_fiscal_year', $calcFY);
+            } elseif ($request->audit_status === 'not_audited') {
+                $query->where(function ($q) use ($calcFY) {
+                    $q->whereNull('last_audited_fiscal_year')
+                      ->orWhere('last_audited_fiscal_year', '<', $calcFY);
+                });
+            }
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -167,7 +190,18 @@ class AssetController extends Controller
             })->count(),
         ];
 
-        return view('assets.index', compact('assets', 'deviceTypes', 'departments', 'budgetYears', 'statusCounts', 'hardwareStats', 'user'));
+        $currentFiscalYear = (now()->month >= 10) ? now()->year + 544 : now()->year + 543;
+        $pendingAuditsCount = \App\Models\HardwareAudit::where('status', 'pending')->count();
+        $auditedYears = Asset::select('last_audited_fiscal_year')
+            ->whereNotNull('last_audited_fiscal_year')
+            ->distinct()
+            ->orderBy('last_audited_fiscal_year', 'desc')
+            ->pluck('last_audited_fiscal_year');
+
+        return view('assets.index', compact(
+            'assets', 'deviceTypes', 'departments', 'budgetYears', 'statusCounts',
+            'hardwareStats', 'user', 'currentFiscalYear', 'pendingAuditsCount', 'auditedYears'
+        ));
     }
 
     public function create()
@@ -248,8 +282,18 @@ class AssetController extends Controller
             abort(403, 'คุณมีสิทธิ์เข้าถึงเฉพาะข้อมูลครุภัณฑ์ประจำแผนกของคุณเท่านั้น');
         }
 
-        $asset->load(['deviceType', 'department', 'repairs.department', 'repairs.technician'])->loadCount('repairs');
-        return view('assets.show', compact('asset'));
+        $asset->load([
+            'deviceType',
+            'department',
+            'repairs.department',
+            'repairs.technician',
+            'hardwareAudits.reviewer'
+        ])->loadCount(['repairs', 'hardwareAudits']);
+
+        $currentFiscalYear = (now()->month >= 10) ? now()->year + 544 : now()->year + 543;
+        $pendingAuditForAsset = $asset->hardwareAudits->firstWhere('status', 'pending');
+
+        return view('assets.show', compact('asset', 'currentFiscalYear', 'pendingAuditForAsset'));
     }
 
     public function edit(Asset $asset)

@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.2.9'),
+    'version' => env('APP_VERSION', '2.3.0'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-14',
-    'build' => '20260914.3',
+    'build' => '20260914.4',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,19 @@ return [
     |
     */
     'changelog' => [
+        '2.3.0' => [
+            'date' => '2026-09-14',
+            'badge' => 'Client PowerShell Agent & Hardware Audit Monitoring',
+            'badge_color' => '#0d9488',
+            'title' => 'ระบบตรวจนับสเปคคอมพิวเตอร์ประจำปีงบประมาณ, Client PowerShell Audit Agent และศูนย์เฝ้าระวังฮาร์ดแวร์ (Monitoring & Staging Queue)',
+            'highlights' => [
+                'ระบบ Agent ฝังในเครื่องลูกข่าย (THC IT Audit Agent): รันด้วย PowerShell อ่านสเปคแท้จาก WMI/BIOS ส่งข้อมูลสเปคและปีงบประมาณอัตโนมัติ โดยไม่แก้ไขฐานข้อมูลเองโดยพลการ',
+                'ศูนย์กลั่นกรองและอนุมัติสเปค (Staging Approval Queue): แอดมินสามารถตรวจสอบ Diff สเปคเดิม vs สเปคที่เครื่องส่งมา พร้อมกดอนุมัติหรือปฏิเสธได้ด้วยตนเองอย่างปลอดภัย',
+                'ระบบเฝ้าระวังและติดตาม (Hardware Audit Monitoring Dashboard): แสดงสถิติการตรวจนับตามปีงบประมาณ, ความครอบคลุม (Coverage %), รายการที่สเปคเปลี่ยนแปลง และส่งออกรายงานสรุปสำหรับงานพัสดุ/ผู้บริหาร',
+                'การเชื่อมโยงระบบสมบูรณ์ (Deep System Integration): เชื่อมโยงสถานะตรวจนับปีงบประมาณเข้ากับหน้ารายละเอียดครุภัณฑ์ (Asset Show), หน้ารวมครุภัณฑ์ (Asset Index Filter) และแจ้งเตือนบนแดชบอร์ดหลัก (Executive Dashboard Alert)',
+                'ผ่านการทดสอบอัตโนมัติ 103/103 Tests สมบูรณ์แบบทุกโมดูล',
+            ],
+        ],
         '2.2.9' => [
             'date' => '2026-09-14',
             'badge' => '1-Click Deep Hardware Scan',

@@ -9,6 +9,15 @@
     <i class="bi bi-file-earmark-excel text-success"></i>
     <span>Export CSV</span>
 </a>
+@if(auth()->user()->isAdmin() || auth()->user()->isTechnician())
+<a href="{{ route('hardware-audits.index') }}" class="topbar-btn" title="ระบบติดตามสเปค & ตรวจนับคอมพิวเตอร์รายปีงบประมาณ">
+    <i class="bi bi-cpu-fill text-primary"></i>
+    <span>ตรวจนับสเปค</span>
+    @if(isset($pendingAuditsCount) && $pendingAuditsCount > 0)
+        <span class="badge rounded-pill bg-warning text-dark" style="font-size: 10.5px; padding: 2px 6px;">{{ $pendingAuditsCount }}</span>
+    @endif
+</a>
+@endif
 @if(auth()->user()->isAdmin())
 <button type="button" class="topbar-btn" onclick="openImportModal()" title="นำเข้าข้อมูลครุภัณฑ์จากไฟล์ CSV">
     <i class="bi bi-file-earmark-arrow-up text-primary"></i>
@@ -898,6 +907,15 @@
             <i class="bi bi-file-earmark-excel"></i>
             <span>Export CSV</span>
         </a>
+        @if(auth()->user()->isAdmin() || auth()->user()->isTechnician())
+        <a href="{{ route('hardware-audits.index') }}" class="btn-hero-ghost" title="ติดตามสเปคและตรวจนับครุภัณฑ์ประจำปีงบประมาณ">
+            <i class="bi bi-cpu"></i>
+            <span>ตรวจนับสเปคประจำปี</span>
+            @if(isset($pendingAuditsCount) && $pendingAuditsCount > 0)
+                <span style="background: #ef4444; color: #fff; font-size: 11px; padding: 1px 7px; border-radius: 999px; font-weight: 700;">{{ $pendingAuditsCount }}</span>
+            @endif
+        </a>
+        @endif
         @if(auth()->user()->isAdmin())
         <button type="button" onclick="openImportModal()" class="btn-hero-ghost" style="cursor: pointer;" title="นำเข้าข้อมูลครุภัณฑ์จากไฟล์ CSV (เฉพาะ Admin)">
             <i class="bi bi-file-earmark-arrow-up"></i>
@@ -1351,6 +1369,50 @@
                 </a>
             </div>
         </div>
+
+        {{-- Annual Hardware Audit Filtering Row --}}
+        <div style="display: flex; gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #e2e8f0; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #475569;">
+                    <i class="bi bi-clipboard-check-fill text-info"></i>
+                    <span>การตรวจนับสเปคประจำปีงบ:</span>
+                </div>
+                <div style="min-width: 170px;">
+                    <select name="audited_fiscal_year" class="form-select form-select-sm" style="border-radius: 8px; font-size: 12.5px;" onchange="this.form.submit()">
+                        <option value="">-- ทุกปีงบประมาณ --</option>
+                        @php
+                            $fyOptions = collect([$currentFiscalYear ?? 2569, ($currentFiscalYear ?? 2569) - 1, ($currentFiscalYear ?? 2569) - 2])
+                                ->merge($auditedYears ?? [])
+                                ->filter()
+                                ->unique()
+                                ->sortDesc();
+                        @endphp
+                        @foreach($fyOptions as $fy)
+                            <option value="{{ $fy }}" {{ request('audited_fiscal_year') == $fy ? 'selected' : '' }}>
+                                ตรวจนับปีงบ {{ $fy }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div style="min-width: 180px;">
+                    <select name="audit_status" class="form-select form-select-sm" style="border-radius: 8px; font-size: 12.5px;" onchange="this.form.submit()">
+                        <option value="">-- สถานะการตรวจนับ --</option>
+                        <option value="audited" {{ request('audit_status') == 'audited' ? 'selected' : '' }}>✅ ตรวจนับสเปคแล้ว</option>
+                        <option value="not_audited" {{ request('audit_status') == 'not_audited' ? 'selected' : '' }}>⏳ ยังไม่ได้ตรวจนับ</option>
+                    </select>
+                </div>
+                @if(request()->filled('audited_fiscal_year') || request()->filled('audit_status'))
+                    <a href="{{ route('assets.index', request()->except(['audited_fiscal_year', 'audit_status', 'page'])) }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 8px; font-size: 12px; padding: 3px 9px;" title="ล้างตัวกรองการตรวจนับ">
+                        <i class="bi bi-x-circle me-1"></i> ล้างตัวกรองตรวจนับ
+                    </a>
+                @endif
+            </div>
+            <div>
+                <a href="{{ route('hardware-audits.index') }}" class="btn btn-sm btn-light border text-primary" style="font-size: 12px; font-weight: 600; border-radius: 8px;">
+                    <i class="bi bi-speedometer2 me-1"></i> เปิดแดชบอร์ดตรวจนับสเปค
+                </a>
+            </div>
+        </div>
     </form>
 </div>
 
@@ -1438,6 +1500,18 @@
                         @elseif($asset->specs)
                             <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
                                 <i class="bi bi-info-circle"></i> {{ Str::limit($asset->specs, 55) }}
+                            </div>
+                        @endif
+
+                        {{-- Annual Audit Badge --}}
+                        @if($asset->last_audited_fiscal_year)
+                            <div style="margin-top: 4px;">
+                                <a href="{{ route('hardware-audits.index', ['fiscal_year' => $asset->last_audited_fiscal_year, 'search' => $asset->serial_number ?: $asset->asset_code]) }}" 
+                                   class="badge" 
+                                   style="background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" 
+                                   title="ตรวจนับและอัปเดตสเปคแล้วในปีงบ {{ $asset->last_audited_fiscal_year }} ({{ $asset->last_audited_at?->format('d/m/Y') }})">
+                                    <i class="bi bi-patch-check-fill text-info"></i> ตรวจนับปีงบ {{ $asset->last_audited_fiscal_year }}
+                                </a>
                             </div>
                         @endif
                     </td>

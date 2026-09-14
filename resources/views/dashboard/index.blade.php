@@ -76,6 +76,29 @@
 @endpush
 
 @section('content')
+<!-- Pending Hardware Audit Alert Banner -->
+@if((auth()->user()->isAdmin() || auth()->user()->isTechnician()) && isset($pendingHardwareAuditsCount) && $pendingHardwareAuditsCount > 0)
+<div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #fde68a; border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);">
+    <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: #f59e0b; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+            <i class="bi bi-cpu-fill"></i>
+        </div>
+        <div>
+            <div style="font-size: 14.5px; font-weight: 700; color: #92400e;">
+                มีรายการตรวจนับและสแกนสเปคจากเครื่องลูกข่ายรอการตรวจสอบ {{ number_format($pendingHardwareAuditsCount) }} รายการ
+            </div>
+            <div style="font-size: 12.5px; color: #b45309; margin-top: 2px;">
+                เครื่องลูกข่ายส่งผลการอ่านค่าฮาร์ดแวร์มายังศูนย์กลางแล้ว แอดมินสามารถตรวจสอบ Diff และกดยืนยันอัปเดตสเปคเข้าสู่ฐานข้อมูลได้
+            </div>
+        </div>
+    </div>
+    <a href="{{ route('hardware-audits.index') }}" class="btn btn-warning" style="font-weight: 700; font-size: 13.5px; padding: 8px 18px; border-radius: 9px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(217, 119, 6, 0.2);">
+        <i class="bi bi-shield-check"></i>
+        <span>ตรวจสอบและอนุมัติสเปค</span>
+    </a>
+</div>
+@endif
+
 <!-- Top Stat Cards -->
 <div class="stats-grid">
     <div class="stat-card">
@@ -118,15 +141,20 @@
         </div>
     </div>
 
-    <div class="stat-card">
+    <a href="{{ route('assets.index') }}" class="stat-card" style="text-decoration: none; color: inherit;">
         <div class="stat-icon purple">
             <i class="bi bi-pc-display"></i>
         </div>
         <div>
             <div class="stat-val" style="color: #6b21a8;">{{ number_format($totalAssets) }}</div>
             <div class="stat-lbl">ครุภัณฑ์คอมพิวเตอร์</div>
+            @if(isset($auditedAssetsThisYearCount))
+                <div style="font-size: 11px; color: #0284c7; font-weight: 600; margin-top: 2px;">
+                    <i class="bi bi-patch-check-fill text-info"></i> ตรวจปี {{ $currentFiscalYear }}: {{ $auditedAssetsThisYearCount }} เครื่อง
+                </div>
+            @endif
         </div>
-    </div>
+    </a>
 
     <a href="{{ route('data-requests.index') }}" class="stat-card" style="text-decoration: none; color: inherit;">
         <div class="stat-icon" style="background: #e0f2fe; color: #0284c7;">

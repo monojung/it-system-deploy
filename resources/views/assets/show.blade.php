@@ -80,12 +80,58 @@
                 </div>
 
                 <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
-                    <div style="font-size: 12px; color: var(--text-muted);">ปีงบประมาณ</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">ปีงบประมาณจัดซื้อ</div>
                     <div style="font-weight: 600; font-size: 14px; margin-top: 2px;">
                         {{ $asset->budget_year ?? '-' }}
                     </div>
                 </div>
+
+                <div style="background: {{ $asset->last_audited_fiscal_year ? '#f0fdf4' : '#fffbeb' }}; padding: 12px 16px; border-radius: 8px; border: 1px solid {{ $asset->last_audited_fiscal_year ? '#bbf7d0' : '#fde68a' }};">
+                    <div style="font-size: 12px; color: {{ $asset->last_audited_fiscal_year ? '#166534' : '#92400e' }}; font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+                        <span>ตรวจนับสเปครายปี</span>
+                        @if($asset->last_audited_fiscal_year)
+                            <span class="badge badge-success" style="font-size: 10px; padding: 2px 6px;">ตรวจแล้ว</span>
+                        @else
+                            <span class="badge badge-warning" style="font-size: 10px; padding: 2px 6px;">ยังไม่ตรวจ</span>
+                        @endif
+                    </div>
+                    <div style="font-weight: 700; font-size: 13.5px; margin-top: 2px; color: {{ $asset->last_audited_fiscal_year ? '#15803d' : '#b45309' }};">
+                        @if($asset->last_audited_fiscal_year)
+                            ปีงบฯ {{ $asset->last_audited_fiscal_year }}
+                            <small style="font-size: 11px; font-weight: 400; display: block; color: #4b5563;">({{ $asset->last_audited_at?->format('d/m/Y') }})</small>
+                        @else
+                            รอตรวจนับปี {{ $currentFiscalYear ?? (now()->month >= 10 ? now()->year + 544 : now()->year + 543) }}
+                        @endif
+                    </div>
+                </div>
             </div>
+
+            @if(isset($pendingAuditForAsset) && $pendingAuditForAsset)
+            <!-- Pending Hardware Audit Banner -->
+            <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #f59e0b; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.12);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #fde68a; color: #b45309; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+                        <i class="bi bi-bell-fill"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; font-size: 14.5px; color: #92400e; display: flex; align-items: center; gap: 8px;">
+                            <span>มีผลการสแกนสเปคใหม่รอแอดมินอนุมัติ</span>
+                            <span class="badge" style="background: #f59e0b; color: #fff; font-size: 11px;">ปีงบ {{ $pendingAuditForAsset->fiscal_year }}</span>
+                        </div>
+                        <div style="font-size: 12.5px; color: #78350f; margin-top: 2px;">
+                            ส่งจากเครื่องโฮสต์: <strong>{{ $pendingAuditForAsset->hostname }}</strong> เมื่อ {{ $pendingAuditForAsset->created_at->format('d/m/Y H:i') }} น.
+                            @if($pendingAuditForAsset->hasDiff())
+                                &bull; <span style="color: #b45309; font-weight: 700;">ตรวจพบการเปลี่ยนแปลงของสเปค (Diff Detected)</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ route('hardware-audits.index', ['fiscal_year' => $pendingAuditForAsset->fiscal_year, 'search' => $asset->serial_number ?: $asset->asset_code]) }}" class="btn btn-warning btn-sm" style="font-weight: 600; padding: 7px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-check2-circle"></i>
+                    <span>ตรวจสอบและกดอนุมัติสเปค</span>
+                </a>
+            </div>
+            @endif
 
             <!-- Hardware Specs Detailed Grid -->
             <div style="margin-bottom: 24px;">
@@ -378,6 +424,109 @@
                     <tr>
                         <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">
                             ไม่มีประวัติการส่งซ่อมสำหรับครุภัณฑ์นี้ (อุปกรณ์ทำงานปกติ)
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Asset Hardware Audit History Table -->
+<div class="card" style="margin-top: 24px;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div class="card-title">
+            <i class="bi bi-cpu-fill text-info"></i>
+            <span>ประวัติการตรวจนับและสแกนสเปคจากเครื่องลูกข่าย ({{ $asset->hardwareAudits->count() }} ครั้ง)</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{{ route('hardware-audits.index', ['search' => $asset->serial_number ?: $asset->asset_code]) }}" class="btn btn-secondary btn-sm">
+                <i class="bi bi-speedometer2"></i> แดชบอร์ดตรวจนับสเปค
+            </a>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="table" style="margin: 0;">
+                <thead>
+                    <tr>
+                        <th>วันที่ส่งข้อมูล</th>
+                        <th>ปีงบประมาณ</th>
+                        <th>ชื่อโฮสต์ / S/N จาก BIOS</th>
+                        <th>สเปคที่ส่งมา (CPU / RAM / Disk / OS)</th>
+                        <th>การเปลี่ยนแปลง (Diff)</th>
+                        <th>สถานะ</th>
+                        <th>ผู้ตรวจอนุมัติ / หมายเหตุ</th>
+                        <th style="text-align: center;">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($asset->hardwareAudits as $audit)
+                    <tr>
+                        <td style="font-size: 12.5px; color: var(--text-muted); white-space: nowrap;">
+                            {{ $audit->created_at->format('d/m/Y H:i') }} น.
+                        </td>
+                        <td>
+                            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 600;">
+                                ปีงบ {{ $audit->fiscal_year }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; font-family: monospace;">{{ $audit->hostname }}</div>
+                            <div style="font-size: 11.5px; color: var(--text-muted); font-family: monospace;">S/N: {{ $audit->serial_number ?: '-' }}</div>
+                        </td>
+                        <td style="font-size: 12px; max-width: 260px;">
+                            <div style="font-weight: 600; color: #0f172a;">{{ $audit->cpu_model ?: '-' }}</div>
+                            <div style="color: #475569;">
+                                RAM: {{ $audit->ram_capacity ? $audit->ram_capacity . ' GB ' . $audit->ram_type : '-' }} |
+                                Disk: {{ $audit->storage_capacity ? $audit->storage_capacity . ' ' . $audit->storage_type : '-' }}
+                            </div>
+                            <div style="color: #0d9488; font-size: 11.5px;">{{ $audit->os_name ?: '-' }}</div>
+                        </td>
+                        <td>
+                            @if($audit->hasDiff())
+                                <span class="badge badge-warning" style="font-size: 11px;">
+                                    <i class="bi bi-arrow-left-right me-1"></i> มีการเปลี่ยนสเปค
+                                </span>
+                            @else
+                                <span class="badge badge-secondary" style="font-size: 11px; background: #f1f5f9; color: #64748b;">
+                                    ตรงกับฐานข้อมูล
+                                </span>
+                            @endif
+                        </td>
+                        <td>
+                            <span class="badge {{ $audit->status_badge }}" style="font-size: 11.5px;">
+                                {{ $audit->status_label }}
+                            </span>
+                        </td>
+                        <td style="font-size: 12px;">
+                            @if($audit->reviewed_by)
+                                <div style="color: #0f766e; font-weight: 500;">
+                                    <i class="bi bi-check-circle me-1"></i> {{ $audit->reviewer?->name ?? 'แอดมิน' }}
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-muted);">
+                                    {{ $audit->reviewed_at?->format('d/m/Y H:i') }}
+                                </div>
+                            @elseif($audit->status === 'pending')
+                                <span style="color: #b45309; font-weight: 600;">รอแอดมินตรวจสอบ</span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                            @if($audit->review_notes)
+                                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">{{ $audit->review_notes }}</div>
+                            @endif
+                        </td>
+                        <td style="text-align: center; white-space: nowrap;">
+                            <a href="{{ route('hardware-audits.index', ['fiscal_year' => $audit->fiscal_year, 'search' => $audit->serial_number ?: $audit->hostname]) }}" class="btn btn-secondary btn-sm" title="เปิดดูในแดชบอร์ด">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                            ยังไม่มีประวัติการส่งข้อมูลสแกนสเปคจากเครื่องคอมพิวเตอร์นี้
                         </td>
                     </tr>
                     @endforelse

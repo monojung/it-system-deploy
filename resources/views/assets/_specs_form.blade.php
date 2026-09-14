@@ -440,6 +440,20 @@
                         </div>
                     </details>
                 </div>
+
+                {{-- Agent Recommendation Banner --}}
+                <div style="background: #e0f2fe; border: 1px solid #7dd3fc; border-radius: 9px; padding: 12px 14px; font-size: 12.5px; color: #0369a1; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-robot" style="font-size: 18px; color: #0284c7;"></i>
+                        <div>
+                            <strong>ระบบตรวจนับสเปคอัตโนมัติประจำปี (THC IT Audit Agent):</strong>
+                            <div>สามารถติดตั้ง Agent ประจำเครื่องลูกข่าย เพื่อให้อ่านค่าและส่งข้อมูลสเปครายปีงบประมาณอัตโนมัติโดยแอดมินเป็นผู้ตรวจสอบและกดอนุมัติ</div>
+                        </div>
+                    </div>
+                    <a href="{{ route('hardware-audits.index') }}" target="_blank" class="btn btn-sm btn-primary" style="font-size: 12px; font-weight: 600; border-radius: 7px; padding: 5px 12px; white-space: nowrap;">
+                        <i class="bi bi-speedometer2 me-1"></i> เปิดระบบตรวจนับสเปค
+                    </a>
+                </div>
             </div>
 
         </div>
