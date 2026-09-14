@@ -398,10 +398,26 @@
             padding: 10px 16px;
         }
 
-        .btn-thaid:hover {
+        .btn-thaid:hover:not(:disabled):not(.disabled) {
             background: linear-gradient(135deg, #0f2b52 0%, #061e3d 100%);
             border-color: #38bdf8;
             box-shadow: 0 6px 18px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-sso:disabled,
+        .btn-sso.disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn-thaid:disabled,
+        .btn-thaid.disabled {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-color: #475569;
+            color: #94a3b8;
         }
 
         .thaid-logo-box {
@@ -711,16 +727,19 @@
                     </button>
                 @endif
 
-                <!-- ThaID SSO -->
-                <button type="button" class="btn-sso btn-thaid" onclick="openThaidModal()">
-                    <div class="thaid-logo-box">
+                <!-- ThaID SSO (Disabled) -->
+                <button type="button" class="btn-sso btn-thaid disabled" disabled aria-disabled="true" title="ระบบ ThaID ปิดปรับปรุงชั่วคราว">
+                    <div class="thaid-logo-box" style="opacity: 0.65; border-color: #64748b; filter: grayscale(35%);">
                         <img src="{{ asset('images/thaid-logo.jpg') }}" alt="ThaID Logo">
                     </div>
                     <div class="btn-text-block">
-                        <div class="btn-main-text">ลงชื่อเข้าใช้ด้วย ThaID</div>
-                        <div class="btn-sub-text">บัตรประชาชนดิจิทัล กรมการปกครอง (DOPA)</div>
+                        <div class="btn-main-text" style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
+                            <span>ลงชื่อเข้าใช้ด้วย ThaID</span>
+                            <span style="font-size: 10.5px; font-weight: 600; color: #fca5a5; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); padding: 1.5px 7px; border-radius: 9999px; white-space: nowrap;">ปิดปรับปรุงชั่วคราว</span>
+                        </div>
+                        <div class="btn-sub-text" style="color: #94a3b8;">บัตรประชาชนดิจิทัล กรมการปกครอง (DOPA)</div>
                     </div>
-                    <i class="bi bi-qr-code-scan" style="font-size: 20px; color: #38bdf8;"></i>
+                    <i class="bi bi-lock-fill" style="font-size: 18px; color: #64748b;" title="ปิดปรับปรุงชั่วคราว"></i>
                 </button>
             </div>
 
@@ -812,10 +831,9 @@
             }
         }
 
-        // ThaID Modal
+        // ThaID Modal (Disabled temporarily)
         function openThaidModal() {
-            document.getElementById('thaidModal').style.display = 'flex';
-            startTimer();
+            return false;
         }
 
         function closeThaidModal() {

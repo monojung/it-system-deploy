@@ -650,12 +650,8 @@ class AuthController extends Controller
      */
     public function redirectToThaID(Request $request)
     {
-        $clientId = setting('thaid_client_id');
-        $redirectUri = url('/auth/thaid/callback');
-
-        if (empty($clientId)) {
-            return redirect()->route('login')->with('info', 'ยังไม่ได้ระบุ ThaID Client ID ในการตั้งค่าระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อเปิดใช้งาน');
-        }
+        // ระบบเข้าสู่ระบบด้วย ThaID ปิดปรับปรุงชั่วคราว
+        return redirect()->route('login')->with('info', 'ระบบเข้าสู่ระบบด้วย ThaID ปิดปรับปรุงชั่วคราว');
 
         $state = Str::random(40);
         $request->session()->put('thaid_oauth_state', $state);

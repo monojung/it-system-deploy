@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.2.6'),
+    'version' => env('APP_VERSION', '2.2.7'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
-    'release_date' => '2026-09-11',
-    'build' => '20260911.4',
+    'release_date' => '2026-09-14',
+    'build' => '20260914.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,18 @@ return [
     |
     */
     'changelog' => [
+        '2.2.7' => [
+            'date' => '2026-09-14',
+            'badge' => 'Auth & ThaID Maintenance',
+            'badge_color' => '#f59e0b',
+            'title' => 'ปิดการใช้งานการเข้าสู่ระบบด้วย ThaID ชั่วคราวบนหน้า Login',
+            'highlights' => [
+                'ปิดการใช้งานปุ่ม ThaID SSO บนหน้า Login ชั่วคราว และแสดงป้ายสถานะปิดปรับปรุงชั่วคราว',
+                'ระงับการเปิด ThaID QR Code Modal ทางหน้าเว็บเพื่อป้องกันการกดใช้งานที่ยังไม่พร้อม',
+                'เพิ่มระบบ Redirect พร้อมข้อความแจ้งเตือนเมื่อมีคำขอเข้าถึงเส้นทาง /auth/thaid',
+                'ผ่านการทดสอบอัตโนมัติ 96/96 Tests สมบูรณ์แบบทุกโมดูล',
+            ],
+        ],
         '2.2.6' => [
             'date' => '2026-09-11',
             'badge' => 'Subdirectory Route Resolution & Flare Fix',
