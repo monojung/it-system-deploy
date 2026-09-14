@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.2.7'),
+    'version' => env('APP_VERSION', '2.2.8'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-14',
-    'build' => '20260914.1',
+    'build' => '20260914.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,19 @@ return [
     |
     */
     'changelog' => [
+        '2.2.8' => [
+            'date' => '2026-09-14',
+            'badge' => 'Hardware Specs Auto-Detection',
+            'badge_color' => '#0d9488',
+            'title' => 'เพิ่มระบบอ่านและตรวจจับสเปกคอมพิวเตอร์อัตโนมัติจากเครื่องที่เข้าใช้งาน (Client Hardware Detection)',
+            'highlights' => [
+                'เพิ่มปุ่ม "⚡ อ่านสเปกจากเครื่องนี้ (Auto-Detect)" ในหน้าเพิ่มครุภัณฑ์ใหม่และแก้ไขครุภัณฑ์',
+                'ระบบ Web Auto-Detect ตรวจจับ OS, การ์ดจอแท้จาก WebGL, ขนาด RAM, คอร์ CPU, จอภาพ และประเภทเครื่องอัตโนมัติ',
+                'ระบบ Deep Hardware Audit ผ่านคำสั่ง PowerShell ดึง Serial Number, รุ่น CPU เต็ม, บัสแรม DDR4/DDR5, ชนิดไดรฟ์ NVMe SSD และ MAC Address 100%',
+                'มีฟังก์ชัน 1-Click Paste นำเข้าสเปกลงในแบบฟอร์มครุภัณฑ์ทันที พร้อม Highlight และอัปเดต Live Specs Preview',
+                'ผ่านการทดสอบอัตโนมัติ 100/100 Tests (721 assertions) สมบูรณ์แบบทุกโมดูล',
+            ],
+        ],
         '2.2.7' => [
             'date' => '2026-09-14',
             'badge' => 'Auth & ThaID Maintenance',

@@ -403,7 +403,10 @@
                     </div>
                     <span>2. คุณลักษณะและสเปกฮาร์ดแวร์ (Hardware Specifications)</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="openClientHardwareModal()" style="font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; background: #ffffff;">
+                        <i class="bi bi-pc-display"></i> อ่านสเปกจากเครื่องนี้
+                    </button>
                     <span style="font-size: 11.5px; color: #0f766e; background: #e6fffa; border: 1px solid #99f6e4; padding: 2px 8px; border-radius: 6px;">
                         สำหรับ PC, โน้ตบุ๊ก, All-in-One, Server
                     </span>
