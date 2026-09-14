@@ -256,7 +256,7 @@ class ReportController extends Controller
                     ]);
                 }
             } elseif ($type === 'assets') {
-                fputcsv($handle, ['รหัสครุภัณฑ์', 'Serial Number', 'ชื่อรายการ', 'ประเภท', 'ยี่ห้อ/รุ่น', 'CPU', 'RAM (GB)', 'ชนิด RAM', 'Storage', 'ระบบ OS', 'สเปกสรุป', 'แผนก', 'สถานที่ตั้ง', 'ผู้ครอบครอง', 'สถานะ', 'ราคา (บาท)', 'ปีงบประมาณ']);
+                fputcsv($handle, ['รหัสครุภัณฑ์', 'Serial Number', 'ชื่อรายการ', 'ประเภท', 'ยี่ห้อ/รุ่น', 'CPU', 'RAM (GB)', 'ชนิด RAM', 'Storage', 'ระบบ OS', 'สเปคสรุป', 'แผนก', 'สถานที่ตั้ง', 'ผู้ครอบครอง', 'สถานะ', 'ราคา (บาท)', 'ปีงบประมาณ']);
                 $assetQuery = Asset::with(['deviceType', 'department']);
                 if ($user && $user->isUser()) {
                     $assetQuery->where('department_id', $user->department_id ?: 0);

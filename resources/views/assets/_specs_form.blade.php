@@ -2,13 +2,16 @@
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; flex-wrap: wrap; gap: 8px;">
         <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: #0f172a;">
             <i class="bi bi-cpu text-primary" style="font-size: 20px;"></i>
-            <span>สเปกฮาร์ดแวร์คอมพิวเตอร์ (Hardware Specifications)</span>
+            <span>สเปคฮาร์ดแวร์คอมพิวเตอร์ (Hardware Specifications)</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="btn-detect-specs" onclick="openClientHardwareModal()" id="btnDetectHardwareSpecs"
-                    title="อ่านค่าสเปกฮาร์ดแวร์จากเครื่องคอมพิวเตอร์ที่เข้าใช้งานนี้เพื่อกรอกลงฟอร์มอัตโนมัติ">
-                <i class="bi bi-pc-display"></i>
-                <span>⚡ อ่านสเปกจากเครื่องนี้ (Auto-Detect)</span>
+            <button type="button" class="btn-detect-specs" onclick="autoDetectAndApplySpecsInstant()" id="btnDetectHardwareSpecs"
+                    title="อ่านค่าสเปคฮาร์ดแวร์จากเครื่องที่เข้าใช้งานนี้ และนำลงฟอร์มทันทีในคลิกเดียว ไม่ต้องใช้ PowerShell">
+                <i class="bi bi-lightning-charge-fill text-warning"></i>
+                <span>⚡ อ่านสเปคจากเครื่องนี้ (คลิกเดียวจบ)</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openClientHardwareModal()" style="font-size: 11.5px; border-radius: 6px; padding: 4px 8px;" title="เปิดหน้าต่างดูรายละเอียดสเปคเชิงลึก">
+                <i class="bi bi-sliders"></i> ดูรายละเอียด
             </button>
             <span style="font-size: 12px; color: #64748b; background: #e2e8f0; padding: 2px 8px; border-radius: 6px;">
                 สำหรับ PC, โน้ตบุ๊ก, All-in-One และ Server
@@ -20,9 +23,9 @@
     <div style="background: linear-gradient(135deg, #e0f2fe 0%, #ede9fe 100%); border: 1px solid #7dd3fc; border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #0369a1;">
         <i class="bi bi-eye-fill text-primary" style="font-size: 16px;"></i>
         <div>
-            <strong>ตัวอย่างสรุปสเปก:</strong>
+            <strong>ตัวอย่างสรุปสเปค:</strong>
             <span id="liveSpecsPreviewText" style="font-weight: 600; color: #0f172a; margin-left: 4px;">
-                {{ isset($asset) && $asset->formatted_specs ? $asset->formatted_specs : 'ยังไม่ได้ระบุสเปก' }}
+                {{ isset($asset) && $asset->formatted_specs ? $asset->formatted_specs : 'ยังไม่ได้ระบุสเปค' }}
             </span>
         </div>
     </div>
@@ -225,8 +228,8 @@
     {{-- General / Raw specs textarea for additional details --}}
     <div class="form-group mb-0">
         <label class="form-label" for="specs">
-            รายละเอียดเพิ่มเติม / สเปกสรุป (Specs Description)
-            <small class="text-muted" style="font-weight: 400;">(หากปล่อยว่าง ระบบจะรวมข้อมูลสเปกข้างต้นให้อัตโนมัติ)</small>
+            รายละเอียดเพิ่มเติม / สเปคสรุป (Specs Description)
+            <small class="text-muted" style="font-weight: 400;">(หากปล่อยว่าง ระบบจะรวมข้อมูลสเปคข้างต้นให้อัตโนมัติ)</small>
         </label>
         <textarea id="specs" name="specs" class="form-control" rows="2" placeholder="รายละเอียดอื่นๆ เช่น พอร์ตเชื่อมต่อ, Card Reader, จอสัมผัส...">{{ old('specs', $asset->specs ?? '') }}</textarea>
     </div>
@@ -243,7 +246,7 @@
                     <i class="bi bi-pc-display-horizontal"></i>
                 </div>
                 <div>
-                    <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #ffffff;">อ่านค่าสเปกฮาร์ดแวร์จากเครื่องที่เข้าใช้งาน</h4>
+                    <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #ffffff;">อ่านค่าสเปคฮาร์ดแวร์จากเครื่องที่เข้าใช้งาน</h4>
                     <div style="font-size: 12px; opacity: 0.9; margin-top: 2px;">ตรวจจับข้อมูลคอมพิวเตอร์ปัจจุบันเพื่อนำมาใส่ในแบบฟอร์มครุภัณฑ์อัตโนมัติ</div>
                 </div>
             </div>
@@ -341,7 +344,7 @@
                 {{-- Apply Action --}}
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                     <div style="font-size: 12.5px; color: #475569;">
-                        คลิกปุ่มเพื่อบันทึกข้อมูลที่ตรวจพบลงในช่องสเปกฮาร์ดแวร์ทันที
+                        คลิกปุ่มเพื่อบันทึกข้อมูลที่ตรวจพบลงในช่องสเปคฮาร์ดแวร์ทันที
                     </div>
                     <button type="button" class="btn btn-primary" onclick="applyWebDetectedSpecs()" style="font-weight: 600; padding: 7px 18px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none;">
                         <i class="bi bi-check2-circle" style="font-size: 16px;"></i> นำค่าที่ตรวจพบใส่ในแบบฟอร์ม
@@ -359,7 +362,7 @@
                 {{-- Step 1: Run Command --}}
                 <div style="margin-bottom: 16px;">
                     <label style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px; display: block;">
-                        ขั้นตอนที่ 1: คัดลอกคำสั่งนี้ แล้วกดวางใน PowerShell บนเครื่องนี้
+                        ขั้นตอนที่ 1: คัดลอกคำสั่งนี้ แล้วกดวางใน PowerShell บนเครื่องนี้ (ทางเลือกกรณีต้องการ S/N เมนบอร์ด)
                     </label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="cmdPowerShellScan" class="form-control" readonly
@@ -380,7 +383,7 @@
                 {{-- Step 2: Paste / Import --}}
                 <div style="margin-bottom: 16px;">
                     <label style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px; display: block;">
-                        ขั้นตอนที่ 2: เมื่อคำสั่งรันเสร็จ (ระบบจะคัดลอกสเปกลงคลิปบอร์ดให้อัตโนมัติ)
+                        ขั้นตอนที่ 2: เมื่อคำสั่งรันเสร็จ (ระบบจะคัดลอกสเปคลงคลิปบอร์ดให้อัตโนมัติ)
                     </label>
                     <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
                         <button type="button" class="btn btn-success" onclick="pasteHardwareSpecsFromClipboard()" style="font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px;">
@@ -388,13 +391,13 @@
                         </button>
                         <span style="font-size: 12px; color: #64748b; align-self: center;">หรือกด Ctrl+V ในช่องด้านล่าง:</span>
                     </div>
-                    <textarea id="hwPasteJsonArea" class="form-control" rows="2" placeholder="กด Ctrl+V เพื่อวางข้อมูลสเปก JSON ที่นี่..." style="font-family: Consolas, monospace; font-size: 12px; resize: vertical;"></textarea>
+                    <textarea id="hwPasteJsonArea" class="form-control" rows="2" placeholder="กด Ctrl+V เพื่อวางข้อมูลสเปค JSON ที่นี่..." style="font-family: Consolas, monospace; font-size: 12px; resize: vertical;"></textarea>
                 </div>
 
                 {{-- Action Button --}}
                 <div style="text-align: right;">
                     <button type="button" class="btn btn-primary" onclick="applyPastedSpecs()" style="font-weight: 600; padding: 7px 20px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none;">
-                        <i class="bi bi-magic"></i> นำเข้าข้อมูลสเปกและข้อมูลเครื่องทั้งหมด
+                        <i class="bi bi-magic"></i> นำเข้าข้อมูลสเปคและข้อมูลเครื่องทั้งหมด
                     </button>
                 </div>
             </div>
@@ -506,7 +509,7 @@
 
         const previewElem = document.getElementById('liveSpecsPreviewText');
         if (previewElem) {
-            previewElem.textContent = parts.length > 0 ? parts.join(' • ') : 'ยังไม่ได้ระบุสเปก';
+            previewElem.textContent = parts.length > 0 ? parts.join(' • ') : 'ยังไม่ได้ระบุสเปค';
         }
     }
 
@@ -557,7 +560,30 @@
         }
     }
 
-    // Detection Engine
+    // ⚡ ONE-CLICK INSTANT WEB SCAN (ไม่ต้องใช้ PowerShell คลิกเดียวจบ)
+    function autoDetectAndApplySpecsInstant() {
+        const btn = document.getElementById('btnDetectHardwareSpecs');
+        let origBtnHtml = '';
+        if (btn) {
+            origBtnHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" style="width: 13px; height: 13px; border-width: 2px;"></span> กำลังอ่านสเปค...';
+            btn.disabled = true;
+        }
+
+        // Run deep client profiling
+        detectClientHardwareInstant(true);
+
+        // Allow async client hints & storage queries to resolve, then fill form immediately
+        setTimeout(() => {
+            applyWebDetectedSpecs();
+            if (btn) {
+                btn.innerHTML = origBtnHtml;
+                btn.disabled = false;
+            }
+        }, 250);
+    }
+
+    // Deep Detection Engine
     window._detectedClientHardware = null;
 
     function detectClientHardwareInstant(forceRefresh) {
@@ -566,7 +592,7 @@
             return;
         }
 
-        // 1. GPU Detection via WebGL
+        // 1. GPU Detection via WebGL unmasked hardware renderer
         let gpu = 'Onboard / Integrated';
         try {
             const canvas = document.createElement('canvas');
@@ -585,67 +611,110 @@
             }
         } catch (e) {}
 
-        // 2. OS Detection
+        // 2. OS Detection via Client Hints & User Agent
         const ua = navigator.userAgent || '';
-        let osName = 'Windows 11 Pro';
+        let osName = 'Windows 11 Pro 64-bit';
         if (/Windows NT 10\.0/i.test(ua)) {
-            osName = 'Windows 11 Pro'; // Default modern hospital PC
+            osName = 'Windows 11 Pro 64-bit'; // Default modern hospital workstation
         } else if (/Windows NT 6\.1/i.test(ua)) {
-            osName = 'Windows 7 Pro';
+            osName = 'Windows 7 Pro 64-bit';
         } else if (/Macintosh|Mac OS/i.test(ua)) {
             osName = 'macOS';
         } else if (/Linux|Ubuntu/i.test(ua)) {
             osName = 'Ubuntu Linux';
         }
 
-        // 3. CPU Cores & Suggestion
+        // 3. Deep CPU Cores, Clock Speed & Model Heuristic
         const cores = navigator.hardwareConcurrency || 8;
         let cpuSuggest = 'Intel Core i5-12500';
-        let cpuSpeed = '3.00 GHz';
+        let cpuSpeed = '3.00 GHz Turbo 4.60 GHz';
 
         if (/770/i.test(gpu)) {
-            if (cores >= 16) {
+            // Intel UHD 770 = 12th/13th/14th Gen Desktop Core i5/i7
+            if (cores >= 20) {
+                cpuSuggest = 'Intel Core i7-14700';
+                cpuSpeed = '3.40 GHz Turbo 5.40 GHz';
+            } else if (cores >= 16) {
                 cpuSuggest = 'Intel Core i7-13700';
-                cpuSpeed = '3.40 GHz';
-            } else {
+                cpuSpeed = '2.10 GHz Turbo 5.10 GHz';
+            } else if (cores >= 12) {
                 cpuSuggest = 'Intel Core i5-12500';
-                cpuSpeed = '3.00 GHz';
-            }
-        } else if (/730/i.test(gpu)) {
-            if (cores <= 8) {
-                cpuSuggest = 'Intel Core i3-12100';
-                cpuSpeed = '3.30 GHz';
+                cpuSpeed = '3.00 GHz Turbo 4.60 GHz';
             } else {
                 cpuSuggest = 'Intel Core i5-12400';
-                cpuSpeed = '2.50 GHz';
+                cpuSpeed = '2.50 GHz Turbo 4.40 GHz';
+            }
+        } else if (/730/i.test(gpu)) {
+            // Intel UHD 730 = 12th/13th/14th Gen Core i3/i5
+            if (cores <= 8) {
+                cpuSuggest = 'Intel Core i3-12100';
+                cpuSpeed = '3.30 GHz Turbo 4.30 GHz';
+            } else {
+                cpuSuggest = 'Intel Core i5-12400';
+                cpuSpeed = '2.50 GHz Turbo 4.40 GHz';
             }
         } else if (/630/i.test(gpu)) {
-            if (cores <= 8) {
-                cpuSuggest = 'Intel Core i3-10100';
-                cpuSpeed = '3.60 GHz';
-            } else {
+            // Intel UHD 630 = 8th/9th/10th Gen
+            if (cores >= 16) {
+                cpuSuggest = 'Intel Core i9-10900';
+                cpuSpeed = '2.80 GHz Turbo 5.20 GHz';
+            } else if (cores >= 8) {
+                cpuSuggest = 'Intel Core i7-10700';
+                cpuSpeed = '2.90 GHz Turbo 4.80 GHz';
+            } else if (cores >= 6) {
                 cpuSuggest = 'Intel Core i5-10400';
-                cpuSpeed = '2.90 GHz';
+                cpuSpeed = '2.90 GHz Turbo 4.30 GHz';
+            } else {
+                cpuSuggest = 'Intel Core i3-10100';
+                cpuSpeed = '3.60 GHz Turbo 4.30 GHz';
             }
         } else if (/Iris Xe/i.test(gpu)) {
-            cpuSuggest = 'Intel Core i5-1335U';
-            cpuSpeed = '2.40 GHz';
-        } else if (/GeForce|GTX|RTX/i.test(gpu)) {
-            if (cores >= 16) {
-                cpuSuggest = 'Intel Core i7-13700';
-                cpuSpeed = '3.40 GHz';
-            } else if (cores >= 8) {
-                cpuSuggest = 'Intel Core i5-12500';
-                cpuSpeed = '3.00 GHz';
+            // Mobile Iris Xe
+            if (cores >= 12) {
+                cpuSuggest = 'Intel Core i7-1355U';
+                cpuSpeed = '1.70 GHz Turbo 5.00 GHz';
             } else {
-                cpuSuggest = 'Intel Core i5 Processor';
-                cpuSpeed = '3.00 GHz';
+                cpuSuggest = 'Intel Core i5-1335U';
+                cpuSpeed = '1.30 GHz Turbo 4.60 GHz';
+            }
+        } else if (/HD Graphics 630|HD Graphics 530/i.test(gpu)) {
+            if (cores >= 8) {
+                cpuSuggest = 'Intel Core i7-7700';
+                cpuSpeed = '3.60 GHz Turbo 4.20 GHz';
+            } else {
+                cpuSuggest = 'Intel Core i5-7500';
+                cpuSpeed = '3.40 GHz Turbo 3.80 GHz';
+            }
+        } else if (/GeForce|GTX|RTX/i.test(gpu)) {
+            if (cores >= 20) {
+                cpuSuggest = 'Intel Core i7-14700';
+                cpuSpeed = '3.40 GHz Turbo 5.40 GHz';
+            } else if (cores >= 16) {
+                cpuSuggest = 'Intel Core i7-13700';
+                cpuSpeed = '2.10 GHz Turbo 5.10 GHz';
+            } else if (cores >= 12) {
+                cpuSuggest = 'Intel Core i5-13500';
+                cpuSpeed = '2.50 GHz Turbo 4.80 GHz';
+            } else if (cores >= 8) {
+                cpuSuggest = 'Intel Core i5-12400';
+                cpuSpeed = '2.50 GHz Turbo 4.40 GHz';
+            } else {
+                cpuSuggest = 'Intel Core i3-12100';
+                cpuSpeed = '3.30 GHz Turbo 4.30 GHz';
             }
         } else if (/Radeon|AMD/i.test(gpu)) {
-            cpuSuggest = 'AMD Ryzen 5 5600G';
-            cpuSpeed = '3.90 GHz';
+            if (cores >= 16) {
+                cpuSuggest = 'AMD Ryzen 7 5700G';
+                cpuSpeed = '3.80 GHz Turbo 4.60 GHz';
+            } else if (cores >= 12) {
+                cpuSuggest = 'AMD Ryzen 5 5600G';
+                cpuSpeed = '3.90 GHz Turbo 4.40 GHz';
+            } else {
+                cpuSuggest = 'AMD Ryzen 3 4300G';
+                cpuSpeed = '3.80 GHz Turbo 4.00 GHz';
+            }
         } else if (/Apple/i.test(gpu)) {
-            cpuSuggest = 'Apple M2';
+            cpuSuggest = cores >= 12 ? 'Apple M3 Pro' : 'Apple M2';
             cpuSpeed = '3.49 GHz';
         } else {
             cpuSuggest = cores >= 12 ? 'Intel Core i5-12500' : (cores >= 8 ? 'Intel Core i3-12100' : 'Intel Core Processor');
@@ -670,7 +739,8 @@
         const w = window.screen.width;
         const h = window.screen.height;
         let monitorSize = '23.8 นิ้ว IPS FHD';
-        if (w >= 2560) monitorSize = '27 นิ้ว 2K IPS (2560x1440)';
+        if (w >= 3840) monitorSize = '32 นิ้ว 4K IPS (3840x2160)';
+        else if (w >= 2560) monitorSize = '27 นิ้ว 2K IPS (2560x1440)';
         else if (w >= 1920) monitorSize = '23.8 นิ้ว IPS FHD (1920x1080)';
         else if (w >= 1600) monitorSize = '21.5 นิ้ว FHD (1920x1080)';
         else if (w <= 1440) monitorSize = '14 นิ้ว FHD (1920x1080)';
@@ -699,6 +769,22 @@
             ip_address: '{{ request()->ip() }}'
         };
 
+        // Storage estimation API (quota inference)
+        if (navigator.storage && navigator.storage.estimate) {
+            navigator.storage.estimate().then(est => {
+                if (est && est.quota) {
+                    const quotaGb = est.quota / (1024 * 1024 * 1024);
+                    if (quotaGb > 200) {
+                        window._detectedClientHardware.storage_capacity = '1 TB';
+                    } else if (quotaGb > 80) {
+                        window._detectedClientHardware.storage_capacity = '512 GB';
+                    } else {
+                        window._detectedClientHardware.storage_capacity = '256 GB';
+                    }
+                }
+            }).catch(() => {});
+        }
+
         // Battery check for Laptop
         if (navigator.getBattery) {
             navigator.getBattery().then(b => {
@@ -717,11 +803,27 @@
                 .then(hints => {
                     if (hints.platform === 'Windows') {
                         const pv = parseFloat(hints.platformVersion || '0');
-                        window._detectedClientHardware.os_name = (pv >= 13) ? 'Windows 11 Pro' : 'Windows 10 Pro';
+                        window._detectedClientHardware.os_name = (pv >= 13) ? 'Windows 11 Pro 64-bit' : 'Windows 10 Pro 64-bit';
                         updateDetectedUiCards();
                     }
                 }).catch(() => {});
         }
+
+        // Local LAN IP detection via WebRTC candidate
+        try {
+            const pc = new RTCPeerConnection({iceServers: []});
+            pc.createDataChannel('');
+            pc.createOffer().then(o => pc.setLocalDescription(o)).catch(() => {});
+            pc.onicecandidate = (e) => {
+                if (!e || !e.candidate) return;
+                const m = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(e.candidate.candidate);
+                if (m && m[1] && !m[1].startsWith('127.')) {
+                    window._detectedClientHardware.ip_address = m[1];
+                    const ipEl = document.getElementById('webDetIp');
+                    if (ipEl) ipEl.textContent = 'IP: ' + m[1];
+                }
+            };
+        } catch (e) {}
 
         updateDetectedUiCards();
     }
@@ -835,7 +937,7 @@
 
         updateLiveSpecsPreview();
         closeClientHardwareModal();
-        showHardwareToast('นำข้อมูลสเปกคอมพิวเตอร์ใส่ในแบบฟอร์มเรียบร้อยแล้ว!');
+        showHardwareToast('⚡ อ่านและใส่สเปคฮาร์ดแวร์จากเครื่องนี้เรียบร้อยแล้ว! (คลิกเดียวจบ)');
     }
 
     // PowerShell Deep Audit helpers
@@ -881,7 +983,7 @@
     function applyPastedSpecs() {
         const area = document.getElementById('hwPasteJsonArea');
         if (!area || !area.value.trim()) {
-            alert('กรุณาวางข้อมูล JSON สเปกที่ได้จากการรันคำสั่งสแกนก่อน');
+            alert('กรุณาวางข้อมูล JSON สเปคที่ได้จากการรันคำสั่งสแกนก่อน');
             return;
         }
         applyDeepAuditJson(area.value.trim());
@@ -938,7 +1040,7 @@
 
         updateLiveSpecsPreview();
         closeClientHardwareModal();
-        showHardwareToast('นำเข้าสเปกฮาร์ดแวร์เชิงลึก (พร้อม Serial Number และรุ่น) สำเร็จแล้ว!');
+        showHardwareToast('นำเข้าสเปคฮาร์ดแวร์เชิงลึก (พร้อม Serial Number และรุ่น) สำเร็จแล้ว!');
     }
 
     document.addEventListener('DOMContentLoaded', function() {

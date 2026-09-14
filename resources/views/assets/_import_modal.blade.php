@@ -14,7 +14,7 @@
                         <span style="background: rgba(255, 255, 255, 0.25); color: #ffffff; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600;">Admin Only</span>
                     </div>
                     <p style="font-size: 12.5px; margin: 3px 0 0 0; color: rgba(255,255,255,0.92);">
-                        นำเข้าครุภัณฑ์เป็นชุด พร้อมรองรับสเปกฮาร์ดแวร์ CPU, RAM, Storage, OS และข้อมูลจัดซื้อ
+                        นำเข้าครุภัณฑ์เป็นชุด พร้อมรองรับสเปคฮาร์ดแวร์ CPU, RAM, Storage, OS และข้อมูลจัดซื้อ
                     </p>
                 </div>
             </div>
@@ -132,7 +132,7 @@
                             <li><code>name</code> หรือ <code>ชื่อรายการครุภัณฑ์</code> <span class="text-danger">*จำเป็น</span></li>
                             <li><code>device_type</code> หรือ <code>ประเภทอุปกรณ์</code> (เช่น คอมพิวเตอร์ตั้งโต๊ะ, โน้ตบุ๊ก, เครื่องพิมพ์)</li>
                         </ul>
-                        <p style="margin-bottom: 8px;"><strong>คอลัมน์สเปกฮาร์ดแวร์คอมพิวเตอร์:</strong></p>
+                        <p style="margin-bottom: 8px;"><strong>คอลัมน์สเปคฮาร์ดแวร์คอมพิวเตอร์:</strong></p>
                         <ul style="padding-left: 18px; margin-bottom: 10px;">
                             <li><code>cpu_model</code> หรือ <code>CPU</code> (เช่น Intel Core i5-12500, Ryzen 7)</li>
                             <li><code>ram_capacity</code> หรือ <code>RAM (GB)</code> (ตัวเลข เช่น 8, 16, 32)</li>

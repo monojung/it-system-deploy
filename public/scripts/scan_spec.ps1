@@ -158,5 +158,5 @@ Write-Host "  Network:        IP: $ipAddress | MAC: $macAddress" -ForegroundColo
 Write-Host '-----------------------------------------------------------' -ForegroundColor Green
 Write-Host ''
 Write-Host '  [SUCCESS] Hardware specifications copied to Clipboard!' -ForegroundColor Green
-Write-Host '  => Switch back to web browser and click "Paste Scan" (วางข้อมูลสเปก)' -ForegroundColor Yellow
+Write-Host '  => Switch back to web browser and click "Paste Scan" (วางข้อมูลสเปค)' -ForegroundColor Yellow
 Write-Host ''

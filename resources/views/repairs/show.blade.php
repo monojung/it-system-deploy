@@ -107,7 +107,7 @@
                         <div style="font-size: 12px; color: #64748b;">{{ $repair->asset->brand }} {{ $repair->asset->model }}</div>
                     </div>
                     <div>
-                        <div style="font-size: 12px; color: var(--text-muted);">สเปกเครื่อง:</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">สเปคเครื่อง:</div>
                         <div style="font-size: 12.5px; color: #334155;">{{ $repair->asset->specs ?? 'ไม่ได้ระบุ' }}</div>
                     </div>
                     <div>

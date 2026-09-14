@@ -309,7 +309,7 @@
                     {{-- Grouped Select by Category --}}
                     <div style="margin-bottom: 10px;">
                         <select id="ict_standard_select" class="form-select" onchange="handleIctStandardSelect(this.value)" style="border-color: #5eead4; background-color: #ffffff; font-size: 13.5px; font-weight: 500;">
-                            <option value="">-- คลิกเพื่อเลือกปรับชื่อตามเกณฑ์ราคากลาง ICT (มีสเปกและราคากลางแนะนำ) --</option>
+                            <option value="">-- คลิกเพื่อเลือกปรับชื่อตามเกณฑ์ราคากลาง ICT (มีสเปคและราคากลางแนะนำ) --</option>
                             @if(isset($ictStandardsGrouped))
                                 @foreach($ictStandardsGrouped as $category => $items)
                                     <optgroup label="📁 {{ $category }}">
@@ -394,18 +394,18 @@
             </div>
         </div>
 
-        {{-- SECTION 2: คุณลักษณะเฉพาะทางฮาร์ดแวร์ & สเปกเครื่อง (Hardware Specifications) --}}
+        {{-- SECTION 2: คุณลักษณะเฉพาะทางฮาร์ดแวร์ & สเปคเครื่อง (Hardware Specifications) --}}
         <div class="form-section-card" id="hardwareSpecsSection">
             <div class="form-section-header" style="background: linear-gradient(to right, #f0fdfa, #f8fafc);">
                 <div class="form-section-title">
                     <div class="form-section-icon" style="background: #ccfbf1; color: #0d9488;">
                         <i class="bi bi-cpu-fill"></i>
                     </div>
-                    <span>2. คุณลักษณะและสเปกฮาร์ดแวร์ (Hardware Specifications)</span>
+                    <span>2. คุณลักษณะและสเปคฮาร์ดแวร์ (Hardware Specifications)</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="openClientHardwareModal()" style="font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; background: #ffffff;">
-                        <i class="bi bi-pc-display"></i> อ่านสเปกจากเครื่องนี้
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="autoDetectAndApplySpecsInstant()" style="font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; background: #ffffff;">
+                        <i class="bi bi-lightning-charge-fill text-warning"></i> ⚡ อ่านสเปคจากเครื่องนี้ (คลิกเดียวจบ)
                     </button>
                     <span style="font-size: 11.5px; color: #0f766e; background: #e6fffa; border: 1px solid #99f6e4; padding: 2px 8px; border-radius: 6px;">
                         สำหรับ PC, โน้ตบุ๊ก, All-in-One, Server

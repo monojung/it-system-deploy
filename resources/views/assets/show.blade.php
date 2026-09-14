@@ -92,7 +92,7 @@
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                     <div style="font-weight: 700; font-size: 14.5px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
                         <i class="bi bi-cpu-fill text-primary" style="font-size: 18px;"></i>
-                        <span>รายละเอียดคุณลักษณะและสเปกเครื่อง (Hardware Specs)</span>
+                        <span>รายละเอียดคุณลักษณะและสเปคเครื่อง (Hardware Specs)</span>
                     </div>
                     @if($asset->is_computer)
                         <span class="badge badge-info" style="font-size: 11.5px; padding: 4px 10px;">
@@ -219,12 +219,12 @@
                 {{-- Full Specs / Remarks Text --}}
                 @if($asset->specs)
                     <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-size: 13.5px; line-height: 1.5; color: #334155;">
-                        <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">รายละเอียดสเปกเพิ่มเติม:</div>
+                        <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">รายละเอียดสเปคเพิ่มเติม:</div>
                         <div style="white-space: pre-line;">{{ $asset->specs }}</div>
                     </div>
                 @elseif(!$asset->cpu_model && !$asset->ram_capacity)
                     <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-size: 14px; color: var(--text-muted);">
-                        ไม่มีข้อมูลสเปกฮาร์ดแวร์เพิ่มเติม
+                        ไม่มีข้อมูลสเปคฮาร์ดแวร์เพิ่มเติม
                     </div>
                 @endif
             </div>

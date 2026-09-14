@@ -821,7 +821,7 @@ const FIELD_DICT = {
     'os_license': 'ลิขสิทธิ์ระบบปฏิบัติการ',
     'gpu_model': 'การ์ดแสดงผล (GPU)',
     'monitor_size': 'ขนาดจอภาพ',
-    'specs': 'รายละเอียดคุณลักษณะ / สเปก',
+    'specs': 'รายละเอียดคุณลักษณะ / สเปค',
     'location_detail': 'สถานที่ตั้ง / จุดวาง',
     'custodian_name': 'ผู้ครอบครอง / ผู้ดูแล',
     'ip_address': 'หมายเลข IP Address',

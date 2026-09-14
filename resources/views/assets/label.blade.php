@@ -176,7 +176,7 @@
                 <div class="info-row"><strong>แผนก:</strong> {{ $asset->department?->name ?? 'ส่วนกลาง' }}</div>
                 <div class="info-row"><strong>ผู้ดูแล:</strong> {{ $asset->custodian_name ?? '-' }}</div>
                 @if($asset->formatted_specs && $asset->formatted_specs !== '-')
-                <div class="info-row" style="font-size: 11px; color: #0284c7;"><strong>สเปก:</strong> {{ Str::limit($asset->formatted_specs, 48) }}</div>
+                <div class="info-row" style="font-size: 11px; color: #0284c7;"><strong>สเปค:</strong> {{ Str::limit($asset->formatted_specs, 48) }}</div>
                 @endif
                 @if($asset->ip_address)
                 <div class="info-row"><strong>IP:</strong> {{ $asset->ip_address }}</div>

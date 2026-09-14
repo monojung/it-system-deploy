@@ -1007,7 +1007,7 @@
 <div class="hw-active-banner">
     <div class="d-flex align-items-center gap-2 flex-wrap">
         <i class="bi bi-funnel-fill text-primary" style="font-size: 15px;"></i>
-        <span style="font-weight: 600;">กำลังกรองตามสเปกเครื่อง:</span>
+        <span style="font-weight: 600;">กำลังกรองตามสเปคเครื่อง:</span>
         <div class="hw-active-tags">
             @if(request('cpu'))
                 <span class="hw-active-pill">
@@ -1043,7 +1043,7 @@
         <span style="font-weight: 700; color: #0f172a; margin-left: 6px;">(พบ {{ number_format($assets->total()) }} เครื่อง)</span>
     </div>
     <a href="{{ route('assets.index', request()->except(['cpu', 'ram_type', 'ram_capacity', 'os', 'storage_type', 'storage_capacity', 'page'])) }}" class="btn btn-sm btn-outline-danger" style="border-radius: 8px; font-size: 12px; padding: 4px 12px; background: #ffffff;">
-        <i class="bi bi-x-circle me-1"></i> ล้างตัวกรองสเปกทั้งหมด
+        <i class="bi bi-x-circle me-1"></i> ล้างตัวกรองสเปคทั้งหมด
     </a>
 </div>
 @endif
@@ -1053,17 +1053,17 @@
     <div class="hw-explorer-header">
         <div class="hw-explorer-title">
             <i class="bi bi-cpu-fill text-primary" style="font-size: 19px;"></i>
-            <span>สเปกฮาร์ดแวร์ & ตัวกรองอัจฉริยะ (Hardware Specs Explorer)</span>
+            <span>สเปคฮาร์ดแวร์ & ตัวกรองอัจฉริยะ (Hardware Specs Explorer)</span>
             <span class="badge bg-primary" style="font-size: 11.5px; padding: 3px 9px; border-radius: 999px;">
                 {{ $hardwareStats['total_computers'] }} เครื่อง
             </span>
         </div>
         <div class="d-flex align-items-center gap-2">
             <button type="button" class="btn btn-sm btn-light border" onclick="toggleAdvancedFilter()" style="font-size: 12.5px; border-radius: 8px;">
-                <i class="bi bi-sliders me-1 text-primary"></i> <span id="advFilterToggleText">{{ request()->hasAny(['cpu', 'ram_type', 'ram_capacity', 'os', 'storage_type', 'storage_capacity']) ? 'ซ่อนฟอร์มสเปกละเอียด' : 'ฟอร์มค้นหาสเปกละเอียด' }}</span>
+                <i class="bi bi-sliders me-1 text-primary"></i> <span id="advFilterToggleText">{{ request()->hasAny(['cpu', 'ram_type', 'ram_capacity', 'os', 'storage_type', 'storage_capacity']) ? 'ซ่อนฟอร์มสเปคละเอียด' : 'ฟอร์มค้นหาสเปคละเอียด' }}</span>
             </button>
             <button type="button" class="btn btn-sm btn-outline-primary" onclick="openFleetModal()" style="font-size: 12.5px; border-radius: 8px;">
-                <i class="bi bi-bar-chart-fill me-1"></i> สรุปภาพรวมสเปก รพ.
+                <i class="bi bi-bar-chart-fill me-1"></i> สรุปภาพรวมสเปค รพ.
             </button>
         </div>
     </div>
@@ -1209,7 +1209,7 @@
             <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
 
             <div style="font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                <i class="bi bi-sliders text-primary"></i> ค้นหาระบุสเปกฮาร์ดแวร์แบบละเอียด
+                <i class="bi bi-sliders text-primary"></i> ค้นหาระบุสเปคฮาร์ดแวร์แบบละเอียด
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: flex-end;">
@@ -1257,9 +1257,9 @@
                 </div>
                 <div style="display: flex; gap: 6px;">
                     <button type="submit" class="btn btn-sm btn-primary" style="height: 31px; font-weight: 600; flex: 1;">
-                        <i class="bi bi-funnel-fill"></i> กรองสเปก
+                        <i class="bi bi-funnel-fill"></i> กรองสเปค
                     </button>
-                    <a href="{{ route('assets.index', request()->except(['cpu', 'ram_type', 'ram_capacity', 'os', 'storage_type', 'storage_capacity', 'page'])) }}" class="btn btn-sm btn-outline-secondary" title="ล้างค่าสเปก">
+                    <a href="{{ route('assets.index', request()->except(['cpu', 'ram_type', 'ram_capacity', 'os', 'storage_type', 'storage_capacity', 'page'])) }}" class="btn btn-sm btn-outline-secondary" title="ล้างค่าสเปค">
                         <i class="bi bi-arrow-counterclockwise"></i>
                     </a>
                 </div>
@@ -1653,7 +1653,7 @@
                     <i class="bi bi-pie-chart-fill"></i>
                 </div>
                 <div>
-                    <h3 style="font-size: 17px; font-weight: 700; margin: 0; color: #ffffff;">สรุปภาพรวมสเปกคอมพิวเตอร์และระบบ (Fleet Overview)</h3>
+                    <h3 style="font-size: 17px; font-weight: 700; margin: 0; color: #ffffff;">สรุปภาพรวมสเปคคอมพิวเตอร์และระบบ (Fleet Overview)</h3>
                     <p style="font-size: 12.5px; margin: 3px 0 0 0; color: rgba(255,255,255,0.9);">
                         กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลทุ่งหัวช้าง — ทั้งหมด {{ $hardwareStats['total_computers'] }} เครื่อง
                     </p>
@@ -1758,10 +1758,10 @@
         const text = document.getElementById('advFilterToggleText');
         if (form.style.display === 'none' || form.style.display === '') {
             form.style.display = 'block';
-            if (text) text.textContent = 'ซ่อนฟอร์มสเปกละเอียด';
+            if (text) text.textContent = 'ซ่อนฟอร์มสเปคละเอียด';
         } else {
             form.style.display = 'none';
-            if (text) text.textContent = 'ฟอร์มค้นหาสเปกละเอียด';
+            if (text) text.textContent = 'ฟอร์มค้นหาสเปคละเอียด';
         }
     }
 
