@@ -997,17 +997,18 @@
             bottom: 0;
             left: 0;
             right: 0;
-            height: 62px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-top: 1px solid var(--border);
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+            height: 64px;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
             z-index: 990;
-            padding: 0 6px;
-            padding-bottom: env(safe-area-inset-bottom, 0);
+            padding: 4px 6px;
+            padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
             justify-content: space-around;
             align-items: center;
+            gap: 4px;
         }
         .mobile-bottom-nav-item {
             flex: 1;
@@ -1015,7 +1016,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 6px 2px;
+            padding: 4px 2px;
             color: #64748b;
             text-decoration: none;
             font-size: 10px;
@@ -1027,16 +1028,16 @@
             min-height: 48px;
         }
         .mobile-bottom-nav-item i {
-            font-size: 20px;
+            font-size: 19px;
             line-height: 1;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
         .mobile-bottom-nav-item.active {
             color: var(--primary);
             font-weight: 700;
         }
         .mobile-bottom-nav-item.active i {
-            transform: scale(1.1);
+            transform: scale(1.08);
         }
         .mobile-bottom-nav-item .mobile-nav-badge {
             position: absolute;
@@ -1055,24 +1056,55 @@
             padding: 0 4px;
             box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
         }
-        .mobile-nav-action-btn {
-            width: 46px;
+        /* Mobile Bottom Action Buttons (Clean modern flat pill design - no protruding circular button) */
+        .mobile-action-pill {
+            width: 100%;
             height: 46px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-            color: #ffffff !important;
+            border-radius: 12px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
-            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.4);
-            margin-top: -18px;
-            border: 3px solid #ffffff;
-            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-            -webkit-tap-highlight-color: transparent;
+            gap: 2px;
+            color: #ffffff !important;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            padding: 4px 6px;
+            text-decoration: none;
+            cursor: pointer;
         }
-        .mobile-nav-action-btn:active {
-            transform: scale(0.92);
+        .mobile-action-pill:active {
+            transform: scale(0.94);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .mobile-action-pill i {
+            font-size: 16px;
+            line-height: 1;
+            margin: 0;
+            color: #ffffff !important;
+        }
+        .mobile-action-pill span {
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.1;
+            color: #ffffff !important;
+            white-space: nowrap;
+        }
+        .pill-repair {
+            background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+            box-shadow: 0 3px 10px rgba(13, 148, 136, 0.38);
+        }
+        .pill-data {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            box-shadow: 0 3px 10px rgba(2, 132, 199, 0.38);
+        }
+        .mobile-action-pill.active-pill {
+            outline: 2px solid #ffffff;
+            outline-offset: -2px;
+        }
+        .mobile-nav-action-wrapper {
+            flex: 1.15;
+            padding: 2px;
         }
 
         @media (max-width: 992px) {
@@ -1416,33 +1448,32 @@
         </div>
     </div>
 
-    <!-- Mobile Bottom Application Navigation Bar -->
-    <nav class="mobile-bottom-nav no-print" aria-label="Mobile Navigation">
-        <a href="{{ route('dashboard') }}" class="mobile-bottom-nav-item {{ request()->routeIs('dashboard') || request()->is('/') ? 'active' : '' }}" title="แดชบอร์ด">
+    <!-- Mobile Bottom Application Navigation Bar (ออกแบบใหม่ ไร้ปุ่มกลม นูน พร้อมปุ่มแจ้งซ่อม & ขอข้อมูล) -->
+    <nav class="mobile-bottom-nav no-print" aria-label="แถบนำทางสำหรับมือถือ">
+        <a href="{{ route('dashboard') }}" class="mobile-bottom-nav-item {{ request()->routeIs('dashboard') || request()->is('/') ? 'active' : '' }}" title="แดชบอร์ดภาพรวม">
             <i class="bi bi-speedometer2"></i>
             <span>แดชบอร์ด</span>
         </a>
-        <a href="{{ route('repairs.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('repairs.index') || request()->routeIs('repairs.show') ? 'active' : '' }}" title="รายการแจ้งซ่อม">
-            <i class="bi bi-tools"></i>
+        <a href="{{ route('repairs.index') }}" class="mobile-bottom-nav-item {{ (request()->routeIs('repairs.index') || request()->routeIs('repairs.show')) && !request()->routeIs('repairs.create') ? 'active' : '' }}" title="ติดตามสถานะงานซ่อม">
+            <i class="bi bi-clock-history"></i>
             <span>งานซ่อม</span>
             @if(!empty($navPendingRepairs) && $navPendingRepairs > 0)
                 <span class="mobile-nav-badge">{{ $navPendingRepairs }}</span>
             @endif
         </a>
-        <a href="{{ route('repairs.create') }}" class="mobile-bottom-nav-item" title="แจ้งซ่อมด่วน">
-            <div class="mobile-nav-action-btn">
-                <i class="bi bi-plus-lg"></i>
+        <a href="{{ route('repairs.create') }}" class="mobile-bottom-nav-item mobile-nav-action-wrapper" title="สร้างรายการแจ้งซ่อม / แจ้งปัญหาไอที">
+            <div class="mobile-action-pill pill-repair {{ request()->routeIs('repairs.create') ? 'active-pill' : '' }}">
+                <i class="bi bi-tools"></i>
+                <span>แจ้งซ่อม</span>
             </div>
-            <span style="font-weight: 600; color: var(--primary);">แจ้งซ่อม</span>
         </a>
-        <a href="{{ route('data-requests.index') }}" class="mobile-bottom-nav-item {{ request()->routeIs('data-requests.*') ? 'active' : '' }}" title="คำขอข้อมูล">
-            <i class="bi bi-file-earmark-bar-graph"></i>
-            <span>ขอข้อมูล</span>
-            @if(!empty($navPendingDr) && $navPendingDr > 0)
-                <span class="mobile-nav-badge">{{ $navPendingDr }}</span>
-            @endif
+        <a href="{{ route('data-requests.create') }}" class="mobile-bottom-nav-item mobile-nav-action-wrapper" title="สร้างคำขอข้อมูลสารสนเทศ / รายงานและสถิติ">
+            <div class="mobile-action-pill pill-data {{ request()->routeIs('data-requests.create') ? 'active-pill' : '' }}">
+                <i class="bi bi-file-earmark-plus-fill"></i>
+                <span>ขอข้อมูล</span>
+            </div>
         </a>
-        <a href="javascript:void(0)" onclick="toggleSidebar()" class="mobile-bottom-nav-item" title="เปิดเมนูทั้งหมด">
+        <a href="javascript:void(0)" onclick="toggleSidebar()" class="mobile-bottom-nav-item" title="เปิดเมนูระบบทั้งหมด">
             <i class="bi bi-grid-fill"></i>
             <span>เมนู</span>
         </a>

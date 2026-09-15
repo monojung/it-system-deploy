@@ -55,6 +55,45 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/api/hardware-audit/submit', [HardwareAuditController::class, 'submit'])->name('hardware-audit.submit');
 Route::post('/hardware-audit/submit', [HardwareAuditController::class, 'submit']);
 
+// Public Client Scripts & Agents Endpoints (Serve PowerShell & Batch files with text/plain for irm / download)
+Route::get('/agent/{filename}', function ($filename) {
+    $filename = basename($filename);
+    $candidates = [
+        public_path('agent/' . $filename),
+        base_path('agent/' . $filename),
+        base_path('public/agent/' . $filename),
+    ];
+    foreach ($candidates as $path) {
+        if (file_exists($path)) {
+            $mime = str_ends_with($filename, '.ps1') ? 'text/plain; charset=utf-8' : (str_ends_with($filename, '.bat') ? 'application/x-bat' : 'text/plain; charset=utf-8');
+            return response(file_get_contents($path), 200, [
+                'Content-Type' => $mime,
+                'Cache-Control' => 'no-cache, must-revalidate',
+            ]);
+        }
+    }
+    abort(404, 'Agent script not found');
+})->where('filename', '[A-Za-z0-9_\-\.]+')->name('agent.download');
+
+Route::get('/scripts/{filename}', function ($filename) {
+    $filename = basename($filename);
+    $candidates = [
+        public_path('scripts/' . $filename),
+        base_path('scripts/' . $filename),
+        base_path('public/scripts/' . $filename),
+    ];
+    foreach ($candidates as $path) {
+        if (file_exists($path)) {
+            $mime = str_ends_with($filename, '.ps1') ? 'text/plain; charset=utf-8' : (str_ends_with($filename, '.bat') ? 'application/x-bat' : 'text/plain; charset=utf-8');
+            return response(file_get_contents($path), 200, [
+                'Content-Type' => $mime,
+                'Cache-Control' => 'no-cache, must-revalidate',
+            ]);
+        }
+    }
+    abort(404, 'Script not found');
+})->where('filename', '[A-Za-z0-9_\-\.]+')->name('scripts.download');
+
 // Authenticated Routes
 Route::middleware(['auth'])->group(function () {
     // Dashboard & Profile

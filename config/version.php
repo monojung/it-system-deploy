@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.3.0'),
+    'version' => env('APP_VERSION', '2.3.1'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
-    'release_date' => '2026-09-14',
-    'build' => '20260914.4',
+    'release_date' => '2026-09-15',
+    'build' => '20260915.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,19 @@ return [
     |
     */
     'changelog' => [
+        '2.3.1' => [
+            'date' => '2026-09-15',
+            'badge' => 'Mobile UX Redesign & Agent 404 Fix',
+            'badge_color' => '#0284c7',
+            'title' => 'ปรับปรุงหน้าจอมือถือใหม่ ไร้ปุ่มกลม เพิ่มปุ่มลัดแจ้งซ่อม & ขอข้อมูล และแก้ไขลิงก์ดาวน์โหลดสคริปต์ตรวจสเปค (Fix 404)',
+            'highlights' => [
+                'ปรับปรุงประสบการณ์ใช้งานบนสมาร์ทโฟน (Mobile Navigation Redesign): ตัดปุ่มกลมๆ ที่นูนเกินหน้าจอออก เปลี่ยนเป็นแถบนำทางสมัยใหม่ 5 เมนูหลัก พร้อมปุ่มลัด [แจ้งซ่อม] และ [ขอข้อมูล] สีสันชัดเจนกดง่าย',
+                'เพิ่มการ์ดทางลัดบนแดชบอร์ดมือถือ (Mobile Quick Action Cards): แสดงการ์ดด่วนด้านบนสุดสำหรับผู้ใช้งานโทรศัพท์มือถือ เข้าถึงหน้าแจ้งซ่อมและหน้าขอข้อมูลได้ทันทีใน 1 แตะ',
+                'แก้ไขปัญหา 404 ลิงก์ดาวน์โหลดสคริปต์ตรวจสเปคผ่าน PowerShell (irm | iex): เพิ่มเส้นทาง Route /agent/{filename} และ /scripts/{filename} พร้อมคัดลอกไฟล์สคริปต์ลงทั้ง DocumentRoot และ public/',
+                'ปรับแต่ง thc_audit_agent.ps1 ให้มีระบบ Fallback อัตโนมัติ (thchospital.moph.go.th, 192.168.2.89, localhost) รองรับการรันทั้งเครือข่ายภายในโรงพยาบาลและผ่านอินเทอร์เน็ต',
+                'ผ่านการทดสอบอัตโนมัติ 100% ครอบคลุมทั้งดาวน์โหลดสคริปต์ การตรวจนับสเปค และระบบแจ้งซ่อม',
+            ],
+        ],
         '2.3.0' => [
             'date' => '2026-09-14',
             'badge' => 'Client PowerShell Agent & Hardware Audit Monitoring',

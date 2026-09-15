@@ -6,6 +6,39 @@
 
 @push('styles')
 <style>
+    .mobile-quick-actions {
+        display: none;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 992px) {
+        .mobile-quick-actions {
+            display: block;
+        }
+    }
+    .mobile-action-card {
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        color: #ffffff !important;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .mobile-action-card:active {
+        transform: scale(0.97);
+    }
+    .mobile-action-card.card-repair {
+        background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+        box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+    }
+    .mobile-action-card.card-data {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+    }
+
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -98,6 +131,30 @@
     </a>
 </div>
 @endif
+
+<!-- Mobile Quick Action Cards (Fast Direct Access for Mobile Users) -->
+<div class="mobile-quick-actions">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <a href="{{ route('repairs.create') }}" class="mobile-action-card card-repair">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0;">
+                <i class="bi bi-tools"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 700; font-size: 14.5px; line-height: 1.2;">แจ้งซ่อม</div>
+                <div style="font-size: 11px; opacity: 0.9; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">แจ้งปัญหา/คอมเสีย</div>
+            </div>
+        </a>
+        <a href="{{ route('data-requests.create') }}" class="mobile-action-card card-data">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0;">
+                <i class="bi bi-file-earmark-plus-fill"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 700; font-size: 14.5px; line-height: 1.2;">ขอข้อมูล</div>
+                <div style="font-size: 11px; opacity: 0.9; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">สถิติ/รายงาน IT</div>
+            </div>
+        </a>
+    </div>
+</div>
 
 <!-- Top Stat Cards -->
 <div class="stats-grid">
