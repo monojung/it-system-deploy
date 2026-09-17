@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\AssetBorrow;
 use App\Models\Asset;
 use App\Models\Department;
+use App\Models\Repair;
 use App\Models\AuditLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,7 @@ class AssetBorrowController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = AssetBorrow::with(['asset.deviceType', 'department', 'user']);
+        $query = AssetBorrow::with(['asset.deviceType', 'department', 'user', 'repair']);
 
         // Scope regular user access
         if ($user && $user->isUser()) {
@@ -97,6 +98,22 @@ class AssetBorrowController extends Controller
     {
         $user = Auth::user();
         $selectedAssetId = $request->input('asset_id');
+        $repairId = $request->input('repair_id');
+        $linkedRepair = null;
+        $prefillBorrower = null;
+
+        if ($repairId) {
+            $linkedRepair = Repair::with(['asset', 'department'])->find($repairId);
+            if ($linkedRepair) {
+                $prefillBorrower = [
+                    'name' => $linkedRepair->requester_name,
+                    'department_id' => $linkedRepair->department_id,
+                    'phone' => $linkedRepair->requester_phone,
+                    'purpose' => "ใช้งานทดแทนอุปกรณ์ระหว่างส่งซ่อม (ใบแจ้งซ่อม #{$linkedRepair->ticket_number}: {$linkedRepair->title})",
+                    'location' => $linkedRepair->location_detail,
+                ];
+            }
+        }
 
         // Assets available for borrowing:
         // status IN ('spare', 'active') and not currently actively borrowed
@@ -132,7 +149,9 @@ class AssetBorrowController extends Controller
             'departments',
             'selectedAssetId',
             'presetAccessories',
-            'user'
+            'user',
+            'linkedRepair',
+            'prefillBorrower'
         ));
     }
 
@@ -158,6 +177,7 @@ class AssetBorrowController extends Controller
 
         $validated = $request->validate([
             'asset_id' => 'required|exists:it_assets,id',
+            'repair_id' => 'nullable|exists:it_repairs,id',
             'borrower_name' => 'required|string|max:100',
             'department_id' => 'required|exists:it_departments,id',
             'contact_phone' => 'required|string|max:50',
@@ -203,6 +223,7 @@ class AssetBorrowController extends Controller
             'borrower_position' => $request->input('borrower_position'),
             'contact_phone' => $validated['contact_phone'],
             'asset_id' => $validated['asset_id'],
+            'repair_id' => $validated['repair_id'] ?? null,
             'purpose' => $validated['purpose'],
             'location_used' => $validated['location_used'] ?? null,
             'borrow_date' => $validated['borrow_date'],
@@ -223,6 +244,7 @@ class AssetBorrowController extends Controller
             'asset.department',
             'department',
             'user',
+            'repair',
             'approver',
             'dispatcher',
             'receiver'
@@ -449,6 +471,7 @@ class AssetBorrowController extends Controller
             'asset.deviceType',
             'asset.department',
             'department',
+            'repair',
             'user',
             'approver',
             'dispatcher',

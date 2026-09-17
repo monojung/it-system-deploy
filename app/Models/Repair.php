@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Traits\Auditable;
 
 class Repair extends Model
@@ -74,6 +75,18 @@ class Repair extends Model
     public function parts(): HasMany
     {
         return $this->hasMany(RepairPart::class, 'repair_id');
+    }
+
+    public function borrows(): HasMany
+    {
+        return $this->hasMany(AssetBorrow::class, 'repair_id')->latest();
+    }
+
+    public function activeBorrow(): HasOne
+    {
+        return $this->hasOne(AssetBorrow::class, 'repair_id')
+            ->whereIn('status', ['approved', 'borrowed'])
+            ->latestOfMany();
     }
 
     public function getStatusLabelAttribute(): string

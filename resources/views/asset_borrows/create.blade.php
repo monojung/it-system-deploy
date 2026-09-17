@@ -71,6 +71,37 @@
     <form action="{{ route('asset-borrows.store') }}" method="POST" id="borrowForm">
         @csrf
 
+        @if(isset($linkedRepair) && $linkedRepair)
+            <input type="hidden" name="repair_id" value="{{ $linkedRepair->id }}">
+            <div style="background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%); border: 1.5px solid #38bdf8; border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.1);">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: #0284c7; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; background: #0284c7; color: #ffffff; padding: 2px 8px; border-radius: 6px;">
+                                ขอยืมเครื่องสำรองสำหรับงานซ่อม
+                            </span>
+                            <span class="badge bg-primary" style="font-family: monospace;">#{{ $linkedRepair->ticket_number }}</span>
+                        </div>
+                        <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 4px;">
+                            {{ $linkedRepair->title }}
+                        </div>
+                        <div style="font-size: 12px; color: #475569; margin-top: 2px;">
+                            ผู้แจ้ง: <strong>{{ $linkedRepair->requester_name }}</strong> &bull; แผนก: <strong>{{ $linkedRepair->department?->name }}</strong>
+                            @if($linkedRepair->asset)
+                                &bull; อุปกรณ์ที่ส่งซ่อม: <strong>{{ $linkedRepair->asset->name }} ({{ $linkedRepair->asset->asset_code }})</strong>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ route('repairs.show', $linkedRepair->id) }}" target="_blank" class="btn btn-sm btn-outline-primary" style="border-radius: 8px; font-size: 12px; font-weight: 600;">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> ดูใบแจ้งซ่อม
+                </a>
+            </div>
+        @endif
+
         <!-- CARD 1: เลือกอุปกรณ์จากคลังครุภัณฑ์ IT -->
         <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden; background: #ffffff;">
             <div class="card-header" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -292,7 +323,7 @@
                             <span style="color: #ef4444;">*</span>
                         </label>
                         <input type="text" name="borrower_name" id="borrower_name" class="form-control" 
-                               value="{{ old('borrower_name', $user ? $user->name : '') }}" required placeholder="เช่น นพ.สมชาย ใจดี / พว.สุดา สุขสันต์" style="border-radius: 10px; font-size: 13.5px;">
+                               value="{{ old('borrower_name', $prefillBorrower['name'] ?? ($user ? $user->name : '')) }}" required placeholder="เช่น นพ.สมชาย ใจดี / พว.สุดา สุขสันต์" style="border-radius: 10px; font-size: 13.5px;">
                     </div>
 
                     <div class="col-md-4">
@@ -304,7 +335,7 @@
                         <select name="department_id" id="department_id" class="form-select" required style="border-radius: 10px; font-size: 13.5px;">
                             <option value="">-- เลือกกลุ่มงาน/แผนก --</option>
                             @foreach($departments as $dept)
-                                <option value="{{ $dept->id }}" {{ old('department_id', $user ? $user->department_id : '') == $dept->id ? 'selected' : '' }}>
+                                <option value="{{ $dept->id }}" {{ old('department_id', $prefillBorrower['department_id'] ?? ($user ? $user->department_id : '')) == $dept->id ? 'selected' : '' }}>
                                     {{ $dept->name }}
                                 </option>
                             @endforeach
@@ -318,7 +349,7 @@
                             <span style="color: #ef4444;">*</span>
                         </label>
                         <input type="text" name="contact_phone" id="contact_phone" class="form-control" 
-                               value="{{ old('contact_phone', $user ? $user->phone : '') }}" required placeholder="เช่น 081-234-5678 / เบอร์ภายใน" style="border-radius: 10px; font-size: 13.5px;">
+                               value="{{ old('contact_phone', $prefillBorrower['phone'] ?? ($user ? $user->phone : '')) }}" required placeholder="เช่น 081-234-5678 / เบอร์ภายใน" style="border-radius: 10px; font-size: 13.5px;">
                     </div>
                 </div>
             </div>
@@ -403,7 +434,7 @@
                         </button>
                     </div>
 
-                    <textarea name="purpose" id="purpose" rows="2" class="form-control" required placeholder="ระบุเหตุผลและภารกิจที่นำอุปกรณ์ไปใช้งาน..." style="border-radius: 10px; font-size: 13.5px;">{{ old('purpose') }}</textarea>
+                    <textarea name="purpose" id="purpose" rows="2" class="form-control" required placeholder="ระบุเหตุผลและภารกิจที่นำอุปกรณ์ไปใช้งาน..." style="border-radius: 10px; font-size: 13.5px;">{{ old('purpose', $prefillBorrower['purpose'] ?? '') }}</textarea>
                 </div>
 
                 <div class="mb-0">
@@ -411,7 +442,7 @@
                         สถานที่นำไปใช้งาน
                     </label>
                     <input type="text" name="location_used" id="location_used" class="form-control" 
-                           value="{{ old('location_used') }}" placeholder="เช่น ห้องประชุม 1 อาคารอำนวยการ / รพ.สต.บ้านทุ่งหัวช้าง / แผนกผู้ป่วยนอก" style="border-radius: 10px; font-size: 13.5px;">
+                           value="{{ old('location_used', $prefillBorrower['location'] ?? '') }}" placeholder="เช่น ห้องประชุม 1 อาคารอำนวยการ / รพ.สต.บ้านทุ่งหัวช้าง / แผนกผู้ป่วยนอก" style="border-radius: 10px; font-size: 13.5px;">
                 </div>
             </div>
         </div>

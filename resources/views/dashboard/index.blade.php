@@ -38,6 +38,10 @@
         background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
         box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
     }
+    .mobile-action-card.card-borrow {
+        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+    }
 
     .stats-grid {
         display: grid;
@@ -132,25 +136,57 @@
 </div>
 @endif
 
+<!-- Overdue Asset Borrows Alert Banner -->
+@if(isset($overdueBorrowsCount) && $overdueBorrowsCount > 0)
+<div style="background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border: 1.5px solid #fecdd3; border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; box-shadow: 0 4px 12px rgba(225, 29, 72, 0.08);">
+    <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: #e11d48; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(225, 29, 72, 0.25);">
+            <i class="bi bi-clock-history"></i>
+        </div>
+        <div>
+            <div style="font-size: 14.5px; font-weight: 700; color: #9f1239;">
+                มีอุปกรณ์ที่เกินกำหนดส่งคืนจำนวน {{ number_format($overdueBorrowsCount) }} รายการ
+            </div>
+            <div style="font-size: 12.5px; color: #be123c; margin-top: 2px;">
+                กรุณาตรวจสอบและประสานงานผู้ยืมเพื่อติดตามการนำส่งคืนอุปกรณ์ให้อยู่ในความพร้อมใช้งาน
+            </div>
+        </div>
+    </div>
+    <a href="{{ route('asset-borrows.index', ['status' => 'borrowed']) }}" class="btn btn-danger" style="font-weight: 700; font-size: 13.5px; padding: 8px 18px; border-radius: 9px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(225, 29, 72, 0.2);">
+        <i class="bi bi-arrow-down-left-circle"></i>
+        <span>ติดตามการส่งคืน</span>
+    </a>
+</div>
+@endif
+
 <!-- Mobile Quick Action Cards (Fast Direct Access for Mobile Users) -->
 <div class="mobile-quick-actions">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
         <a href="{{ route('repairs.create') }}" class="mobile-action-card card-repair">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
                 <i class="bi bi-tools"></i>
             </div>
             <div style="flex: 1; min-width: 0;">
-                <div style="font-weight: 700; font-size: 14.5px; line-height: 1.2;">แจ้งซ่อม</div>
-                <div style="font-size: 11px; opacity: 0.9; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">แจ้งปัญหา/คอมเสีย</div>
+                <div style="font-weight: 700; font-size: 14px; line-height: 1.2;">แจ้งซ่อม</div>
+                <div style="font-size: 10.5px; opacity: 0.9; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">แจ้งปัญหา/คอมเสีย</div>
+            </div>
+        </a>
+        <a href="{{ route('asset-borrows.create') }}" class="mobile-action-card card-borrow">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                <i class="bi bi-arrow-left-right"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 700; font-size: 14px; line-height: 1.2;">ยืมอุปกรณ์</div>
+                <div style="font-size: 10.5px; opacity: 0.9; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">โน้ตบุ๊ก/โปรเจกเตอร์</div>
             </div>
         </a>
         <a href="{{ route('data-requests.create') }}" class="mobile-action-card card-data">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
                 <i class="bi bi-file-earmark-plus-fill"></i>
             </div>
             <div style="flex: 1; min-width: 0;">
-                <div style="font-weight: 700; font-size: 14.5px; line-height: 1.2;">ขอข้อมูล</div>
-                <div style="font-size: 11px; opacity: 0.9; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">สถิติ/รายงาน IT</div>
+                <div style="font-weight: 700; font-size: 14px; line-height: 1.2;">ขอข้อมูล</div>
+                <div style="font-size: 10.5px; opacity: 0.9; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">สถิติ/รายงาน IT</div>
             </div>
         </a>
     </div>
@@ -210,6 +246,23 @@
                     <i class="bi bi-patch-check-fill text-info"></i> ตรวจปี {{ $currentFiscalYear }}: {{ $auditedAssetsThisYearCount }} เครื่อง
                 </div>
             @endif
+        </div>
+    </a>
+
+    <a href="{{ route('asset-borrows.index') }}" class="stat-card" style="text-decoration: none; color: inherit;">
+        <div class="stat-icon" style="background: #e0e7ff; color: #4338ca;">
+            <i class="bi bi-arrow-left-right"></i>
+        </div>
+        <div>
+            <div class="stat-val" style="color: #4338ca;">{{ number_format($activeBorrowsCount) }}</div>
+            <div class="stat-lbl">อุปกรณ์ที่กำลังยืมใช้งาน</div>
+            <div style="font-size: 11px; color: {{ $pendingBorrowsCount > 0 ? '#d97706' : '#64748b' }}; font-weight: 600; margin-top: 2px;">
+                @if($pendingBorrowsCount > 0)
+                    <i class="bi bi-hourglass-split"></i> รออนุมัติ {{ $pendingBorrowsCount }} คำขอ
+                @else
+                    <i class="bi bi-check-circle"></i> ทั้งหมด {{ number_format($totalBorrowsCount) }} รายการ
+                @endif
+            </div>
         </div>
     </a>
 

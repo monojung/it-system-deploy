@@ -125,9 +125,35 @@
                 <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
                     {{ $borrow->actual_return_date ? $borrow->actual_return_date->format('d/m/Y') : 'ยังไม่ส่งคืน' }}
                 </div>
-            </div>
         </div>
     </div>
+
+    @if($borrow->repair)
+    <!-- LINKED REPAIR TICKET BANNER -->
+    <div style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border: 1.5px solid #93c5fd; border-radius: 16px; padding: 18px 22px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);">
+                <i class="bi bi-tools"></i>
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="font-weight: 800; font-size: 15.5px; color: #1e3a8a;">ผูกกับใบแจ้งซ่อม: #{{ $borrow->repair->ticket_number }}</span>
+                    <span class="badge {{ $borrow->repair->status_badge }}" style="font-size: 11px;">{{ $borrow->repair->status_label }}</span>
+                    <span class="badge" style="background: #e0e7ff; color: #3730a3; font-size: 11px;">เครื่องสำรองใช้งานระหว่างซ่อม</span>
+                </div>
+                <div style="font-size: 13px; color: #475569; margin-top: 4px;">
+                    <strong>เรื่องที่แจ้งซ่อม:</strong> {{ $borrow->repair->title }}
+                    @if($borrow->repair->asset)
+                        • <strong>เครื่องที่ส่งซ่อม:</strong> {{ $borrow->repair->asset->name }} ({{ $borrow->repair->asset->asset_code }})
+                    @endif
+                </div>
+            </div>
+        </div>
+        <a href="{{ route('repairs.show', $borrow->repair->id) }}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 9px 18px; border-radius: 10px; box-shadow: 0 2px 6px rgba(37,99,235,0.2);">
+            <i class="bi bi-arrow-up-right-circle"></i> ดูรายละเอียดใบแจ้งซ่อม
+        </a>
+    </div>
+    @endif
 
     <!-- MAIN TWO-COLUMN DETAILS -->
     <div class="row g-4 mb-4">
@@ -307,6 +333,17 @@
                                     @if($borrow->return_notes)
                                         <div style="color: #64748b;"><strong>ข้อสังเกต:</strong> {{ $borrow->return_notes }}</div>
                                     @endif
+
+                                    @if($borrow->asset_id && (str_contains($borrow->return_condition ?? '', 'ชำรุด') || str_contains($borrow->return_condition ?? '', 'เสีย') || str_contains($borrow->return_condition ?? '', 'พัง')))
+                                    <div style="margin-top: 10px; padding: 10px 12px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px;">
+                                        <div style="font-size: 11.5px; color: #be123c; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
+                                            <i class="bi bi-exclamation-triangle-fill text-danger"></i> พบอุปกรณ์ชำรุดจากการใช้งาน
+                                        </div>
+                                        <a href="{{ route('repairs.create', ['asset_id' => $borrow->asset_id, 'description' => 'ส่งซ่อมหลังรับคืนจากการยืม #' . $borrow->borrow_no . ' (สภาพ: ' . $borrow->return_condition . ($borrow->return_notes ? ' | ' . $borrow->return_notes : '') . ')']) }}" class="btn btn-sm btn-danger w-100" style="font-size: 11.5px; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                                            <i class="bi bi-wrench-adjustable"></i> เปิดใบแจ้งซ่อมอุปกรณ์นี้ทันที
+                                        </a>
+                                    </div>
+                                    @endif
                                 </div>
                             @else
                                 <div style="font-size: 12.5px; color: #94a3b8; font-style: italic;">ยังไม่มีการรับมอบคืน</div>
@@ -461,6 +498,7 @@
                     <select name="target_asset_status" class="form-select" required style="border-radius: 10px; font-size: 13.5px;">
                         <option value="spare">เครื่องสำรอง (Spare - พร้อมให้ยืมต่อในคลัง)</option>
                         <option value="active">ใช้งานปกติ (Active - ส่งคืนประจำแผนกเดิม)</option>
+                        <option value="repairing">ส่งซ่อมบำรุง (Repairing - ชำรุดเสียหาย)</option>
                     </select>
                 </div>
 

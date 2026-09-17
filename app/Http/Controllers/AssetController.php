@@ -293,8 +293,10 @@ class AssetController extends Controller
             'department',
             'repairs.department',
             'repairs.technician',
-            'hardwareAudits.reviewer'
-        ])->loadCount(['repairs', 'hardwareAudits']);
+            'hardwareAudits.reviewer',
+            'currentBorrow.department',
+            'borrows.department',
+        ])->loadCount(['repairs', 'hardwareAudits', 'borrows']);
 
         $currentFiscalYear = (now()->month >= 10) ? now()->year + 544 : now()->year + 543;
         $pendingAuditForAsset = $asset->hardwareAudits->firstWhere('status', 'pending');

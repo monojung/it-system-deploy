@@ -9,6 +9,7 @@ use App\Models\Asset;
 use App\Models\SparePart;
 use App\Models\Department;
 use App\Models\DataRequest;
+use App\Models\AssetBorrow;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -95,6 +96,19 @@ class DashboardController extends Controller
         $currentFiscalYear = (Carbon::now()->month >= 10) ? Carbon::now()->year + 544 : Carbon::now()->year + 543;
         $auditedAssetsThisYearCount = Asset::where('last_audited_fiscal_year', $currentFiscalYear)->count();
 
+        // Equipment Borrowing stats
+        $borrowQuery = AssetBorrow::query();
+        if ($user && $user->isUser() && $user->department_id) {
+            $borrowQuery->where(function($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('department_id', $user->department_id);
+            });
+        }
+        $totalBorrowsCount = (clone $borrowQuery)->count();
+        $activeBorrowsCount = (clone $borrowQuery)->where('status', 'borrowed')->count();
+        $pendingBorrowsCount = (clone $borrowQuery)->where('status', 'pending')->count();
+        $overdueBorrowsCount = (clone $borrowQuery)->where('status', 'borrowed')->whereDate('expected_return_date', '<', Carbon::today())->count();
+
         return view('dashboard.index', compact(
             'totalRepairs',
             'pendingRepairs',
@@ -114,7 +128,11 @@ class DashboardController extends Controller
             'recentDataRequests',
             'pendingHardwareAuditsCount',
             'currentFiscalYear',
-            'auditedAssetsThisYearCount'
+            'auditedAssetsThisYearCount',
+            'totalBorrowsCount',
+            'activeBorrowsCount',
+            'pendingBorrowsCount',
+            'overdueBorrowsCount'
         ));
     }
 

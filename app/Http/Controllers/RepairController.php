@@ -198,7 +198,7 @@ class RepairController extends Controller
 
     public function show(Repair $repair)
     {
-        $repair->load(['department', 'asset.deviceType', 'technician', 'requester', 'logs.user', 'parts.sparePart']);
+        $repair->load(['department', 'asset.deviceType', 'technician', 'requester', 'logs.user', 'parts.sparePart', 'activeBorrow.asset.deviceType']);
 
         $technicians = User::whereIn('role', ['admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
         $spareParts = SparePart::where('stock_quantity', '>', 0)->orderBy('name')->get();

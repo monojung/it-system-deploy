@@ -19,7 +19,15 @@
         </span>
     </div>
 
-    <div style="display: flex; gap: 10px;">
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        @if(in_array($repair->status, ['pending', 'in_progress', 'waiting_parts', 'external']))
+            @if(!$repair->activeBorrow)
+            <a href="{{ route('asset-borrows.create', ['repair_id' => $repair->id]) }}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left-right"></i>
+                <span>ขอยืมเครื่องสำรอง</span>
+            </a>
+            @endif
+        @endif
         <a href="{{ route('repairs.print', $repair) }}" target="_blank" class="btn btn-secondary">
             <i class="bi bi-printer"></i>
             <span>พิมพ์ใบงานซ่อม</span>
@@ -129,6 +137,66 @@
             <div class="card-body">
                 <div style="font-size: 14px; font-weight: 500;">{{ $repair->other_device_info }}</div>
             </div>
+        </div>
+        @endif
+
+        <!-- Replacement Equipment / เครื่องสำรองใช้งาน -->
+        @if($repair->activeBorrow)
+        <div class="card" style="border: 1.5px solid #60a5fa; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08); overflow: hidden;">
+            <div class="card-header" style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border-bottom: 1px solid #bfdbfe;">
+                <div class="card-title" style="color: #1d4ed8; font-size: 14.5px;">
+                    <i class="bi bi-arrow-left-right text-primary"></i>
+                    <span>เครื่องสำรองใช้งานระหว่างซ่อม (Replacement Unit)</span>
+                </div>
+                <a href="{{ route('asset-borrows.show', $repair->activeBorrow) }}" class="btn btn-sm btn-primary" style="font-size: 12px; padding: 4px 10px;">
+                    <i class="bi bi-eye"></i> ดูใบยืม #{{ $repair->activeBorrow->borrow_no }}
+                </a>
+            </div>
+            <div class="card-body" style="background: #ffffff;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px dashed #cbd5e1; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 12px; color: #64748b;">สถานะเครื่องสำรอง:</span>
+                        <span class="badge {{ $repair->activeBorrow->status_badge }}" style="font-size: 11.5px; padding: 3px 10px;">
+                            {{ $repair->activeBorrow->status_label }}
+                        </span>
+                    </div>
+                    <div style="font-size: 12.5px; color: #475569;">
+                        กำหนดส่งคืน: <strong style="color: #d97706;">{{ $repair->activeBorrow->expected_return_date ? $repair->activeBorrow->expected_return_date->format('d/m/Y') : 'ไม่ระบุ' }}</strong>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
+                    <div>
+                        <div style="font-size: 11.5px; color: var(--text-muted);">รหัสครุภัณฑ์เครื่องสำรอง:</div>
+                        <div style="font-weight: 700; color: #2563eb; font-size: 14.5px;">{{ $repair->activeBorrow->asset?->asset_code }}</div>
+                        <div style="font-size: 12px; color: #475569;">{{ $repair->activeBorrow->asset?->name }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11.5px; color: var(--text-muted);">ยี่ห้อ / รุ่น / สเปค:</div>
+                        <div style="font-weight: 600; font-size: 13px; color: var(--text-main);">{{ $repair->activeBorrow->asset?->brand }} {{ $repair->activeBorrow->asset?->model }}</div>
+                        <div style="font-size: 11.5px; color: #64748b;">{{ $repair->activeBorrow->asset?->specs ?? '-' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11.5px; color: var(--text-muted);">ผู้รับเครื่องสำรอง:</div>
+                        <div style="font-weight: 600; font-size: 13px; color: var(--text-main);">{{ $repair->activeBorrow->borrower_name }}</div>
+                        <div style="font-size: 11.5px; color: #64748b;">เบอร์: {{ $repair->activeBorrow->borrower_phone ?? '-' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @elseif(in_array($repair->status, ['pending', 'in_progress', 'waiting_parts', 'external']))
+        <div style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border: 1.5px dashed #93c5fd; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: #dbeafe; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                    <i class="bi bi-arrow-left-right"></i>
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 13.5px; color: #1e3a8a;">ยังไม่มีเครื่องสำรองใช้งานสำหรับงานซ่อมนี้</div>
+                    <div style="font-size: 12px; color: #64748b;">หากจำเป็นต้องใช้อุปกรณ์ทดแทนระหว่างรอซ่อม สามารถเบิกยืมเครื่องสำรองได้ทันที</div>
+                </div>
+            </div>
+            <a href="{{ route('asset-borrows.create', ['repair_id' => $repair->id]) }}" class="btn btn-sm btn-primary" style="white-space: nowrap; font-size: 12.5px;">
+                <i class="bi bi-plus-circle"></i> ขอยืมเครื่องสำรอง
+            </a>
         </div>
         @endif
 

@@ -347,6 +347,11 @@
                                                     <i class="bi bi-link-45deg"></i> เชื่อมด้วย HWID
                                                 </span>
                                             @endif
+                                            @if($audit->asset->status === 'borrowed')
+                                                <span class="badge" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 9.5px; font-weight: 600; padding: 1px 5px; border-radius: 4px;" title="อุปกรณ์นี้กำลังถูกยืมใช้งาน">
+                                                    <i class="bi bi-arrow-left-right"></i> กำลังถูกยืม
+                                                </span>
+                                            @endif
                                         </div>
                                         <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
                                             <i class="bi bi-geo-alt me-1"></i>{{ $audit->asset->department?->name ?? 'ไม่ระบุแผนก' }}

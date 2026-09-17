@@ -23,6 +23,7 @@ class AssetBorrow extends Model
         'borrower_position',
         'contact_phone',
         'asset_id',
+        'repair_id',
         'purpose',
         'location_used',
         'borrow_date',
@@ -53,6 +54,11 @@ class AssetBorrow extends Model
     public function asset(): BelongsTo
     {
         return $this->belongsTo(Asset::class, 'asset_id');
+    }
+
+    public function repair(): BelongsTo
+    {
+        return $this->belongsTo(Repair::class, 'repair_id');
     }
 
     public function user(): BelongsTo

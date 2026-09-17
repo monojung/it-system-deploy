@@ -15,15 +15,22 @@
         </span>
     </div>
 
-    <div style="display: flex; gap: 10px;">
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
         <a href="{{ route('repairs.create', ['asset_id' => $asset->id]) }}" class="btn btn-primary">
             <i class="bi bi-wrench"></i>
             <span>แจ้งซ่อมเครื่องนี้</span>
         </a>
+        @if($asset->status === 'borrowed' && $asset->currentBorrow)
+        <a href="{{ route('asset-borrows.show', $asset->currentBorrow->id) }}" class="btn btn-warning" style="color: #78350f; font-weight: 600;">
+            <i class="bi bi-arrow-left-right"></i>
+            <span>ดูรายการยืมปัจจุบัน</span>
+        </a>
+        @else
         <a href="{{ route('asset-borrows.create', ['asset_id' => $asset->id]) }}" class="btn btn-primary" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); border-color: #4338ca;">
             <i class="bi bi-box-arrow-right"></i>
             <span>ขอยืมอุปกรณ์นี้</span>
         </a>
+        @endif
         <a href="{{ route('assets.label', $asset) }}" target="_blank" class="btn btn-secondary">
             <i class="bi bi-qr-code"></i>
             <span>พิมพ์สติกเกอร์ QR</span>
@@ -40,6 +47,34 @@
         @endif
     </div>
 </div>
+
+@if($asset->status === 'borrowed' && $asset->currentBorrow)
+<div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #f59e0b; border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.12);">
+    <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: #f59e0b; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);">
+            <i class="bi bi-arrow-left-right"></i>
+        </div>
+        <div>
+            <div style="font-weight: 800; font-size: 15px; color: #92400e; display: flex; align-items: center; gap: 8px;">
+                <span>อุปกรณ์นี้กำลังถูกยืมใช้งาน</span>
+                <span class="badge" style="background: #fbbf24; color: #78350f; font-size: 11px;">รหัสคำขอ: {{ $asset->currentBorrow->borrow_no }}</span>
+                @if($asset->currentBorrow->is_overdue)
+                    <span class="badge bg-danger">เกินกำหนดส่งคืน</span>
+                @endif
+            </div>
+            <div style="font-size: 13px; color: #78350f; margin-top: 3px;">
+                ผู้ยืม: <strong>{{ $asset->currentBorrow->borrower_name }}</strong> 
+                ({{ $asset->currentBorrow->department?->name ?? $asset->currentBorrow->borrower_department ?? 'ไม่ระบุแผนก' }}) 
+                • เบอร์โทร: {{ $asset->currentBorrow->contact_phone }}
+                • กำหนดส่งคืน: <strong>{{ $asset->currentBorrow->expected_return_date ? $asset->currentBorrow->expected_return_date->format('d/m/Y') : 'ไม่ระบุ' }}</strong>
+            </div>
+        </div>
+    </div>
+    <a href="{{ route('asset-borrows.show', $asset->currentBorrow->id) }}" class="btn btn-sm btn-warning" style="color: #78350f; font-weight: 700; border-color: #d97706; padding: 7px 16px;">
+        <i class="bi bi-eye"></i> ดูใบยืม-คืน #{{ $asset->currentBorrow->borrow_no }}
+    </a>
+</div>
+@endif
 
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
     <!-- Asset Info Card -->
