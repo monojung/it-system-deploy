@@ -204,14 +204,19 @@ class AssetController extends Controller
         ));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $deviceTypes = DeviceType::orderBy('name')->get();
         $departments = Department::where('is_active', true)->orderBy('name')->get();
         $ictStandardsGrouped = IctStandardCatalog::grouped();
         $ictStandardsAll = IctStandardCatalog::all();
 
-        return view('assets.create', compact('deviceTypes', 'departments', 'ictStandardsGrouped', 'ictStandardsAll'));
+        $prefillAudit = null;
+        if ($request->filled('from_audit')) {
+            $prefillAudit = \App\Models\HardwareAudit::find($request->from_audit);
+        }
+
+        return view('assets.create', compact('deviceTypes', 'departments', 'ictStandardsGrouped', 'ictStandardsAll', 'prefillAudit'));
     }
 
     public function store(Request $request)
@@ -219,6 +224,7 @@ class AssetController extends Controller
         $request->validate([
             'asset_code' => 'required|string|max:100|unique:it_assets,asset_code',
             'serial_number' => 'nullable|string|max:100',
+            'hardware_id' => 'nullable|string|max:100',
             'name' => 'required|string|max:255',
             'device_type_id' => 'required|exists:it_device_types,id',
             'brand' => 'nullable|string|max:100',
@@ -311,6 +317,7 @@ class AssetController extends Controller
         $request->validate([
             'asset_code' => 'required|string|max:100|unique:it_assets,asset_code,' . $asset->id,
             'serial_number' => 'nullable|string|max:100',
+            'hardware_id' => 'nullable|string|max:100',
             'name' => 'required|string|max:255',
             'device_type_id' => 'required|exists:it_device_types,id',
             'brand' => 'nullable|string|max:100',

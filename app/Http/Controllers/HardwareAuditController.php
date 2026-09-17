@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\HardwareAudit;
 use App\Models\Asset;
 use App\Models\Department;
+use App\Models\DeviceType;
 use App\Models\AuditLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +33,7 @@ class HardwareAuditController extends Controller
     {
         $validated = $request->validate([
             'hostname' => 'nullable|string|max:100',
+            'hardware_id' => 'nullable|string|max:100',
             'serial_number' => 'nullable|string|max:100',
             'mac_address' => 'nullable|string|max:50',
             'ip_address' => 'nullable|string|max:45',
@@ -56,28 +58,55 @@ class HardwareAuditController extends Controller
         $fiscalYear = (int) $request->input('fiscal_year', $this->getCurrentFiscalYear());
         $ip = $request->ip() ?: $request->input('ip_address');
 
-        // Clean Serial Number
-        $serial = trim($request->input('serial_number', ''));
+        // Clean HardwareID and Serial Number
+        $hardwareId = trim((string)$request->input('hardware_id', ''));
+        if (preg_match('/^[0F-]{36}$/i', $hardwareId) || preg_match('/Default string|To be filled by O\.E\.M\.|None/i', $hardwareId)) {
+            $hardwareId = '';
+        }
+
+        $serial = trim((string)$request->input('serial_number', ''));
         if (preg_match('/Default string|To be filled by O\.E\.M\.|None/i', $serial)) {
             $serial = '';
         }
 
         // Try Auto-matching with existing Asset in it_assets table
         $matchedAsset = null;
-        if (!empty($serial)) {
-            $matchedAsset = Asset::where('serial_number', $serial)->first();
+        $matchedBy = null;
+
+        // 1. Highest Priority: Match by HardwareID (Physical SMBIOS / Motherboard UUID)
+        if (!empty($hardwareId)) {
+            $matchedAsset = Asset::where('hardware_id', $hardwareId)->first();
+            if ($matchedAsset) {
+                $matchedBy = 'hardware_id';
+            }
         }
 
+        // 2. Secondary: Match by Serial Number
+        if (!$matchedAsset && !empty($serial)) {
+            $matchedAsset = Asset::where('serial_number', $serial)->first();
+            if ($matchedAsset) {
+                $matchedBy = 'serial_number';
+            }
+        }
+
+        // 3. Fallback: Match by MAC Address
         if (!$matchedAsset && !empty($request->input('mac_address'))) {
             $mac = trim($request->input('mac_address'));
             $matchedAsset = Asset::where('mac_address', $mac)->first();
+            if ($matchedAsset) {
+                $matchedBy = 'mac_address';
+            }
         }
 
+        // 4. Fallback: Match by Hostname / Asset Code
         if (!$matchedAsset && !empty($request->input('hostname'))) {
             $hostname = trim($request->input('hostname'));
             $matchedAsset = Asset::where('name', 'like', "%{$hostname}%")
                 ->orWhere('asset_code', 'like', "%{$hostname}%")
                 ->first();
+            if ($matchedAsset) {
+                $matchedBy = 'hostname';
+            }
         }
 
         // Calculate Specs Diff if matched asset exists
@@ -106,49 +135,64 @@ class HardwareAuditController extends Controller
             }
         }
 
-        // Upsert into it_hardware_audits as 'pending'
-        // Staged for Admin review (Do NOT overwrite asset automatically!)
-        $audit = HardwareAudit::updateOrCreate(
-            [
-                'fiscal_year' => $fiscalYear,
-                'hostname' => $request->input('hostname'),
-                'serial_number' => $serial ?: null,
-            ],
-            [
-                'asset_id' => $matchedAsset ? $matchedAsset->id : null,
-                'mac_address' => $request->input('mac_address'),
-                'ip_address' => $ip,
-                'brand' => $request->input('brand'),
-                'model' => $request->input('model'),
-                'device_type_code' => $request->input('device_type_code', 'PC'),
-                'cpu_model' => $request->input('cpu_model'),
-                'cpu_speed' => $request->input('cpu_speed'),
-                'ram_capacity' => $request->input('ram_capacity'),
-                'ram_type' => $request->input('ram_type'),
-                'ram_bus' => $request->input('ram_bus'),
-                'ram_slots' => $request->input('ram_slots'),
-                'storage_type' => $request->input('storage_type'),
-                'storage_capacity' => $request->input('storage_capacity'),
-                'os_name' => $request->input('os_name'),
-                'os_license' => $request->input('os_license'),
-                'gpu_model' => $request->input('gpu_model'),
-                'monitor_size' => $request->input('monitor_size'),
-                'raw_payload' => $request->all(),
-                'specs_diff' => !empty($diff) ? $diff : null,
-                'client_agent_version' => $request->input('client_agent_version', '1.0.0'),
-                'status' => 'pending', // Awaiting Admin Approval
-            ]
-        );
+        // Locate existing audit record for this machine in the current fiscal year
+        $auditQuery = HardwareAudit::where('fiscal_year', $fiscalYear);
+        if (!empty($hardwareId)) {
+            $auditQuery->where('hardware_id', $hardwareId);
+        } elseif (!empty($serial)) {
+            $auditQuery->where('serial_number', $serial);
+        } else {
+            $auditQuery->where('hostname', $request->input('hostname'));
+        }
+
+        $audit = $auditQuery->first();
+        if (!$audit) {
+            $audit = new HardwareAudit();
+            $audit->fiscal_year = $fiscalYear;
+        }
+
+        $audit->fill([
+            'asset_id' => $matchedAsset ? $matchedAsset->id : null,
+            'hostname' => $request->input('hostname'),
+            'hardware_id' => $hardwareId ?: null,
+            'serial_number' => $serial ?: null,
+            'mac_address' => $request->input('mac_address'),
+            'ip_address' => $ip,
+            'brand' => $request->input('brand'),
+            'model' => $request->input('model'),
+            'device_type_code' => $request->input('device_type_code', 'PC'),
+            'cpu_model' => $request->input('cpu_model'),
+            'cpu_speed' => $request->input('cpu_speed'),
+            'ram_capacity' => $request->input('ram_capacity'),
+            'ram_type' => $request->input('ram_type'),
+            'ram_bus' => $request->input('ram_bus'),
+            'ram_slots' => $request->input('ram_slots'),
+            'storage_type' => $request->input('storage_type'),
+            'storage_capacity' => $request->input('storage_capacity'),
+            'os_name' => $request->input('os_name'),
+            'os_license' => $request->input('os_license'),
+            'gpu_model' => $request->input('gpu_model'),
+            'monitor_size' => $request->input('monitor_size'),
+            'raw_payload' => $request->all(),
+            'specs_diff' => !empty($diff) ? $diff : null,
+            'client_agent_version' => $request->input('client_agent_version', '1.2.0'),
+            'status' => 'pending', // Awaiting Admin Approval
+        ]);
+        $audit->save();
 
         return response()->json([
             'success' => true,
             'message' => 'ส่งรายงานสเปคคอมพิวเตอร์เข้าสู่ระบบเรียบร้อยแล้ว (สถานะ: รอแอดมินตรวจสอบและอนุมัติ)',
             'audit_id' => $audit->id,
             'fiscal_year' => $fiscalYear,
+            'hardware_id' => $hardwareId ?: null,
+            'is_new_device' => !$matchedAsset,
+            'matched_by' => $matchedBy,
             'matched_asset' => $matchedAsset ? [
                 'id' => $matchedAsset->id,
                 'asset_code' => $matchedAsset->asset_code,
                 'name' => $matchedAsset->name,
+                'hardware_id' => $matchedAsset->hardware_id,
             ] : null,
             'has_specs_diff' => !empty($diff),
             'diff' => $diff,
@@ -298,6 +342,8 @@ class HardwareAuditController extends Controller
             ->sortDesc()
             ->values();
 
+        $deviceTypes = DeviceType::orderBy('name')->get();
+
         return view('hardware_audits.index', compact(
             'fiscalYear',
             'currentFiscalYear',
@@ -313,6 +359,7 @@ class HardwareAuditController extends Controller
             'mdesWarningCount',
             'audits',
             'departments',
+            'deviceTypes',
             'ramDistribution',
             'osDistribution',
             'storageDistribution',
@@ -347,6 +394,7 @@ class HardwareAuditController extends Controller
 
         // If asset found, update structured hardware specs
         if ($asset) {
+            if ($audit->hardware_id) $asset->hardware_id = $audit->hardware_id;
             if ($audit->cpu_model) $asset->cpu_model = $audit->cpu_model;
             if ($audit->cpu_speed) $asset->cpu_speed = $audit->cpu_speed;
             if ($audit->ram_capacity) $asset->ram_capacity = $audit->ram_capacity;
@@ -401,6 +449,114 @@ class HardwareAuditController extends Controller
     }
 
     /**
+     * Admin Action: Create New Asset directly from an unmatched/new Hardware Audit submission
+     */
+    public function createAssetFromAudit(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!$user || (!$user->isAdmin() && !$user->isTechnician())) {
+            abort(403, 'เฉพาะเจ้าหน้าที่ไอทีหรือแอดมินเท่านั้นที่มีสิทธิ์เพิ่มครุภัณฑ์ใหม่');
+        }
+
+        $audit = HardwareAudit::findOrFail($id);
+
+        $validated = $request->validate([
+            'asset_code' => 'required|string|max:100|unique:it_assets,asset_code',
+            'name' => 'required|string|max:255',
+            'device_type_id' => 'required|exists:it_device_types,id',
+            'department_id' => 'nullable|exists:it_departments,id',
+            'location_detail' => 'nullable|string|max:255',
+            'custodian_name' => 'nullable|string|max:255',
+            'budget_year' => 'nullable|string|max:10',
+            'brand' => 'nullable|string|max:100',
+            'model' => 'nullable|string|max:100',
+            'serial_number' => 'nullable|string|max:100',
+            'hardware_id' => 'nullable|string|max:100',
+            'price' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string',
+        ]);
+
+        // Build composite specs string
+        $specsParts = [];
+        if ($audit->cpu_model) $specsParts[] = "CPU " . $audit->cpu_model . ($audit->cpu_speed ? " (" . $audit->cpu_speed . ")" : "");
+        if ($audit->ram_capacity) $specsParts[] = "RAM " . $audit->ram_capacity . "GB " . ($audit->ram_type ?: '') . ($audit->ram_bus ? " (" . $audit->ram_bus . ")" : "");
+        if ($audit->storage_capacity) $specsParts[] = ($audit->storage_type ?: 'Storage') . " " . $audit->storage_capacity;
+        if ($audit->os_name) $specsParts[] = "OS " . $audit->os_name;
+        if ($audit->gpu_model) $specsParts[] = "GPU " . $audit->gpu_model;
+        $specsString = implode(' | ', $specsParts);
+
+        // Create Asset
+        $asset = Asset::create([
+            'asset_code' => $validated['asset_code'],
+            'name' => $validated['name'],
+            'device_type_id' => $validated['device_type_id'],
+            'department_id' => $validated['department_id'] ?? null,
+            'location_detail' => $validated['location_detail'] ?? null,
+            'custodian_name' => $validated['custodian_name'] ?? null,
+            'budget_year' => $validated['budget_year'] ?: (string)$audit->fiscal_year,
+            'brand' => $validated['brand'] ?: $audit->brand,
+            'model' => $validated['model'] ?: $audit->model,
+            'serial_number' => $validated['serial_number'] ?: $audit->serial_number,
+            'hardware_id' => $validated['hardware_id'] ?: $audit->hardware_id,
+            'cpu_model' => $audit->cpu_model,
+            'cpu_speed' => $audit->cpu_speed,
+            'ram_capacity' => $audit->ram_capacity,
+            'ram_type' => $audit->ram_type,
+            'ram_bus' => $audit->ram_bus,
+            'ram_slots' => $audit->ram_slots,
+            'storage_type' => $audit->storage_type,
+            'storage_capacity' => $audit->storage_capacity,
+            'os_name' => $audit->os_name,
+            'os_license' => $audit->os_license,
+            'gpu_model' => $audit->gpu_model,
+            'monitor_size' => $audit->monitor_size,
+            'ip_address' => $audit->ip_address,
+            'mac_address' => $audit->mac_address,
+            'specs' => $specsString,
+            'price' => $validated['price'] ?? null,
+            'status' => 'active',
+            'notes' => $validated['notes'] ?? ("สร้างจากผลการตรวจนับอัตโนมัติ (HardwareID: " . ($audit->hardware_id ?: '-') . ")"),
+            'last_audited_at' => now(),
+            'last_audited_fiscal_year' => $audit->fiscal_year,
+        ]);
+
+        // Link audit record to newly created asset and approve
+        $audit->asset_id = $asset->id;
+        $audit->status = 'approved';
+        $audit->reviewed_by = $user->id;
+        $audit->reviewed_at = now();
+        $audit->review_notes = 'ลงทะเบียนเป็นครุภัณฑ์ใหม่เรียบร้อยแล้ว: ' . $asset->asset_code;
+        $audit->save();
+
+        // Audit Log
+        AuditLog::record(
+            'create',
+            'assets',
+            "เพิ่มครุภัณฑ์ใหม่ {$asset->asset_code} ({$asset->name}) จากผลตรวจนับฮาร์ดแวร์ประจำปีงบประมาณ {$audit->fiscal_year} (HardwareID: {$asset->hardware_id})",
+            $asset,
+            null,
+            null,
+            $request,
+            $user
+        );
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "ลงทะเบียนครุภัณฑ์ใหม่ '{$asset->asset_code}' และเชื่อมโยงผลการตรวจนับเรียบร้อยแล้ว",
+                'asset' => [
+                    'id' => $asset->id,
+                    'asset_code' => $asset->asset_code,
+                    'name' => $asset->name,
+                    'hardware_id' => $asset->hardware_id,
+                ],
+            ]);
+        }
+
+        return back()->with('success', "ลงทะเบียนครุภัณฑ์ใหม่ '{$asset->asset_code}' สำเร็จและบันทึกผลการตรวจนับเรียบร้อยแล้ว");
+    }
+
+    /**
      * Admin Action: Batch Approve multiple submissions
      */
     public function batchApprove(Request $request)
@@ -422,6 +578,7 @@ class HardwareAuditController extends Controller
                 if ($audit->asset_id) {
                     $asset = Asset::find($audit->asset_id);
                     if ($asset) {
+                        if ($audit->hardware_id) $asset->hardware_id = $audit->hardware_id;
                         if ($audit->cpu_model) $asset->cpu_model = $audit->cpu_model;
                         if ($audit->cpu_speed) $asset->cpu_speed = $audit->cpu_speed;
                         if ($audit->ram_capacity) $asset->ram_capacity = $audit->ram_capacity;
@@ -436,6 +593,9 @@ class HardwareAuditController extends Controller
                         if ($audit->monitor_size) $asset->monitor_size = $audit->monitor_size;
                         if ($audit->ip_address) $asset->ip_address = $audit->ip_address;
                         if ($audit->mac_address) $asset->mac_address = $audit->mac_address;
+                        if ($audit->serial_number && empty($asset->serial_number)) {
+                            $asset->serial_number = $audit->serial_number;
+                        }
                         $asset->last_audited_at = now();
                         $asset->last_audited_fiscal_year = $audit->fiscal_year;
                         $asset->save();

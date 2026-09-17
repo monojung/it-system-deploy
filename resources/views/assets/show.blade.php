@@ -69,6 +69,20 @@
                     </div>
                 </div>
 
+                <div style="background: #fdf4ff; padding: 12px 16px; border-radius: 8px; border: 1px solid #f0abfc;">
+                    <div style="font-size: 12px; color: #a21caf; font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="bi bi-fingerprint me-1"></i> HardwareID (UUID)</span>
+                        @if($asset->hardware_id)
+                            <button type="button" class="btn btn-link p-0 text-decoration-none" onclick="navigator.clipboard.writeText('{{ $asset->hardware_id }}'); if (window.Swal) Swal.fire({toast:true, position:'top-end', icon:'success', title:'คัดลอก HardwareID แล้ว', showConfirmButton:false, timer:1500});" title="คัดลอก HardwareID">
+                                <i class="bi bi-clipboard" style="font-size: 12px; color: #a21caf;"></i>
+                            </button>
+                        @endif
+                    </div>
+                    <div style="font-weight: 600; font-family: monospace; font-size: 13px; margin-top: 2px; color: #701a75; word-break: break-all;">
+                        {{ $asset->hardware_id ?? '-' }}
+                    </div>
+                </div>
+
                 <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
                     <div style="font-size: 12px; color: var(--text-muted);">IP Address</div>
                     <div style="font-weight: 600; font-family: monospace; font-size: 14px; margin-top: 2px;">

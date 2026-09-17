@@ -211,6 +211,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/hardware-audits', [HardwareAuditController::class, 'index'])->name('hardware-audits.index');
         Route::get('/hardware-audits/{id}/inspect', [HardwareAuditController::class, 'inspect'])->name('hardware-audits.inspect');
         Route::post('/hardware-audits/{id}/approve', [HardwareAuditController::class, 'approve'])->name('hardware-audits.approve');
+        Route::post('/hardware-audits/{id}/create-asset', [HardwareAuditController::class, 'createAssetFromAudit'])->name('hardware-audits.create-asset');
         Route::post('/hardware-audits/batch-approve', [HardwareAuditController::class, 'batchApprove'])->name('hardware-audits.batch-approve');
         Route::post('/hardware-audits/{id}/reject', [HardwareAuditController::class, 'reject'])->name('hardware-audits.reject');
         Route::get('/hardware-audits/print-report', [HardwareAuditController::class, 'printAnnualReport'])->name('hardware-audits.print-report');

@@ -16,6 +16,7 @@ class HardwareAudit extends Model
         'fiscal_year',
         'asset_id',
         'hostname',
+        'hardware_id',
         'serial_number',
         'mac_address',
         'ip_address',

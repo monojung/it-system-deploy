@@ -20,6 +20,7 @@ Write-Host 'Auditing physical hardware specs, please wait...' -ForegroundColor W
 $cs = Get-CimInstance Win32_ComputerSystem
 $bios = Get-CimInstance Win32_Bios
 $os = Get-CimInstance Win32_OperatingSystem
+$csp = Get-CimInstance Win32_ComputerSystemProduct
 
 $computerName = $env:COMPUTERNAME
 $brand = if ($cs.Manufacturer) { $cs.Manufacturer.Trim() } else { '' }
@@ -28,6 +29,15 @@ $serialNumber = if ($bios.SerialNumber) { $bios.SerialNumber.Trim() } else { '' 
 
 if ($serialNumber -match 'Default string|To be filled by O\.E\.M\.|None') {
     $serialNumber = ''
+}
+
+# Unique Hardware ID (SMBIOS System UUID / Motherboard Serial)
+$hardwareId = if ($csp.UUID) { $csp.UUID.Trim() } else { '' }
+if ($hardwareId -match '^[0F-]{36}$' -or $hardwareId -match 'Default string|None' -or [string]::IsNullOrWhiteSpace($hardwareId)) {
+    $bb = Get-CimInstance Win32_BaseBoard
+    if ($bb.SerialNumber -and $bb.SerialNumber -notmatch 'Default string|None') {
+        $hardwareId = $bb.SerialNumber.Trim()
+    }
 }
 
 # 2. CPU
@@ -108,6 +118,7 @@ $monitorSize = if ($isLaptop) { '15.6 นิ้ว FHD' } else { '23.8 นิ้
 # 10. Construct Payload
 $payload = [ordered]@{
     hostname              = $computerName
+    hardware_id           = $hardwareId
     serial_number         = $serialNumber
     mac_address           = $macAddress
     ip_address            = $ipAddress
@@ -126,7 +137,7 @@ $payload = [ordered]@{
     os_license            = $osLicense
     gpu_model             = $gpuModel
     monitor_size          = $monitorSize
-    client_agent_version  = '1.1.0'
+    client_agent_version  = '1.2.0'
 }
 
 $jsonBody = $payload | ConvertTo-Json -Compress
@@ -135,6 +146,7 @@ $jsonBody = $payload | ConvertTo-Json -Compress
 Write-Host ''
 Write-Host '------------------ HARDWARE SCAN SUMMARY ------------------' -ForegroundColor Green
 Write-Host "  Hostname:       $computerName" -ForegroundColor White
+Write-Host "  Hardware ID:    $hardwareId" -ForegroundColor Magenta
 Write-Host "  Brand / Model:  $brand $model" -ForegroundColor White
 Write-Host "  Serial Number:  $serialNumber" -ForegroundColor Yellow
 Write-Host "  CPU Model:      $cpuName ($cpuSpeedGhz)" -ForegroundColor Cyan

@@ -263,12 +263,12 @@
                                 <th style="width: 115px;">วันที่ส่งผลสแกน</th>
                                 <th>ชื่อเครื่อง (Hostname / Network)</th>
                                 <th style="width: 175px;">ยี่ห้อ / รุ่น (Brand & Model)</th>
-                                <th style="width: 140px;">Serial Number</th>
-                                <th>ครุภัณฑ์ที่จับคู่ (Matched Asset)</th>
+                                <th style="width: 165px;">HardwareID / S/N</th>
+                                <th style="width: 200px;">ครุภัณฑ์ที่จับคู่ (Matched Asset)</th>
                                 <th>สเปคที่ตรวจพบจาก Agent (Hardware Telemetry)</th>
                                 <th style="text-align: center; width: 110px;">การเปลี่ยนแปลง</th>
                                 <th style="text-align: center; width: 95px;">สถานะ</th>
-                                <th style="text-align: right; width: 230px;">การจัดการ</th>
+                                <th style="text-align: right; width: 260px;">การจัดการ</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -308,31 +308,33 @@
                                     @if($audit->brand || $audit->model)
                                         <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
                                             <span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 11px; font-weight: 700;">
-                                                <i class="bi bi-laptop me-1"></i>{{ $audit->brand ?: 'คอมพิวเตอร์' }}
+                                                {{ $audit->brand ?: 'ไม่ระบุยี่ห้อ' }}
                                             </span>
-                                            <span style="font-size: 12px; font-weight: 600; color: #1e293b;">{{ $audit->model }}</span>
+                                            <span style="font-weight: 600; color: #334155; font-size: 12.5px;">{{ $audit->model }}</span>
                                         </div>
-                                        <div style="font-size: 11px; color: #64748b; margin-top: 3px;">
-                                            ประเภท: <strong style="color: #0f766e;">{{ strtoupper($audit->device_type_code ?? 'PC') }}</strong>
-                                        </div>
-                                    @elseif($audit->asset && ($audit->asset->brand || $audit->asset->model))
-                                        <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
-                                            <span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; font-size: 11px;">
-                                                {{ $audit->asset->brand }}
-                                            </span>
-                                            <span style="font-size: 12px; font-weight: 600;">{{ $audit->asset->model }}</span>
+                                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                                            <span class="badge bg-light text-secondary border" style="font-size: 10px;">{{ $audit->device_type_code ?? 'PC' }}</span>
                                         </div>
                                     @else
                                         <span class="text-muted" style="font-size: 12px;">(ไม่ระบุยี่ห้อ/รุ่น)</span>
                                     @endif
                                 </td>
 
+                                {{-- HardwareID & Serial Number Column --}}
                                 <td>
-                                    <code style="font-size: 11.5px; color: #0f766e; background: #f0fdfa; border: 1px solid #ccfbf1; padding: 3px 6px; border-radius: 6px; font-weight: 700; display: inline-block;">
+                                    @if($audit->hardware_id)
+                                        <div style="margin-bottom: 3px;">
+                                            <span class="badge" style="background: #fdf4ff; color: #a21caf; border: 1px solid #f0abfc; font-size: 10px; font-weight: 700; font-family: monospace;" title="HardwareID: {{ $audit->hardware_id }}">
+                                                <i class="bi bi-fingerprint me-1"></i>HWID: {{ Str::limit($audit->hardware_id, 13) }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                    <code style="font-size: 11px; color: #0f766e; background: #f0fdfa; border: 1px solid #ccfbf1; padding: 2px 6px; border-radius: 6px; font-weight: 700; display: inline-block;">
                                         {{ $audit->serial_number ?: '(ไม่พบ S/N)' }}
                                     </code>
                                 </td>
 
+                                {{-- Matched Asset Column --}}
                                 <td>
                                     @if($audit->asset)
                                         <div>
@@ -340,14 +342,25 @@
                                                 <span>{{ $audit->asset->asset_code }}</span>
                                                 <i class="bi bi-box-arrow-up-right" style="font-size: 10px;"></i>
                                             </a>
+                                            @if($audit->hardware_id && $audit->asset->hardware_id === $audit->hardware_id)
+                                                <span class="badge" style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 9.5px; font-weight: 600; padding: 1px 5px; border-radius: 4px;" title="จับคู่แม่นยำด้วย HardwareID">
+                                                    <i class="bi bi-link-45deg"></i> เชื่อมด้วย HWID
+                                                </span>
+                                            @endif
                                         </div>
                                         <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
                                             <i class="bi bi-geo-alt me-1"></i>{{ $audit->asset->department?->name ?? 'ไม่ระบุแผนก' }}
                                         </div>
                                     @else
-                                        <span class="badge bg-secondary-subtle text-secondary border px-2 py-1" style="font-size: 11px;">
-                                            <i class="bi bi-asterisk me-1"></i>เครื่องใหม่ / ยังไม่จับคู่
-                                        </span>
+                                        <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
+                                            <span class="badge" style="background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+                                                <i class="bi bi-sparkles me-1"></i>🆕 ตรวจพบเครื่องใหม่
+                                            </span>
+                                            <button type="button" class="btn btn-sm" onclick="openCreateAssetModal({{ json_encode($audit) }})"
+                                                    style="font-size: 11px; padding: 2px 8px; border-radius: 6px; background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); color: #ffffff; font-weight: 600; border: none; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(13,148,136,0.2);">
+                                                <i class="bi bi-plus-circle-fill"></i> เพิ่มเป็นครุภัณฑ์ใหม่
+                                            </button>
+                                        </div>
                                     @endif
                                 </td>
 
@@ -415,10 +428,19 @@
 
                                         <!-- ACTION BUTTONS: Approve / Reject (Only for pending) -->
                                         @if($audit->status === 'pending')
-                                            <button type="button" class="btn btn-sm btn-success" onclick="approveSingleAudit({{ $audit->id }}, '{{ $audit->hostname }}')" 
-                                                    title="อนุมัติและอัปเดตสเปคลงครุภัณฑ์ทันที" style="font-size: 11.5px; padding: 5px 9px; border-radius: 7px;">
-                                                <i class="bi bi-check-lg"></i>
-                                            </button>
+                                            @if(!$audit->asset_id)
+                                                <button type="button" class="btn btn-sm" onclick="openCreateAssetModal({{ json_encode($audit) }})" 
+                                                        title="ลงทะเบียนและเพิ่มเป็นครุภัณฑ์ใหม่ลงระบบคลังทันที" 
+                                                        style="background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); color: #ffffff; font-size: 11.5px; padding: 5px 10px; border-radius: 7px; font-weight: 700; border: none; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(13,148,136,0.25);">
+                                                    <i class="bi bi-plus-circle-fill"></i>
+                                                    <span>+ เพิ่มครุภัณฑ์ใหม่</span>
+                                                </button>
+                                            @else
+                                                <button type="button" class="btn btn-sm btn-success" onclick="approveSingleAudit({{ $audit->id }}, '{{ $audit->hostname }}')" 
+                                                        title="อนุมัติและอัปเดตสเปคลงครุภัณฑ์ทันที" style="font-size: 11.5px; padding: 5px 9px; border-radius: 7px;">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            @endif
                                             <button type="button" class="btn btn-sm btn-outline-danger" onclick="rejectSingleAudit({{ $audit->id }}, '{{ $audit->hostname }}')" 
                                                     title="ปฏิเสธรายการนี้" style="font-size: 11.5px; padding: 5px 9px; border-radius: 7px;">
                                                 <i class="bi bi-x-lg"></i>
@@ -769,6 +791,124 @@
                 <i class="bi bi-check-lg"></i> อนุมัติและบันทึกลงครุภัณฑ์
             </button>
         </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 3: REGISTER NEW ASSET DIRECTLY FROM HARDWARE AUDIT                  -->
+<!-- ========================================================================= -->
+<div id="createAssetModal" class="custom-modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); z-index: 1080; align-items: center; justify-content: center; padding: 16px;">
+    <div class="custom-modal-dialog" style="background: #ffffff; border-radius: 18px; width: 100%; max-width: 820px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); padding: 16px 22px; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-plus-circle-fill"></i>
+                <span>ลงทะเบียนครุภัณฑ์ใหม่จากผลสแกนฮาร์ดแวร์ (New Asset Registration)</span>
+            </div>
+            <button type="button" onclick="closeCreateAssetModal()" style="background: rgba(255,255,255,0.15); border: none; color: #ffffff; width: 32px; height: 32px; border-radius: 8px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+        </div>
+
+        <form id="formRegisterAssetFromAudit" onsubmit="submitCreateAssetFromAudit(event)" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
+            <input type="hidden" id="newAssetAuditId" name="audit_id">
+            <input type="hidden" id="newAssetHardwareId" name="hardware_id">
+            
+            <div style="padding: 22px; overflow-y: auto; flex: 1;">
+                {{-- Discovered Telemetry Specs Summary Banner --}}
+                <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                        <span style="font-size: 12px; font-weight: 700; color: #0f766e; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="bi bi-cpu-fill me-1"></i> สเปคที่อ่านได้จริงจากเครื่อง (Hardware Telemetry)
+                        </span>
+                        <span class="badge" id="newAssetHardwareIdBadge" style="background: #fdf4ff; color: #a21caf; border: 1px solid #f0abfc; font-size: 11px; font-family: monospace; font-weight: 700;">
+                            HWID: -
+                        </span>
+                    </div>
+                    <div id="newAssetSpecsSummaryText" style="font-size: 13px; color: #1e293b; line-height: 1.5; font-weight: 500;">
+                        กำลังโหลดข้อมูลสเปค...
+                    </div>
+                </div>
+
+                {{-- Form Fields --}}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">หมายเลขครุภัณฑ์ (Asset Code) <span class="text-danger">*</span></label>
+                        <input type="text" id="newAssetCode" name="asset_code" class="form-control" required placeholder="เช่น 7440-001-0001/{{ substr((string)$fiscalYear, -2) }}">
+                        <span class="form-text" style="font-size: 11px; color: #64748b;">รหัสหมายเลขครุภัณฑ์ตามทะเบียนพัสดุ</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">ประเภทอุปกรณ์ (Device Type) <span class="text-danger">*</span></label>
+                        <select id="newAssetDeviceTypeId" name="device_type_id" class="form-select" required>
+                            @foreach($deviceTypes ?? [] as $dt)
+                                <option value="{{ $dt->id }}" data-code="{{ $dt->code }}">{{ $dt->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">ชื่อรายการครุภัณฑ์ (Asset Name) <span class="text-danger">*</span></label>
+                        <input type="text" id="newAssetName" name="name" class="form-control" required placeholder="เช่น เครื่องคอมพิวเตอร์ สำหรับงานประมวลผล แบบที่ 2">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">ยี่ห้อ (Brand)</label>
+                        <input type="text" id="newAssetBrand" name="brand" class="form-control" placeholder="เช่น Dell, HP">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">รุ่น (Model)</label>
+                        <input type="text" id="newAssetModel" name="model" class="form-control" placeholder="เช่น ProDesk 400 G7">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">Serial Number (S/N)</label>
+                        <input type="text" id="newAssetSerial" name="serial_number" class="form-control">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">แผนก / หน่วยงานที่ใช้งาน</label>
+                        <select id="newAssetDepartmentId" name="department_id" class="form-select">
+                            <option value="">-- ไม่ระบุแผนก --</option>
+                            @foreach($departments ?? [] as $dept)
+                                <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">จุดวาง / ห้องทำงาน</label>
+                        <input type="text" id="newAssetLocation" name="location_detail" class="form-control" placeholder="เช่น โต๊ะทำงานชั้น 2, ห้องตรวจ 1">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">ผู้ครอบครอง / ผู้ดูแล</label>
+                        <input type="text" id="newAssetCustodian" name="custodian_name" class="form-control" placeholder="เช่น ชื่อเจ้าหน้าที่ผู้รับผิดชอบ">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">ปีงบประมาณ</label>
+                        <input type="text" id="newAssetBudgetYear" name="budget_year" class="form-control" value="{{ $fiscalYear }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">ราคาจัดซื้อ (บาท)</label>
+                        <input type="number" step="0.01" id="newAssetPrice" name="price" class="form-control" placeholder="24500.00">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">หมายเหตุ</label>
+                        <input type="text" id="newAssetNotes" name="notes" class="form-control" placeholder="หมายเหตุเพิ่มเติม">
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <a id="btnOpenFullAssetForm" href="#" target="_blank" style="font-size: 12.5px; color: #0284c7; font-weight: 600; text-decoration: none;">
+                        <i class="bi bi-box-arrow-up-right me-1"></i> หรือเปิดฟอร์มลงทะเบียนแบบเต็มรูปแบบ
+                    </a>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="closeCreateAssetModal()">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitNewAsset" style="font-weight: 700; padding: 6px 18px; background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none;">
+                        <i class="bi bi-plus-circle-fill me-1"></i> บันทึกและสร้างครุภัณฑ์ใหม่
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -1214,9 +1354,133 @@
     }
 
     // -------------------------------------------------------------
+    // Register New Asset Modal Handler
+    // -------------------------------------------------------------
+    let currentNewAssetAudit = null;
+    let currentDiffAudit = null;
+
+    function openCreateAssetModal(audit) {
+        currentNewAssetAudit = audit;
+        const modal = document.getElementById('createAssetModal');
+        
+        document.getElementById('newAssetAuditId').value = audit.id;
+        document.getElementById('newAssetHardwareId').value = audit.hardware_id || '';
+        document.getElementById('newAssetHardwareIdBadge').textContent = audit.hardware_id ? ('HWID: ' + audit.hardware_id) : 'HWID: ไม่พบข้อมูล';
+        
+        // Build Specs Summary text
+        const specs = [
+            audit.cpu_model ? ('CPU ' + audit.cpu_model + (audit.cpu_speed ? ' (' + audit.cpu_speed + ')' : '')) : null,
+            audit.ram_capacity ? ('RAM ' + audit.ram_capacity + 'GB ' + (audit.ram_type || '') + (audit.ram_bus ? ' (' + audit.ram_bus + ')' : '')) : null,
+            audit.storage_capacity ? ((audit.storage_type || 'Storage') + ' ' + audit.storage_capacity) : null,
+            audit.os_name ? ('OS ' + audit.os_name) : null,
+            audit.ip_address ? ('IP ' + audit.ip_address) : null
+        ].filter(Boolean).join(' • ');
+
+        document.getElementById('newAssetSpecsSummaryText').textContent = specs || 'อ่านสเปคจากเครื่องไม่สมบูรณ์';
+
+        // Auto-generate suggested asset code
+        const fiscalYearShort = String({{ $fiscalYear }}).slice(-2);
+        const randomNum = String(Math.floor(1000 + Math.random() * 9000));
+        document.getElementById('newAssetCode').value = '7440-001-' + randomNum + '/' + fiscalYearShort;
+
+        const brand = audit.brand || '';
+        const model = audit.model || audit.hostname || '';
+        document.getElementById('newAssetName').value = 'เครื่องคอมพิวเตอร์ ' + (brand ? brand + ' ' : '') + model;
+        document.getElementById('newAssetBrand').value = brand;
+        document.getElementById('newAssetModel').value = model;
+        document.getElementById('newAssetSerial').value = audit.serial_number || '';
+        document.getElementById('newAssetBudgetYear').value = audit.fiscal_year || '{{ $fiscalYear }}';
+
+        // Match DeviceType dropdown
+        const devTypeSelect = document.getElementById('newAssetDeviceTypeId');
+        if (devTypeSelect) {
+            const targetCode = (audit.device_type_code || 'PC').toUpperCase();
+            for (let i = 0; i < devTypeSelect.options.length; i++) {
+                const opt = devTypeSelect.options[i];
+                if ((opt.getAttribute('data-code') || '').toUpperCase() === targetCode) {
+                    devTypeSelect.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Link for full registration form
+        const fullFormBtn = document.getElementById('btnOpenFullAssetForm');
+        if (fullFormBtn) {
+            fullFormBtn.href = "{{ route('assets.create') }}?from_audit=" + audit.id;
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    function closeCreateAssetModal() {
+        document.getElementById('createAssetModal').style.display = 'none';
+    }
+
+    function submitCreateAssetFromAudit(e) {
+        e.preventDefault();
+        const form = document.getElementById('formRegisterAssetFromAudit');
+        const submitBtn = document.getElementById('btnSubmitNewAsset');
+        const auditId = document.getElementById('newAssetAuditId').value;
+        const formData = new FormData(form);
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> กำลังบันทึก...';
+
+        fetch("{{ url('/hardware-audits') }}/" + auditId + "/create-asset", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-plus-circle-fill me-1"></i> บันทึกและสร้างครุภัณฑ์ใหม่';
+
+            if (data.success) {
+                closeCreateAssetModal();
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'ลงทะเบียนครุภัณฑ์สำเร็จ!',
+                        text: data.message,
+                        confirmButtonText: 'ตกลง'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    alert(data.message);
+                    window.location.reload();
+                }
+            } else {
+                const err = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'เกิดข้อผิดพลาดในการบันทึก');
+                if (window.Swal) {
+                    Swal.fire({ icon: 'error', title: 'ไม่สามารถบันทึกได้', text: err });
+                } else {
+                    alert(err);
+                }
+            }
+        })
+        .catch(err => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-plus-circle-fill me-1"></i> บันทึกและสร้างครุภัณฑ์ใหม่';
+            if (window.Swal) {
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', text: err.message });
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + err.message);
+            }
+        });
+    }
+
+    // -------------------------------------------------------------
     // Side-by-Side Spec Diff Modal (เปรียบเทียบสเปคเดิม vs สเปคใหม่)
     // -------------------------------------------------------------
     function openAuditDiffModal(audit, asset) {
+        currentDiffAudit = audit;
         const modal = document.getElementById('auditDiffModal');
         const body = document.getElementById('auditDiffModalBody');
         const approveBtn = document.getElementById('modalApproveBtn');
@@ -1257,13 +1521,38 @@
             `;
         });
 
+        let newDeviceBanner = '';
+        if (!asset) {
+            newDeviceBanner = `
+                <div style="background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: #ffe4e6; color: #e11d48; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            <i class="bi bi-sparkles"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; color: #e11d48; font-size: 14px;">ตรวจพบเครื่องใหม่ (ยังไม่มีในระบบทะเบียนครุภัณฑ์)</div>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                                เครื่องนี้ยังไม่เคยผูกกับครุภัณฑ์ สามารถคลิกปุ่มเพื่อเพิ่มเป็นครุภัณฑ์ใหม่ได้ทันที
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="closeAuditDiffModal(); openCreateAssetModal(currentDiffAudit);" 
+                            style="background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none; font-weight: 700; padding: 6px 14px; border-radius: 8px;">
+                        <i class="bi bi-plus-circle-fill me-1"></i> เพิ่มเป็นครุภัณฑ์ใหม่ทันที
+                    </button>
+                </div>
+            `;
+        }
+
         body.innerHTML = `
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+            ${newDeviceBanner}
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
                     <strong style="font-size: 15px; color: #0f172a;">${audit.hostname || 'ไม่ระบุชื่อเครื่อง'}</strong>
-                    <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                    <div style="font-size: 12px; color: #64748b; margin-top: 3px;">
+                        ${audit.hardware_id ? '<span class="badge me-1" style="background:#fdf4ff; color:#a21caf; border:1px solid #f0abfc; font-family:monospace;">HWID: ' + audit.hardware_id + '</span>' : ''}
                         Serial Number: <code>${audit.serial_number || '-'}</code> &bull; 
-                        ${asset ? 'รหัสครุภัณฑ์: <strong>' + asset.asset_code + '</strong>' : '<span class="text-warning">ไม่พบครุภัณฑ์ที่จับคู่</span>'}
+                        ${asset ? 'รหัสครุภัณฑ์: <strong>' + asset.asset_code + '</strong>' : '<span class="text-danger fw-bold">ไม่พบครุภัณฑ์ที่จับคู่</span>'}
                     </div>
                 </div>
                 <div>
@@ -1290,11 +1579,21 @@
         `;
 
         if (audit.status === 'pending') {
-            approveBtn.style.display = 'inline-flex';
-            approveBtn.onclick = function() {
-                closeAuditDiffModal();
-                approveSingleAudit(audit.id, audit.hostname);
-            };
+            if (asset) {
+                approveBtn.style.display = 'inline-flex';
+                approveBtn.innerHTML = '<i class="bi bi-check-lg"></i> อนุมัติและบันทึกลงครุภัณฑ์';
+                approveBtn.onclick = function() {
+                    closeAuditDiffModal();
+                    approveSingleAudit(audit.id, audit.hostname);
+                };
+            } else {
+                approveBtn.style.display = 'inline-flex';
+                approveBtn.innerHTML = '<i class="bi bi-plus-circle-fill"></i> เพิ่มเป็นครุภัณฑ์ใหม่';
+                approveBtn.onclick = function() {
+                    closeAuditDiffModal();
+                    openCreateAssetModal(audit);
+                };
+            }
         } else {
             approveBtn.style.display = 'none';
         }

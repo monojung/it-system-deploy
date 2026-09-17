@@ -17,6 +17,7 @@ class Asset extends Model
     protected $fillable = [
         'asset_code',
         'serial_number',
+        'hardware_id',
         'name',
         'device_type_id',
         'brand',

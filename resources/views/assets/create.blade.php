@@ -239,6 +239,25 @@
     <form action="{{ route('assets.store') }}" method="POST" enctype="multipart/form-data" id="createAssetForm">
         @csrf
 
+        @if(isset($prefillAudit) && $prefillAudit)
+        <div style="background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%); border: 1.5px solid #e879f9; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 12px rgba(192, 38, 211, 0.08);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: #c026d3; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+                    <i class="bi bi-sparkles"></i>
+                </div>
+                <div>
+                    <strong style="color: #86198f; font-size: 14px;">กำลังลงทะเบียนครุภัณฑ์ใหม่จากผลสแกนฮาร์ดแวร์ประจำปีงบประมาณ {{ $prefillAudit->fiscal_year }}</strong>
+                    <div style="font-size: 12px; color: #4b5563; margin-top: 2px;">
+                        เครื่อง: <strong>{{ $prefillAudit->hostname }}</strong> &bull; HardwareID: <code style="color: #a21caf; font-weight: 700;">{{ $prefillAudit->hardware_id ?: '-' }}</code> &bull; S/N: <code>{{ $prefillAudit->serial_number ?: '-' }}</code>
+                    </div>
+                </div>
+            </div>
+            <span class="badge" style="background: #f0abfc; color: #701a75; font-size: 11.5px; font-weight: 700; padding: 6px 12px; border-radius: 999px;">
+                นำเข้าสเปคอัตโนมัติแล้ว
+            </span>
+        </div>
+        @endif
+
         {{-- SECTION 1: ข้อมูลพื้นฐานและการจำแนกประเภท (Asset Identity) --}}
         <div class="form-section-card">
             <div class="form-section-header">
@@ -271,8 +290,14 @@
                                 elseif (str_contains($lower, 'พิมพ์') || str_contains($lower, 'printer')) $icon = 'bi-printer';
                                 elseif (str_contains($lower, 'สแกนเนอร์') || str_contains($lower, 'scanner')) $icon = 'bi-scanner';
                                 elseif (str_contains($lower, 'เครือข่าย') || str_contains($lower, 'switch') || str_contains($lower, 'router')) $icon = 'bi-hdd-network';
+
+                                $isActiveType = old('device_type_id') == $type->id;
+                                if (!$isActiveType && isset($prefillAudit)) {
+                                    $code = strtoupper($prefillAudit->device_type_code ?? '');
+                                    if ($type->code === $code) $isActiveType = true;
+                                }
                             @endphp
-                            <button type="button" class="type-pill-btn {{ old('device_type_id') == $type->id ? 'active' : '' }}"
+                            <button type="button" class="type-pill-btn {{ $isActiveType ? 'active' : '' }}"
                                     data-type-id="{{ $type->id }}"
                                     data-type-name="{{ $type->name }}"
                                     onclick="selectDeviceType('{{ $type->id }}', this)">
@@ -294,8 +319,17 @@
                     <div class="form-group" style="flex: 1;">
                         <label class="form-label" for="serial_number">Serial Number (S/N)</label>
                         <input type="text" id="serial_number" name="serial_number" class="form-control"
-                               value="{{ old('serial_number') }}" placeholder="เช่น S/N บนตัวเครื่อง">
+                               value="{{ old('serial_number', $prefillAudit->serial_number ?? '') }}" placeholder="เช่น S/N บนตัวเครื่อง">
                         <span class="form-text">หมายเลขประจำเครื่องจากผู้ผลิต</span>
+                    </div>
+
+                    <div class="form-group" style="flex: 1.1;">
+                        <label class="form-label" for="hardware_id">
+                            <i class="bi bi-fingerprint" style="color: #a21caf;"></i> HardwareID (UUID)
+                        </label>
+                        <input type="text" id="hardware_id" name="hardware_id" class="form-control" style="font-family: monospace;"
+                               value="{{ old('hardware_id', $prefillAudit->hardware_id ?? '') }}" placeholder="SMBIOS UUID ประจำเครื่อง">
+                        <span class="form-text">ระบุอัตโนมัติจาก Agent สแกนสเปค</span>
                     </div>
 
                     <div class="form-group" style="flex: 1.2;">
@@ -303,7 +337,14 @@
                         <select name="device_type_id" id="device_type_id" class="form-select" required onchange="handleTypeDropdownChange(this)">
                             <option value="">-- กรุณาเลือกประเภท --</option>
                             @foreach($deviceTypes as $type)
-                                <option value="{{ $type->id }}" data-code="{{ $type->code }}" {{ old('device_type_id') == $type->id ? 'selected' : '' }}>
+                                @php
+                                    $isSel = old('device_type_id') == $type->id;
+                                    if (!$isSel && isset($prefillAudit)) {
+                                        $code = strtoupper($prefillAudit->device_type_code ?? '');
+                                        if ($type->code === $code) $isSel = true;
+                                    }
+                                @endphp
+                                <option value="{{ $type->id }}" data-code="{{ $type->code }}" {{ $isSel ? 'selected' : '' }}>
                                     {{ $type->name }}
                                 </option>
                             @endforeach
@@ -384,14 +425,14 @@
                             <small class="text-muted" style="font-weight: 400;">(สามารถเลือกจากเกณฑ์ด้านบน หรือพิมพ์แก้ไขต่อท้ายได้)</small>
                         </label>
                         <input type="text" id="name" name="name" class="form-control"
-                               value="{{ old('name') }}" placeholder="เช่น เครื่องคอมพิวเตอร์ สำหรับงานประมวลผล แบบที่ 2 (ห้องตรวจ 1)" required>
+                               value="{{ old('name', isset($prefillAudit) ? 'เครื่องคอมพิวเตอร์ ' . ($prefillAudit->brand ? $prefillAudit->brand . ' ' : '') . ($prefillAudit->model ?: $prefillAudit->hostname) : '') }}" placeholder="เช่น เครื่องคอมพิวเตอร์ สำหรับงานประมวลผล แบบที่ 2 (ห้องตรวจ 1)" required>
                         <span class="form-text">ชื่อทางการสำหรับทะเบียนพัสดุและรายงานตามระเบียบราชการ</span>
                     </div>
 
                     <div class="form-group" style="flex: 1;">
                         <label class="form-label" for="brand">ยี่ห้อ (Brand)</label>
                         <input type="text" id="brand" name="brand" class="form-control" list="brand_suggestions"
-                               value="{{ old('brand') }}" placeholder="เช่น Dell, HP, Lenovo, Brother">
+                               value="{{ old('brand', $prefillAudit->brand ?? '') }}" placeholder="เช่น Dell, HP, Lenovo, Brother">
                         <datalist id="brand_suggestions">
                             <option value="Dell">
                             <option value="HP">
@@ -410,7 +451,7 @@
                     <div class="form-group" style="flex: 1;">
                         <label class="form-label" for="model">รุ่น (Model)</label>
                         <input type="text" id="model" name="model" class="form-control"
-                               value="{{ old('model') }}" placeholder="เช่น OptiPlex 7010, ThinkCentre">
+                               value="{{ old('model', $prefillAudit->model ?? '') }}" placeholder="เช่น OptiPlex 7010, ThinkCentre">
                     </div>
                 </div>
             </div>
@@ -516,7 +557,7 @@
                             <i class="bi bi-router text-primary"></i> IP Address
                         </label>
                         <input type="text" id="ip_address" name="ip_address" class="form-control"
-                               value="{{ old('ip_address') }}" placeholder="เช่น 192.168.2.55">
+                               value="{{ old('ip_address', $prefillAudit->ip_address ?? '') }}" placeholder="เช่น 192.168.2.55">
                         <span class="form-text">IP Address ภายในระบบ LAN โรงพยาบาล</span>
                     </div>
 
@@ -525,7 +566,7 @@
                             <i class="bi bi-ethernet text-secondary"></i> MAC Address
                         </label>
                         <input type="text" id="mac_address" name="mac_address" class="form-control"
-                               value="{{ old('mac_address') }}" placeholder="เช่น 00:1A:2B:3C:4D:5E">
+                               value="{{ old('mac_address', $prefillAudit->mac_address ?? '') }}" placeholder="เช่น 00:1A:2B:3C:4D:5E">
                         <span class="form-text">Hardware Address การ์ดแลน / Wi-Fi</span>
                     </div>
                 </div>
@@ -618,7 +659,7 @@
                     <div class="form-group">
                         <label class="form-label" for="budget_year">ปีงบประมาณ</label>
                         <input type="text" id="budget_year" name="budget_year" class="form-control"
-                               value="{{ old('budget_year', '2568') }}" placeholder="เช่น 2567, 2568">
+                               value="{{ old('budget_year', $prefillAudit->fiscal_year ?? '2569') }}" placeholder="เช่น 2568, 2569">
                     </div>
                 </div>
             </div>

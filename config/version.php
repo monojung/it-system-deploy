@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.3.2'),
+    'version' => env('APP_VERSION', '2.3.3'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-17',
-    'build' => '20260917.1',
+    'build' => '20260917.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,19 @@ return [
     |
     */
     'changelog' => [
+        '2.3.3' => [
+            'date' => '2026-09-17',
+            'badge' => 'HardwareID Matching & Auto-Register New Asset',
+            'badge_color' => '#10b981',
+            'title' => 'ระบบเชื่อมโยงตรวจนับคอมพิวเตอร์ด้วย HardwareID (SMBIOS UUID) และฟีเจอร์ลงทะเบียนครุภัณฑ์ใหม่อัตโนมัติจาก Telemetry',
+            'highlights' => [
+                'เชื่อมโยงข้อมูลตรวจนับด้วย HardwareID (SMBIOS UUID): ระบุเครื่องคอมพิวเตอร์อย่างแม่นยำแม้เปลี่ยนชื่อเครื่อง (Hostname) หรือเปลี่ยนการ์ดเครือข่าย โดย PowerShell Agent (v1.2.0) ดึง SMBIOS UUID อัตโนมัติพร้อมระบบสำรอง Motherboard Serial',
+                'ลำดับความสำคัญในการจับคู่ข้อมูลตรวจนับ: ให้ความสำคัญกับ HardwareID เป็นอันดับแรก ตามด้วย Serial Number, MAC Address และ Hostname',
+                'ตรวจพบเครื่องใหม่ & เพิ่มเป็นครุภัณฑ์ใหม่ทันที (+ เพิ่มครุภัณฑ์ใหม่): เมื่อพบเครื่องใหม่ที่ไม่มีในฐานข้อมูล สามารถคลิกลงทะเบียนเป็นครุภัณฑ์ใหม่ได้ทันทีผ่าน Modal รวดเร็ว หรือเปิดแบบฟอร์มครุภัณฑ์ โดยดึงสเปคทุกชิ้น (CPU, RAM, Disk, OS, IP, MAC) ไปกรอกให้อัตโนมัติ 100%',
+                'ซิงก์ HardwareID กลับสู่ครุภัณฑ์อัตโนมัติ: เมื่อเจ้าหน้าที่กดอนุมัติผลตรวจนับ ระบบจะบันทึก HardwareID ไปยังข้อมูลครุภัณฑ์ เพื่อให้การตรวจนับในปีงบประมาณถัดไปเชื่อมโยงกันอย่างแม่นยำถาวร',
+                'เพิ่มการแสดงผล HardwareID ในหน้ารายละเอียดครุภัณฑ์ (Asset Detail) พร้อมปุ่มคัดลอก และป้ายแสดงผล "🔗 เชื่อมด้วย HWID" / "🆕 ตรวจพบเครื่องใหม่" ในหน้าติดตามตรวจนับ',
+            ],
+        ],
         '2.3.2' => [
             'date' => '2026-09-17',
             'badge' => 'IT Asset Borrowing & Hardware Telemetry Inspector',
