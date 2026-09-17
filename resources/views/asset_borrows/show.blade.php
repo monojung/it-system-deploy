@@ -322,96 +322,201 @@
 </div>
 
 {{-- MODAL 1: ส่งมอบอุปกรณ์ (Dispatch Modal) --}}
-<div id="dispatchModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-    <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; margin: 20px;">
-        <div style="padding: 18px 24px; background: #0d9488; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
-            <div style="font-weight: 700; font-size: 16px;">บันทึกการส่งมอบอุปกรณ์ (Handover Equipment)</div>
-            <button type="button" onclick="document.getElementById('dispatchModal').style.display='none'" style="background: none; border: none; color: #ffffff; font-size: 20px; cursor: pointer;">&times;</button>
-        </div>
-        <form action="{{ route('asset-borrows.dispatch', $borrow->id) }}" method="POST">
-            @csrf
-            <div style="padding: 22px;">
-                <p style="font-size: 13.5px; color: #475569; margin-bottom: 16px;">
-                    ยืนยันการส่งมอบอุปกรณ์ <strong>{{ $borrow->asset?->name }} ({{ $borrow->asset?->asset_code }})</strong> ให้แก่ <strong>{{ $borrow->borrower_name }}</strong>
-                </p>
-
-                <div class="mb-3">
-                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">สภาพอุปกรณ์ก่อนส่งมอบ</label>
-                    <input type="text" name="dispatch_condition" class="form-control" value="ปกติ สมบูรณ์ ครบถ้วนตามรายการ" required>
+<div id="dispatchModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 1050; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 520px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; margin: 20px; border: 1px solid #e2e8f0; animation: modalFadeIn 0.2s ease;">
+        <div style="padding: 20px 24px; background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                    <i class="bi bi-box-seam-fill"></i>
                 </div>
-                <div style="font-size: 12px; color: #64748b;">
-                    * เมื่อกดส่งมอบ สถานะของอุปกรณ์ในคลังจะเปลี่ยนเป็น "กำลังถูกยืมใช้งาน" โดยอัตโนมัติ
+                <div>
+                    <div style="font-weight: 800; font-size: 16px;">บันทึกการส่งมอบอุปกรณ์</div>
+                    <div style="font-size: 11.5px; opacity: 0.9;">Handover Equipment & Accessories</div>
                 </div>
             </div>
-            <div style="padding: 14px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="btn btn-light" onclick="document.getElementById('dispatchModal').style.display='none'">ยกเลิก</button>
-                <button type="submit" class="btn btn-primary" style="background: #0d9488; border-color: #0d9488;">ยืนยันส่งมอบอุปกรณ์</button>
+            <button type="button" onclick="document.getElementById('dispatchModal').style.display='none'" style="background: rgba(255,255,255,0.15); border: none; color: #ffffff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer;">&times;</button>
+        </div>
+
+        <form action="{{ route('asset-borrows.dispatch', $borrow->id) }}" method="POST">
+            @csrf
+            <div style="padding: 24px;">
+                <!-- Summary Pill Card -->
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">อุปกรณ์:</span>
+                        <span class="badge bg-primary" style="font-family: monospace;">{{ $borrow->asset?->asset_code }}</span>
+                    </div>
+                    <div style="font-size: 14.5px; font-weight: 700; color: #0f172a;">
+                        {{ $borrow->asset?->name }} ({{ $borrow->asset?->brand }} {{ $borrow->asset?->model }})
+                    </div>
+                    <div style="font-size: 12.5px; color: #475569; margin-top: 4px;">
+                        ส่งมอบให้: <strong>{{ $borrow->borrower_name }}</strong> ({{ $borrow->department?->name }})
+                    </div>
+                </div>
+
+                @if(!empty($borrow->accessories))
+                <div style="margin-bottom: 18px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+                        <i class="bi bi-check2-all text-primary"></i> รายการอุปกรณ์เสริมที่ต้องส่งมอบ:
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        @foreach((array)$borrow->accessories as $acc)
+                            <span class="badge" style="background: #f0fdfa; color: #0f766e; border: 1px solid #ccfbf1; font-size: 11.5px; padding: 4px 10px;">
+                                ✓ {{ $acc }}
+                            </span>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                <div class="mb-3">
+                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
+                        สภาพอุปกรณ์ก่อนส่งมอบ <span style="color: #ef4444;">*</span>
+                    </label>
+                    <input type="text" name="dispatch_condition" class="form-control" value="ปกติ สมบูรณ์ ครบถ้วนตามรายการ" required style="border-radius: 10px; font-size: 13.5px;">
+                    <div style="display: flex; gap: 6px; margin-top: 6px;">
+                        <button type="button" class="btn btn-light btn-sm" onclick="document.querySelector('input[name=dispatch_condition]').value='ปกติ สมบูรณ์ ครบถ้วนตามรายการ'" style="font-size: 11px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 2px 8px;">
+                            ปกติ สมบูรณ์ ครบถ้วน
+                        </button>
+                        <button type="button" class="btn btn-light btn-sm" onclick="document.querySelector('input[name=dispatch_condition]').value='มีรอยขีดข่วนเล็กน้อยตามการใช้งาน ตัวเครื่องทำงานปกติ'" style="font-size: 11px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 2px 8px;">
+                            มีรอยขีดข่วนเล็กน้อย
+                        </button>
+                    </div>
+                </div>
+
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 10px 14px; font-size: 12px; color: #166534; display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-info-circle-fill" style="font-size: 16px;"></i>
+                    <span>เมื่อกดยืนยัน ระบบจะปรับสถานะครุภัณฑ์ในคลังเป็น <strong>"กำลังถูกยืมใช้งาน"</strong> ทันที</span>
+                </div>
+            </div>
+
+            <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-light" onclick="document.getElementById('dispatchModal').style.display='none'" style="border-radius: 8px; font-weight: 600;">ยกเลิก</button>
+                <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none; border-radius: 8px; font-weight: 700; padding: 8px 20px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-check-circle-fill"></i> ยืนยันส่งมอบอุปกรณ์
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 {{-- MODAL 2: รับคืนอุปกรณ์ (Return Modal) --}}
-<div id="returnModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-    <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; margin: 20px;">
-        <div style="padding: 18px 24px; background: #10b981; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
-            <div style="font-weight: 700; font-size: 16px;">บันทึกการรับมอบคืนอุปกรณ์ (Return Inspection)</div>
-            <button type="button" onclick="document.getElementById('returnModal').style.display='none'" style="background: none; border: none; color: #ffffff; font-size: 20px; cursor: pointer;">&times;</button>
+<div id="returnModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 1050; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 540px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; margin: 20px; border: 1px solid #e2e8f0;">
+        <div style="padding: 20px 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                    <i class="bi bi-arrow-return-left"></i>
+                </div>
+                <div>
+                    <div style="font-weight: 800; font-size: 16px;">บันทึกการรับมอบคืนอุปกรณ์</div>
+                    <div style="font-size: 11.5px; opacity: 0.9;">Return Inspection & Inventory Restock</div>
+                </div>
+            </div>
+            <button type="button" onclick="document.getElementById('returnModal').style.display='none'" style="background: rgba(255,255,255,0.15); border: none; color: #ffffff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer;">&times;</button>
         </div>
+
         <form action="{{ route('asset-borrows.return', $borrow->id) }}" method="POST">
             @csrf
-            <div style="padding: 22px;">
-                <div class="mb-3">
-                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">วันที่ส่งคืนจริง</label>
-                    <input type="date" name="actual_return_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+            <div style="padding: 24px; max-height: 75vh; overflow-y: auto;">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
+                            วันที่ส่งคืนจริง <span style="color: #ef4444;">*</span>
+                        </label>
+                        <input type="date" name="actual_return_date" class="form-control" value="{{ date('Y-m-d') }}" required style="border-radius: 10px; font-size: 13.5px;">
+                    </div>
+                    <div class="col-md-6">
+                        <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
+                            สภาพอุปกรณ์เมื่อรับคืน <span style="color: #ef4444;">*</span>
+                        </label>
+                        <select name="return_condition" class="form-select" required style="border-radius: 10px; font-size: 13.5px;">
+                            <option value="ปกติ สมบูรณ์">✅ ปกติ สมบูรณ์ (ใช้งานได้ตามปกติ)</option>
+                            <option value="อุปกรณ์ไม่ครบ">⚠️ อุปกรณ์ไม่ครบ (ขาดสายชาร์จ/เมาส์/อุปกรณ์เสริม)</option>
+                            <option value="ชำรุดเสียหาย">❌ ชำรุดเสียหาย (ต้องส่งช่างซ่อมบำรุง)</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">สภาพอุปกรณ์เมื่อรับคืน</label>
-                    <select name="return_condition" class="form-select" required>
-                        <option value="ปกติ สมบูรณ์">ปกติ สมบูรณ์ (ใช้งานได้ตามปกติ)</option>
-                        <option value="อุปกรณ์ไม่ครบ">อุปกรณ์ไม่ครบ (ขาดสายชาร์จ/เมาส์/อุปกรณ์เสริม)</option>
-                        <option value="ชำรุดเสียหาย">ชำรุดเสียหาย (ต้องส่งช่างซ่อม)</option>
-                    </select>
+                @if(!empty($borrow->accessories))
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+                        <i class="bi bi-card-checklist text-primary"></i> เช็กตรวจรับอุปกรณ์เสริมที่คืน:
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        @foreach((array)$borrow->accessories as $acc)
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #475569; cursor: pointer;">
+                                <input type="checkbox" checked style="accent-color: #10b981;">
+                                <span>{{ $acc }}</span>
+                            </label>
+                        @endforeach
+                    </div>
                 </div>
+                @endif
 
                 <div class="mb-3">
-                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">ปรับสถานะอุปกรณ์ในคลังเป็น</label>
-                    <select name="target_asset_status" class="form-select" required>
-                        <option value="spare">เครื่องสำรอง (Spare - พร้อมให้ยืมต่อ)</option>
-                        <option value="active">ใช้งานปกติ (Active)</option>
+                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
+                        ปรับสถานะอุปกรณ์ในคลังครุภัณฑ์เป็น <span style="color: #ef4444;">*</span>
+                    </label>
+                    <select name="target_asset_status" class="form-select" required style="border-radius: 10px; font-size: 13.5px;">
+                        <option value="spare">เครื่องสำรอง (Spare - พร้อมให้ยืมต่อในคลัง)</option>
+                        <option value="active">ใช้งานปกติ (Active - ส่งคืนประจำแผนกเดิม)</option>
                     </select>
                 </div>
 
                 <div class="mb-0">
-                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">บันทึกข้อสังเกต / หมายเหตุรับคืน</label>
-                    <textarea name="return_notes" rows="2" class="form-control" placeholder="บันทึกสภาพเครื่อง หรือของที่ขาด"></textarea>
+                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
+                        บันทึกข้อสังเกต / หมายเหตุรับคืน
+                    </label>
+                    <textarea name="return_notes" rows="2" class="form-control" placeholder="บันทึกสภาพเครื่อง อุปกรณ์ที่ขาด หรือข้อสังเกตเพิ่มเติม (ถ้ามี)" style="border-radius: 10px; font-size: 13.5px;"></textarea>
                 </div>
             </div>
-            <div style="padding: 14px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="btn btn-light" onclick="document.getElementById('returnModal').style.display='none'">ยกเลิก</button>
-                <button type="submit" class="btn btn-success">บันทึกรับคืนอุปกรณ์</button>
+
+            <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-light" onclick="document.getElementById('returnModal').style.display='none'" style="border-radius: 8px; font-weight: 600;">ยกเลิก</button>
+                <button type="submit" class="btn btn-success" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 8px; font-weight: 700; padding: 8px 20px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-check-circle-fill"></i> ยืนยันบันทึกรับคืนอุปกรณ์
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 {{-- MODAL 3: ปฏิเสธคำขอ (Reject Modal) --}}
-<div id="rejectModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050; align-items: center; justify-content: center;">
-    <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 460px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; margin: 20px;">
-        <div style="padding: 16px 20px; background: #ef4444; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
-            <div style="font-weight: 700;">ปฏิเสธคำขอยืมอุปกรณ์</div>
-            <button type="button" onclick="document.getElementById('rejectModal').style.display='none'" style="background: none; border: none; color: #ffffff; font-size: 20px; cursor: pointer;">&times;</button>
+<div id="rejectModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 1050; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; margin: 20px; border: 1px solid #e2e8f0;">
+        <div style="padding: 18px 24px; background: #ef4444; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                    <i class="bi bi-x-circle-fill"></i>
+                </div>
+                <div style="font-weight: 800; font-size: 16px;">ปฏิเสธคำขอยืมอุปกรณ์</div>
+            </div>
+            <button type="button" onclick="document.getElementById('rejectModal').style.display='none'" style="background: rgba(255,255,255,0.15); border: none; color: #ffffff; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer;">&times;</button>
         </div>
+
         <form action="{{ route('asset-borrows.reject', $borrow->id) }}" method="POST">
             @csrf
-            <div style="padding: 20px;">
-                <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">ระบุเหตุผลที่ไม่อนุมัติ</label>
-                <textarea name="reason" rows="3" class="form-control" placeholder="เช่น อุปกรณ์มีภารกิจอื่นในวันดังกล่าว / เครื่องอยู่ระหว่างรอซ่อม" required></textarea>
+            <div style="padding: 24px;">
+                <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
+                    ระบุเหตุผลที่ไม่อนุมัติคำขอ <span style="color: #ef4444;">*</span>
+                </label>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+                    <button type="button" class="btn btn-light btn-sm" onclick="document.querySelector('textarea[name=reason]').value='อุปกรณ์มีภารกิจอื่นที่จำเป็นในวันดังกล่าว'" style="font-size: 11px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 2px 8px;">
+                        อุปกรณ์ติดภารกิจอื่น
+                    </button>
+                    <button type="button" class="btn btn-light btn-sm" onclick="document.querySelector('textarea[name=reason]').value='อุปกรณ์อยู่ระหว่างรอการตรวจเช็คสภาพและส่งซ่อมบำรุง'" style="font-size: 11px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 2px 8px;">
+                        เครื่องรอตรวจซ่อม
+                    </button>
+                </div>
+                <textarea name="reason" rows="3" class="form-control" placeholder="ระบุเหตุผลที่จำเป็น..." required style="border-radius: 10px; font-size: 13.5px;"></textarea>
             </div>
-            <div style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
-                <button type="button" class="btn btn-light" onclick="document.getElementById('rejectModal').style.display='none'">ยกเลิก</button>
-                <button type="submit" class="btn btn-danger">ยืนยันปฏิเสธคำขอ</button>
+
+            <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-light" onclick="document.getElementById('rejectModal').style.display='none'" style="border-radius: 8px; font-weight: 600;">ยกเลิก</button>
+                <button type="submit" class="btn btn-danger" style="border-radius: 8px; font-weight: 700; padding: 8px 20px;">
+                    ยืนยันปฏิเสธคำขอ
+                </button>
             </div>
         </form>
     </div>

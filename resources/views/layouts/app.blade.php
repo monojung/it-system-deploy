@@ -1257,12 +1257,6 @@
                         <span class="nav-badge" title="{{ $navPendingDr }} คำขอข้อมูลรอพิจารณา">{{ $navPendingDr }}</span>
                     @endif
                 </a>
-
-                <div class="nav-section-title">คลังและพัสดุ (Inventory)</div>
-                <a href="{{ route('assets.index') }}" class="nav-item {{ request()->routeIs('assets.*') ? 'active' : '' }}">
-                    <i class="bi bi-pc-display"></i>
-                    <span>คลังคอมพิวเตอร์ & ครุภัณฑ์</span>
-                </a>
                 <a href="{{ route('asset-borrows.index') }}" class="nav-item {{ request()->routeIs('asset-borrows.*') ? 'active' : '' }}">
                     <i class="bi bi-arrow-left-right"></i>
                     <span>ขอยืม-คืนอุปกรณ์ IT</span>
@@ -1272,6 +1266,12 @@
                     @if($navPendingBorrows > 0)
                         <span class="nav-badge" style="background: #0284c7;" title="{{ $navPendingBorrows }} คำขอยืมรออนุมัติ">{{ $navPendingBorrows }}</span>
                     @endif
+                </a>
+
+                <div class="nav-section-title">คลังและพัสดุ (Inventory)</div>
+                <a href="{{ route('assets.index') }}" class="nav-item {{ request()->routeIs('assets.*') ? 'active' : '' }}">
+                    <i class="bi bi-pc-display"></i>
+                    <span>คลังคอมพิวเตอร์ & ครุภัณฑ์</span>
                 </a>
                 @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician()))
                 <a href="{{ route('hardware-audits.index') }}" class="nav-item {{ request()->routeIs('hardware-audits.*') ? 'active' : '' }}">
@@ -1382,6 +1382,10 @@
                     <a href="{{ route('repairs.create') }}" class="topbar-btn topbar-btn-primary" title="แจ้งซ่อมอุปกรณ์หรือปัญหาไอที">
                         <i class="bi bi-plus-lg"></i>
                         <span>แจ้งซ่อมด่วน</span>
+                    </a>
+                    <a href="{{ route('asset-borrows.create') }}" class="topbar-btn" style="background: rgba(14, 165, 233, 0.1); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.28);" title="ยื่นคำขอยืมอุปกรณ์คอมพิวเตอร์และพัสดุ IT">
+                        <i class="bi bi-arrow-left-right"></i>
+                        <span>ขอยืมอุปกรณ์</span>
                     </a>
                     <a href="{{ route('data-requests.create') }}" class="topbar-btn topbar-btn-secondary" title="ยื่นคำขอข้อมูลสารสนเทศและสถิติ">
                         <i class="bi bi-plus-lg"></i>

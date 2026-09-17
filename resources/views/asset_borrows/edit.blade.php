@@ -2,24 +2,40 @@
 
 @section('title', 'แก้ไขคำขอยืมอุปกรณ์ไอที - ' . $borrow->borrow_no)
 @section('page_title', 'แก้ไขคำขอยืมอุปกรณ์ไอที')
-@section('page_subtitle', 'รหัสคำขอ: ' . $borrow->borrow_no)
+@section('page_subtitle', 'รหัสคำขอ: ' . $borrow->borrow_no . ' • สถานะ: ' . $borrow->status_label)
 
 @section('content')
-<div class="content-container" style="max-width: 960px; margin: 0 auto;">
-
-    <!-- Top Action Nav -->
-    <div style="margin-bottom: 20px;">
-        <a href="{{ route('asset-borrows.show', $borrow->id) }}" class="btn btn-outline-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
-            <i class="bi bi-arrow-left"></i> ย้อนกลับหน้ารายละเอียดคำขอ
+<div class="content-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div class="header-left" style="display: flex; align-items: center; gap: 14px;">
+        <div class="header-icon" style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);">
+            <i class="bi bi-pencil-square"></i>
+        </div>
+        <div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <h1 class="header-title" style="font-size: 21px; font-weight: 800; color: #0f172a; margin: 0;">แก้ไขคำขอยืมอุปกรณ์ IT</h1>
+                <span class="badge bg-primary" style="font-size: 13px; font-family: monospace;">{{ $borrow->borrow_no }}</span>
+            </div>
+            <p class="header-subtitle" style="font-size: 13px; color: #64748b; margin: 4px 0 0;">
+                ปรับปรุงข้อมูลคำขอยืมอุปกรณ์คอมพิวเตอร์และพัสดุไอที โรงพยาบาลทุ่งหัวช้าง
+            </p>
+        </div>
+    </div>
+    <div class="header-right">
+        <a href="{{ route('asset-borrows.show', $borrow->id) }}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px;">
+            <i class="bi bi-arrow-left"></i> ย้อนกลับหน้ารายละเอียด
         </a>
     </div>
+</div>
+
+<div class="content-container" style="max-width: 1020px; margin: 0 auto; padding-bottom: 90px;">
 
     @if ($errors->any())
-    <div class="alert alert-danger" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px;">
-        <div style="font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-            <i class="bi bi-exclamation-circle-fill"></i> โปรดตรวจสอบข้อมูลต่อไปนี้:
+    <div class="alert alert-danger" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.08);">
+        <div style="font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-exclamation-octagon-fill" style="font-size: 18px;"></i>
+            <span>โปรดตรวจสอบข้อมูลต่อไปนี้ก่อนดำเนินการ:</span>
         </div>
-        <ul style="margin: 0; padding-left: 20px; font-size: 13.5px;">
+        <ul style="margin: 0; padding-left: 24px; font-size: 13.5px; line-height: 1.6;">
             @foreach ($errors->all() as $error)
                 <li>{{ $error }}</li>
             @endforeach
@@ -27,59 +43,231 @@
     </div>
     @endif
 
-    <form action="{{ route('asset-borrows.update', $borrow->id) }}" method="POST">
+    <form action="{{ route('asset-borrows.update', $borrow->id) }}" method="POST" id="borrowEditForm">
         @csrf
         @method('PUT')
 
         <!-- CARD 1: อุปกรณ์ที่ต้องการยืม -->
-        <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden;">
-            <div class="card-header" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; padding: 16px 22px;">
-                <div style="font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                    <i class="bi bi-pc-display text-primary"></i>
-                    <span>1. เลือกอุปกรณ์ที่ต้องการยืมจากคลัง (IT Asset Selection)</span>
+        <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden; background: #ffffff;">
+            <div class="card-header" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <div style="font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 9px; background: #ccfbf1; color: #0f766e; display: flex; align-items: center; justify-content: center; font-size: 17px;">
+                        <i class="bi bi-pc-display"></i>
+                    </div>
+                    <span>1. เลือกอุปกรณ์ที่ต้องการยืมจากคลัง (Equipment Selection)</span>
                 </div>
+                <span style="font-size: 12px; color: #64748b;">คลิกการ์ดเพื่อเลือกอุปกรณ์</span>
             </div>
 
             <div class="card-body" style="padding: 22px;">
-                <div class="mb-3">
-                    <label for="asset_id" style="font-size: 13.5px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
-                        เลือกอุปกรณ์ในคลัง <span style="color: #ef4444;">*</span>
-                    </label>
-                    <select name="asset_id" id="asset_id" class="form-select" required>
-                        @foreach($availableAssets as $asset)
-                            <option value="{{ $asset->id }}" {{ old('asset_id', $borrow->asset_id) == $asset->id ? 'selected' : '' }}>
-                                [{{ $asset->status_label }}] {{ $asset->name }} - {{ $asset->brand }} {{ $asset->model }} (รหัส: {{ $asset->asset_code }})
-                            </option>
-                        @endforeach
-                    </select>
+
+                <!-- Selected Device Showcase Card -->
+                <div id="selectedAssetShowcase" style="margin-bottom: 20px; background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%); border: 1.5px solid #0d9488; border-radius: 14px; padding: 18px; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.12); position: relative; transition: all 0.2s;">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                        <div style="display: flex; align-items: flex-start; gap: 14px;">
+                            <div id="showcaseIconWrapper" style="width: 52px; height: 52px; border-radius: 12px; background: #0d9488; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3);">
+                                <i class="bi bi-laptop" id="showcaseIcon"></i>
+                            </div>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800; color: #0f766e; background: #ccfbf1; padding: 2px 8px; border-radius: 6px;">
+                                        ✓ อุปกรณ์ที่เลือกยืม
+                                    </span>
+                                    <span class="badge bg-primary" id="showcaseCode" style="font-size: 12px; font-family: monospace;">
+                                        {{ $borrow->asset?->asset_code ?? '-' }}
+                                    </span>
+                                </div>
+                                <div id="showcaseName" style="font-size: 17px; font-weight: 800; color: #0f172a; margin-top: 4px;">
+                                    {{ $borrow->asset?->name ?? 'ไม่พบข้อมูลครุภัณฑ์' }}
+                                </div>
+                                <div id="showcaseBrandModel" style="font-size: 13.5px; color: #334155; font-weight: 600;">
+                                    {{ $borrow->asset?->brand }} {{ $borrow->asset?->model }}
+                                </div>
+                                <div id="showcaseSerial" style="font-size: 12px; color: #64748b; margin-top: 2px; font-family: monospace;">
+                                    S/N: {{ $borrow->asset?->serial_number ?? 'ไม่ระบุ' }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="scrollToDevicePicker()" style="border-radius: 8px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                                <i class="bi bi-arrow-repeat"></i> เปลี่ยนเครื่องที่เลือก
+                            </button>
+                            <span id="showcaseDept" style="font-size: 12px; color: #475569; background: rgba(255,255,255,0.8); padding: 3px 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                                ประจำที่: {{ $borrow->asset?->department?->name ?? 'คลังส่วนกลาง' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(13, 148, 136, 0.3); font-size: 12.5px; color: #1e293b; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <span style="font-weight: 700; color: #0f766e;"><i class="bi bi-cpu"></i> ข้อมูลสเปค:</span>
+                        <span id="showcaseSpecs" style="color: #334155;">{{ $borrow->asset?->formatted_specs ?? '-' }}</span>
+                    </div>
                 </div>
+
+                <!-- Hidden Synced Select -->
+                <select name="asset_id" id="asset_id" style="display: none;" required onchange="syncSelectedAssetFromSelect(this)">
+                    @foreach($availableAssets as $asset)
+                        @php
+                            $cat = 'other';
+                            $devTypeName = mb_strtolower($asset->deviceType?->name ?? '');
+                            $assetName = mb_strtolower($asset->name . ' ' . $asset->model);
+                            if (str_contains($devTypeName, 'notebook') || str_contains($devTypeName, 'laptop') || str_contains($assetName, 'notebook') || str_contains($assetName, 'laptop') || str_contains($assetName, 'โน้ตบุ๊ก')) {
+                                $cat = 'notebook';
+                            } elseif (str_contains($devTypeName, 'pc') || str_contains($devTypeName, 'desktop') || str_contains($devTypeName, 'all in one') || str_contains($assetName, 'pc') || str_contains($assetName, 'คอมพิวเตอร์')) {
+                                $cat = 'desktop';
+                            } elseif (str_contains($devTypeName, 'projector') || str_contains($assetName, 'projector') || str_contains($assetName, 'โปรเจคเตอร์')) {
+                                $cat = 'projector';
+                            }
+                        @endphp
+                        <option value="{{ $asset->id }}"
+                                data-category="{{ $cat }}"
+                                data-name="{{ $asset->name }}"
+                                data-code="{{ $asset->asset_code }}"
+                                data-brand="{{ $asset->brand }}"
+                                data-model="{{ $asset->model }}"
+                                data-serial="{{ $asset->serial_number }}"
+                                data-specs="{{ $asset->formatted_specs }}"
+                                data-status="{{ $asset->status_label }}"
+                                data-dept="{{ $asset->department?->name ?? 'คลังส่วนกลาง' }}"
+                                {{ old('asset_id', $borrow->asset_id) == $asset->id ? 'selected' : '' }}>
+                            [{{ $asset->status_label }}] {{ $asset->name }} - {{ $asset->brand }} {{ $asset->model }} (รหัส: {{ $asset->asset_code }})
+                        </option>
+                    @endforeach
+                </select>
+
+                <!-- Filter & Search Controls -->
+                <div id="devicePickerContainer">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                        <div class="category-pills-wrap" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-sm btn-category active" data-filter="all" onclick="filterDeviceCategory('all', this)" style="border-radius: 20px; font-weight: 600; padding: 6px 14px; font-size: 12.5px;">
+                                ทั้งหมด ({{ $availableAssets->count() }})
+                            </button>
+                            <button type="button" class="btn btn-sm btn-category" data-filter="notebook" onclick="filterDeviceCategory('notebook', this)" style="border-radius: 20px; font-weight: 600; padding: 6px 14px; font-size: 12.5px;">
+                                💻 โน้ตบุ๊ก (Notebooks)
+                            </button>
+                            <button type="button" class="btn btn-sm btn-category" data-filter="desktop" onclick="filterDeviceCategory('desktop', this)" style="border-radius: 20px; font-weight: 600; padding: 6px 14px; font-size: 12.5px;">
+                                🖥️ คอมพิวเตอร์ (PC)
+                            </button>
+                            <button type="button" class="btn btn-sm btn-category" data-filter="projector" onclick="filterDeviceCategory('projector', this)" style="border-radius: 20px; font-weight: 600; padding: 6px 14px; font-size: 12.5px;">
+                                📽️ โปรเจคเตอร์ & จอภาพ
+                            </button>
+                            <button type="button" class="btn btn-sm btn-category" data-filter="other" onclick="filterDeviceCategory('other', this)" style="border-radius: 20px; font-weight: 600; padding: 6px 14px; font-size: 12.5px;">
+                                📦 อุปกรณ์อื่นๆ
+                            </button>
+                        </div>
+
+                        <div style="position: relative; min-width: 240px; flex: 1; max-width: 320px;">
+                            <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+                            <input type="text" id="assetSearchInput" class="form-control form-control-sm" placeholder="ค้นหาชื่อ, รหัส, สเปค, ยี่ห้อ..." oninput="filterDeviceCards()" style="padding-left: 34px; border-radius: 20px; height: 34px; font-size: 12.5px;">
+                        </div>
+                    </div>
+
+                    <!-- Device Cards Grid -->
+                    <div id="deviceCardGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; max-height: 380px; overflow-y: auto; padding: 4px; border: 1px solid #f1f5f9; border-radius: 12px; background: #f8fafc;">
+                        @foreach($availableAssets as $asset)
+                            @php
+                                $cat = 'other';
+                                $icon = 'bi-box-seam';
+                                $devTypeName = mb_strtolower($asset->deviceType?->name ?? '');
+                                $assetName = mb_strtolower($asset->name . ' ' . $asset->model);
+                                if (str_contains($devTypeName, 'notebook') || str_contains($devTypeName, 'laptop') || str_contains($assetName, 'notebook') || str_contains($assetName, 'laptop') || str_contains($assetName, 'โน้ตบุ๊ก')) {
+                                    $cat = 'notebook';
+                                    $icon = 'bi-laptop';
+                                } elseif (str_contains($devTypeName, 'pc') || str_contains($devTypeName, 'desktop') || str_contains($devTypeName, 'all in one') || str_contains($assetName, 'pc') || str_contains($assetName, 'คอมพิวเตอร์')) {
+                                    $cat = 'desktop';
+                                    $icon = 'bi-display';
+                                } elseif (str_contains($devTypeName, 'projector') || str_contains($assetName, 'projector') || str_contains($assetName, 'โปรเจคเตอร์')) {
+                                    $cat = 'projector';
+                                    $icon = 'bi-projector';
+                                }
+                            @endphp
+                            <div class="device-card {{ old('asset_id', $borrow->asset_id) == $asset->id ? 'selected-card' : '' }}" 
+                                 id="device-card-{{ $asset->id }}"
+                                 data-id="{{ $asset->id }}"
+                                 data-category="{{ $cat }}"
+                                 data-search="{{ mb_strtolower($asset->name . ' ' . $asset->brand . ' ' . $asset->model . ' ' . $asset->asset_code . ' ' . $asset->serial_number . ' ' . $asset->formatted_specs . ' ' . ($asset->department?->name ?? '')) }}"
+                                 onclick="selectAssetCard('{{ $asset->id }}')"
+                                 style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.2s ease; position: relative;">
+                                
+                                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div class="device-card-icon" style="width: 38px; height: 38px; border-radius: 10px; background: #f0fdfa; color: #0d9488; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                                            <i class="bi {{ $icon }}"></i>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; line-height: 1.3;" title="{{ $asset->name }}">
+                                                {{ Str::limit($asset->name, 28) }}
+                                            </div>
+                                            <div style="font-size: 11.5px; color: #64748b; font-weight: 500;">
+                                                {{ $asset->brand }} {{ $asset->model }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="check-indicator" style="width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #cbd5e1; display: flex; align-items: center; justify-content: center; color: transparent; font-size: 12px; transition: all 0.2s;">
+                                        <i class="bi bi-check-lg"></i>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 10px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <span style="font-family: monospace; font-size: 11px; background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 5px; font-weight: 600;">
+                                        {{ $asset->asset_code }}
+                                    </span>
+                                    @if($asset->status === 'spare')
+                                        <span class="badge" style="background: #e0f2fe; color: #0284c7; font-size: 10.5px;">เครื่องสำรอง</span>
+                                    @else
+                                        <span class="badge" style="background: #f0fdf4; color: #16a34a; font-size: 10.5px;">พร้อมใช้งาน</span>
+                                    @endif
+                                </div>
+
+                                @if($asset->formatted_specs)
+                                <div style="margin-top: 8px; font-size: 11.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    <i class="bi bi-cpu" style="font-size: 11px;"></i> {{ Str::limit($asset->formatted_specs, 45) }}
+                                </div>
+                                @endif
+
+                                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #f1f5f9; font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
+                                    <span><i class="bi bi-geo-alt"></i> {{ $asset->department?->name ?? 'คลังส่วนกลาง' }}</span>
+                                    <span style="color: #0d9488; font-weight: 600;">เลือกเครื่องนี้ &rarr;</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
             </div>
         </div>
 
         <!-- CARD 2: ข้อมูลผู้ขอยืม & แผนก -->
-        <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden;">
+        <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden; background: #ffffff;">
             <div class="card-header" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; padding: 16px 22px;">
-                <div style="font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                    <i class="bi bi-person-badge text-info"></i>
-                    <span>2. ข้อมูลผู้ขอยืมและหน่วยงาน</span>
+                <div style="font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 9px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 17px;">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <span>2. ข้อมูลผู้ขอยืมและหน่วยงาน (Requester Information)</span>
                 </div>
             </div>
 
             <div class="card-body" style="padding: 22px;">
                 <div class="row g-3">
                     <div class="col-md-5">
-                        <label for="borrower_name" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">
-                            ชื่อ-สกุล ผู้ขอยืม <span style="color: #ef4444;">*</span>
+                        <label for="borrower_name" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
+                            <i class="bi bi-person text-primary"></i>
+                            <span>ชื่อ-สกุล ผู้ขอยืม</span>
+                            <span style="color: #ef4444;">*</span>
                         </label>
                         <input type="text" name="borrower_name" id="borrower_name" class="form-control" 
-                               value="{{ old('borrower_name', $borrow->borrower_name) }}" required>
+                               value="{{ old('borrower_name', $borrow->borrower_name) }}" required style="border-radius: 10px; font-size: 13.5px;">
                     </div>
 
                     <div class="col-md-4">
-                        <label for="department_id" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">
-                            กลุ่มงาน / แผนกที่ขอยืม <span style="color: #ef4444;">*</span>
+                        <label for="department_id" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
+                            <i class="bi bi-building text-info"></i>
+                            <span>กลุ่มงาน / แผนกที่ขอยืม</span>
+                            <span style="color: #ef4444;">*</span>
                         </label>
-                        <select name="department_id" id="department_id" class="form-select" required>
+                        <select name="department_id" id="department_id" class="form-select" required style="border-radius: 10px; font-size: 13.5px;">
                             @foreach($departments as $dept)
                                 <option value="{{ $dept->id }}" {{ old('department_id', $borrow->department_id) == $dept->id ? 'selected' : '' }}>
                                     {{ $dept->name }}
@@ -89,77 +277,113 @@
                     </div>
 
                     <div class="col-md-3">
-                        <label for="contact_phone" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">
-                            เบอร์โทรศัพท์ติดต่อ <span style="color: #ef4444;">*</span>
+                        <label for="contact_phone" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
+                            <i class="bi bi-telephone text-success"></i>
+                            <span>เบอร์โทรศัพท์ติดต่อ</span>
+                            <span style="color: #ef4444;">*</span>
                         </label>
                         <input type="text" name="contact_phone" id="contact_phone" class="form-control" 
-                               value="{{ old('contact_phone', $borrow->contact_phone) }}" required>
+                               value="{{ old('contact_phone', $borrow->contact_phone) }}" required style="border-radius: 10px; font-size: 13.5px;">
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- CARD 3: กำหนดเวลาและวัตถุประสงค์ -->
-        <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden;">
-            <div class="card-header" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; padding: 16px 22px;">
-                <div style="font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                    <i class="bi bi-calendar-event text-warning"></i>
-                    <span>3. กำหนดเวลาและวัตถุประสงค์การนำไปใช้งาน</span>
+        <!-- CARD 3: กำหนดเวลาและวัตถุประสงค์การยืม -->
+        <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden; background: #ffffff;">
+            <div class="card-header" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div style="font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 9px; background: #fef3c7; color: #b45309; display: flex; align-items: center; justify-content: center; font-size: 17px;">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <span>3. กำหนดเวลาและวัตถุประสงค์การนำไปใช้งาน (Schedule & Purpose)</span>
+                </div>
+                <div id="durationBadge" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 12px; font-weight: 700; padding: 3px 12px; border-radius: 20px;">
+                    ระยะเวลายืม: -
                 </div>
             </div>
 
             <div class="card-body" style="padding: 22px;">
+                <!-- Quick Duration Presets -->
+                <div style="margin-bottom: 16px;">
+                    <span style="font-size: 12px; font-weight: 600; color: #64748b; margin-right: 8px;">ปุ่มลัดระยะเวลา:</span>
+                    <div style="display: inline-flex; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDuration(1)" style="border-radius: 8px; font-size: 12px; padding: 4px 10px;">
+                            ⚡ ยืม 1 วัน
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDuration(3)" style="border-radius: 8px; font-size: 12px; padding: 4px 10px;">
+                            📅 ยืม 3 วัน
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDuration(7)" style="border-radius: 8px; font-size: 12px; padding: 4px 10px;">
+                            🗓️ ยืม 7 วัน (1 สัปดาห์)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDuration(14)" style="border-radius: 8px; font-size: 12px; padding: 4px 10px;">
+                            ⏳ ยืม 14 วัน (2 สัปดาห์)
+                        </button>
+                    </div>
+                </div>
+
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label for="borrow_date" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">
-                            วันที่ต้องการยืม / วันที่รับมอบ <span style="color: #ef4444;">*</span>
+                        <label for="borrow_date" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
+                            วันที่ต้องการยืม / รับมอบเครื่อง <span style="color: #ef4444;">*</span>
                         </label>
                         <input type="date" name="borrow_date" id="borrow_date" class="form-control" 
-                               value="{{ old('borrow_date', $borrow->borrow_date ? $borrow->borrow_date->format('Y-m-d') : '') }}" required>
+                               value="{{ old('borrow_date', $borrow->borrow_date ? $borrow->borrow_date->format('Y-m-d') : '') }}" required onchange="calculateDuration()" style="border-radius: 10px; font-size: 13.5px;">
                     </div>
 
                     <div class="col-md-6">
-                        <label for="expected_return_date" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">
+                        <label for="expected_return_date" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
                             กำหนดวันที่ส่งคืนอุปกรณ์ <span style="color: #ef4444;">*</span>
                         </label>
                         <input type="date" name="expected_return_date" id="expected_return_date" class="form-control" 
-                               value="{{ old('expected_return_date', $borrow->expected_return_date ? $borrow->expected_return_date->format('Y-m-d') : '') }}" required>
+                               value="{{ old('expected_return_date', $borrow->expected_return_date ? $borrow->expected_return_date->format('Y-m-d') : '') }}" required onchange="calculateDuration()" style="border-radius: 10px; font-size: 13.5px;">
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label for="purpose" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">
+                    <label for="purpose" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
                         วัตถุประสงค์การขอยืมใช้งาน <span style="color: #ef4444;">*</span>
                     </label>
-                    <textarea name="purpose" id="purpose" rows="2" class="form-control" required>{{ old('purpose', $borrow->purpose) }}</textarea>
+                    <textarea name="purpose" id="purpose" rows="2" class="form-control" required style="border-radius: 10px; font-size: 13.5px;">{{ old('purpose', $borrow->purpose) }}</textarea>
                 </div>
 
                 <div class="mb-0">
-                    <label for="location_used" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">
+                    <label for="location_used" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
                         สถานที่นำไปใช้งาน
                     </label>
                     <input type="text" name="location_used" id="location_used" class="form-control" 
-                           value="{{ old('location_used', $borrow->location_used) }}">
+                           value="{{ old('location_used', $borrow->location_used) }}" style="border-radius: 10px; font-size: 13.5px;">
                 </div>
             </div>
         </div>
 
         <!-- CARD 4: อุปกรณ์เสริม -->
-        <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden;">
-            <div class="card-header" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; padding: 16px 22px;">
-                <div style="font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                    <i class="bi bi-box-seam text-purple"></i>
+        <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden; background: #ffffff;">
+            <div class="card-header" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div style="font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 9px; background: #f3e8ff; color: #7e22ce; display: flex; align-items: center; justify-content: center; font-size: 17px;">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
                     <span>4. อุปกรณ์เสริมและอุปกรณ์ต่อพ่วงที่ต้องการยืม</span>
                 </div>
             </div>
 
             <div class="card-body" style="padding: 22px;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-bottom: 16px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-bottom: 18px;">
+                    @php
+                        $currentAcc = is_array($borrow->accessories) ? $borrow->accessories : [];
+                    @endphp
                     @foreach($presetAccessories as $acc)
-                        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 10px; background: #ffffff; cursor: pointer;">
+                        @php
+                            $checked = in_array($acc, old('accessories', $currentAcc));
+                        @endphp
+                        <label class="accessory-card {{ $checked ? 'checked-acc' : '' }}" 
+                               style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1.5px solid {{ $checked ? '#0d9488' : '#e2e8f0' }}; border-radius: 12px; background: {{ $checked ? '#f0fdfa' : '#ffffff' }}; cursor: pointer; transition: all 0.2s;">
                             <input type="checkbox" name="accessories[]" value="{{ $acc }}" 
-                                   {{ in_array($acc, $currentAcc) ? 'checked' : '' }}
-                                   style="width: 17px; height: 17px; accent-color: #0d9488;">
+                                   {{ $checked ? 'checked' : '' }}
+                                   onchange="toggleAccCard(this)"
+                                   style="width: 18px; height: 18px; accent-color: #0d9488; flex-shrink: 0;">
                             <span style="font-size: 13px; color: #1e293b; font-weight: 500;">{{ $acc }}</span>
                         </label>
                     @endforeach
@@ -168,27 +392,168 @@
         </div>
 
         <!-- CARD 5: หมายเหตุ -->
-        <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden;">
+        <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: var(--shadow-sm); overflow: hidden; background: #ffffff;">
             <div class="card-body" style="padding: 22px;">
                 <div class="mb-0">
-                    <label for="notes" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">
+                    <label for="notes" style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">
                         หมายเหตุหรือข้อความถึงเจ้าหน้าที่ไอที
                     </label>
-                    <textarea name="notes" id="notes" rows="2" class="form-control">{{ old('notes', $borrow->notes) }}</textarea>
+                    <textarea name="notes" id="notes" rows="2" class="form-control" style="border-radius: 10px; font-size: 13.5px;">{{ old('notes', $borrow->notes) }}</textarea>
                 </div>
             </div>
         </div>
 
         <!-- Submit Buttons -->
         <div style="display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 40px;">
-            <a href="{{ route('asset-borrows.show', $borrow->id) }}" class="btn btn-light" style="padding: 10px 24px; font-weight: 600;">
+            <a href="{{ route('asset-borrows.show', $borrow->id) }}" class="btn btn-light" style="padding: 10px 24px; font-weight: 600; border-radius: 10px;">
                 ยกเลิก
             </a>
-            <button type="submit" class="btn btn-primary" style="padding: 10px 28px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
-                <i class="bi bi-check-circle-fill"></i> บันทึกการแก้ไข
+            <button type="submit" class="btn btn-primary" style="padding: 10px 28px; font-weight: 700; border-radius: 10px; background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3); display: inline-flex; align-items: center; gap: 8px;">
+                <i class="bi bi-check-circle-fill"></i> บันทึกการแก้ไขคำขอ
             </button>
         </div>
     </form>
 
 </div>
+
+@push('styles')
+<style>
+.btn-category {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+}
+.btn-category.active {
+    background: #0d9488;
+    color: #ffffff;
+    border-color: #0d9488;
+}
+.device-card:hover {
+    transform: translateY(-2px);
+    border-color: #0d9488 !important;
+}
+.device-card.selected-card {
+    border-color: #0d9488 !important;
+    background: #f0fdfa !important;
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25);
+}
+.device-card.selected-card .check-indicator {
+    background: #0d9488;
+    border-color: #0d9488;
+    color: #ffffff !important;
+}
+.accessory-card.checked-acc {
+    border-color: #0d9488 !important;
+    background: #f0fdfa !important;
+}
+</style>
+@endpush
+
+@push('scripts')
+<script>
+function selectAssetCard(assetId) {
+    const select = document.getElementById('asset_id');
+    if (!select) return;
+
+    select.value = assetId;
+    syncSelectedAssetFromSelect(select);
+}
+
+function syncSelectedAssetFromSelect(select) {
+    const showcase = document.getElementById('selectedAssetShowcase');
+    const selectedOption = select.options[select.selectedIndex];
+    const allCards = document.querySelectorAll('.device-card');
+
+    allCards.forEach(c => c.classList.remove('selected-card'));
+
+    if (!selectedOption || !selectedOption.value) return;
+
+    const assetId = selectedOption.value;
+    const activeCard = document.getElementById('device-card-' + assetId);
+    if (activeCard) activeCard.classList.add('selected-card');
+
+    document.getElementById('showcaseName').textContent = selectedOption.getAttribute('data-name') || '-';
+    document.getElementById('showcaseCode').textContent = selectedOption.getAttribute('data-code') || '-';
+    document.getElementById('showcaseBrandModel').textContent = ((selectedOption.getAttribute('data-brand') || '') + ' ' + (selectedOption.getAttribute('data-model') || '')).trim() || '-';
+    document.getElementById('showcaseSerial').textContent = 'S/N: ' + (selectedOption.getAttribute('data-serial') || 'ไม่ระบุ');
+    document.getElementById('showcaseSpecs').textContent = selectedOption.getAttribute('data-specs') || '-';
+    document.getElementById('showcaseDept').textContent = 'ประจำที่: ' + (selectedOption.getAttribute('data-dept') || 'คลังส่วนกลาง');
+
+    const cat = selectedOption.getAttribute('data-category') || 'other';
+    const iconEl = document.getElementById('showcaseIcon');
+    if (cat === 'notebook') iconEl.className = 'bi bi-laptop';
+    else if (cat === 'desktop') iconEl.className = 'bi bi-display';
+    else if (cat === 'projector') iconEl.className = 'bi bi-projector';
+    else iconEl.className = 'bi bi-box-seam';
+}
+
+function scrollToDevicePicker() {
+    const el = document.getElementById('devicePickerContainer');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function filterDeviceCategory(category, btn) {
+    document.querySelectorAll('.btn-category').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const keyword = (document.getElementById('assetSearchInput')?.value || '').toLowerCase().trim();
+    document.querySelectorAll('.device-card').forEach(card => {
+        const matchesCat = (category === 'all' || card.getAttribute('data-category') === category);
+        const matchesKeyword = !keyword || (card.getAttribute('data-search') || '').includes(keyword);
+        card.style.display = (matchesCat && matchesKeyword) ? 'block' : 'none';
+    });
+}
+
+function filterDeviceCards() {
+    const activeCategoryBtn = document.querySelector('.btn-category.active');
+    const selectedCat = activeCategoryBtn ? activeCategoryBtn.getAttribute('data-filter') : 'all';
+    filterDeviceCategory(selectedCat, null);
+}
+
+function setDuration(days) {
+    const borrowInput = document.getElementById('borrow_date');
+    const returnInput = document.getElementById('expected_return_date');
+    let baseDate = new Date();
+    if (borrowInput && borrowInput.value) {
+        baseDate = new Date(borrowInput.value);
+    }
+    const returnDate = new Date(baseDate);
+    returnDate.setDate(returnDate.getDate() + parseInt(days));
+
+    const yyyy = returnDate.getFullYear();
+    const mm = String(returnDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(returnDate.getDate()).padStart(2, '0');
+    returnInput.value = `${yyyy}-${mm}-${dd}`;
+    calculateDuration();
+}
+
+function calculateDuration() {
+    const borrowInput = document.getElementById('borrow_date');
+    const returnInput = document.getElementById('expected_return_date');
+    const badge = document.getElementById('durationBadge');
+    if (!borrowInput || !returnInput || !borrowInput.value || !returnInput.value) return;
+
+    const diffDays = Math.ceil((new Date(returnInput.value) - new Date(borrowInput.value)) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) {
+        badge.style.background = '#fef2f2'; badge.style.color = '#dc2626'; badge.textContent = '⚠️ วันที่ไม่ถูกต้อง';
+    } else {
+        badge.style.background = '#f0fdf4'; badge.style.color = '#166534'; badge.textContent = `ระยะเวลายืม: ${diffDays} วัน`;
+    }
+}
+
+function toggleAccCard(checkbox) {
+    const label = checkbox.closest('label');
+    if (!label) return;
+    if (checkbox.checked) {
+        label.classList.add('checked-acc'); label.style.borderColor = '#0d9488'; label.style.background = '#f0fdfa';
+    } else {
+        label.classList.remove('checked-acc'); label.style.borderColor = '#e2e8f0'; label.style.background = '#ffffff';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    calculateDuration();
+});
+</script>
+@endpush
 @endsection
