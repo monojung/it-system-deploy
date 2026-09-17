@@ -20,6 +20,10 @@
             <i class="bi bi-wrench"></i>
             <span>แจ้งซ่อมเครื่องนี้</span>
         </a>
+        <a href="{{ route('asset-borrows.create', ['asset_id' => $asset->id]) }}" class="btn btn-primary" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); border-color: #4338ca;">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>ขอยืมอุปกรณ์นี้</span>
+        </a>
         <a href="{{ route('assets.label', $asset) }}" target="_blank" class="btn btn-secondary">
             <i class="bi bi-qr-code"></i>
             <span>พิมพ์สติกเกอร์ QR</span>
@@ -527,6 +531,86 @@
                     <tr>
                         <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">
                             ยังไม่มีประวัติการส่งข้อมูลสแกนสเปคจากเครื่องคอมพิวเตอร์นี้
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Asset Borrow History Table -->
+<div class="card" style="margin-top: 24px;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div class="card-title">
+            <i class="bi bi-box-arrow-right text-indigo" style="color: #4f46e5;"></i>
+            <span>ประวัติการขอยืม-คืนอุปกรณ์นี้ ({{ $asset->borrows->count() }} ครั้ง)</span>
+        </div>
+        <a href="{{ route('asset-borrows.create', ['asset_id' => $asset->id]) }}" class="btn btn-primary btn-sm" style="background: #4f46e5; border-color: #4f46e5;">
+            <i class="bi bi-plus-circle"></i> ทำเรื่องขอยืมอุปกรณ์นี้
+        </a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="table" style="margin: 0;">
+                <thead>
+                    <tr>
+                        <th>เลขที่ใบยืม</th>
+                        <th>ผู้ขอยืม / แผนก</th>
+                        <th>วัตถุประสงค์</th>
+                        <th>ช่วงเวลาที่ยืม</th>
+                        <th>สถานะ</th>
+                        <th>วันที่คืนจริง</th>
+                        <th style="text-align: center;">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($asset->borrows as $borrow)
+                    <tr>
+                        <td>
+                            <a href="{{ route('asset-borrows.show', $borrow) }}" style="font-weight: 700; color: #4f46e5; text-decoration: none; font-family: monospace;">
+                                {{ $borrow->borrow_no }}
+                            </a>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600;">{{ $borrow->borrower_name }}</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">{{ $borrow->borrower_department }} &bull; {{ $borrow->borrower_phone }}</div>
+                        </td>
+                        <td style="font-size: 13px; max-width: 250px;">
+                            <div style="color: #334155;">{{ Str::limit($borrow->purpose, 60) }}</div>
+                            @if($borrow->location_of_use)
+                                <div style="font-size: 11.5px; color: #64748b;"><i class="bi bi-geo-alt me-1"></i> {{ $borrow->location_of_use }}</div>
+                            @endif
+                        </td>
+                        <td style="font-size: 12.5px;">
+                            <div>{{ $borrow->borrow_date->format('d/m/Y') }} &rarr; {{ $borrow->expected_return_date->format('d/m/Y') }}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">({{ $borrow->borrow_date->diffInDays($borrow->expected_return_date) }} วัน)</div>
+                        </td>
+                        <td>
+                            <span class="badge {{ $borrow->status_badge }}">
+                                {{ $borrow->status_label }}
+                            </span>
+                        </td>
+                        <td style="font-size: 12.5px;">
+                            @if($borrow->actual_return_date)
+                                <span style="color: #16a34a; font-weight: 600;">
+                                    <i class="bi bi-check-circle me-1"></i> {{ $borrow->actual_return_date->format('d/m/Y') }}
+                                </span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td style="text-align: center;">
+                            <a href="{{ route('asset-borrows.show', $borrow) }}" class="btn btn-secondary btn-sm" title="ดูรายละเอียด">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                            ยังไม่มีประวัติการขอยืมครุภัณฑ์ชิ้นนี้
                         </td>
                     </tr>
                     @endforelse

@@ -586,4 +586,47 @@ class HardwareAuditController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    /**
+     * AJAX Endpoint: Inspect detailed hardware audit telemetry & raw agent data
+     */
+    public function inspect($id)
+    {
+        $audit = HardwareAudit::with(['asset.department', 'reviewer'])->findOrFail($id);
+
+        $mdesIssues = [];
+        if ($audit->ram_capacity && $audit->ram_capacity < 8) {
+            $mdesIssues[] = "หน่วยความจำ (RAM) ต่ำกว่าเกณฑ์มาตรฐานขั้นต่ำ (ปัจจุบัน {$audit->ram_capacity} GB, มาตรฐาน ICT >= 8 GB)";
+        }
+        if ($audit->storage_type && stripos($audit->storage_type, 'HDD') !== false) {
+            $mdesIssues[] = "ไดรฟ์เก็บข้อมูลเป็นจานหมุน (HDD) ควรพิจารณาอัปเกรดเป็น Solid State Drive (SSD)";
+        }
+        if ($audit->os_name && (stripos($audit->os_name, 'Windows 7') !== false || stripos($audit->os_name, 'Windows 8') !== false)) {
+            $mdesIssues[] = "ระบบปฏิบัติการ ({$audit->os_name}) สิ้นสุดระยะเวลาสนับสนุนความปลอดภัยแล้ว (End-of-Life)";
+        }
+
+        $rescanCommand = 'irm "' . url('/agent/thc_audit_agent.ps1') . '" | iex';
+
+        // Extract brand and model from raw_payload or asset if not directly set
+        $brand = $audit->brand ?: ($audit->raw_payload['system']['Manufacturer'] ?? ($audit->asset?->brand ?? null));
+        $model = $audit->model ?: ($audit->raw_payload['system']['Model'] ?? ($audit->asset?->model ?? null));
+
+        $auditData = $audit->toArray();
+        $auditData['brand'] = $brand;
+        $auditData['model'] = $model;
+        $auditData['rescan_command'] = $rescanCommand;
+
+        return response()->json([
+            'success' => true,
+            'audit' => $auditData,
+            'asset' => $audit->asset,
+            'mdes_evaluation' => [
+                'is_standard' => empty($mdesIssues),
+                'issues' => $mdesIssues,
+            ],
+            'mdes_issues' => $mdesIssues,
+            'is_mdes_standard' => empty($mdesIssues),
+            'rescan_command' => $rescanCommand,
+        ]);
+    }
 }

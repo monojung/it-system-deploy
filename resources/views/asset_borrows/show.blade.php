@@ -1,0 +1,420 @@
+@extends('layouts.app')
+
+@section('title', 'รายละเอียดการยืม-คืนอุปกรณ์ - ' . $borrow->borrow_no)
+@section('page_title', 'รายละเอียดการยืม-คืนอุปกรณ์ไอที')
+@section('page_subtitle', 'รหัสคำขอ: ' . $borrow->borrow_no)
+
+@section('topbar-actions')
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a href="{{ route('asset-borrows.print', $borrow->id) }}" target="_blank" class="topbar-btn" style="display: inline-flex; align-items: center; gap: 6px;">
+        <i class="bi bi-printer"></i>
+        <span>พิมพ์ใบยืม-คืน A4</span>
+    </a>
+
+    @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician()))
+        @if($borrow->status === 'pending')
+            <form action="{{ route('asset-borrows.approve', $borrow->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('ยืนยันการอนุมัติคำขอยืมอุปกรณ์นี้หรือไม่?')">
+                @csrf
+                <button type="submit" class="topbar-btn topbar-btn-primary" style="background: #10b981; border-color: #10b981;">
+                    <i class="bi bi-check-lg"></i> อนุมัติคำขอ
+                </button>
+            </form>
+            <button type="button" class="topbar-btn" style="color: #ef4444;" onclick="document.getElementById('rejectModal').style.display='flex'">
+                <i class="bi bi-x-circle"></i> ปฏิเสธ
+            </button>
+        @elseif($borrow->status === 'approved')
+            <button type="button" class="topbar-btn topbar-btn-primary" style="background: #0d9488; border-color: #0d9488;" onclick="document.getElementById('dispatchModal').style.display='flex'">
+                <i class="bi bi-box-arrow-right"></i> ส่งมอบอุปกรณ์
+            </button>
+        @elseif($borrow->status === 'borrowed')
+            <button type="button" class="topbar-btn topbar-btn-primary" style="background: #10b981; border-color: #10b981;" onclick="document.getElementById('returnModal').style.display='flex'">
+                <i class="bi bi-arrow-down-left-circle"></i> รับคืนอุปกรณ์
+            </button>
+        @endif
+    @endif
+
+    @if(in_array($borrow->status, ['pending']) || (auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician())))
+        <a href="{{ route('asset-borrows.edit', $borrow->id) }}" class="topbar-btn">
+            <i class="bi bi-pencil"></i> แก้ไข
+        </a>
+    @endif
+</div>
+@endsection
+
+@section('content')
+<div class="content-container">
+
+    <!-- Back Button & Status Alert -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <a href="{{ route('asset-borrows.index') }}" class="btn btn-outline-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+            <i class="bi bi-arrow-left"></i> กลับหน้ารวมรายการยืม-คืน
+        </a>
+
+        <div>
+            {!! $borrow->status_badge !!}
+            @if($borrow->is_overdue)
+                <span class="badge bg-danger ms-1">เกินกำหนดส่งคืน</span>
+            @endif
+        </div>
+    </div>
+
+    @if(session('success'))
+    <div class="alert alert-success" style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 12px; padding: 14px 18px; margin-bottom: 22px; display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-check-circle-fill font-lg"></i>
+        <span>{{ session('success') }}</span>
+    </div>
+    @endif
+
+    @if(session('info'))
+    <div class="alert alert-info" style="background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1; border-radius: 12px; padding: 14px 18px; margin-bottom: 22px; display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-info-circle-fill font-lg"></i>
+        <span>{{ session('info') }}</span>
+    </div>
+    @endif
+
+    <!-- WORKFLOW PROGRESS STEPPER -->
+    <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); padding: 22px;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; position: relative;">
+            
+            {{-- Step 1: ยื่นคำขอ --}}
+            <div style="text-align: center;">
+                <div style="width: 42px; height: 42px; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; background: #0d9488; color: #ffffff; box-shadow: 0 2px 8px rgba(13,148,136,0.3);">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <div style="font-weight: 700; font-size: 13px; color: #0f172a;">1. ยื่นคำขอยืม</div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">{{ $borrow->created_at ? $borrow->created_at->format('d/m/Y H:i') : '-' }}</div>
+            </div>
+
+            {{-- Step 2: อนุมัติ --}}
+            @php
+                $step2Active = in_array($borrow->status, ['approved', 'borrowed', 'returned']);
+            @endphp
+            <div style="text-align: center;">
+                <div style="width: 42px; height: 42px; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; background: {{ $step2Active ? '#0284c7' : '#e2e8f0' }}; color: {{ $step2Active ? '#ffffff' : '#64748b' }};">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div style="font-weight: 700; font-size: 13px; color: {{ $step2Active ? '#0f172a' : '#94a3b8' }};">2. เจ้าหน้าที่อนุมัติ</div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                    {{ $borrow->approved_at ? $borrow->approved_at->format('d/m/Y H:i') : ($borrow->status === 'rejected' ? 'ปฏิเสธคำขอ' : 'รอการอนุมัติ') }}
+                </div>
+            </div>
+
+            {{-- Step 3: ส่งมอบอุปกรณ์ --}}
+            @php
+                $step3Active = in_array($borrow->status, ['borrowed', 'returned']);
+            @endphp
+            <div style="text-align: center;">
+                <div style="width: 42px; height: 42px; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; background: {{ $step3Active ? '#0d9488' : '#e2e8f0' }}; color: {{ $step3Active ? '#ffffff' : '#64748b' }};">
+                    <i class="bi bi-box-arrow-right"></i>
+                </div>
+                <div style="font-weight: 700; font-size: 13px; color: {{ $step3Active ? '#0f172a' : '#94a3b8' }};">3. ส่งมอบใช้งาน</div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                    {{ $borrow->dispatched_at ? $borrow->dispatched_at->format('d/m/Y H:i') : 'รอรับอุปกรณ์' }}
+                </div>
+            </div>
+
+            {{-- Step 4: รับคืนเรียบร้อย --}}
+            @php
+                $step4Active = ($borrow->status === 'returned');
+            @endphp
+            <div style="text-align: center;">
+                <div style="width: 42px; height: 42px; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; background: {{ $step4Active ? '#10b981' : '#e2e8f0' }}; color: {{ $step4Active ? '#ffffff' : '#64748b' }};">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+                <div style="font-weight: 700; font-size: 13px; color: {{ $step4Active ? '#0f172a' : '#94a3b8' }};">4. ส่งคืนเรียบร้อย</div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                    {{ $borrow->actual_return_date ? $borrow->actual_return_date->format('d/m/Y') : 'ยังไม่ส่งคืน' }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN TWO-COLUMN DETAILS -->
+    <div class="row g-4 mb-4">
+        
+        <!-- LEFT COLUMN: อุปกรณ์ที่ยืม & อุปกรณ์เสริม -->
+        <div class="col-lg-6">
+            {{-- CARD: Asset Info --}}
+            <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden;">
+                <div class="card-header" style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-pc-display text-primary"></i>
+                        <span>ข้อมูลอุปกรณ์ที่ยืม (IT Asset)</span>
+                    </div>
+                    @if($borrow->asset)
+                        <a href="{{ route('assets.show', $borrow->asset_id) }}" target="_blank" class="btn btn-sm btn-outline-primary" style="font-size: 12px; padding: 2px 10px;">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> ดูครุภัณฑ์
+                        </a>
+                    @endif
+                </div>
+
+                <div class="card-body" style="padding: 20px;">
+                    @if($borrow->asset)
+                        <div style="display: flex; gap: 16px; align-items: flex-start;">
+                            <div style="width: 60px; height: 60px; border-radius: 14px; background: #f0fdfa; color: #0d9488; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0;">
+                                <i class="bi bi-laptop"></i>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 17px; font-weight: 800; color: #0f172a;">{{ $borrow->asset->name }}</div>
+                                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                                    <span class="badge bg-light text-dark border">
+                                        {{ $borrow->asset->brand }} {{ $borrow->asset->model }}
+                                    </span>
+                                    <span class="badge bg-primary">รหัส: {{ $borrow->asset->asset_code }}</span>
+                                    <span class="badge bg-info text-dark">S/N: {{ $borrow->asset->serial_number ?: '-' }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-top: 16px; font-size: 13px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div><strong>ประเภท:</strong> {{ $borrow->asset->deviceType?->name ?? 'อุปกรณ์ IT' }}</div>
+                                <div><strong>สถานะครุภัณฑ์:</strong> {{ $borrow->asset->status_label }}</div>
+                                <div style="grid-column: 1 / -1;"><strong>สเปคฮาร์ดแวร์:</strong> {{ $borrow->asset->formatted_specs }}</div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="text-muted">ไม่พบข้อมูลอุปกรณ์ในระบบ</div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- CARD: Accessories --}}
+            <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden;">
+                <div class="card-header" style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 16px 20px;">
+                    <div style="font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-box-seam text-purple"></i>
+                        <span>รายการอุปกรณ์เสริมและอุปกรณ์ต่อพ่วงที่ยืมไปด้วย</span>
+                    </div>
+                </div>
+
+                <div class="card-body" style="padding: 20px;">
+                    @if(!empty($borrow->accessories))
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            @php
+                                $accItems = is_array($borrow->accessories) ? $borrow->accessories : array_map('trim', explode(',', $borrow->accessories));
+                            @endphp
+                            @foreach($accItems as $item)
+                                @if(!empty($item))
+                                <span style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-weight: 600; font-size: 13px; padding: 6px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="bi bi-check2"></i> {{ trim($item) }}
+                                </span>
+                                @endif
+                            @endforeach
+                        </div>
+                    @else
+                        <span class="text-muted" style="font-size: 13px;">(ไม่มีการระบุอุปกรณ์เสริมเพิ่มเติม ยืมเฉพาะตัวเครื่อง)</span>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: ข้อมูลผู้ยืม, วันเวลา, และบันทึกส่งมอบ/รับคืน -->
+        <div class="col-lg-6">
+            {{-- CARD: Requester & Schedule --}}
+            <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden;">
+                <div class="card-header" style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 16px 20px;">
+                    <div style="font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-person-badge text-info"></i>
+                        <span>ข้อมูลผู้ขอยืม & กำหนดการยืม</span>
+                    </div>
+                </div>
+
+                <div class="card-body" style="padding: 20px;">
+                    <table class="table table-sm table-borderless mb-0" style="font-size: 13.5px;">
+                        <tr>
+                            <td style="width: 140px; color: #64748b; font-weight: 600;">ผู้ขอยืม:</td>
+                            <td style="color: #0f172a; font-weight: 700;">{{ $borrow->borrower_name }}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b; font-weight: 600;">แผนก/กลุ่มงาน:</td>
+                            <td style="color: #0f172a;">{{ $borrow->department?->name ?? 'ไม่ระบุ' }}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b; font-weight: 600;">เบอร์โทรศัพท์:</td>
+                            <td style="color: #0f172a;">{{ $borrow->contact_phone }}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b; font-weight: 600;">วันที่ยืม/รับมอบ:</td>
+                            <td style="color: #0f172a; font-weight: 700;">
+                                {{ $borrow->borrow_date ? $borrow->borrow_date->format('d/m/Y') : '-' }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b; font-weight: 600;">กำหนดส่งคืน:</td>
+                            <td style="color: #0f172a; font-weight: 700;">
+                                {{ $borrow->expected_return_date ? $borrow->expected_return_date->format('d/m/Y') : '-' }}
+                                <span class="badge bg-light text-dark border ms-1">รวม {{ $borrow->duration_days }} วัน</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b; font-weight: 600;">วัตถุประสงค์:</td>
+                            <td style="color: #1e293b;">{{ $borrow->purpose }}</td>
+                        </tr>
+                        @if($borrow->location_used)
+                        <tr>
+                            <td style="color: #64748b; font-weight: 600;">สถานที่ใช้งาน:</td>
+                            <td style="color: #1e293b;">{{ $borrow->location_used }}</td>
+                        </tr>
+                        @endif
+                        @if($borrow->notes)
+                        <tr>
+                            <td style="color: #64748b; font-weight: 600;">หมายเหตุ:</td>
+                            <td style="color: #64748b;">{{ $borrow->notes }}</td>
+                        </tr>
+                        @endif
+                    </table>
+                </div>
+            </div>
+
+            {{-- CARD: Handover & Return Records --}}
+            <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); overflow: hidden;">
+                <div class="card-header" style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 16px 20px;">
+                    <div style="font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-clipboard2-check text-success"></i>
+                        <span>บันทึกการส่งมอบและการตรวจรับคืน (Handover & Return Audit)</span>
+                    </div>
+                </div>
+
+                <div class="card-body" style="padding: 20px;">
+                    <div class="row g-3">
+                        {{-- การส่งมอบ --}}
+                        <div class="col-sm-6" style="border-right: 1px dashed #e2e8f0;">
+                            <div style="font-weight: 700; font-size: 13px; color: #0d9488; margin-bottom: 6px;">
+                                <i class="bi bi-box-arrow-right me-1"></i>ข้อมูลการส่งมอบ:
+                            </div>
+                            @if($borrow->dispatched_at)
+                                <div style="font-size: 12.5px; color: #1e293b;">
+                                    <div><strong>ผู้ส่งมอบ:</strong> {{ $borrow->dispatcher?->name ?? '-' }}</div>
+                                    <div><strong>วันที่ส่งมอบ:</strong> {{ $borrow->dispatched_at->format('d/m/Y H:i') }}</div>
+                                    <div><strong>สภาพก่อนมอบ:</strong> {{ $borrow->dispatch_condition ?: 'ปกติ' }}</div>
+                                </div>
+                            @else
+                                <div style="font-size: 12.5px; color: #94a3b8; font-style: italic;">ยังไม่ได้ส่งมอบอุปกรณ์</div>
+                            @endif
+                        </div>
+
+                        {{-- การรับคืน --}}
+                        <div class="col-sm-6">
+                            <div style="font-weight: 700; font-size: 13px; color: #16a34a; margin-bottom: 6px;">
+                                <i class="bi bi-arrow-down-left-circle me-1"></i>ข้อมูลการรับคืน:
+                            </div>
+                            @if($borrow->status === 'returned' && $borrow->actual_return_date)
+                                <div style="font-size: 12.5px; color: #1e293b;">
+                                    <div><strong>ผู้รับคืน:</strong> {{ $borrow->receiver?->name ?? '-' }}</div>
+                                    <div><strong>วันที่รับคืน:</strong> {{ $borrow->actual_return_date->format('d/m/Y') }}</div>
+                                    <div><strong>สภาพหลังคืน:</strong> {{ $borrow->return_condition ?: 'ปกติ สมบูรณ์' }}</div>
+                                    @if($borrow->return_notes)
+                                        <div style="color: #64748b;"><strong>ข้อสังเกต:</strong> {{ $borrow->return_notes }}</div>
+                                    @endif
+                                </div>
+                            @else
+                                <div style="font-size: 12.5px; color: #94a3b8; font-style: italic;">ยังไม่มีการรับมอบคืน</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{{-- MODAL 1: ส่งมอบอุปกรณ์ (Dispatch Modal) --}}
+<div id="dispatchModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; margin: 20px;">
+        <div style="padding: 18px 24px; background: #0d9488; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-weight: 700; font-size: 16px;">บันทึกการส่งมอบอุปกรณ์ (Handover Equipment)</div>
+            <button type="button" onclick="document.getElementById('dispatchModal').style.display='none'" style="background: none; border: none; color: #ffffff; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <form action="{{ route('asset-borrows.dispatch', $borrow->id) }}" method="POST">
+            @csrf
+            <div style="padding: 22px;">
+                <p style="font-size: 13.5px; color: #475569; margin-bottom: 16px;">
+                    ยืนยันการส่งมอบอุปกรณ์ <strong>{{ $borrow->asset?->name }} ({{ $borrow->asset?->asset_code }})</strong> ให้แก่ <strong>{{ $borrow->borrower_name }}</strong>
+                </p>
+
+                <div class="mb-3">
+                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">สภาพอุปกรณ์ก่อนส่งมอบ</label>
+                    <input type="text" name="dispatch_condition" class="form-control" value="ปกติ สมบูรณ์ ครบถ้วนตามรายการ" required>
+                </div>
+                <div style="font-size: 12px; color: #64748b;">
+                    * เมื่อกดส่งมอบ สถานะของอุปกรณ์ในคลังจะเปลี่ยนเป็น "กำลังถูกยืมใช้งาน" โดยอัตโนมัติ
+                </div>
+            </div>
+            <div style="padding: 14px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-light" onclick="document.getElementById('dispatchModal').style.display='none'">ยกเลิก</button>
+                <button type="submit" class="btn btn-primary" style="background: #0d9488; border-color: #0d9488;">ยืนยันส่งมอบอุปกรณ์</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- MODAL 2: รับคืนอุปกรณ์ (Return Modal) --}}
+<div id="returnModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; margin: 20px;">
+        <div style="padding: 18px 24px; background: #10b981; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-weight: 700; font-size: 16px;">บันทึกการรับมอบคืนอุปกรณ์ (Return Inspection)</div>
+            <button type="button" onclick="document.getElementById('returnModal').style.display='none'" style="background: none; border: none; color: #ffffff; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <form action="{{ route('asset-borrows.return', $borrow->id) }}" method="POST">
+            @csrf
+            <div style="padding: 22px;">
+                <div class="mb-3">
+                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">วันที่ส่งคืนจริง</label>
+                    <input type="date" name="actual_return_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">สภาพอุปกรณ์เมื่อรับคืน</label>
+                    <select name="return_condition" class="form-select" required>
+                        <option value="ปกติ สมบูรณ์">ปกติ สมบูรณ์ (ใช้งานได้ตามปกติ)</option>
+                        <option value="อุปกรณ์ไม่ครบ">อุปกรณ์ไม่ครบ (ขาดสายชาร์จ/เมาส์/อุปกรณ์เสริม)</option>
+                        <option value="ชำรุดเสียหาย">ชำรุดเสียหาย (ต้องส่งช่างซ่อม)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">ปรับสถานะอุปกรณ์ในคลังเป็น</label>
+                    <select name="target_asset_status" class="form-select" required>
+                        <option value="spare">เครื่องสำรอง (Spare - พร้อมให้ยืมต่อ)</option>
+                        <option value="active">ใช้งานปกติ (Active)</option>
+                    </select>
+                </div>
+
+                <div class="mb-0">
+                    <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; display: block;">บันทึกข้อสังเกต / หมายเหตุรับคืน</label>
+                    <textarea name="return_notes" rows="2" class="form-control" placeholder="บันทึกสภาพเครื่อง หรือของที่ขาด"></textarea>
+                </div>
+            </div>
+            <div style="padding: 14px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-light" onclick="document.getElementById('returnModal').style.display='none'">ยกเลิก</button>
+                <button type="submit" class="btn btn-success">บันทึกรับคืนอุปกรณ์</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- MODAL 3: ปฏิเสธคำขอ (Reject Modal) --}}
+<div id="rejectModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050; align-items: center; justify-content: center;">
+    <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 460px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; margin: 20px;">
+        <div style="padding: 16px 20px; background: #ef4444; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-weight: 700;">ปฏิเสธคำขอยืมอุปกรณ์</div>
+            <button type="button" onclick="document.getElementById('rejectModal').style.display='none'" style="background: none; border: none; color: #ffffff; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <form action="{{ route('asset-borrows.reject', $borrow->id) }}" method="POST">
+            @csrf
+            <div style="padding: 20px;">
+                <label style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block;">ระบุเหตุผลที่ไม่อนุมัติ</label>
+                <textarea name="reason" rows="3" class="form-control" placeholder="เช่น อุปกรณ์มีภารกิจอื่นในวันดังกล่าว / เครื่องอยู่ระหว่างรอซ่อม" required></textarea>
+            </div>
+            <div style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="btn btn-light" onclick="document.getElementById('rejectModal').style.display='none'">ยกเลิก</button>
+                <button type="submit" class="btn btn-danger">ยืนยันปฏิเสธคำขอ</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@endsection

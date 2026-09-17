@@ -1263,6 +1263,16 @@
                     <i class="bi bi-pc-display"></i>
                     <span>คลังคอมพิวเตอร์ & ครุภัณฑ์</span>
                 </a>
+                <a href="{{ route('asset-borrows.index') }}" class="nav-item {{ request()->routeIs('asset-borrows.*') ? 'active' : '' }}">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>ขอยืม-คืนอุปกรณ์ IT</span>
+                    @php
+                        $navPendingBorrows = \App\Models\AssetBorrow::where('status', 'pending')->count();
+                    @endphp
+                    @if($navPendingBorrows > 0)
+                        <span class="nav-badge" style="background: #0284c7;" title="{{ $navPendingBorrows }} คำขอยืมรออนุมัติ">{{ $navPendingBorrows }}</span>
+                    @endif
+                </a>
                 @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician()))
                 <a href="{{ route('hardware-audits.index') }}" class="nav-item {{ request()->routeIs('hardware-audits.*') ? 'active' : '' }}">
                     <i class="bi bi-cpu-fill"></i>

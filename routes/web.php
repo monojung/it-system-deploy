@@ -17,6 +17,7 @@ use App\Http\Controllers\SystemResetController;
 use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\ServerInitController;
 use App\Http\Controllers\HardwareAuditController;
+use App\Http\Controllers\AssetBorrowController;
 
 // Initial Server Setup Route (Storage link, cache clear, migrations)
 Route::get('/server-init', [ServerInitController::class, 'init'])
@@ -177,6 +178,25 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
     Route::get('/assets/{asset}/label', [AssetController::class, 'label'])->name('assets.label');
 
+    // IT Equipment Borrowing (ระบบขอยืม-คืนอุปกรณ์ไอที)
+    Route::get('/asset-borrows', [AssetBorrowController::class, 'index'])->name('asset-borrows.index');
+    Route::get('/asset-borrows/create', [AssetBorrowController::class, 'create'])->name('asset-borrows.create');
+    Route::post('/asset-borrows', [AssetBorrowController::class, 'store'])->name('asset-borrows.store');
+    Route::get('/asset-borrows/{assetBorrow}', [AssetBorrowController::class, 'show'])->name('asset-borrows.show');
+    Route::get('/asset-borrows/{assetBorrow}/edit', [AssetBorrowController::class, 'edit'])->name('asset-borrows.edit');
+    Route::put('/asset-borrows/{assetBorrow}', [AssetBorrowController::class, 'update'])->name('asset-borrows.update');
+    Route::delete('/asset-borrows/{assetBorrow}', [AssetBorrowController::class, 'destroy'])->name('asset-borrows.destroy');
+    Route::get('/asset-borrows/{assetBorrow}/print', [AssetBorrowController::class, 'print'])->name('asset-borrows.print');
+
+    // Admin & Technician only actions for asset borrows
+    Route::middleware(['role:admin,technician'])->group(function () {
+        Route::post('/asset-borrows/{assetBorrow}/approve', [AssetBorrowController::class, 'approve'])->name('asset-borrows.approve');
+        Route::post('/asset-borrows/{assetBorrow}/reject', [AssetBorrowController::class, 'reject'])->name('asset-borrows.reject');
+        Route::post('/asset-borrows/{assetBorrow}/dispatch', [AssetBorrowController::class, 'dispatch'])->name('asset-borrows.dispatch');
+        Route::post('/asset-borrows/{assetBorrow}/return', [AssetBorrowController::class, 'receiveReturn'])->name('asset-borrows.return');
+        Route::post('/asset-borrows/{assetBorrow}/receive-return', [AssetBorrowController::class, 'receiveReturn'])->name('asset-borrows.receive-return');
+    });
+
     // Reports (รายงานสรุป ไตรมาส / เดือน / ครุภัณฑ์)
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/assets', [ReportController::class, 'assets'])->name('reports.assets');
@@ -189,6 +209,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Hardware Audit & Monitor Dashboard (สำรวจสเปคคอมพิวเตอร์ประจำปีงบประมาณ)
         Route::get('/hardware-audits', [HardwareAuditController::class, 'index'])->name('hardware-audits.index');
+        Route::get('/hardware-audits/{id}/inspect', [HardwareAuditController::class, 'inspect'])->name('hardware-audits.inspect');
         Route::post('/hardware-audits/{id}/approve', [HardwareAuditController::class, 'approve'])->name('hardware-audits.approve');
         Route::post('/hardware-audits/batch-approve', [HardwareAuditController::class, 'batchApprove'])->name('hardware-audits.batch-approve');
         Route::post('/hardware-audits/{id}/reject', [HardwareAuditController::class, 'reject'])->name('hardware-audits.reject');

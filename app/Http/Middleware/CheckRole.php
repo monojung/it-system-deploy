@@ -36,6 +36,10 @@ class CheckRole
             return $next($request);
         }
 
+        if ($request->expectsJson() || $request->is('api/*')) {
+            abort(403, 'คุณไม่มีสิทธิ์ในการเข้าถึง (เฉพาะ ' . implode(', ', $roles) . ' เท่านั้น)');
+        }
+
         return redirect()->route('dashboard')->with('error', 'คุณไม่มีสิทธิ์ในการเข้าถึงเมนูนี้ (เฉพาะ ' . implode(', ', $roles) . ' เท่านั้น)');
     }
 }

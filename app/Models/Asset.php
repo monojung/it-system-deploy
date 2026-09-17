@@ -80,6 +80,18 @@ class Asset extends Model
         return $this->hasMany(HardwareAudit::class, 'asset_id')->latest();
     }
 
+    public function borrows(): HasMany
+    {
+        return $this->hasMany(AssetBorrow::class, 'asset_id')->latest();
+    }
+
+    public function currentBorrow()
+    {
+        return $this->hasOne(AssetBorrow::class, 'asset_id')
+            ->whereIn('status', ['approved', 'borrowed'])
+            ->latestOfMany();
+    }
+
     public function scopeAuditedInFiscalYear($query, int $fiscalYear)
     {
         return $query->where('last_audited_fiscal_year', $fiscalYear);
@@ -98,6 +110,7 @@ class Asset extends Model
         return match ($this->status) {
             'active' => 'ใช้งานปกติ',
             'spare' => 'เครื่องสำรอง',
+            'borrowed' => 'กำลังถูกยืมใช้งาน',
             'repairing' => 'กำลังส่งซ่อม',
             'broken' => 'ชำรุดรอซ่อม',
             'disposed' => 'รอจำหน่าย/แทงจำหน่าย',
@@ -110,6 +123,7 @@ class Asset extends Model
         return match ($this->status) {
             'active' => 'badge-success',
             'spare' => 'badge-info',
+            'borrowed' => 'badge-primary',
             'repairing' => 'badge-warning',
             'broken' => 'badge-danger',
             'disposed' => 'badge-secondary',
