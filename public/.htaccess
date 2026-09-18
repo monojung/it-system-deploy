@@ -3,6 +3,17 @@
         Options -MultiViews -Indexes
     </IfModule>
 
+    # Force UTF-8 Content-Type for PowerShell & Scripts
+    AddType "text/plain; charset=utf-8" .ps1
+    AddType "application/x-bat" .bat
+
+    <IfModule mod_headers.c>
+        <FilesMatch "\.(ps1|bat|sh|json)$">
+            Header set Content-Type "text/plain; charset=utf-8"
+            Header set Cache-Control "no-cache, must-revalidate"
+        </FilesMatch>
+    </IfModule>
+
     RewriteEngine On
 
     # Handle Authorization Header

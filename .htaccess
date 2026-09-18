@@ -37,3 +37,15 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Ensure PowerShell scripts and shell files are served as UTF-8 plaintext
+AddType "text/plain; charset=utf-8" .ps1
+AddType "text/plain; charset=utf-8" .bat
+AddType "text/plain; charset=utf-8" .sh
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(ps1|bat|sh|json)$">
+        Header set Content-Type "text/plain; charset=utf-8"
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+</IfModule>

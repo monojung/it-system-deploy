@@ -2,8 +2,21 @@
 # thc_audit_agent.ps1
 # Thung Hua Chang Hospital - Client Hardware Audit Agent
 # Embedded PowerShell Agent to collect physical hardware specs & transmit to IT Server
-# Version: 2.0.0 (Compatible with IT System Platform v2.3.6)
+# Version: 2.1.0 (Compatible with IT System Platform v2.3.9)
 # ==============================================================================
+
+# Set console & pipeline encoding to UTF-8 for Thai character fidelity
+try {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+    chcp 65001 | Out-Null
+} catch {}
+
+# Enable TLS 1.2 & TLS 1.1 protocol on Windows PowerShell 5.1 & modern platforms
+try {
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12 -bor [System.Net.SecurityProtocolType]::Tls11 -bor [System.Net.SecurityProtocolType]::Tls
+    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+} catch {}
 
 # Parameters & Fallback Options (Full IEX pipeline and CLI compatibility)
 if (-not (Get-Variable -Name ServerUrl -ErrorAction SilentlyContinue) -or [string]::IsNullOrWhiteSpace($ServerUrl)) {
@@ -15,12 +28,16 @@ if (-not (Get-Variable -Name FiscalYear -ErrorAction SilentlyContinue)) {
 if (-not (Get-Variable -Name Silent -ErrorAction SilentlyContinue)) {
     $Silent = $false
 }
+if (-not (Get-Variable -Name AssetCode -ErrorAction SilentlyContinue) -or [string]::IsNullOrWhiteSpace($AssetCode)) {
+    $AssetCode = ""
+}
 
 # Parse CLI arguments if run directly via powershell.exe -File
 if ($args) {
     for ($i = 0; $i -lt $args.Count; $i++) {
         if ($args[$i] -eq '-ServerUrl' -and ($i + 1) -lt $args.Count) { $ServerUrl = $args[$i + 1] }
         if ($args[$i] -eq '-FiscalYear' -and ($i + 1) -lt $args.Count) { $FiscalYear = [int]$args[$i + 1] }
+        if ($args[$i] -eq '-AssetCode' -and ($i + 1) -lt $args.Count) { $AssetCode = [string]$args[$i + 1] }
         if ($args[$i] -eq '-Silent') { $Silent = $true }
     }
 }
@@ -354,11 +371,14 @@ $payload = [ordered]@{
     os_license            = $osLicense
     gpu_model             = $gpuModel
     monitor_size          = $monitorStr
-    client_agent_version  = '2.0.0'
+    client_agent_version  = '2.1.0'
 }
 
 if ($FiscalYear -gt 0) {
     $payload['fiscal_year'] = $FiscalYear
+}
+if (-not [string]::IsNullOrWhiteSpace($AssetCode)) {
+    $payload['asset_code'] = $AssetCode
 }
 
 $jsonBody = $payload | ConvertTo-Json -Compress
@@ -371,6 +391,9 @@ if (-not $Silent) {
     Write-Host '----------------------- ข้อมูลสเปคคอมพิวเตอร์ที่ตรวจพบ -----------------------' -ForegroundColor Green
     Write-Host "  ชื่อเครื่อง (Host):   $computerName" -ForegroundColor White
     Write-Host "  Hardware ID (UUID):  $hardwareId" -ForegroundColor Magenta
+    if ($AssetCode) {
+        Write-Host "  รหัสครุภัณฑ์ (Asset): $AssetCode" -ForegroundColor Yellow
+    }
     Write-Host "  ยี่ห้อ / รุ่นเครื่อง:    $brand $model" -ForegroundColor White
     if ($serialNumber) {
         Write-Host "  หมายเลข Serial:      $serialNumber" -ForegroundColor Yellow
@@ -408,11 +431,15 @@ foreach ($targetUrl in $candidateUrls) {
         Write-Host "  เชื่อมต่อไปยังเซิร์ฟเวอร์: $targetUrl" -ForegroundColor Gray
     }
     try {
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12 -bor [System.Net.SecurityProtocolType]::Tls11 -bor [System.Net.SecurityProtocolType]::Tls
+        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
         $bytes = [System.Text.Encoding]::UTF8.GetBytes($jsonBody)
         $req = [System.Net.HttpWebRequest]::Create($targetUrl)
         $req.Method = "POST"
         $req.ContentType = "application/json; charset=utf-8"
-        $req.Timeout = 8000
+        $req.Accept = "application/json"
+        $req.Timeout = 10000
+        $req.UserAgent = "THC-Audit-Agent/2.1"
         
         $reqStream = $req.GetRequestStream()
         $reqStream.Write($bytes, 0, $bytes.Length)
@@ -432,8 +459,16 @@ foreach ($targetUrl in $candidateUrls) {
         $transmitted = $true
         break
     } catch {
+        $firstErr = $_.Exception.Message
         try {
-            $respObj = Invoke-RestMethod -Uri $targetUrl -Method Post -Body $jsonBody -ContentType 'application/json; charset=utf-8' -TimeoutSec 8
+            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12 -bor [System.Net.SecurityProtocolType]::Tls11 -bor [System.Net.SecurityProtocolType]::Tls
+            [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes($jsonBody)
+            $headers = @{
+                "Content-Type" = "application/json; charset=utf-8"
+                "Accept"       = "application/json"
+            }
+            $respObj = Invoke-RestMethod -Uri $targetUrl -Method Post -Body $jsonBody -Headers $headers -ContentType 'application/json; charset=utf-8' -TimeoutSec 10
             if (-not $Silent) {
                 Write-Host '  [สำเร็จ] ส่งข้อมูลเข้าสู่ระบบ IT เรียบร้อยแล้ว (ผ่าน Fallback)!' -ForegroundColor Green
                 Write-Host '  => สถานะ: บันทึกข้อมูลเข้าสู่ระบบรอเจ้าหน้าที่ไอทีตรวจสอบและอนุมัติ' -ForegroundColor Yellow
@@ -442,7 +477,7 @@ foreach ($targetUrl in $candidateUrls) {
             break
         } catch {
             if (-not $Silent) {
-                Write-Host "  [ไม่สามารถเชื่อมต่อได้] $targetUrl" -ForegroundColor DarkGray
+                Write-Host "  [ไม่สามารถเชื่อมต่อได้] $targetUrl ($firstErr / $($_.Exception.Message))" -ForegroundColor DarkGray
             }
         }
     }

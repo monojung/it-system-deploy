@@ -93,6 +93,7 @@ class DashboardController extends Controller
 
         // Hardware Audit stats
         $pendingHardwareAuditsCount = \App\Models\HardwareAudit::where('status', 'pending')->count();
+        $unlinkedHardwareAuditsCount = \App\Models\HardwareAudit::where('status', 'pending')->whereNull('asset_id')->count();
         $currentFiscalYear = (Carbon::now()->month >= 10) ? Carbon::now()->year + 544 : Carbon::now()->year + 543;
         $auditedAssetsThisYearCount = Asset::where('last_audited_fiscal_year', $currentFiscalYear)->count();
 
@@ -127,6 +128,7 @@ class DashboardController extends Controller
             'pendingDataRequests',
             'recentDataRequests',
             'pendingHardwareAuditsCount',
+            'unlinkedHardwareAuditsCount',
             'currentFiscalYear',
             'auditedAssetsThisYearCount',
             'totalBorrowsCount',

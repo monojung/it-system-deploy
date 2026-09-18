@@ -193,11 +193,16 @@
                         <i class="bi bi-cpu-fill text-primary" style="font-size: 18px;"></i>
                         <span>รายละเอียดคุณลักษณะและสเปคเครื่อง (Hardware Specs)</span>
                     </div>
-                    @if($asset->is_computer)
-                        <span class="badge badge-info" style="font-size: 11.5px; padding: 4px 10px;">
-                            <i class="bi bi-pc-display me-1"></i> คอมพิวเตอร์ประมวลผล
-                        </span>
-                    @endif
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        @if($asset->is_computer)
+                            <span class="badge badge-info" style="font-size: 11.5px; padding: 4px 10px;">
+                                <i class="bi bi-pc-display me-1"></i> คอมพิวเตอร์ประมวลผล
+                            </span>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="copyAssetAgentCmd('{{ $asset->asset_code }}')" title="คัดลอกคำสั่งสแกนเครื่องนี้ไปรันบน PowerShell" style="font-size: 12px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="bi bi-terminal"></i> สแกน/อัปเดตสเปค (UTF-8)
+                            </button>
+                        @endif
+                    </div>
                 </div>
 
                 @if($asset->cpu_model || $asset->ram_capacity || $asset->os_name || $asset->storage_capacity)
@@ -493,7 +498,12 @@
             <i class="bi bi-cpu-fill text-info"></i>
             <span>ประวัติการตรวจนับและสแกนสเปคจากเครื่องลูกข่าย ({{ $asset->hardwareAudits->count() }} ครั้ง)</span>
         </div>
-        <div style="display: flex; gap: 8px;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            @if($asset->is_computer)
+                <button type="button" class="btn btn-primary btn-sm" onclick="copyAssetAgentCmd('{{ $asset->asset_code }}')" style="display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="bi bi-terminal-fill"></i> คัดลอกคำสั่งสแกนเครื่องนี้ (UTF-8)
+                </button>
+            @endif
             <a href="{{ route('hardware-audits.index', ['search' => $asset->serial_number ?: $asset->asset_code]) }}" class="btn btn-secondary btn-sm">
                 <i class="bi bi-speedometer2"></i> แดชบอร์ดตรวจนับสเปค
             </a>
@@ -815,5 +825,18 @@
             closeDeleteModal();
         }
     });
+
+    function copyAssetAgentCmd(assetCode) {
+        const cmd = `powershell -ExecutionPolicy Bypass -NoProfile -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & ([scriptblock]::Create((irm 'https://thchospital.moph.go.th/it-system/agent/thc_audit_agent.ps1'))) -AssetCode '${assetCode}'"`;
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(cmd).then(() => {
+                alert('คัดลอกคำสั่งสแกนครุภัณฑ์ ' + assetCode + ' เรียบร้อยแล้ว!\nสามารถนำไปคลิกขวา Paste วางใน PowerShell (Run as Administrator) บนเครื่องเป้าหมายได้ทันที');
+            }).catch(() => {
+                prompt('กรุณาคัดลอกคำสั่งด้านล่างไปรันใน PowerShell:', cmd);
+            });
+        } else {
+            prompt('กรุณาคัดลอกคำสั่งด้านล่างไปรันใน PowerShell:', cmd);
+        }
+    }
 </script>
 @endpush

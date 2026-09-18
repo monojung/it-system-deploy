@@ -121,18 +121,31 @@
             <i class="bi bi-cpu-fill"></i>
         </div>
         <div>
-            <div style="font-size: 14.5px; font-weight: 700; color: #92400e;">
-                มีรายการตรวจนับและสแกนสเปคจากเครื่องลูกข่ายรอการตรวจสอบ {{ number_format($pendingHardwareAuditsCount) }} รายการ
+            <div style="font-size: 14.5px; font-weight: 700; color: #92400e; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span>มีรายการตรวจนับและสแกนสเปคจากเครื่องลูกข่ายรอการตรวจสอบ {{ number_format($pendingHardwareAuditsCount) }} รายการ</span>
+                @if(isset($unlinkedHardwareAuditsCount) && $unlinkedHardwareAuditsCount > 0)
+                    <span class="badge" style="background: #e11d48; color: #ffffff; font-size: 11.5px; padding: 3px 8px; border-radius: 6px;">
+                        <i class="bi bi-sparkles me-1"></i>รอผูก/เพิ่มครุภัณฑ์ใหม่ {{ number_format($unlinkedHardwareAuditsCount) }} เครื่อง
+                    </span>
+                @endif
             </div>
             <div style="font-size: 12.5px; color: #b45309; margin-top: 2px;">
-                เครื่องลูกข่ายส่งผลการอ่านค่าฮาร์ดแวร์มายังศูนย์กลางแล้ว แอดมินสามารถตรวจสอบ Diff และกดยืนยันอัปเดตสเปคเข้าสู่ฐานข้อมูลได้
+                เครื่องลูกข่ายส่งผลการอ่านค่าฮาร์ดแวร์มายังศูนย์กลางแล้ว แอดมินสามารถตรวจสอบ Diff, เชื่อมโยงครุภัณฑ์ หรือเพิ่มเป็นครุภัณฑ์ใหม่ได้
             </div>
         </div>
     </div>
-    <a href="{{ route('hardware-audits.index') }}" class="btn btn-warning" style="font-weight: 700; font-size: 13.5px; padding: 8px 18px; border-radius: 9px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(217, 119, 6, 0.2);">
-        <i class="bi bi-shield-check"></i>
-        <span>ตรวจสอบและอนุมัติสเปค</span>
-    </a>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        @if(isset($unlinkedHardwareAuditsCount) && $unlinkedHardwareAuditsCount > 0)
+            <a href="{{ route('hardware-audits.index', ['status' => 'unlinked']) }}" class="btn btn-sm" style="background: #0284c7; color: #ffffff; font-weight: 700; font-size: 13px; padding: 8px 14px; border-radius: 9px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);">
+                <i class="bi bi-link-45deg"></i>
+                <span>หน้าเชื่อมครุภัณฑ์ ({{ $unlinkedHardwareAuditsCount }})</span>
+            </a>
+        @endif
+        <a href="{{ route('hardware-audits.index') }}" class="btn btn-warning" style="font-weight: 700; font-size: 13.5px; padding: 8px 18px; border-radius: 9px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(217, 119, 6, 0.2);">
+            <i class="bi bi-shield-check"></i>
+            <span>ตรวจสอบและอนุมัติสเปค</span>
+        </a>
+    </div>
 </div>
 @endif
 

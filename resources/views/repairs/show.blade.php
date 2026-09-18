@@ -124,6 +124,44 @@
                         <div style="font-size: 11px; font-family: monospace; color: #64748b;">{{ $repair->asset->mac_address ?? '-' }}</div>
                     </div>
                 </div>
+
+                @if($repair->asset->cpu_model || $repair->asset->ram_capacity || $repair->asset->hardware_id)
+                <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid #f1f5f9; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                    <span style="font-size: 11.5px; font-weight: 700; color: #64748b; margin-right: 4px;">
+                        <i class="bi bi-cpu-fill text-primary me-1"></i>สเปคจริงจากคลัง:
+                    </span>
+                    @if($repair->asset->cpu_model)
+                        <span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 11px;">
+                            CPU: {{ $repair->asset->cpu_model }}
+                        </span>
+                    @endif
+                    @if($repair->asset->ram_capacity)
+                        <span class="badge" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 11px;">
+                            RAM: {{ $repair->asset->ram_capacity }} GB {{ $repair->asset->ram_type ?? '' }}
+                        </span>
+                    @endif
+                    @if($repair->asset->storage_capacity)
+                        <span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-size: 11px;">
+                            {{ $repair->asset->storage_type ?? 'Storage' }}: {{ $repair->asset->storage_capacity }}
+                        </span>
+                    @endif
+                    @if($repair->asset->os_name)
+                        <span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-size: 11px;">
+                            OS: {{ $repair->asset->os_name }}
+                        </span>
+                    @endif
+                    @if($repair->asset->hardware_id)
+                        <span class="badge" style="background: #fdf4ff; color: #a21caf; border: 1px solid #f0abfc; font-size: 10.5px; font-family: monospace;">
+                            HWID: {{ Str::limit($repair->asset->hardware_id, 14) }}
+                        </span>
+                    @endif
+                    @if($repair->asset->last_audited_fiscal_year)
+                        <span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-size: 10.5px;">
+                            <i class="bi bi-shield-check me-1"></i>สแกนปีงบ {{ $repair->asset->last_audited_fiscal_year }}
+                        </span>
+                    @endif
+                </div>
+                @endif
             </div>
         </div>
         @elseif($repair->other_device_info)

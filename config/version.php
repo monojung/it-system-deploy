@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.3.8'),
+    'version' => env('APP_VERSION', '2.3.9'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-18',
-    'build' => '20260918.3',
+    'build' => '20260918.4',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,20 @@ return [
     |
     */
     'changelog' => [
+        '2.3.9' => [
+            'date' => '2026-09-18',
+            'badge' => 'Major Update: UTF-8 Telemetry & Asset Linking Workflow',
+            'badge_color' => '#0ea5e9',
+            'title' => 'แก้ไขปัญหาฟอนต์ภาษาไทยต่างดาว (Mojibake), รองรับการเข้ารหัส UTF-8 เต็มรูปแบบ และเพิ่มระบบเชื่อมโยงครุภัณฑ์ใหม่แบบครบวงจร',
+            'highlights' => [
+                'แก้ไขฟอนต์ภาษาไทยต่างดาว (Mojibake) บน PowerShell และระบบเครือข่าย: กำหนดส่วนหัว Apache Content-Type เป็น text/plain; charset=utf-8 สำหรับสคริปต์ .ps1/.bat, ฝัง UTF-8 BOM ในไฟล์สคริปต์, ปรับคำสั่ง irm/iex ให้ตั้งค่า OutputEncoding เป็น UTF-8 และ chcp 65001',
+                'เปิดใช้โปรโตคอล TLS 1.2/1.1 บน PowerShell 5.1: แก้ปัญหาเชื่อมต่อเซิร์ฟเวอร์ไม่ได้บน Windows รุ่นเก่าด้วยการบังคับ SecurityProtocol Tls12 อัตโนมัติ',
+                'ขยายขนาดฐานข้อมูลสเปคฮาร์ดแวร์: ขยายคอลัมน์ monitor_size, cpu_model, gpu_model, model, brand และ os_license เป็น VARCHAR(255) ป้องกันข้อผิดพลาด String data right truncated เมื่อต่อจอภาพหลายจอ',
+                'ระบบกู้คืนภาษาไทยอัตโนมัติบนเซิร์ฟเวอร์ (UTF-8 Auto-Sanitizer): ตรวจจับและแปลงโค้ดตัวอักษร Latin-1 mojibake (à¹‚à¸£à¸‡...) กลับเป็นภาษาไทยที่อ่านออกได้ 100% อัตโนมัติก่อนบันทึกฐานข้อมูล',
+                'หน้าเชื่อมครุภัณฑ์ใหม่และค้นหาครุภัณฑ์เดิม (Asset Linking Modal): เพิ่มปุ่มและหน้าต่างค้นหาครุภัณฑ์แบบเรียลไทม์ สำหรับเชื่อมโยงเครื่องที่สแกนสเปคเข้ามาใหม่เข้ากับครุภัณฑ์เดิมในระบบ พร้อมตัวเลือกซิงก์สเปคทันที',
+                'ความสัมพันธ์ข้ามโมดูลทั้งระบบ (Cross-System Integration): แจ้งเตือนจำนวนเครื่องรอเชื่อมโยงบนแบนเนอร์ Dashboard, แสดงชิปสเปคฮาร์ดแวร์จริงในหน้ารายละเอียดใบแจ้งซ่อม (Repairs Show), และเพิ่มปุ่มคัดลอกคำสั่งสแกนเครื่องด่วนบนหน้ารายละเอียดครุภัณฑ์ (Assets Show)',
+            ],
+        ],
         '2.3.8' => [
             'date' => '2026-09-18',
             'badge' => 'Hotfix: Route Cache Resilience & System Recovery',

@@ -221,8 +221,9 @@
                                value="{{ request('search') }}" style="padding-left: 32px; border-radius: 8px; height: 36px;">
                     </div>
 
-                    <select name="status" class="form-select form-select-sm" style="width: 150px; border-radius: 8px; height: 36px;">
+                    <select name="status" class="form-select form-select-sm" style="width: 175px; border-radius: 8px; height: 36px;">
                         <option value="pending" {{ request('status', 'pending') === 'pending' ? 'selected' : '' }}>⏳ รอตรวจสอบ ({{ $pendingCount }})</option>
+                        <option value="unlinked" {{ request('status') === 'unlinked' ? 'selected' : '' }}>🆕 เครื่องใหม่ยังไม่ผูก ({{ $unlinkedCount }})</option>
                         <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>✓ อนุมัติแล้ว ({{ $approvedCount }})</option>
                         <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>✕ ปฏิเสธแล้ว ({{ $rejectedCount }})</option>
                         <option value="" {{ request('status') === '' ? 'selected' : '' }}>📋 ทุกสถานะ</option>
@@ -439,11 +440,17 @@
                                         <!-- ACTION BUTTONS: Approve / Reject (Only for pending) -->
                                         @if($audit->status === 'pending')
                                             @if(!$audit->asset_id)
+                                                <button type="button" class="btn btn-sm" onclick="openLinkAssetModal({{ json_encode($audit) }})" 
+                                                        title="ค้นหาและเชื่อมโยงผลตรวจสเปคเข้ากับครุภัณฑ์เดิมที่มีในระบบ" 
+                                                        style="background: #0284c7; color: #ffffff; font-size: 11.5px; padding: 5px 8px; border-radius: 7px; font-weight: 600; border: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 2px 4px rgba(2,132,199,0.25);">
+                                                    <i class="bi bi-link-45deg"></i>
+                                                    <span>เชื่อมโยง</span>
+                                                </button>
                                                 <button type="button" class="btn btn-sm" onclick="openCreateAssetModal({{ json_encode($audit) }})" 
                                                         title="ลงทะเบียนและเพิ่มเป็นครุภัณฑ์ใหม่ลงระบบคลังทันที" 
-                                                        style="background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); color: #ffffff; font-size: 11.5px; padding: 5px 10px; border-radius: 7px; font-weight: 700; border: none; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(13,148,136,0.25);">
+                                                        style="background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); color: #ffffff; font-size: 11.5px; padding: 5px 8px; border-radius: 7px; font-weight: 700; border: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 2px 4px rgba(13,148,136,0.25);">
                                                     <i class="bi bi-plus-circle-fill"></i>
-                                                    <span>+ เพิ่มครุภัณฑ์ใหม่</span>
+                                                    <span>+ เครื่องใหม่</span>
                                                 </button>
                                             @else
                                                 <button type="button" class="btn btn-sm btn-success" onclick="approveSingleAudit({{ $audit->id }}, '{{ $audit->hostname }}')" 
@@ -687,9 +694,14 @@
                         <span style="font-size: 13px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
                             <i class="bi bi-terminal-fill"></i> คำสั่ง PowerShell One-Liner (รันได้ทันทีบนเครื่องลูกข่าย):
                         </span>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="copyNetworkCommand()" style="font-size: 12px; padding: 4px 12px; border-radius: 6px;">
-                            <i class="bi bi-clipboard me-1"></i> คัดลอกคำสั่ง
-                        </button>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="copyUtf8Command()" style="font-size: 12px; padding: 4px 12px; border-radius: 6px;">
+                                <i class="bi bi-shield-check me-1"></i> คัดลอกแบบการันตี UTF-8
+                            </button>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="copyNetworkCommand()" style="font-size: 12px; padding: 4px 12px; border-radius: 6px;">
+                                <i class="bi bi-clipboard me-1"></i> คัดลอกคำสั่งสั้น
+                            </button>
+                        </div>
                     </div>
                     <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 14px;">
                         <code id="networkCmdText" style="font-family: Consolas, monospace; font-size: 13px; color: #38bdf8; display: block; word-break: break-all;">
@@ -697,7 +709,7 @@
                         </code>
                     </div>
                     <div style="font-size: 11.5px; color: #94a3b8; margin-top: 8px;">
-                        * เปิด PowerShell (Run as administrator) แล้ววางคำสั่งด้านบน กด Enter ระบบจะตรวจนับและส่งข้อมูลเข้าคิวเซิร์ฟเวอร์อัตโนมัติ
+                        * เปิด PowerShell (Run as administrator) แล้ววางคำสั่งด้านบน กด Enter ระบบจะตรวจนับและส่งข้อมูลเข้าคิวเซิร์ฟเวอร์อัตโนมัติ (รองรับ TLS 1.2 และ UTF-8 อัตโนมัติ)
                     </div>
                 </div>
 
@@ -801,6 +813,135 @@
                 <i class="bi bi-check-lg"></i> อนุมัติและบันทึกลงครุภัณฑ์
             </button>
         </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 2.5: LINK UNMATCHED HARDWARE AUDIT TO EXISTING ASSET              -->
+<!-- ========================================================================= -->
+<div id="linkAssetModal" class="custom-modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); z-index: 1080; align-items: center; justify-content: center; padding: 16px;">
+    <div class="custom-modal-dialog" style="background: #ffffff; border-radius: 18px; width: 100%; max-width: 860px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); overflow: hidden;">
+        <!-- Modal Header -->
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); padding: 16px 22px; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-link-45deg" style="font-size: 20px;"></i>
+                <span>เชื่อมโยงคอมพิวเตอร์เข้ากับครุภัณฑ์ในระบบ (Link Hardware Audit to Existing Asset)</span>
+            </div>
+            <button type="button" onclick="closeLinkAssetModal()" style="background: rgba(255,255,255,0.15); border: none; color: #ffffff; width: 32px; height: 32px; border-radius: 8px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+        </div>
+
+        <!-- Modal Body Form -->
+        <form id="formLinkAsset" onsubmit="submitLinkAsset(event)" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
+            <input type="hidden" id="linkAssetAuditId" name="audit_id">
+            <input type="hidden" id="linkAssetTargetId" name="asset_id">
+
+            <div style="padding: 20px; overflow-y: auto; flex: 1;">
+                <!-- Telemetry Source Machine Card -->
+                <div style="background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 12px; padding: 14px 16px; margin-bottom: 18px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
+                        <span style="font-size: 12px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="bi bi-cpu-fill me-1"></i> คอมพิวเตอร์ที่ตรวจพบจาก Agent (ต้นทาง)
+                        </span>
+                        <span class="badge" id="linkAssetHardwareIdBadge" style="background: #fdf4ff; color: #a21caf; border: 1px solid #f0abfc; font-size: 11px; font-family: monospace; font-weight: 700;">
+                            HWID: -
+                        </span>
+                    </div>
+                    <div style="font-size: 14px; font-weight: 700; color: #0f172a;" id="linkAssetHostInfo">
+                        -
+                    </div>
+                    <div id="linkAssetSpecsSummary" style="font-size: 12.5px; color: #334155; margin-top: 4px; line-height: 1.4;">
+                        กำลังโหลดข้อมูลสเปค...
+                    </div>
+                </div>
+
+                <!-- Step 1: Live Search Asset in Inventory -->
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label" style="font-size: 13px; font-weight: 700; color: #0f172a;">
+                        <i class="bi bi-search me-1 text-primary"></i> ค้นหาครุภัณฑ์ในระบบ เพื่อเชื่อมโยง:
+                    </label>
+                    <div style="position: relative;">
+                        <i class="bi bi-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
+                        <input type="text" id="linkAssetSearchInput" class="form-control" 
+                               placeholder="พิมพ์หมายเลขครุภัณฑ์ (เช่น 7440-...), ชื่อเครื่อง, แผนก, S/N, หรือชื่อผู้ดูแล..." 
+                               oninput="debounceSearchAssets()"
+                               style="padding-left: 38px; border-radius: 10px; height: 42px; font-size: 13.5px; border: 1.5px solid #cbd5e1;">
+                        <button type="button" id="linkAssetClearSearch" onclick="clearLinkSearch()" 
+                                style="display: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer;">&times;</button>
+                    </div>
+                    <div style="font-size: 11.5px; color: #64748b; margin-top: 5px;">
+                        <i class="bi bi-info-circle me-1"></i> ระบบจะค้นหาครุภัณฑ์สถานะปกติในคลัง สามารถคลิกเลือกเครื่องที่ต้องการได้จากรายการผลลัพธ์ด้านล่าง
+                    </div>
+                </div>
+
+                <!-- Search Results Container -->
+                <div id="linkAssetResultsContainer" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; margin-bottom: 16px; background: #f8fafc; min-height: 60px;">
+                    <div id="linkAssetResultsEmpty" style="text-align: center; color: #94a3b8; padding: 18px; font-size: 12.5px;">
+                        พิมพ์คำค้นหาข้างต้นเพื่อค้นหาครุภัณฑ์ที่ต้องการเชื่อมโยง
+                    </div>
+                </div>
+
+                <!-- Step 2: Selected Asset Details & Sync Options (Initially Hidden) -->
+                <div id="linkAssetSelectedCard" style="display: none; background: #eff6ff; border: 1.5px solid #93c5fd; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                    <div style="font-weight: 700; font-size: 13px; color: #1e40af; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="bi bi-check-circle-fill me-1 text-primary"></i> ครุภัณฑ์ที่เลือกเชื่อมโยง:</span>
+                        <span id="selectedAssetBadge" class="badge bg-primary" style="font-size: 12px;">-</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 12.5px; margin-bottom: 14px;">
+                        <div>
+                            <span class="text-muted">ชื่อรายการ:</span> <strong id="selectedAssetName" class="text-dark">-</strong>
+                        </div>
+                        <div>
+                            <span class="text-muted">แผนก:</span> <strong id="selectedAssetDept" class="text-dark">-</strong>
+                        </div>
+                        <div>
+                            <span class="text-muted">ผู้ครอบครอง:</span> <strong id="selectedAssetCustodian" class="text-dark">-</strong>
+                        </div>
+                        <div>
+                            <span class="text-muted">สเปคเดิม:</span> <span id="selectedAssetSpecs" class="text-secondary">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Sync Options Checkboxes -->
+                    <div style="border-top: 1px solid #bfdbfe; padding-top: 12px;">
+                        <div style="font-weight: 700; font-size: 12px; color: #1e40af; margin-bottom: 8px;">
+                            ตัวเลือกการอัปเดตข้อมูลลงครุภัณฑ์:
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; font-size: 12.5px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                                <input type="checkbox" name="sync_hwid" id="chkSyncHwid" value="1" checked class="form-check-input" style="cursor: pointer;">
+                                <span>อัปเดต <strong>HardwareID (UUID)</strong> ของเครื่องนี้</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                                <input type="checkbox" name="sync_sn" id="chkSyncSn" value="1" checked class="form-check-input" style="cursor: pointer;">
+                                <span>อัปเดต <strong>Serial Number</strong> จาก BIOS</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                                <input type="checkbox" name="sync_specs" id="chkSyncSpecs" value="1" checked class="form-check-input" style="cursor: pointer;">
+                                <span>อัปเดต <strong>สเปคจริง (CPU, RAM, SSD/HDD, OS)</strong></span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                                <input type="checkbox" checked disabled class="form-check-input">
+                                <span>บันทึกสถานะตรวจนับปีงบฯ <strong>{{ $fiscalYear }}</strong> ทันที</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Optional Note -->
+                    <div style="margin-top: 12px;">
+                        <label class="form-label" style="font-size: 11.5px; font-weight: 600; color: #1e40af; margin-bottom: 3px;">หมายเหตุเพิ่มเติม (ถ้ามี):</label>
+                        <input type="text" id="linkAssetNotes" name="notes" class="form-control form-control-sm" placeholder="เช่น เครื่องประจำห้องจ่ายยาชั้น 1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeLinkAssetModal()">ยกเลิก</button>
+                <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitLinkAsset" disabled style="font-weight: 700; padding: 6px 20px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: none;">
+                    <i class="bi bi-link-45deg me-1"></i> ยืนยันเชื่อมโยงและอัปเดตสเปค
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -1365,6 +1506,254 @@
     }
 
     // -------------------------------------------------------------
+    // Link Existing Asset Modal Handler
+    // -------------------------------------------------------------
+    let currentLinkAudit = null;
+    let selectedTargetAsset = null;
+    let searchAssetsTimer = null;
+
+    function openLinkAssetModal(audit) {
+        currentLinkAudit = audit;
+        selectedTargetAsset = null;
+        const modal = document.getElementById('linkAssetModal');
+        
+        document.getElementById('linkAssetAuditId').value = audit.id;
+        document.getElementById('linkAssetTargetId').value = '';
+        document.getElementById('linkAssetHardwareIdBadge').textContent = audit.hardware_id ? ('HWID: ' + audit.hardware_id) : 'HWID: ไม่พบข้อมูล';
+        
+        // Host Info
+        document.getElementById('linkAssetHostInfo').innerHTML = `
+            <span style="font-family: monospace;">${audit.hostname || 'ไม่ระบุชื่อเครื่อง'}</span>
+            ${audit.brand ? ' &bull; ' + audit.brand : ''} ${audit.model ? audit.model : ''}
+            ${audit.serial_number ? ' &bull; S/N: <code>' + audit.serial_number + '</code>' : ''}
+            ${audit.ip_address ? ' &bull; IP: <code>' + audit.ip_address + '</code>' : ''}
+        `;
+
+        // Specs Summary
+        const specs = [
+            audit.cpu_model ? ('CPU ' + audit.cpu_model + (audit.cpu_speed ? ' (' + audit.cpu_speed + ')' : '')) : null,
+            audit.ram_capacity ? ('RAM ' + audit.ram_capacity + 'GB ' + (audit.ram_type || '') + (audit.ram_bus ? ' (' + audit.ram_bus + ')' : '')) : null,
+            audit.storage_capacity ? ((audit.storage_type || 'Storage') + ' ' + audit.storage_capacity) : null,
+            audit.os_name ? ('OS ' + audit.os_name) : null,
+        ].filter(Boolean).join(' • ');
+        document.getElementById('linkAssetSpecsSummary').textContent = specs || 'อ่านสเปคจากเครื่องไม่สมบูรณ์';
+
+        // Reset Search & Preview
+        document.getElementById('linkAssetSearchInput').value = '';
+        document.getElementById('linkAssetClearSearch').style.display = 'none';
+        document.getElementById('linkAssetSelectedCard').style.display = 'none';
+        document.getElementById('btnSubmitLinkAsset').disabled = true;
+
+        // Prefill search with serial number or hostname for convenience
+        const query = (audit.serial_number && audit.serial_number.length > 3) ? audit.serial_number : (audit.hostname || '');
+        if (query) {
+            document.getElementById('linkAssetSearchInput').value = query;
+            document.getElementById('linkAssetClearSearch').style.display = 'block';
+            fetchAssetSearchResults(query);
+        } else {
+            document.getElementById('linkAssetResultsContainer').innerHTML = `
+                <div id="linkAssetResultsEmpty" style="text-align: center; color: #94a3b8; padding: 18px; font-size: 12.5px;">
+                    พิมพ์คำค้นหาข้างต้นเพื่อค้นหาครุภัณฑ์ที่ต้องการเชื่อมโยง
+                </div>
+            `;
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    function closeLinkAssetModal() {
+        document.getElementById('linkAssetModal').style.display = 'none';
+    }
+
+    function clearLinkSearch() {
+        document.getElementById('linkAssetSearchInput').value = '';
+        document.getElementById('linkAssetClearSearch').style.display = 'none';
+        document.getElementById('linkAssetResultsContainer').innerHTML = `
+            <div id="linkAssetResultsEmpty" style="text-align: center; color: #94a3b8; padding: 18px; font-size: 12.5px;">
+                พิมพ์คำค้นหาข้างต้นเพื่อค้นหาครุภัณฑ์ที่ต้องการเชื่อมโยง
+            </div>
+        `;
+    }
+
+    function debounceSearchAssets() {
+        clearTimeout(searchAssetsTimer);
+        const q = document.getElementById('linkAssetSearchInput').value.trim();
+        document.getElementById('linkAssetClearSearch').style.display = q ? 'block' : 'none';
+        if (!q) {
+            clearLinkSearch();
+            return;
+        }
+        searchAssetsTimer = setTimeout(() => {
+            fetchAssetSearchResults(q);
+        }, 300);
+    }
+
+    function fetchAssetSearchResults(query) {
+        const container = document.getElementById('linkAssetResultsContainer');
+        container.innerHTML = `
+            <div style="text-align: center; padding: 16px; color: #0284c7; font-size: 13px;">
+                <div class="spinner-border spinner-border-sm me-1" role="status"></div> กำลังค้นหาครุภัณฑ์ในระบบ...
+            </div>
+        `;
+
+        fetch(`{{ url('/hardware-audits/search-assets') }}?q=` + encodeURIComponent(query), {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success || !data.assets || data.assets.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: #94a3b8; padding: 18px; font-size: 12.5px;">
+                        <i class="bi bi-exclamation-circle me-1"></i> ไม่พบครุภัณฑ์ที่ตรงกับคำค้นหา "${query}"
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div style="display: flex; flex-direction: column; gap: 6px;">';
+            data.assets.forEach(asset => {
+                const isSelected = selectedTargetAsset && selectedTargetAsset.id === asset.id;
+                html += `
+                    <div class="asset-link-card" onclick='selectAssetForLinking(${JSON.stringify(asset).replace(/'/g, "&apos;")})' 
+                         style="background: ${isSelected ? '#e0f2fe' : '#ffffff'}; border: 1.5px solid ${isSelected ? '#0284c7' : '#e2e8f0'}; border-radius: 8px; padding: 10px 14px; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <strong style="color: #0284c7; font-family: monospace; font-size: 13px;">${asset.asset_code}</strong>
+                                <span style="font-weight: 600; color: #0f172a; font-size: 13px;">${asset.name}</span>
+                                <span class="badge bg-light text-secondary border" style="font-size: 10.5px;">${asset.device_type_name}</span>
+                            </div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 3px;">
+                                <i class="bi bi-geo-alt me-1"></i>${asset.department_name} &bull; 
+                                ผู้ครอบครอง: <strong>${asset.custodian_name}</strong> &bull; 
+                                S/N: <code>${asset.serial_number || '-'}</code>
+                            </div>
+                            <div style="font-size: 11px; color: #0f766e; margin-top: 2px;">
+                                สเปคเดิม: ${asset.specs}
+                            </div>
+                        </div>
+                        <div>
+                            <span class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline-primary'}" style="font-size: 11.5px; padding: 3px 10px; border-radius: 6px; font-weight: 600;">
+                                ${isSelected ? '✓ เลือกแล้ว' : 'เลือกเครื่องนี้'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        })
+        .catch(err => {
+            container.innerHTML = `<div class="alert alert-danger p-2 mb-0" style="font-size: 12px;">เกิดข้อผิดพลาด: ${err.message}</div>`;
+        });
+    }
+
+    function selectAssetForLinking(asset) {
+        selectedTargetAsset = asset;
+        document.getElementById('linkAssetTargetId').value = asset.id;
+
+        // Update selected card preview
+        document.getElementById('selectedAssetBadge').textContent = asset.asset_code;
+        document.getElementById('selectedAssetName').textContent = asset.name;
+        document.getElementById('selectedAssetDept').textContent = asset.department_name;
+        document.getElementById('selectedAssetCustodian').textContent = asset.custodian_name;
+        document.getElementById('selectedAssetSpecs').textContent = asset.specs;
+
+        document.getElementById('linkAssetSelectedCard').style.display = 'block';
+        document.getElementById('btnSubmitLinkAsset').disabled = false;
+
+        // Refresh result card styles
+        const cards = document.querySelectorAll('.asset-link-card');
+        cards.forEach(card => {
+            if (card.innerHTML.includes(asset.asset_code)) {
+                card.style.background = '#e0f2fe';
+                card.style.borderColor = '#0284c7';
+                const btn = card.querySelector('.btn');
+                if (btn) {
+                    btn.className = 'btn btn-sm btn-primary';
+                    btn.textContent = '✓ เลือกแล้ว';
+                }
+            } else {
+                card.style.background = '#ffffff';
+                card.style.borderColor = '#e2e8f0';
+                const btn = card.querySelector('.btn');
+                if (btn) {
+                    btn.className = 'btn btn-sm btn-outline-primary';
+                    btn.textContent = 'เลือกเครื่องนี้';
+                }
+            }
+        });
+    }
+
+    function submitLinkAsset(e) {
+        e.preventDefault();
+        if (!selectedTargetAsset) {
+            if (window.Swal) Swal.fire({ icon: 'warning', title: 'กรุณาเลือกครุภัณฑ์', text: 'โปรดค้นหาและคลิกเลือกครุภัณฑ์ที่ต้องการเชื่อมโยง' });
+            else alert('โปรดเลือกครุภัณฑ์');
+            return;
+        }
+
+        const form = document.getElementById('formLinkAsset');
+        const submitBtn = document.getElementById('btnSubmitLinkAsset');
+        const auditId = document.getElementById('linkAssetAuditId').value;
+        const formData = new FormData(form);
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> กำลังบันทึกการเชื่อมโยง...';
+
+        fetch("{{ url('/hardware-audits') }}/" + auditId + "/link-asset", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-link-45deg me-1"></i> ยืนยันเชื่อมโยงและอัปเดตสเปค';
+
+            if (data.success) {
+                closeLinkAssetModal();
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'เชื่อมโยงครุภัณฑ์สำเร็จ!',
+                        text: data.message,
+                        confirmButtonText: 'ตกลง',
+                        confirmButtonColor: '#0284c7'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    alert(data.message);
+                    window.location.reload();
+                }
+            } else {
+                const err = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'เกิดข้อผิดพลาดในการบันทึก');
+                if (window.Swal) {
+                    Swal.fire({ icon: 'error', title: 'ไม่สามารถบันทึกได้', text: err });
+                } else {
+                    alert(err);
+                }
+            }
+        })
+        .catch(err => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-link-45deg me-1"></i> ยืนยันเชื่อมโยงและอัปเดตสเปค';
+            if (window.Swal) {
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', text: err.message });
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + err.message);
+            }
+        });
+    }
+
+    // -------------------------------------------------------------
     // Register New Asset Modal Handler
     // -------------------------------------------------------------
     let currentNewAssetAudit = null;
@@ -1543,14 +1932,20 @@
                         <div>
                             <div style="font-weight: 700; color: #e11d48; font-size: 14px;">ตรวจพบเครื่องใหม่ (ยังไม่มีในระบบทะเบียนครุภัณฑ์)</div>
                             <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-                                เครื่องนี้ยังไม่เคยผูกกับครุภัณฑ์ สามารถคลิกปุ่มเพื่อเพิ่มเป็นครุภัณฑ์ใหม่ได้ทันที
+                                เครื่องนี้ยังไม่เคยผูกกับครุภัณฑ์ สามารถเชื่อมโยงกับครุภัณฑ์เดิม หรือเพิ่มเป็นครุภัณฑ์ใหม่ได้ทันที
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-sm btn-primary" onclick="closeAuditDiffModal(); openCreateAssetModal(currentDiffAudit);" 
-                            style="background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none; font-weight: 700; padding: 6px 14px; border-radius: 8px;">
-                        <i class="bi bi-plus-circle-fill me-1"></i> เพิ่มเป็นครุภัณฑ์ใหม่ทันที
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-sm btn-info text-white" onclick="closeAuditDiffModal(); openLinkAssetModal(currentDiffAudit);" 
+                                style="font-weight: 700; padding: 6px 14px; border-radius: 8px;">
+                            <i class="bi bi-link-45deg me-1"></i> เชื่อมโยงครุภัณฑ์เดิม
+                        </button>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="closeAuditDiffModal(); openCreateAssetModal(currentDiffAudit);" 
+                                style="background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none; font-weight: 700; padding: 6px 14px; border-radius: 8px;">
+                            <i class="bi bi-plus-circle-fill me-1"></i> เพิ่มเป็นครุภัณฑ์ใหม่
+                        </button>
+                    </div>
                 </div>
             `;
         }
@@ -1622,6 +2017,17 @@
         navigator.clipboard.writeText(text).then(() => {
             if (window.Swal) {
                 Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'คัดลอกคำสั่งเรียบร้อยแล้ว', showConfirmButton: false, timer: 1500 });
+            } else {
+                alert('คัดลอกคำสั่งเรียบร้อยแล้ว');
+            }
+        });
+    }
+
+    function copyUtf8Command() {
+        const cmd = `[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; iex (irm "{{ url('/agent/thc_audit_agent.ps1') }}")`;
+        navigator.clipboard.writeText(cmd).then(() => {
+            if (window.Swal) {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'คัดลอกคำสั่งการันตี UTF-8 แล้ว', showConfirmButton: false, timer: 1500 });
             } else {
                 alert('คัดลอกคำสั่งเรียบร้อยแล้ว');
             }

@@ -26,6 +26,32 @@ class HardwareAuditController extends Controller
     }
 
     /**
+     * Ensure text is clean, valid UTF-8 and automatically heal ISO-8859-1 mojibake
+     * Commonly caused by PowerShell 5.1 irm (e.g. à¹‚à¸£à¸‡... -> โรง...)
+     */
+    protected function sanitizeUtf8(?string $text): ?string
+    {
+        if ($text === null || $text === '') {
+            return $text;
+        }
+
+        // 1. Detect and recover ISO-8859-1 mojibake for Thai UTF-8 characters
+        if (preg_match('/[àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ]/', $text)) {
+            $attempt = @mb_convert_encoding($text, 'ISO-8859-1', 'UTF-8');
+            if ($attempt !== false && preg_match('/[\x{0E00}-\x{0E7F}]/u', $attempt)) {
+                $text = $attempt;
+            }
+        }
+
+        // 2. Ensure valid UTF-8 encoding
+        if (!mb_check_encoding($text, 'UTF-8')) {
+            $text = @mb_convert_encoding($text, 'UTF-8', 'Windows-874, TIS-620, ISO-8859-1, ASCII');
+        }
+
+        return trim($text);
+    }
+
+    /**
      * API Endpoint: Receive hardware specs submission from client-side PowerShell Agent
      * Publicly accessible by client agent (CSRF-exempt)
      */
@@ -37,22 +63,22 @@ class HardwareAuditController extends Controller
             'serial_number' => 'nullable|string|max:100',
             'mac_address' => 'nullable|string|max:50',
             'ip_address' => 'nullable|string|max:45',
-            'brand' => 'nullable|string|max:100',
-            'model' => 'nullable|string|max:100',
+            'brand' => 'nullable|string|max:255',
+            'model' => 'nullable|string|max:255',
             'device_type_code' => 'nullable|string|max:20',
-            'cpu_model' => 'nullable|string|max:150',
+            'cpu_model' => 'nullable|string|max:255',
             'cpu_speed' => 'nullable|string|max:50',
             'ram_capacity' => 'nullable|integer',
             'ram_type' => 'nullable|string|max:30',
             'ram_bus' => 'nullable|string|max:30',
-            'ram_slots' => 'nullable|string|max:50',
+            'ram_slots' => 'nullable|string|max:255',
             'storage_type' => 'nullable|string|max:50',
             'storage_capacity' => 'nullable|string|max:50',
-            'storage_second' => 'nullable|string|max:100',
+            'storage_second' => 'nullable|string|max:255',
             'os_name' => 'nullable|string|max:100',
-            'os_license' => 'nullable|string|max:100',
-            'gpu_model' => 'nullable|string|max:150',
-            'monitor_size' => 'nullable|string|max:100',
+            'os_license' => 'nullable|string|max:255',
+            'gpu_model' => 'nullable|string|max:255',
+            'monitor_size' => 'nullable|string|max:255',
             'client_agent_version' => 'nullable|string|max:30',
         ]);
 
@@ -92,8 +118,22 @@ class HardwareAuditController extends Controller
         $matchedAsset = null;
         $matchedBy = null;
 
+        // 0. Explicit Match by Asset Code or Asset ID if passed by client
+        if ($request->filled('asset_code')) {
+            $matchedAsset = Asset::where('asset_code', trim((string)$request->input('asset_code')))->first();
+            if ($matchedAsset) {
+                $matchedBy = 'asset_code';
+            }
+        }
+        if (!$matchedAsset && $request->filled('asset_id')) {
+            $matchedAsset = Asset::find($request->input('asset_id'));
+            if ($matchedAsset) {
+                $matchedBy = 'asset_id';
+            }
+        }
+
         // 1. Highest Priority: Match by HardwareID (Physical SMBIOS / Motherboard UUID)
-        if (!empty($hardwareId)) {
+        if (!$matchedAsset && !empty($hardwareId)) {
             $matchedAsset = Asset::where('hardware_id', $hardwareId)->first();
             if ($matchedAsset) {
                 $matchedBy = 'hardware_id';
@@ -171,32 +211,52 @@ class HardwareAuditController extends Controller
             $audit->fiscal_year = $fiscalYear;
         }
 
+        // Sanitize UTF-8 on all textual incoming fields to guarantee 100% Thai fidelity
+        $hostname = mb_substr((string)$this->sanitizeUtf8($request->input('hostname')), 0, 100);
+        $cleanBrand = mb_substr((string)$this->sanitizeUtf8($brand ?: $request->input('brand')), 0, 250);
+        $cleanModel = mb_substr((string)$this->sanitizeUtf8($model ?: $request->input('model')), 0, 250);
+        $deviceTypeCode = mb_substr((string)$this->sanitizeUtf8($request->input('device_type_code', 'PC')), 0, 20);
+        $cleanCpuModel = mb_substr((string)$this->sanitizeUtf8($cpuModel ?: $request->input('cpu_model')), 0, 250);
+        $cpuSpeed = mb_substr((string)$this->sanitizeUtf8($request->input('cpu_speed')), 0, 50);
+        $ramType = mb_substr((string)$this->sanitizeUtf8($request->input('ram_type')), 0, 30);
+        $ramBus = mb_substr((string)$this->sanitizeUtf8($request->input('ram_bus')), 0, 30);
+        $ramSlots = mb_substr((string)$this->sanitizeUtf8($request->input('ram_slots')), 0, 250);
+        $storageType = mb_substr((string)$this->sanitizeUtf8($request->input('storage_type')), 0, 50);
+        $storageCap = mb_substr((string)$this->sanitizeUtf8($request->input('storage_capacity')), 0, 50);
+        $storageSecond = mb_substr((string)$this->sanitizeUtf8($request->input('storage_second')), 0, 250);
+        $osName = mb_substr((string)$this->sanitizeUtf8($request->input('os_name')), 0, 100);
+        $osLicense = mb_substr((string)$this->sanitizeUtf8($request->input('os_license')), 0, 250);
+        $gpuModel = mb_substr((string)$this->sanitizeUtf8($request->input('gpu_model')), 0, 250);
+        $monitorSize = mb_substr((string)$this->sanitizeUtf8($request->input('monitor_size')), 0, 250);
+        $macAddress = mb_substr((string)$this->sanitizeUtf8($request->input('mac_address')), 0, 50);
+        $clientVersion = mb_substr((string)$this->sanitizeUtf8($request->input('client_agent_version', '2.1.0')), 0, 30);
+
         $audit->fill([
             'asset_id' => $matchedAsset ? $matchedAsset->id : null,
-            'hostname' => $request->input('hostname'),
+            'hostname' => $hostname ?: null,
             'hardware_id' => $hardwareId ?: null,
             'serial_number' => $serial ?: null,
-            'mac_address' => $request->input('mac_address'),
+            'mac_address' => $macAddress ?: null,
             'ip_address' => $ip,
-            'brand' => $brand ?: $request->input('brand'),
-            'model' => $model ?: $request->input('model'),
-            'device_type_code' => $request->input('device_type_code', 'PC'),
-            'cpu_model' => $cpuModel ?: $request->input('cpu_model'),
-            'cpu_speed' => $request->input('cpu_speed'),
+            'brand' => $cleanBrand ?: null,
+            'model' => $cleanModel ?: null,
+            'device_type_code' => $deviceTypeCode ?: 'PC',
+            'cpu_model' => $cleanCpuModel ?: null,
+            'cpu_speed' => $cpuSpeed ?: null,
             'ram_capacity' => $request->input('ram_capacity'),
-            'ram_type' => $request->input('ram_type'),
-            'ram_bus' => $request->input('ram_bus'),
-            'ram_slots' => $request->input('ram_slots'),
-            'storage_type' => $request->input('storage_type'),
-            'storage_capacity' => $request->input('storage_capacity'),
-            'storage_second' => $request->input('storage_second'),
-            'os_name' => $request->input('os_name'),
-            'os_license' => $request->input('os_license'),
-            'gpu_model' => $request->input('gpu_model'),
-            'monitor_size' => $request->input('monitor_size'),
+            'ram_type' => $ramType ?: null,
+            'ram_bus' => $ramBus ?: null,
+            'ram_slots' => $ramSlots ?: null,
+            'storage_type' => $storageType ?: null,
+            'storage_capacity' => $storageCap ?: null,
+            'storage_second' => $storageSecond ?: null,
+            'os_name' => $osName ?: null,
+            'os_license' => $osLicense ?: null,
+            'gpu_model' => $gpuModel ?: null,
+            'monitor_size' => $monitorSize ?: null,
             'raw_payload' => $request->all(),
             'specs_diff' => !empty($diff) ? $diff : null,
-            'client_agent_version' => $request->input('client_agent_version', '1.2.0'),
+            'client_agent_version' => $clientVersion ?: '2.1.0',
             'status' => 'pending', // Awaiting Admin Approval
         ]);
         $audit->save();
@@ -266,6 +326,12 @@ class HardwareAuditController extends Controller
             ->where('status', 'rejected')
             ->count();
 
+        // Unlinked submissions count (Newly discovered computers awaiting asset linking or registration)
+        $unlinkedCount = HardwareAudit::where('fiscal_year', $fiscalYear)
+            ->whereNull('asset_id')
+            ->where('status', 'pending')
+            ->count();
+
         $notAuditedCount = max(0, $totalFleet - $auditedCount);
         $auditedPercentage = $totalFleet > 0 ? round(($auditedCount / $totalFleet) * 100, 1) : 0;
 
@@ -285,7 +351,9 @@ class HardwareAuditController extends Controller
         $pendingQuery = HardwareAudit::with(['asset.department', 'reviewer'])
             ->where('fiscal_year', $fiscalYear);
 
-        if ($request->filled('status')) {
+        if ($request->input('status') === 'unlinked') {
+            $pendingQuery->whereNull('asset_id')->where('status', 'pending');
+        } elseif ($request->filled('status')) {
             $pendingQuery->where('status', $request->status);
         } else {
             $pendingQuery->where('status', 'pending');
@@ -375,6 +443,7 @@ class HardwareAuditController extends Controller
             'pendingCount',
             'approvedCount',
             'rejectedCount',
+            'unlinkedCount',
             'notAuditedCount',
             'auditedPercentage',
             'mdesWarningCount',
@@ -580,6 +649,190 @@ class HardwareAuditController extends Controller
         }
 
         return back()->with('success', "ลงทะเบียนครุภัณฑ์ใหม่ '{$asset->asset_code}' สำเร็จและบันทึกผลการตรวจนับเรียบร้อยแล้ว");
+    }
+
+    /**
+     * AJAX Endpoint: Search active assets to link with an unmatched Hardware Audit
+     */
+    public function searchAssetsForLinking(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || (!$user->isAdmin() && !$user->isTechnician())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $q = trim((string) $request->input('q', ''));
+        if (mb_strlen($q) < 1) {
+            return response()->json(['success' => true, 'assets' => []]);
+        }
+
+        $assets = Asset::with(['department', 'deviceType'])
+            ->where(function ($query) use ($q) {
+                $query->where('asset_code', 'like', "%{$q}%")
+                      ->orWhere('name', 'like', "%{$q}%")
+                      ->orWhere('serial_number', 'like', "%{$q}%")
+                      ->orWhere('hardware_id', 'like', "%{$q}%")
+                      ->orWhere('custodian_name', 'like', "%{$q}%")
+                      ->orWhere('brand', 'like', "%{$q}%")
+                      ->orWhere('model', 'like', "%{$q}%")
+                      ->orWhereHas('department', function ($sub) use ($q) {
+                          $sub->where('name', 'like', "%{$q}%");
+                      });
+            })
+            ->where('status', 'active')
+            ->orderBy('asset_code')
+            ->take(20)
+            ->get();
+
+        $formatted = $assets->map(function ($asset) {
+            return [
+                'id' => $asset->id,
+                'asset_code' => $asset->asset_code,
+                'name' => $asset->name,
+                'brand' => $asset->brand,
+                'model' => $asset->model,
+                'serial_number' => $asset->serial_number,
+                'hardware_id' => $asset->hardware_id,
+                'department_name' => $asset->department?->name ?? 'ไม่ระบุแผนก',
+                'device_type_name' => $asset->deviceType?->name ?? 'คอมพิวเตอร์',
+                'custodian_name' => $asset->custodian_name ?? '-',
+                'location_detail' => $asset->location_detail ?? '-',
+                'cpu_model' => $asset->cpu_model ?? '-',
+                'ram_capacity' => $asset->ram_capacity ? ($asset->ram_capacity . ' GB ' . ($asset->ram_type ?? '')) : '-',
+                'storage_capacity' => $asset->storage_capacity ? (($asset->storage_type ?? 'Drive') . ' ' . $asset->storage_capacity) : '-',
+                'os_name' => $asset->os_name ?? '-',
+                'specs' => $asset->specs ?? '-',
+                'last_audited_fiscal_year' => $asset->last_audited_fiscal_year,
+                'status_label' => $asset->status_label,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'assets' => $formatted,
+            'count' => $formatted->count(),
+        ]);
+    }
+
+    /**
+     * Admin Action: Link an unmatched Hardware Audit to an existing Asset in it_assets
+     */
+    public function linkAsset(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!$user || (!$user->isAdmin() && !$user->isTechnician())) {
+            abort(403, 'เฉพาะเจ้าหน้าที่ไอทีหรือแอดมินเท่านั้นที่มีสิทธิ์เชื่อมโยงครุภัณฑ์');
+        }
+
+        $audit = HardwareAudit::findOrFail($id);
+
+        $validated = $request->validate([
+            'asset_id' => 'required|exists:it_assets,id',
+            'sync_specs' => 'nullable|boolean',
+            'sync_hwid' => 'nullable|boolean',
+            'sync_sn' => 'nullable|boolean',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $asset = Asset::findOrFail($validated['asset_id']);
+
+        // Check if another active asset already uses this hardware_id
+        if ($audit->hardware_id) {
+            $existing = Asset::where('hardware_id', $audit->hardware_id)
+                ->where('id', '!=', $asset->id)
+                ->first();
+            if ($existing) {
+                $existing->hardware_id = null;
+                $existing->save();
+            }
+        }
+
+        // Link audit record to asset
+        $audit->asset_id = $asset->id;
+
+        // Sync options (default true)
+        $syncHwid = $request->boolean('sync_hwid', true);
+        $syncSn = $request->boolean('sync_sn', true);
+        $syncSpecs = $request->boolean('sync_specs', true);
+
+        if ($syncHwid && !empty($audit->hardware_id)) {
+            $asset->hardware_id = $audit->hardware_id;
+        }
+
+        if ($syncSn && !empty($audit->serial_number)) {
+            $asset->serial_number = $audit->serial_number;
+        }
+
+        if ($syncSpecs) {
+            if ($audit->cpu_model) $asset->cpu_model = $audit->cpu_model;
+            if ($audit->cpu_speed) $asset->cpu_speed = $audit->cpu_speed;
+            if ($audit->ram_capacity) $asset->ram_capacity = $audit->ram_capacity;
+            if ($audit->ram_type) $asset->ram_type = $audit->ram_type;
+            if ($audit->ram_bus) $asset->ram_bus = $audit->ram_bus;
+            if ($audit->ram_slots) $asset->ram_slots = $audit->ram_slots;
+            if ($audit->storage_type) $asset->storage_type = $audit->storage_type;
+            if ($audit->storage_capacity) $asset->storage_capacity = $audit->storage_capacity;
+            if ($audit->storage_second) $asset->storage_second = $audit->storage_second;
+            if ($audit->os_name) $asset->os_name = $audit->os_name;
+            if ($audit->os_license) $asset->os_license = $audit->os_license;
+            if ($audit->gpu_model) $asset->gpu_model = $audit->gpu_model;
+            if ($audit->monitor_size) $asset->monitor_size = $audit->monitor_size;
+            if ($audit->ip_address) $asset->ip_address = $audit->ip_address;
+            if ($audit->mac_address) $asset->mac_address = $audit->mac_address;
+            if ($audit->brand && empty($asset->brand)) $asset->brand = $audit->brand;
+            if ($audit->model && empty($asset->model)) $asset->model = $audit->model;
+
+            // Composite specs string
+            $specsParts = [];
+            if ($audit->cpu_model) $specsParts[] = "CPU " . $audit->cpu_model . ($audit->cpu_speed ? " (" . $audit->cpu_speed . ")" : "");
+            if ($audit->ram_capacity) $specsParts[] = "RAM " . $audit->ram_capacity . "GB " . ($audit->ram_type ?: '') . ($audit->ram_bus ? " (" . $audit->ram_bus . ")" : "");
+            if ($audit->storage_capacity) $specsParts[] = ($audit->storage_type ?: 'Storage') . " " . $audit->storage_capacity;
+            if ($audit->storage_second) $specsParts[] = "Drive 2: " . $audit->storage_second;
+            if ($audit->os_name) $specsParts[] = "OS " . $audit->os_name;
+            if ($audit->gpu_model) $specsParts[] = "GPU " . $audit->gpu_model;
+            if (!empty($specsParts)) {
+                $asset->specs = implode(' | ', $specsParts);
+            }
+        }
+
+        // Mark as audited in this fiscal year
+        $asset->last_audited_at = now();
+        $asset->last_audited_fiscal_year = $audit->fiscal_year;
+        $asset->save();
+
+        // Update audit status to approved
+        $audit->status = 'approved';
+        $audit->reviewed_by = $user->id;
+        $audit->reviewed_at = now();
+        $audit->review_notes = 'เชื่อมโยงเข้ากับครุภัณฑ์เดิม: ' . $asset->asset_code . ($request->filled('notes') ? ' (' . $request->notes . ')' : '');
+        $audit->save();
+
+        // Audit Log
+        AuditLog::record(
+            'update',
+            'hardware_audits',
+            "เชื่อมโยงผลตรวจสเปคเครื่อง {$audit->hostname} (HWID: {$audit->hardware_id}) เข้ากับครุภัณฑ์ {$asset->asset_code} ({$asset->name})",
+            $audit,
+            null,
+            null,
+            $request,
+            $user
+        );
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "เชื่อมโยงเครื่อง '{$audit->hostname}' เข้ากับครุภัณฑ์ '{$asset->asset_code}' เรียบร้อยแล้ว",
+                'asset' => [
+                    'id' => $asset->id,
+                    'asset_code' => $asset->asset_code,
+                    'name' => $asset->name,
+                    'hardware_id' => $asset->hardware_id,
+                ],
+            ]);
+        }
+
+        return back()->with('success', "เชื่อมโยงเครื่อง '{$audit->hostname}' เข้ากับครุภัณฑ์ '{$asset->asset_code}' สำเร็จและอัปเดตสเปคเรียบร้อยแล้ว");
     }
 
     /**
