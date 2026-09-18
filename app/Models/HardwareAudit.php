@@ -31,6 +31,7 @@ class HardwareAudit extends Model
         'ram_slots',
         'storage_type',
         'storage_capacity',
+        'storage_second',
         'os_name',
         'os_license',
         'gpu_model',

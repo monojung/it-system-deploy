@@ -385,6 +385,11 @@
                                         <span class="badge" style="background: {{ stripos($audit->storage_type, 'SSD') !== false ? '#dcfce7' : '#fef3c7' }}; color: {{ stripos($audit->storage_type, 'SSD') !== false ? '#15803d' : '#b45309' }}; border: 1px solid {{ stripos($audit->storage_type, 'SSD') !== false ? '#bbf7d0' : '#fde68a' }}; font-size: 11px; font-weight: 600;">
                                             {{ $audit->storage_type }} {{ $audit->storage_capacity }}
                                         </span>
+                                        @if($audit->storage_second)
+                                            <span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-size: 10px; font-weight: 600;" title="ไดรฟ์เสริม: {{ $audit->storage_second }}">
+                                                <i class="bi bi-hdd me-1"></i>+ {{ $audit->storage_second }}
+                                            </span>
+                                        @endif
                                     </div>
                                     <div style="font-size: 11px; color: #64748b; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
                                         <i class="bi bi-windows text-info"></i> <span>{{ $audit->os_name }}</span>
@@ -1234,6 +1239,7 @@
                         <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
                             ประเภท: <strong>${audit.storage_type || '-'}</strong>
                         </div>
+                        ${audit.storage_second ? `<div style="font-size: 11.5px; color: #0d9488; margin-top: 4px; font-weight: 600;"><i class="bi bi-hdd me-1"></i>ไดรฟ์ที่ 2: ${audit.storage_second}</div>` : ''}
                     </div>
 
                     <!-- OS Card -->

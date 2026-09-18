@@ -48,15 +48,34 @@ class HardwareAuditController extends Controller
             'ram_slots' => 'nullable|string|max:50',
             'storage_type' => 'nullable|string|max:50',
             'storage_capacity' => 'nullable|string|max:50',
+            'storage_second' => 'nullable|string|max:100',
             'os_name' => 'nullable|string|max:100',
             'os_license' => 'nullable|string|max:100',
             'gpu_model' => 'nullable|string|max:150',
-            'monitor_size' => 'nullable|string|max:50',
+            'monitor_size' => 'nullable|string|max:100',
             'client_agent_version' => 'nullable|string|max:30',
         ]);
 
         $fiscalYear = (int) $request->input('fiscal_year', $this->getCurrentFiscalYear());
         $ip = $request->ip() ?: $request->input('ip_address');
+
+        // Clean Brand, Model, and CPU Model for optimal readability
+        $brand = trim((string)$request->input('brand', ''));
+        if (preg_match('/To be filled by O\.E\.M\.|System manufacturer|Default string/i', $brand) || $brand === '') {
+            $brand = 'เครื่องประกอบ (Custom PC)';
+        }
+
+        $model = trim((string)$request->input('model', ''));
+        if (preg_match('/To be filled by O\.E\.M\.|System Product Name|Default string/i', $model) || $model === '') {
+            $model = 'เครื่องประกอบ (DIY/Clone)';
+        }
+
+        $cpuModel = trim((string)$request->input('cpu_model', ''));
+        if (!empty($cpuModel)) {
+            $cpuModel = preg_replace('/\s*@\s*[\d\.]+\s*GHz/i', '', $cpuModel);
+            $cpuModel = str_ireplace(['(R)', '(TM)'], '', $cpuModel);
+            $cpuModel = trim(preg_replace('/\s+/', ' ', $cpuModel));
+        }
 
         // Clean HardwareID and Serial Number
         $hardwareId = trim((string)$request->input('hardware_id', ''));
@@ -118,6 +137,7 @@ class HardwareAuditController extends Controller
                 'ram_type' => 'ชนิด RAM',
                 'storage_type' => 'ชนิดพื้นที่จัดเก็บ',
                 'storage_capacity' => 'ขนาดพื้นที่จัดเก็บ',
+                'storage_second' => 'พื้นที่จัดเก็บเสริม (Secondary Drive)',
                 'os_name' => 'ระบบปฏิบัติการ',
                 'gpu_model' => 'การ์ดจอ GPU',
             ];
@@ -158,10 +178,10 @@ class HardwareAuditController extends Controller
             'serial_number' => $serial ?: null,
             'mac_address' => $request->input('mac_address'),
             'ip_address' => $ip,
-            'brand' => $request->input('brand'),
-            'model' => $request->input('model'),
+            'brand' => $brand ?: $request->input('brand'),
+            'model' => $model ?: $request->input('model'),
             'device_type_code' => $request->input('device_type_code', 'PC'),
-            'cpu_model' => $request->input('cpu_model'),
+            'cpu_model' => $cpuModel ?: $request->input('cpu_model'),
             'cpu_speed' => $request->input('cpu_speed'),
             'ram_capacity' => $request->input('ram_capacity'),
             'ram_type' => $request->input('ram_type'),
@@ -169,6 +189,7 @@ class HardwareAuditController extends Controller
             'ram_slots' => $request->input('ram_slots'),
             'storage_type' => $request->input('storage_type'),
             'storage_capacity' => $request->input('storage_capacity'),
+            'storage_second' => $request->input('storage_second'),
             'os_name' => $request->input('os_name'),
             'os_license' => $request->input('os_license'),
             'gpu_model' => $request->input('gpu_model'),
@@ -403,6 +424,9 @@ class HardwareAuditController extends Controller
             if ($audit->ram_slots) $asset->ram_slots = $audit->ram_slots;
             if ($audit->storage_type) $asset->storage_type = $audit->storage_type;
             if ($audit->storage_capacity) $asset->storage_capacity = $audit->storage_capacity;
+            if ($audit->storage_second) $asset->storage_second = $audit->storage_second;
+            if ($audit->brand && empty($asset->brand)) $asset->brand = $audit->brand;
+            if ($audit->model && empty($asset->model)) $asset->model = $audit->model;
             if ($audit->os_name) $asset->os_name = $audit->os_name;
             if ($audit->os_license) $asset->os_license = $audit->os_license;
             if ($audit->gpu_model) $asset->gpu_model = $audit->gpu_model;
@@ -481,6 +505,7 @@ class HardwareAuditController extends Controller
         if ($audit->cpu_model) $specsParts[] = "CPU " . $audit->cpu_model . ($audit->cpu_speed ? " (" . $audit->cpu_speed . ")" : "");
         if ($audit->ram_capacity) $specsParts[] = "RAM " . $audit->ram_capacity . "GB " . ($audit->ram_type ?: '') . ($audit->ram_bus ? " (" . $audit->ram_bus . ")" : "");
         if ($audit->storage_capacity) $specsParts[] = ($audit->storage_type ?: 'Storage') . " " . $audit->storage_capacity;
+        if ($audit->storage_second) $specsParts[] = "Drive 2: " . $audit->storage_second;
         if ($audit->os_name) $specsParts[] = "OS " . $audit->os_name;
         if ($audit->gpu_model) $specsParts[] = "GPU " . $audit->gpu_model;
         $specsString = implode(' | ', $specsParts);
@@ -506,6 +531,7 @@ class HardwareAuditController extends Controller
             'ram_slots' => $audit->ram_slots,
             'storage_type' => $audit->storage_type,
             'storage_capacity' => $audit->storage_capacity,
+            'storage_second' => $audit->storage_second,
             'os_name' => $audit->os_name,
             'os_license' => $audit->os_license,
             'gpu_model' => $audit->gpu_model,
@@ -706,6 +732,7 @@ class HardwareAuditController extends Controller
                 'บัส RAM',
                 'Storage',
                 'ความจุ Storage',
+                'Storage เสริม',
                 'OS',
                 'GPU',
                 'IP Address',
@@ -732,6 +759,7 @@ class HardwareAuditController extends Controller
                     $a->ram_bus,
                     $a->storage_type,
                     $a->storage_capacity,
+                    $a->storage_second ?: '-',
                     $a->os_name,
                     $a->gpu_model,
                     $a->ip_address,

@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.3.5'),
+    'version' => env('APP_VERSION', '2.3.6'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
-    'release_date' => '2026-09-17',
-    'build' => '20260917.4',
+    'release_date' => '2026-09-18',
+    'build' => '20260918.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,19 @@ return [
     |
     */
     'changelog' => [
+        '2.3.6' => [
+            'date' => '2026-09-18',
+            'badge' => 'Intelligent Hardware Audit Agent v2.0',
+            'badge_color' => '#10b981',
+            'title' => 'อัปเกรด Client Hardware Audit Agent v2.0 ส่งข้อมูลสเปคจริงอ่านรู้เรื่อง สะอาด สมบูรณ์ และรองรับพื้นที่จัดเก็บข้อมูลไดรฟ์ที่ 2',
+            'highlights' => [
+                'ทำความสะอาดข้อมูลสเปคให้อ่านรู้เรื่อง (Clean & Human-Readable Telemetry): กรองสตริงดิบจากโรงงานและ BIOS เช่น "To be filled by O.E.M." หรือ "System manufacturer", ดึงข้อมูลยี่ห้อ/รุ่นเมนบอร์ดจริงกรณีเป็นเครื่องประกอบ, ตัดเครื่องหมาย (R), (TM) และ @ GHz ออกจาก CPU พร้อมระบุจำนวน Cores และ Threads ชัดเจน',
+                'ตรวจจับการติดตั้งแรมรายช่องอย่างแม่นยำ (Accurate RAM Slot Distribution): ตรวจจับความจุแรมตามแผงจริง เช่น 8GB x 2 ช่อง หรือ 8GB + 4GB (2 ช่อง) และตรวจจับประเภท DDR3/DDR4/DDR5 และบัสความเร็วได้อย่างถูกต้อง',
+                'ตรวจจับไดรฟ์บูต OS และไดรฟ์รองตัวที่ 2 (Dual Storage & Boot Drive Detection): ใช้ WMI Associator เพื่อหาไดรฟ์ติดตั้งระบบปฏิบัติการ (Drive C:) จริง ไม่สับสนกับแฟลชไดรฟ์หรือดิสก์เสริม พร้อมตรวจจับและบันทึกข้อมูลฮาร์ดดิสก์ตัวที่ 2 (Secondary Storage) บันทึกเข้าสู่ระบบ',
+                'ตรวจเช็คสถานะลิขสิทธิ์ Windows และถอดรหัสจอภาพจริง (Genuine License & EDID Display): ตรวจสอบการเปิดใช้งาน (Activated) ลิขสิทธิ์แท้ (Digital License / OEM OA3 / Volume KMS) และถอดรหัสรหัสชื่อจอและขนาดนิ้วจริงจาก EDID',
+                'หน้าต่างสั่งการ Terminal ภาษาไทยสวยงาม มีสีสัน เข้าใจง่าย: แสดงสรุปสเปคที่สแกนได้บนหน้าจออย่างละเอียด ชัดเจน พร้อมจัดเก็บสำเนา Local Cache และส่งเข้าสู่ระบบ IT ผ่าน HTTPS และ LAN Fallback',
+            ],
+        ],
         '2.3.5' => [
             'date' => '2026-09-17',
             'badge' => 'Cross-System Integration & Smart Workflow',
