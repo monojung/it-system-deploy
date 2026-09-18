@@ -21,12 +21,12 @@
             <span>แจ้งซ่อมเครื่องนี้</span>
         </a>
         @if($asset->status === 'borrowed' && $asset->currentBorrow)
-        <a href="{{ route('asset-borrows.show', $asset->currentBorrow->id) }}" class="btn btn-warning" style="color: #78350f; font-weight: 600;">
+        <a href="{{ Route::has('asset-borrows.show') ? route('asset-borrows.show', $asset->currentBorrow->id) : url('/asset-borrows/' . $asset->currentBorrow->id) }}" class="btn btn-warning" style="color: #78350f; font-weight: 600;">
             <i class="bi bi-arrow-left-right"></i>
             <span>ดูรายการยืมปัจจุบัน</span>
         </a>
         @else
-        <a href="{{ route('asset-borrows.create', ['asset_id' => $asset->id]) }}" class="btn btn-primary" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); border-color: #4338ca;">
+        <a href="{{ Route::has('asset-borrows.create') ? route('asset-borrows.create', ['asset_id' => $asset->id]) : url('/asset-borrows/create?asset_id=' . $asset->id) }}" class="btn btn-primary" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); border-color: #4338ca;">
             <i class="bi bi-box-arrow-right"></i>
             <span>ขอยืมอุปกรณ์นี้</span>
         </a>
@@ -70,7 +70,7 @@
             </div>
         </div>
     </div>
-    <a href="{{ route('asset-borrows.show', $asset->currentBorrow->id) }}" class="btn btn-sm btn-warning" style="color: #78350f; font-weight: 700; border-color: #d97706; padding: 7px 16px;">
+    <a href="{{ Route::has('asset-borrows.show') ? route('asset-borrows.show', $asset->currentBorrow->id) : url('/asset-borrows/' . $asset->currentBorrow->id) }}" class="btn btn-sm btn-warning" style="color: #78350f; font-weight: 700; border-color: #d97706; padding: 7px 16px;">
         <i class="bi bi-eye"></i> ดูใบยืม-คืน #{{ $asset->currentBorrow->borrow_no }}
     </a>
 </div>
@@ -596,7 +596,7 @@
             <i class="bi bi-box-arrow-right text-indigo" style="color: #4f46e5;"></i>
             <span>ประวัติการขอยืม-คืนอุปกรณ์นี้ ({{ $asset->borrows->count() }} ครั้ง)</span>
         </div>
-        <a href="{{ route('asset-borrows.create', ['asset_id' => $asset->id]) }}" class="btn btn-primary btn-sm" style="background: #4f46e5; border-color: #4f46e5;">
+        <a href="{{ Route::has('asset-borrows.create') ? route('asset-borrows.create', ['asset_id' => $asset->id]) : url('/asset-borrows/create?asset_id=' . $asset->id) }}" class="btn btn-primary btn-sm" style="background: #4f46e5; border-color: #4f46e5;">
             <i class="bi bi-plus-circle"></i> ทำเรื่องขอยืมอุปกรณ์นี้
         </a>
     </div>
@@ -618,7 +618,7 @@
                     @forelse($asset->borrows as $borrow)
                     <tr>
                         <td>
-                            <a href="{{ route('asset-borrows.show', $borrow) }}" style="font-weight: 700; color: #4f46e5; text-decoration: none; font-family: monospace;">
+                            <a href="{{ Route::has('asset-borrows.show') ? route('asset-borrows.show', $borrow) : url('/asset-borrows/' . $borrow->id) }}" style="font-weight: 700; color: #4f46e5; text-decoration: none; font-family: monospace;">
                                 {{ $borrow->borrow_no }}
                             </a>
                         </td>
@@ -651,7 +651,7 @@
                             @endif
                         </td>
                         <td style="text-align: center;">
-                            <a href="{{ route('asset-borrows.show', $borrow) }}" class="btn btn-secondary btn-sm" title="ดูรายละเอียด">
+                            <a href="{{ Route::has('asset-borrows.show') ? route('asset-borrows.show', $borrow) : url('/asset-borrows/' . $borrow->id) }}" class="btn btn-secondary btn-sm" title="ดูรายละเอียด">
                                 <i class="bi bi-eye"></i>
                             </a>
                         </td>

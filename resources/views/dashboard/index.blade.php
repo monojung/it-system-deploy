@@ -152,7 +152,7 @@
             </div>
         </div>
     </div>
-    <a href="{{ route('asset-borrows.index', ['status' => 'borrowed']) }}" class="btn btn-danger" style="font-weight: 700; font-size: 13.5px; padding: 8px 18px; border-radius: 9px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(225, 29, 72, 0.2);">
+    <a href="{{ Route::has('asset-borrows.index') ? route('asset-borrows.index', ['status' => 'borrowed']) : url('/asset-borrows?status=borrowed') }}" class="btn btn-danger" style="font-weight: 700; font-size: 13.5px; padding: 8px 18px; border-radius: 9px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(225, 29, 72, 0.2);">
         <i class="bi bi-arrow-down-left-circle"></i>
         <span>ติดตามการส่งคืน</span>
     </a>
@@ -171,7 +171,7 @@
                 <div style="font-size: 10.5px; opacity: 0.9; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">แจ้งปัญหา/คอมเสีย</div>
             </div>
         </a>
-        <a href="{{ route('asset-borrows.create') }}" class="mobile-action-card card-borrow">
+        <a href="{{ Route::has('asset-borrows.create') ? route('asset-borrows.create') : url('/asset-borrows/create') }}" class="mobile-action-card card-borrow">
             <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
                 <i class="bi bi-arrow-left-right"></i>
             </div>
@@ -249,7 +249,7 @@
         </div>
     </a>
 
-    <a href="{{ route('asset-borrows.index') }}" class="stat-card" style="text-decoration: none; color: inherit;">
+    <a href="{{ Route::has('asset-borrows.index') ? route('asset-borrows.index') : url('/asset-borrows') }}" class="stat-card" style="text-decoration: none; color: inherit;">
         <div class="stat-icon" style="background: #e0e7ff; color: #4338ca;">
             <i class="bi bi-arrow-left-right"></i>
         </div>

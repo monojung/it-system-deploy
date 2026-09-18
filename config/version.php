@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.3.7'),
+    'version' => env('APP_VERSION', '2.3.8'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-18',
-    'build' => '20260918.2',
+    'build' => '20260918.3',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,17 @@ return [
     |
     */
     'changelog' => [
+        '2.3.8' => [
+            'date' => '2026-09-18',
+            'badge' => 'Hotfix: Route Cache Resilience & System Recovery',
+            'badge_color' => '#10b981',
+            'title' => 'ป้องกันข้อผิดพลาด RouteNotFoundException (asset-borrows.index) และปรับปรุงระบบกู้คืนระบบแคชอัตโนมัติ',
+            'highlights' => [
+                'ป้องกัน RouteNotFoundException: ครอบระบบสร้างลิงก์ด้วย Route::has() ในแถบเมนูหลัก แดชบอร์ด รายการครุภัณฑ์ และงานซ่อม ป้องกันหน้าเว็บพังหรือ 500 แม้เซิร์ฟเวอร์ยังไม่อัปเดตไฟล์แคชเส้นทาง',
+                'กำจัดปัญหา Stale Route Cache หลังอัปเดตระบบ: ปรับปรุง SystemUpdateService ในขั้นตอนที่ 5 ให้ลบไฟล์แคช bootstrap/cache/*.php ทั้งหมดโดยตรง และไม่รัน route:cache ในกระบวนการเว็บเบราว์เซอร์ เพื่อให้โหลดเส้นทางใหม่เสมอ',
+                'สคริปต์กู้คืนระบบฉุกเฉิน server_init.php: เพิ่มการกวาดล้างและลบไฟล์ bootstrap/cache/routes-v7.php โดยตรง สามารถเข้ากู้คืนระบบได้ทันทีผ่าน server_init.php?key=thc11143',
+            ],
+        ],
         '2.3.7' => [
             'date' => '2026-09-18',
             'badge' => 'Hotfix: Agent IEX Execution Compatibility',

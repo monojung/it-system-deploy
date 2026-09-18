@@ -408,12 +408,36 @@ class SystemUpdateService
                 Artisan::call('optimize:clear');
                 $appendLog("Optimize clear output:\n" . Artisan::output());
 
-                // Optional: cache config in production
+                // Direct purge of all bootstrap cache files to guarantee no stale routes or configs linger
+                $bootstrapCacheFiles = [
+                    base_path('bootstrap/cache/config.php'),
+                    base_path('bootstrap/cache/routes-v7.php'),
+                    base_path('bootstrap/cache/routes.php'),
+                    base_path('bootstrap/cache/events.php'),
+                    base_path('bootstrap/cache/services.php'),
+                    base_path('bootstrap/cache/packages.php'),
+                ];
+                $purgedFiles = [];
+                foreach ($bootstrapCacheFiles as $cFile) {
+                    if (file_exists($cFile)) {
+                        @unlink($cFile);
+                        $purgedFiles[] = basename($cFile);
+                    }
+                }
+                if (!empty($purgedFiles)) {
+                    $appendLog("Direct bootstrap cache purge: " . implode(', ', $purgedFiles));
+                }
+
+                // NOTE: Do NOT call route:cache or config:cache here within the active web request,
+                // because the in-memory route collection was booted before git pull replaced files on disk.
+                // Keeping routes dynamic allows Laravel to load routes/web.php fresh on the next request.
                 if (config('app.env') === 'production') {
-                    Artisan::call('config:cache');
-                    Artisan::call('route:cache');
-                    Artisan::call('view:cache');
-                    $appendLog("Application caches warmed up.");
+                    try {
+                        Artisan::call('view:cache');
+                        $appendLog("Application view cache pre-warmed.");
+                    } catch (Exception $vEx) {
+                        $appendLog("View cache note: " . $vEx->getMessage());
+                    }
                 }
             } catch (Exception $e) {
                 $appendLog("Warning on optimize: " . $e->getMessage());

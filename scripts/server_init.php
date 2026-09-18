@@ -119,7 +119,26 @@ if ($app) {
     }
 }
 
-// 7. Optimize Clear
+// 7. Optimize Clear & Direct Cache Purge
+$directPurged = [];
+$bootstrapCacheFiles = [
+    __DIR__ . '/bootstrap/cache/config.php',
+    __DIR__ . '/bootstrap/cache/routes-v7.php',
+    __DIR__ . '/bootstrap/cache/routes.php',
+    __DIR__ . '/bootstrap/cache/events.php',
+    __DIR__ . '/bootstrap/cache/services.php',
+    __DIR__ . '/bootstrap/cache/packages.php',
+];
+foreach ($bootstrapCacheFiles as $cFile) {
+    if (file_exists($cFile)) {
+        @unlink($cFile);
+        $directPurged[] = basename($cFile);
+    }
+}
+if (!empty($directPurged)) {
+    $logs[] = "[Direct Cache Purge]: ลบไฟล์แคชตกค้าง: " . implode(', ', $directPurged);
+}
+
 if ($app) {
     try {
         \Illuminate\Support\Facades\Artisan::call('optimize:clear');

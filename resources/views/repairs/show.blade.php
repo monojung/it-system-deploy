@@ -22,7 +22,7 @@
     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
         @if(in_array($repair->status, ['pending', 'in_progress', 'waiting_parts', 'external']))
             @if(!$repair->activeBorrow)
-            <a href="{{ route('asset-borrows.create', ['repair_id' => $repair->id]) }}" class="btn btn-outline-primary">
+            <a href="{{ Route::has('asset-borrows.create') ? route('asset-borrows.create', ['repair_id' => $repair->id]) : url('/asset-borrows/create?repair_id=' . $repair->id) }}" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left-right"></i>
                 <span>ขอยืมเครื่องสำรอง</span>
             </a>
@@ -148,7 +148,7 @@
                     <i class="bi bi-arrow-left-right text-primary"></i>
                     <span>เครื่องสำรองใช้งานระหว่างซ่อม (Replacement Unit)</span>
                 </div>
-                <a href="{{ route('asset-borrows.show', $repair->activeBorrow) }}" class="btn btn-sm btn-primary" style="font-size: 12px; padding: 4px 10px;">
+                <a href="{{ Route::has('asset-borrows.show') ? route('asset-borrows.show', $repair->activeBorrow) : url('/asset-borrows/' . $repair->activeBorrow->id) }}" class="btn btn-sm btn-primary" style="font-size: 12px; padding: 4px 10px;">
                     <i class="bi bi-eye"></i> ดูใบยืม #{{ $repair->activeBorrow->borrow_no }}
                 </a>
             </div>
@@ -194,7 +194,7 @@
                     <div style="font-size: 12px; color: #64748b;">หากจำเป็นต้องใช้อุปกรณ์ทดแทนระหว่างรอซ่อม สามารถเบิกยืมเครื่องสำรองได้ทันที</div>
                 </div>
             </div>
-            <a href="{{ route('asset-borrows.create', ['repair_id' => $repair->id]) }}" class="btn btn-sm btn-primary" style="white-space: nowrap; font-size: 12.5px;">
+            <a href="{{ Route::has('asset-borrows.create') ? route('asset-borrows.create', ['repair_id' => $repair->id]) : url('/asset-borrows/create?repair_id=' . $repair->id) }}" class="btn btn-sm btn-primary" style="white-space: nowrap; font-size: 12.5px;">
                 <i class="bi bi-plus-circle"></i> ขอยืมเครื่องสำรอง
             </a>
         </div>

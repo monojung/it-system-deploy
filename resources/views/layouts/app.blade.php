@@ -1257,7 +1257,7 @@
                         <span class="nav-badge" title="{{ $navPendingDr }} คำขอข้อมูลรอพิจารณา">{{ $navPendingDr }}</span>
                     @endif
                 </a>
-                <a href="{{ route('asset-borrows.index') }}" class="nav-item {{ request()->routeIs('asset-borrows.*') ? 'active' : '' }}">
+                <a href="{{ Route::has('asset-borrows.index') ? route('asset-borrows.index') : url('/asset-borrows') }}" class="nav-item {{ request()->routeIs('asset-borrows.*') || request()->is('asset-borrows*') ? 'active' : '' }}">
                     <i class="bi bi-arrow-left-right"></i>
                     <span>ขอยืม-คืนอุปกรณ์ IT</span>
                     @php
@@ -1274,7 +1274,7 @@
                     <span>คลังคอมพิวเตอร์ & ครุภัณฑ์</span>
                 </a>
                 @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician()))
-                <a href="{{ route('hardware-audits.index') }}" class="nav-item {{ request()->routeIs('hardware-audits.*') ? 'active' : '' }}">
+                <a href="{{ Route::has('hardware-audits.index') ? route('hardware-audits.index') : url('/hardware-audits') }}" class="nav-item {{ request()->routeIs('hardware-audits.*') || request()->is('hardware-audits*') ? 'active' : '' }}">
                     <i class="bi bi-cpu-fill"></i>
                     <span>ติดตามสเปค & ตรวจนับรายปี</span>
                     @php
@@ -1383,7 +1383,7 @@
                         <i class="bi bi-plus-lg"></i>
                         <span>แจ้งซ่อมด่วน</span>
                     </a>
-                    <a href="{{ route('asset-borrows.create') }}" class="topbar-btn" style="background: rgba(14, 165, 233, 0.1); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.28);" title="ยื่นคำขอยืมอุปกรณ์คอมพิวเตอร์และพัสดุ IT">
+                    <a href="{{ Route::has('asset-borrows.create') ? route('asset-borrows.create') : url('/asset-borrows/create') }}" class="topbar-btn" style="background: rgba(14, 165, 233, 0.1); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.28);" title="ยื่นคำขอยืมอุปกรณ์คอมพิวเตอร์และพัสดุ IT">
                         <i class="bi bi-arrow-left-right"></i>
                         <span>ขอยืมอุปกรณ์</span>
                     </a>
