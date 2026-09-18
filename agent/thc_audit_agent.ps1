@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # thc_audit_agent.ps1
 # Thung Hua Chang Hospital - Client Hardware Audit Agent
 # Embedded PowerShell Agent to collect physical hardware specs & transmit to IT Server
