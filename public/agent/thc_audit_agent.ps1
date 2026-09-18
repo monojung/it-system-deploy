@@ -5,11 +5,25 @@
 # Version: 2.0.0 (Compatible with IT System Platform v2.3.6)
 # ==============================================================================
 
-param(
-    [string]$ServerUrl = "https://thchospital.moph.go.th/it-system/api/hardware-audit/submit",
-    [int]$FiscalYear = 0,
-    [switch]$Silent = $false
-)
+# Parameters & Fallback Options (Full IEX pipeline and CLI compatibility)
+if (-not (Get-Variable -Name ServerUrl -ErrorAction SilentlyContinue) -or [string]::IsNullOrWhiteSpace($ServerUrl)) {
+    $ServerUrl = "https://thchospital.moph.go.th/it-system/api/hardware-audit/submit"
+}
+if (-not (Get-Variable -Name FiscalYear -ErrorAction SilentlyContinue)) {
+    $FiscalYear = 0
+}
+if (-not (Get-Variable -Name Silent -ErrorAction SilentlyContinue)) {
+    $Silent = $false
+}
+
+# Parse CLI arguments if run directly via powershell.exe -File
+if ($args) {
+    for ($i = 0; $i -lt $args.Count; $i++) {
+        if ($args[$i] -eq '-ServerUrl' -and ($i + 1) -lt $args.Count) { $ServerUrl = $args[$i + 1] }
+        if ($args[$i] -eq '-FiscalYear' -and ($i + 1) -lt $args.Count) { $FiscalYear = [int]$args[$i + 1] }
+        if ($args[$i] -eq '-Silent') { $Silent = $true }
+    }
+}
 
 $ErrorActionPreference = 'SilentlyContinue'
 

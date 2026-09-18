@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.3.6'),
+    'version' => env('APP_VERSION', '2.3.7'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-18',
-    'build' => '20260918.1',
+    'build' => '20260918.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,16 @@ return [
     |
     */
     'changelog' => [
+        '2.3.7' => [
+            'date' => '2026-09-18',
+            'badge' => 'Hotfix: Agent IEX Execution Compatibility',
+            'badge_color' => '#ef4444',
+            'title' => 'แก้ไขข้อผิดพลาดการรันคำสั่ง Agent One-Liner ผ่าน Invoke-Expression (irm ... | iex)',
+            'highlights' => [
+                'แก้ปัญหา InvalidLeftHandSide / Assignment Expression Error: ปรับโครงสร้างการประกาศพารามิเตอร์ใน thc_audit_agent.ps1 ให้เป็นตัวแปรสคริปต์สากล รองรับการไปป์ผ่าน Invoke-Expression (iex) ได้ 100% โดยไม่เกิดข้อผิดพลาดของพารามิเตอร์',
+                'รองรับทั้งการรันสดผ่าน Network One-Liner และไฟล์ .bat / .ps1 ประจำเครื่อง: ใช้งานได้ทั้งคำสั่งด่วน irm | iex และไฟล์ติดตั้ง install_thc_agent.bat ได้อย่างสมบูรณ์แบบ',
+            ],
+        ],
         '2.3.6' => [
             'date' => '2026-09-18',
             'badge' => 'Intelligent Hardware Audit Agent v2.0',
