@@ -414,7 +414,8 @@
         .topbar-right {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 10px;
+            flex-shrink: 0;
         }
 
         .topbar-btn {
@@ -1383,19 +1384,22 @@
                     </div>
                 </div>
                 <div class="topbar-right">
-                    @yield('topbar-actions')
-                    <a href="{{ route('repairs.create') }}" class="topbar-btn topbar-btn-primary" title="แจ้งซ่อมอุปกรณ์หรือปัญหาไอที">
-                        <i class="bi bi-plus-lg"></i>
-                        <span>แจ้งซ่อมด่วน</span>
-                    </a>
-                    <a href="{{ Route::has('asset-borrows.create') ? route('asset-borrows.create') : url('/asset-borrows/create') }}" class="topbar-btn" style="background: rgba(14, 165, 233, 0.1); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.28);" title="ยื่นคำขอยืมอุปกรณ์คอมพิวเตอร์และพัสดุ IT">
-                        <i class="bi bi-arrow-left-right"></i>
-                        <span>ขอยืมอุปกรณ์</span>
-                    </a>
-                    <a href="{{ route('data-requests.create') }}" class="topbar-btn topbar-btn-secondary" title="ยื่นคำขอข้อมูลสารสนเทศและสถิติ">
-                        <i class="bi bi-plus-lg"></i>
-                        <span>ขอข้อมูล</span>
-                    </a>
+                    @hasSection('topbar-actions')
+                        @yield('topbar-actions')
+                    @else
+                        <a href="{{ route('repairs.create') }}" class="topbar-btn topbar-btn-primary" title="แจ้งซ่อมอุปกรณ์หรือปัญหาไอที">
+                            <i class="bi bi-plus-lg"></i>
+                            <span>แจ้งซ่อมด่วน</span>
+                        </a>
+                        <a href="{{ Route::has('asset-borrows.create') ? route('asset-borrows.create') : url('/asset-borrows/create') }}" class="topbar-btn" style="background: rgba(14, 165, 233, 0.1); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.28);" title="ยื่นคำขอยืมอุปกรณ์คอมพิวเตอร์และพัสดุ IT">
+                            <i class="bi bi-arrow-left-right"></i>
+                            <span>ขอยืมอุปกรณ์</span>
+                        </a>
+                        <a href="{{ route('data-requests.create') }}" class="topbar-btn topbar-btn-secondary" title="ยื่นคำขอข้อมูลสารสนเทศและสถิติ">
+                            <i class="bi bi-plus-lg"></i>
+                            <span>ขอข้อมูล</span>
+                        </a>
+                    @endif
 
                     @auth
                     <a href="{{ route('profile') }}" class="topbar-btn" title="แก้ไขข้อมูลส่วนตัว">

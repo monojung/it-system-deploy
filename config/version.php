@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.4.1'),
+    'version' => env('APP_VERSION', '2.4.2'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-21',
-    'build' => '20260921.2',
+    'build' => '20260921.3',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -28,17 +28,29 @@ return [
     */
     'update_repo_url' => env('SYSTEM_UPDATE_REPO_URL', 'https://github.com/monojung/it-system-deploy.git'),
     'update_branch' => env('SYSTEM_UPDATE_BRANCH', 'main'),
-    'update_remote_name' => env('SYSTEM_UPDATE_REMOTE_NAME', 'deploy'),
 
     /*
     |--------------------------------------------------------------------------
-    | Changelog & Release History
+    | System Changelog History
     |--------------------------------------------------------------------------
     |
-    | Structured release notes categorized by version numbers.
+    | Detailed version release notes, architectural enhancements, security
+    | patches, and operational changes for Thung Hua Chang Hospital.
     |
     */
     'changelog' => [
+        '2.4.2' => [
+            'date' => '2026-09-21',
+            'badge' => 'UI Refinement: Asset Inventory & Topbar Clean Architecture',
+            'badge_color' => '#0d9488',
+            'title' => 'ยกเครื่องและปรับปรุงหน้าคลังคอมพิวเตอร์และครุภัณฑ์ IT (/assets) พร้อมแก้ไขปัญหา Navbar ซ้อนทับ',
+            'highlights' => [
+                'แก้ไขปัญหา Navbar Header บวมและซ้อนทับ: ปรับปรุงโครงสร้าง @hasSection(\'topbar-actions\') ใน Main Layout ป้องกันปุ่มเมนูด่วนใน Navbar เบียดและตกบรรทัด พร้อมคืนความสะอาดเรียบหรูให้กับแถบด้านบน',
+                'รวมศูนย์เครื่องมือจัดการครุภัณฑ์บน Hero Banner: รวบรวมปุ่มเพิ่มครุภัณฑ์ใหม่, จัดการประเภทอุปกรณ์ (Device Types), ตรวจนับสเปคประจำปี, นำเข้า CSV และส่งออก Excel/CSV ไว้ในแบนเนอร์ส่วนหัวอย่างสวยงามและเป็นสัดส่วน',
+                'ยุบรวมและปรับปรุงตัวกรองสเปคฮาร์ดแวร์ (Collapsible Hardware Specs Hub): ซ่อนชิปสเปคที่มีความสูงมากไว้ใน Drawer ที่สามารถเปิด/ปิดได้ในคลิกเดียว (หรือเปิดอัตโนมัติเมื่อมีการกรองสเปค) ช่วยลดความสูงของหน้าจอก่อนถึงตารางข้อมูลลงกว่า 300 พิกเซล ให้ผู้ใช้งานเห็นตารางครุภัณฑ์ได้ทันทีโดยไม่ต้องเลื่อนหน้าจอ',
+                'ปรับปรุงตารางรายการครุภัณฑ์ (Responsive Assets Table): กำหนดความกว้างคอลัมน์ให้สมดุล ตัดข้อความชิป CPU ที่ยาวเกินไปด้วย ellipsis เพื่อให้ความสูงของแต่ละแถวในตารางเท่ากัน สบายตา และอ่านง่ายขึ้น',
+            ],
+        ],
         '2.4.1' => [
             'date' => '2026-09-21',
             'badge' => 'Maintenance & UX Enhancement: Console Drawer & Borrow Workflow',
