@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.3.9'),
+    'version' => env('APP_VERSION', '2.4.0'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
-    'release_date' => '2026-09-18',
-    'build' => '20260918.4',
+    'release_date' => '2026-09-21',
+    'build' => '20260921.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,21 @@ return [
     |
     */
     'changelog' => [
+        '2.4.0' => [
+            'date' => '2026-09-21',
+            'badge' => 'Major Release: Device Types Management & Self-Healing Audit Agent',
+            'badge_color' => '#0d9488',
+            'title' => 'เพิ่มระบบจัดการประเภทอุปกรณ์ครุภัณฑ์ (Device Types), ปรับปรุงตัวติดตั้ง Agent อัตโนมัติ (Self-Healing Auto-Download), แก้ไขภาษาไทย UTF-8 บน PowerShell และยกระดับระบบอัปเดตเวอร์ชัน',
+            'highlights' => [
+                'ระบบจัดการประเภทอุปกรณ์ครุภัณฑ์คอมพิวเตอร์ (Device Types Management): เพิ่มโมดูลจัดการประเภทอุปกรณ์ (CRUD) พร้อมระบบยืนยันการลบ SweetAlert2, ตรวจสอบและป้องกันการลบหากยังมีครุภัณฑ์ใช้งานอยู่ (Asset Linkage Guard), และตัวเลือกไอคอนด่วน (Fast Icon Picker)',
+                'เชื่อมโยงประเภทอุปกรณ์ทั้งระบบ: ผูกประเภทอุปกรณ์เข้ากับแถบเมนูด้านข้าง (Admin Sidebar), หน้ารายการครุภัณฑ์ (Assets Index), ฟอร์มเพิ่ม/แก้ไขครุภัณฑ์ (Create/Edit Asset) และหน้าติดตามผลตรวจนับสเปคคอมพิวเตอร์ประจำปีงบประมาณ',
+                'เพิ่มปุ่มลบในคิวรอตรวจสอบและอนุมัติสเปคคอมพิวเตอร์: รองรับการลบรายการในคิวรอตรวจสอบ (Hardware Audit Pending Queue) พร้อม Modal ยืนยันการลบแบบ SweetAlert2 ป้องกันข้อมูลตกค้างหรือสแกนซ้ำซ้อน',
+                'ตัวติดตั้ง Agent อัจฉริยะกู้คืนตัวเองได้ (Self-Healing Installer): ปรับปรุง install_thc_agent.bat ให้สามารถดาวน์โหลดสคริปต์ thc_audit_agent.ps1 จากเซิร์ฟเวอร์ให้อัตโนมัติในเบื้องหลัง หมดปัญหาไฟล์สคริปต์ขาดหายหรือดาวน์โหลดไม่ครบ',
+                'แก้ไขปัญหาภาษาไทยตัวอักษรเพี้ยน 100%: ปรับคำสั่ง One-Liner ให้ถอดรหัส UTF-8 ผ่าน Net.WebClient และบันทึก thc_audit_agent.ps1 ด้วยรหัส UTF-8 เพื่อให้แสดงภาษาไทยบน PowerShell Console ได้อย่างถูกต้องและคมชัด',
+                'ปรับปรุงการทำงานที่ซ้ำซ้อน: ตัดไฟล์ run_manual_audit.bat และตัวเลือกสับสนออก ยุบรวมหน้าดาวน์โหลดเป็น 2 ช่องทางหลักที่ชัดเจน (แบบคลิกเดียวผ่าน Terminal One-Liner และแบบติดตั้งถาวรผ่าน Batch Installer)',
+                'ระบบค้นหา Git อัตโนมัติสำหรับระบบอัปเดต (Automatic Git Path Detection): รองรับการค้นหาตัวรัน Git อัตโนมัติบน Windows และ XAMPP หมดปัญหาคำสั่ง git is not recognized เมื่อตรวจสอบและสั่งอัปเดตเวอร์ชันผ่านหน้าเว็บ',
+            ],
+        ],
         '2.3.9' => [
             'date' => '2026-09-18',
             'badge' => 'Major Update: UTF-8 Telemetry & Asset Linking Workflow',

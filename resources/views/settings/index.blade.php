@@ -1006,6 +1006,11 @@
                         <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 13.5px; font-weight: 600;">
                             <i class="bi bi-save"></i> บันทึกเลขเวอร์ชัน
                         </button>
+                        @if(\App\Models\SystemSetting::where('key', 'app_version')->exists())
+                        <button type="submit" name="reset_default" value="1" class="btn btn-secondary" style="padding: 10px 16px; font-size: 13.5px; font-weight: 600;" title="คืนค่าเป็นเลขเวอร์ชันตามไฟล์ระบบ (v{{ config('version.version') }})">
+                            <i class="bi bi-arrow-counterclockwise"></i> คืนค่าเริ่มต้น (v{{ config('version.version') }})
+                        </button>
+                        @endif
                     </div>
                 </form>
 

@@ -176,6 +176,11 @@ class SettingController extends Controller
             SystemSetting::set('thaid_client_id', $request->input('thaid_client_id', ''), 'security', 'text');
             SystemSetting::set('thaid_client_secret', $request->input('thaid_client_secret', ''), 'security', 'text');
         } elseif ($group === 'version') {
+            if ($request->boolean('reset_default')) {
+                SystemSetting::where('key', 'app_version')->delete();
+                return back()->with('success', 'รีเซ็ตเลขเวอร์ชันกลับเป็นค่าเริ่มต้นของระบบเรียบร้อยแล้ว (v' . config('version.version', '2.4.0') . ')');
+            }
+
             $data = $request->validate([
                 'app_version' => 'required|string|max:50',
             ]);

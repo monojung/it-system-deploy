@@ -253,7 +253,10 @@ class SystemUpdateService
             $errorType = 'เครือข่ายหรือสิทธิ์การเข้าถึง';
             $hint = 'กรุณาตรวจสอบการเชื่อมต่อเครือข่ายของเซิร์ฟเวอร์';
 
-            if (str_contains($rawError, 'Could not resolve host')) {
+            if (str_contains($rawError, 'not recognized as an internal or external command') || str_contains($rawError, 'git: command not found') || str_contains($rawError, 'No such file or directory')) {
+                $errorType = 'ไม่พบโปรแกรม Git บนสภาพแวดล้อมของเซิร์ฟเวอร์ (Git Not Found in PATH)';
+                $hint = 'เซิร์ฟเวอร์เว็บ (Apache/XAMPP) ไม่พบคำสั่ง git ใน System PATH กรุณาระบุ GIT_PATH ในไฟล์ .env เช่น GIT_PATH="C:\\Program Files\\Git\\cmd\\git.exe" หรือเพิ่ม Git ลงใน PATH ของระบบ';
+            } elseif (str_contains($rawError, 'Could not resolve host')) {
                 $errorType = 'ปัญหา DNS หรือเซิร์ฟเวอร์ไม่สามารถออกอินเทอร์เน็ตได้';
                 $hint = 'เซิร์ฟเวอร์ไม่สามารถแปลงชื่อ github.com ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต, DNS หรือการตั้งค่า Proxy ของโรงพยาบาล';
             } elseif (str_contains($rawError, 'Connection timed out') || str_contains($rawError, 'timed out')) {
@@ -461,7 +464,19 @@ class SystemUpdateService
             }
 
             $duration = (int) round(microtime(true) - $startTime);
-            $newVersion = function_exists('app_version') ? app_version() : config('version.version', '2.2.1');
+
+            // Re-read version freshly from disk (as in-memory config may be stale after git pull)
+            $versionConfig = @include config_path('version.php');
+            $newVersion = is_array($versionConfig) && !empty($versionConfig['version'])
+                ? (string) $versionConfig['version']
+                : (function_exists('app_version') ? app_version() : config('version.version', '2.4.0'));
+
+            // Keep system setting synchronized
+            try {
+                \App\Models\SystemSetting::set('app_version', $newVersion, 'version', 'text', 'เวอร์ชันระบบสารสนเทศ');
+            } catch (Exception $sEx) {
+                // ignore
+            }
 
             $updateRecord->update([
                 'version' => $newVersion,
@@ -652,7 +667,19 @@ class SystemUpdateService
             }
 
             $duration = (int) round(microtime(true) - $startTime);
-            $newVersion = function_exists('app_version') ? app_version() : config('version.version', '2.2.2');
+
+            // Re-read version freshly from disk
+            $versionConfig = @include config_path('version.php');
+            $newVersion = is_array($versionConfig) && !empty($versionConfig['version'])
+                ? (string) $versionConfig['version']
+                : (function_exists('app_version') ? app_version() : config('version.version', '2.4.0'));
+
+            // Keep system setting synchronized
+            try {
+                \App\Models\SystemSetting::set('app_version', $newVersion, 'version', 'text', 'เวอร์ชันระบบสารสนเทศ');
+            } catch (Exception $sEx) {
+                // ignore
+            }
 
             $updateRecord->update([
                 'version' => $newVersion,
@@ -703,11 +730,92 @@ class SystemUpdateService
     }
 
     /**
+     * Resolve git executable path and ensure Git environment
+     */
+    public function resolveGitBinary(): string
+    {
+        $configured = config('version.git_path', env('GIT_PATH'));
+        if ($configured && (file_exists($configured) || is_executable($configured))) {
+            return $configured;
+        }
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            $candidates = [
+                'C:\\Program Files\\Git\\cmd\\git.exe',
+                'C:\\Program Files\\Git\\bin\\git.exe',
+                'C:\\Program Files (x86)\\Git\\cmd\\git.exe',
+                'C:\\Program Files (x86)\\Git\\bin\\git.exe',
+                'D:\\Git\\cmd\\git.exe',
+                'D:\\Git\\bin\\git.exe',
+                'E:\\Git\\cmd\\git.exe',
+                'E:\\Git\\bin\\git.exe',
+                'C:\\Git\\cmd\\git.exe',
+                'C:\\Git\\bin\\git.exe',
+            ];
+            $localApp = getenv('LOCALAPPDATA');
+            if ($localApp) {
+                $candidates[] = $localApp . '\\Programs\\Git\\cmd\\git.exe';
+                $candidates[] = $localApp . '\\Programs\\Git\\bin\\git.exe';
+            }
+
+            foreach ($candidates as $candidate) {
+                if (file_exists($candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return 'git';
+    }
+
+    /**
+     * Prepare environment variables for running processes (ensuring Git paths are in PATH)
+     */
+    protected function getProcessEnv(): array
+    {
+        $env = $_ENV;
+        $currentPath = getenv('PATH') ?: '';
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            $gitDirs = [
+                'C:\\Program Files\\Git\\cmd',
+                'C:\\Program Files\\Git\\bin',
+                'C:\\Program Files\\Git\\usr\\bin',
+                'C:\\Program Files (x86)\\Git\\cmd',
+                'C:\\Program Files (x86)\\Git\\bin',
+                'D:\\Git\\cmd',
+                'D:\\Git\\bin',
+                'E:\\Git\\cmd',
+                'E:\\Git\\bin',
+            ];
+            $extraPaths = [];
+            foreach ($gitDirs as $dir) {
+                if (is_dir($dir) && !str_contains($currentPath, $dir)) {
+                    $extraPaths[] = $dir;
+                }
+            }
+            if (!empty($extraPaths)) {
+                $currentPath = implode(';', $extraPaths) . ';' . $currentPath;
+            }
+        }
+
+        $env['PATH'] = $currentPath;
+        return $env;
+    }
+
+    /**
      * Helper to run Symfony Process with timeout and error checking
      */
     protected function runProcess(array $command, int $timeout = 30): string
     {
-        $process = new Process($command, base_path());
+        if (!empty($command) && $command[0] === 'git') {
+            $gitBinary = $this->resolveGitBinary();
+            if ($gitBinary !== 'git') {
+                $command[0] = $gitBinary;
+            }
+        }
+
+        $process = new Process($command, base_path(), $this->getProcessEnv());
         $process->setTimeout($timeout);
         $process->run();
 
