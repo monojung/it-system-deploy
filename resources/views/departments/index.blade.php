@@ -127,7 +127,7 @@
 @push('scripts')
 <script>
     function editDept(id, name, code, building, phone) {
-        document.getElementById('deptForm').action = "/departments/" + id;
+        document.getElementById('deptForm').action = "{{ url('/departments') }}/" + id;
         document.getElementById('methodField').value = "PUT";
         document.getElementById('dept_name').value = name;
         document.getElementById('dept_code').value = code || '';

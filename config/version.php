@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.4.2'),
+    'version' => env('APP_VERSION', '2.4.3'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-21',
-    'build' => '20260921.3',
+    'build' => '20260921.4',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,16 @@ return [
     |
     */
     'changelog' => [
+        '2.4.3' => [
+            'date' => '2026-09-21',
+            'badge' => 'Hotfix: Subdirectory Deletion Routing & Asset Safety Modal',
+            'badge_color' => '#ef4444',
+            'title' => 'แก้ไขข้อผิดพลาด 404 เมื่อกดลบครุภัณฑ์บนเซิร์ฟเวอร์จริง (Subdirectory URL Routing)',
+            'highlights' => [
+                'แก้ไขข้อผิดพลาด 404 Not Found เมื่อลบครุภัณฑ์: ปรับปรุง action URL ของ Modal ยืนยันการลบครุภัณฑ์ในหน้า assets/index และ assets/show จาก Hardcoded `/assets/${id}` เป็น Blade Helper `{{ url(\'/assets\') }}/${id}` รองรับเซิร์ฟเวอร์ Subdirectory เช่น https://thchospital.moph.go.th/it-system/ ได้อย่างถูกต้อง 100%',
+                'ตรวจสอบความเข้ากันได้ของฟอร์มทั้งระบบ: ปรับปรุง action URL ในหน้าแผนก (departments) และคลังอะไหล่ (spare_parts) ให้ใช้ `{{ url() }}` helper เพื่อป้องกันข้อผิดพลาด 404 ในทุกจุด',
+            ],
+        ],
         '2.4.2' => [
             'date' => '2026-09-21',
             'badge' => 'UI Refinement: Asset Inventory & Topbar Clean Architecture',

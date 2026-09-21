@@ -223,7 +223,7 @@
 @push('scripts')
 <script>
     function openAdjustModal(id, name, currentStock, unit) {
-        document.getElementById('adjustForm').action = "/spare-parts/" + id + "/adjust-stock";
+        document.getElementById('adjustForm').action = "{{ url('/spare-parts') }}/" + id + "/adjust-stock";
         document.getElementById('modalPartName').innerText = name;
         document.getElementById('modalCurrentStock').innerText = currentStock + ' ' + unit;
         document.getElementById('modalUnit').innerText = unit;

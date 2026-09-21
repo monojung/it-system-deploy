@@ -799,7 +799,7 @@
             document.getElementById('del_blocked_section').style.display = 'block';
             document.getElementById('del_allowed_section').style.display = 'none';
         } else {
-            document.getElementById('deleteAssetForm').action = '/assets/' + id;
+            document.getElementById('deleteAssetForm').action = '{{ url('/assets') }}/' + id;
             document.getElementById('del_blocked_section').style.display = 'none';
             document.getElementById('del_allowed_section').style.display = 'block';
         }

@@ -1973,12 +1973,12 @@
         if (repairsCount > 0) {
             // Block deletion due to repair records
             document.getElementById('del_repair_count_num').textContent = repairsCount;
-            document.getElementById('del_view_repairs_btn').href = '/assets/' + id;
+            document.getElementById('del_view_repairs_btn').href = '{{ url('/assets') }}/' + id;
             document.getElementById('del_blocked_section').style.display = 'block';
             document.getElementById('del_allowed_section').style.display = 'none';
         } else {
             // Allow deletion
-            document.getElementById('deleteAssetForm').action = '/assets/' + id;
+            document.getElementById('deleteAssetForm').action = '{{ url('/assets') }}/' + id;
             document.getElementById('del_blocked_section').style.display = 'none';
             document.getElementById('del_allowed_section').style.display = 'block';
         }
