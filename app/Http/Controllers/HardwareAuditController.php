@@ -52,11 +52,50 @@ class HardwareAuditController extends Controller
     }
 
     /**
-     * API Endpoint: Receive hardware specs submission from client-side PowerShell Agent
+     * API Endpoint: Receive hardware specs submission from client-side PowerShell Agent (POST)
+     * Or provide service health/status information when accessed via browser or health checks (GET)
      * Publicly accessible by client agent (CSRF-exempt)
      */
     public function submit(Request $request)
     {
+        // Handle GET Request (Health check, API status, and browser direct access)
+        if ($request->isMethod('get')) {
+            $fiscalYear = $this->getCurrentFiscalYear();
+            $auditedCount = HardwareAudit::where('fiscal_year', $fiscalYear)->count();
+
+            $statusData = [
+                'status' => 'online',
+                'service' => 'THC Client Hardware Audit Telemetry API',
+                'hospital' => 'โรงพยาบาลทุ่งหัวช้าง (Thung Hua Chang Hospital)',
+                'endpoint' => url('/api/hardware-audit/submit'),
+                'version' => '2.1.0',
+                'current_fiscal_year' => $fiscalYear,
+                'supported_methods' => ['POST', 'GET'],
+                'payload_format' => 'application/json',
+                'stats' => [
+                    'current_fiscal_year_audits' => $auditedCount,
+                ],
+                'message' => 'ระบบ API ตรวจนับและติดตามสเปคคอมพิวเตอร์พร้อมใช้งาน (กรุณาส่งข้อมูลฮาร์ดแวร์ผ่าน HTTP POST ด้วยรูปแบบ application/json)',
+                'timestamp' => now()->toIso8601String(),
+            ];
+
+            // If requested via JSON, API client, cURL, or explicitly ?format=json
+            if ($request->wantsJson() || $request->input('format') === 'json' || !$request->acceptsHtml()) {
+                return response()->json($statusData, 200, [
+                    'Content-Type' => 'application/json; charset=utf-8',
+                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            }
+
+            // If accessed directly in a web browser, render the status interface
+            return response()->view('hardware_audits.api_status', [
+                'statusData' => $statusData,
+                'fiscalYear' => $fiscalYear,
+                'auditedCount' => $auditedCount,
+            ], 200, [
+                'Content-Type' => 'text/html; charset=utf-8',
+            ]);
+        }
+
         $validated = $request->validate([
             'hostname' => 'nullable|string|max:100',
             'hardware_id' => 'nullable|string|max:100',
@@ -278,7 +317,9 @@ class HardwareAuditController extends Controller
             'has_specs_diff' => !empty($diff),
             'diff' => $diff,
             'status' => 'pending',
-        ]);
+        ], 200, [
+            'Content-Type' => 'application/json; charset=utf-8',
+        ], JSON_UNESCAPED_UNICODE);
     }
 
     /**
@@ -910,6 +951,81 @@ class HardwareAuditController extends Controller
         $audit->save();
 
         return back()->with('success', "ปฏิเสธรายการสแกนสเปคของ '{$audit->hostname}' เรียบร้อยแล้ว");
+    }
+
+    /**
+     * Admin/Technician Action: Delete a Hardware Audit record
+     */
+    public function destroy(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!$user || (!$user->isAdmin() && !$user->isTechnician())) {
+            abort(403, 'เฉพาะเจ้าหน้าที่ไอทีหรือผู้ดูแลระบบเท่านั้นที่มีสิทธิ์ลบข้อมูลการตรวจนับ');
+        }
+
+        $audit = HardwareAudit::findOrFail($id);
+        $hostname = $audit->hostname ?: ($audit->asset ? $audit->asset->name : 'เครื่อง ID #' . $audit->id);
+        $fiscalYear = $audit->fiscal_year;
+
+        // Record in AuditLog
+        AuditLog::record(
+            'delete',
+            'hardware_audits',
+            "ลบรายการตรวจนับสเปคเครื่อง {$hostname} ประจำปีงบประมาณ {$fiscalYear} (HardwareID: " . ($audit->hardware_id ?: '-') . ")",
+            $audit,
+            null,
+            null,
+            $request,
+            $user
+        );
+
+        $audit->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "ลบรายการตรวจนับสเปคของ '{$hostname}' เรียบร้อยแล้ว",
+            ]);
+        }
+
+        return back()->with('success', "ลบรายการตรวจนับสเปคของ '{$hostname}' เรียบร้อยแล้ว");
+    }
+
+    /**
+     * Admin/Technician Action: Batch Delete Hardware Audit records
+     */
+    public function batchDestroy(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || (!$user->isAdmin() && !$user->isTechnician())) {
+            abort(403, 'เฉพาะเจ้าหน้าที่ไอทีหรือผู้ดูแลระบบเท่านั้นที่มีสิทธิ์ลบข้อมูลการตรวจนับ');
+        }
+
+        $ids = $request->input('audit_ids', []);
+        if (empty($ids) || !is_array($ids)) {
+            return back()->with('error', 'กรุณาเลือกรายการที่ต้องการลบอย่างน้อย 1 รายการ');
+        }
+
+        $count = 0;
+        foreach ($ids as $id) {
+            $audit = HardwareAudit::find($id);
+            if ($audit) {
+                AuditLog::record(
+                    'delete',
+                    'hardware_audits',
+                    "ลบรายการตรวจนับสเปคเครื่อง {$audit->hostname} ประจำปีงบประมาณ {$audit->fiscal_year}",
+                    $audit,
+                    null,
+                    null,
+                    $request,
+                    $user
+                );
+                $audit->delete();
+                $count++;
+            }
+        }
+
+        return back()->with('success', "ลบรายการตรวจนับที่เลือกสำเร็จจำนวน {$count} รายการ");
     }
 
     /**

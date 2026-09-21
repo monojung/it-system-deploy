@@ -1326,6 +1326,10 @@
                     <i class="bi bi-diagram-3"></i>
                     <span>แผนกในโรงพยาบาล</span>
                 </a>
+                <a href="{{ route('device-types.index') }}" class="nav-item {{ request()->routeIs('device-types.*') ? 'active' : '' }}">
+                    <i class="bi bi-hdd-network"></i>
+                    <span>ประเภทอุปกรณ์</span>
+                </a>
                 <a href="{{ route('audit-logs.index') }}" class="nav-item {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
                     <i class="bi bi-shield-check"></i>
                     <span>บันทึกกิจกรรมระบบ (Audit Log)</span>

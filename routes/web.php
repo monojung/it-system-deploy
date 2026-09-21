@@ -18,6 +18,7 @@ use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\ServerInitController;
 use App\Http\Controllers\HardwareAuditController;
 use App\Http\Controllers\AssetBorrowController;
+use App\Http\Controllers\DeviceTypeController;
 
 // Initial Server Setup Route (Storage link, cache clear, migrations)
 Route::get('/server-init', [ServerInitController::class, 'init'])
@@ -52,9 +53,9 @@ Route::get('/auth/mfa-challenge', [AuthController::class, 'showMfaChallenge'])->
 Route::post('/auth/mfa-verify', [AuthController::class, 'verifyMfaChallenge'])->name('auth.mfa-verify');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Public Hardware Audit API Endpoint (for embedded client PowerShell Agent)
-Route::post('/api/hardware-audit/submit', [HardwareAuditController::class, 'submit'])->name('hardware-audit.submit');
-Route::post('/hardware-audit/submit', [HardwareAuditController::class, 'submit']);
+// Public Hardware Audit API Endpoint (for embedded client PowerShell Agent & Browser Status Check)
+Route::match(['get', 'post'], '/api/hardware-audit/submit', [HardwareAuditController::class, 'submit'])->name('hardware-audit.submit');
+Route::match(['get', 'post'], '/hardware-audit/submit', [HardwareAuditController::class, 'submit']);
 
 // Public Client Scripts & Agents Endpoints (Serve PowerShell & Batch files with text/plain for irm / download)
 Route::get('/agent/{filename}', function ($filename) {
@@ -215,7 +216,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/hardware-audits/{id}/link-asset', [HardwareAuditController::class, 'linkAsset'])->name('hardware-audits.link-asset');
         Route::post('/hardware-audits/{id}/create-asset', [HardwareAuditController::class, 'createAssetFromAudit'])->name('hardware-audits.create-asset');
         Route::post('/hardware-audits/batch-approve', [HardwareAuditController::class, 'batchApprove'])->name('hardware-audits.batch-approve');
+        Route::post('/hardware-audits/batch-delete', [HardwareAuditController::class, 'batchDestroy'])->name('hardware-audits.batch-delete');
         Route::post('/hardware-audits/{id}/reject', [HardwareAuditController::class, 'reject'])->name('hardware-audits.reject');
+        Route::delete('/hardware-audits/{id}', [HardwareAuditController::class, 'destroy'])->name('hardware-audits.destroy');
         Route::get('/hardware-audits/print-report', [HardwareAuditController::class, 'printAnnualReport'])->name('hardware-audits.print-report');
         Route::get('/hardware-audits/export-csv', [HardwareAuditController::class, 'exportCsv'])->name('hardware-audits.export-csv');
     });
@@ -251,6 +254,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
         Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
         Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
+
+        // Device Types (ประเภทอุปกรณ์ครุภัณฑ์)
+        Route::get('/device-types', [DeviceTypeController::class, 'index'])->name('device-types.index');
+        Route::post('/device-types', [DeviceTypeController::class, 'store'])->name('device-types.store');
+        Route::put('/device-types/{deviceType}', [DeviceTypeController::class, 'update'])->name('device-types.update');
+        Route::delete('/device-types/{deviceType}', [DeviceTypeController::class, 'destroy'])->name('device-types.destroy');
 
         // System Settings & Data Management
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');

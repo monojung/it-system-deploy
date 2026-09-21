@@ -19,6 +19,10 @@
 </a>
 @endif
 @if(auth()->user()->isAdmin())
+<a href="{{ route('device-types.index') }}" class="topbar-btn" title="จัดการประเภทอุปกรณ์ครุภัณฑ์">
+    <i class="bi bi-hdd-network text-info"></i>
+    <span>ประเภทอุปกรณ์</span>
+</a>
 <button type="button" class="topbar-btn" onclick="openImportModal()" title="นำเข้าข้อมูลครุภัณฑ์จากไฟล์ CSV">
     <i class="bi bi-file-earmark-arrow-up text-primary"></i>
     <span>Import CSV</span>
@@ -1519,7 +1523,7 @@
                     {{-- Device Type --}}
                     <td>
                         <span class="asset-type-badge">
-                            <i class="bi bi-cpu text-muted"></i>
+                            <i class="bi {{ $asset->deviceType?->icon ?: 'bi-hdd-network' }} text-muted"></i>
                             <span>{{ $asset->deviceType?->name ?? 'อุปกรณ์ทั่วไป' }}</span>
                         </span>
                     </td>

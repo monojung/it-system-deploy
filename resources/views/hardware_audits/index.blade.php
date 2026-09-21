@@ -240,12 +240,16 @@
                     @endif
                 </div>
 
-                {{-- Batch Approval Trigger --}}
+                {{-- Batch Actions Trigger --}}
                 @if(request('status', 'pending') === 'pending' && $audits->count() > 0)
-                <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                     <button type="button" class="btn btn-success btn-sm" onclick="submitBatchApproval()" style="height: 36px; padding: 0 16px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
                         <i class="bi bi-check2-all" style="font-size: 16px;"></i> 
-                        <span>อนุมัติรายการที่เลือกเป็นกลุ่ม (Batch)</span>
+                        <span>อนุมัติที่เลือกเป็นกลุ่ม (Batch)</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="submitBatchDelete()" style="height: 36px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
+                        <i class="bi bi-trash" style="font-size: 15px;"></i> 
+                        <span>ลบรายการที่เลือก</span>
                     </button>
                 </div>
                 @endif
@@ -258,18 +262,18 @@
                     <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
                         <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 700;">
                             <tr>
-                                <th style="width: 40px; text-align: center;">
+                                <th style="width: 38px; text-align: center;">
                                     <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)" style="cursor: pointer;">
                                 </th>
-                                <th style="width: 115px;">วันที่ส่งผลสแกน</th>
-                                <th>ชื่อเครื่อง (Hostname / Network)</th>
-                                <th style="width: 175px;">ยี่ห้อ / รุ่น (Brand & Model)</th>
-                                <th style="width: 165px;">HardwareID / S/N</th>
-                                <th style="width: 200px;">ครุภัณฑ์ที่จับคู่ (Matched Asset)</th>
-                                <th>สเปคที่ตรวจพบจาก Agent (Hardware Telemetry)</th>
-                                <th style="text-align: center; width: 110px;">การเปลี่ยนแปลง</th>
-                                <th style="text-align: center; width: 95px;">สถานะ</th>
-                                <th style="text-align: right; width: 260px;">การจัดการ</th>
+                                <th style="width: 105px;">วันที่ส่งสแกน</th>
+                                <th style="min-width: 140px;">ชื่อเครื่อง (Hostname / IP)</th>
+                                <th style="width: 150px;">ยี่ห้อ / รุ่น</th>
+                                <th style="width: 145px;">HardwareID / S/N</th>
+                                <th style="width: 175px;">ครุภัณฑ์ที่จับคู่</th>
+                                <th style="min-width: 190px;">สเปคจาก Agent</th>
+                                <th style="text-align: center; width: 100px;">การเปลี่ยนแปลง</th>
+                                <th style="text-align: center; width: 85px;">สถานะ</th>
+                                <th style="text-align: right; width: 280px; min-width: 280px;">การจัดการ</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -421,48 +425,57 @@
                                 </td>
 
                                 <td style="text-align: right; white-space: nowrap;">
-                                    <div style="display: inline-flex; gap: 5px; align-items: center;">
+                                    <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end;">
                                         
                                         <!-- BUTTON 1: Open Agent Inspector Modal -->
                                         <button type="button" class="btn btn-sm" onclick="openAgentInspectionModal({{ $audit->id }})" 
                                                 title="เปิดดูผลการตรวจเช็คสเปคฮาร์ดแวร์เชิงลึก และผลตรวจเกณฑ์มาตรฐาน ICT" 
-                                                style="background: #0284c7; color: #ffffff; font-size: 11.5px; padding: 5px 10px; border-radius: 7px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(2,132,199,0.2);">
+                                                style="background: #0284c7; color: #ffffff; font-size: 11.5px; padding: 4.5px 8px; border-radius: 7px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 3px rgba(2,132,199,0.25); border: none;">
                                             <i class="bi bi-cpu-fill"></i>
-                                            <span>ตรวจเช็ค Agent</span>
+                                            <span>สเปค</span>
                                         </button>
 
                                         <!-- BUTTON 2: Side-by-Side Diff Comparison Modal -->
+                                        @if($audit->asset_id)
                                         <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openAuditDiffModal({{ json_encode($audit) }}, {{ json_encode($audit->asset) }})" 
-                                                title="เปรียบเทียบสเปคเดิม vs สเปคใหม่ (Diff)" style="font-size: 11.5px; padding: 5px 8px; border-radius: 7px;">
+                                                title="เปรียบเทียบสเปคเดิม vs สเปคใหม่ (Diff)" style="font-size: 11.5px; padding: 4.5px 7px; border-radius: 7px;">
                                             <i class="bi bi-arrow-left-right"></i>
                                         </button>
+                                        @endif
 
-                                        <!-- ACTION BUTTONS: Approve / Reject (Only for pending) -->
+                                        <!-- ACTION BUTTONS: Approve / Reject / Link (Only for pending) -->
                                         @if($audit->status === 'pending')
                                             @if(!$audit->asset_id)
                                                 <button type="button" class="btn btn-sm" onclick="openLinkAssetModal({{ json_encode($audit) }})" 
                                                         title="ค้นหาและเชื่อมโยงผลตรวจสเปคเข้ากับครุภัณฑ์เดิมที่มีในระบบ" 
-                                                        style="background: #0284c7; color: #ffffff; font-size: 11.5px; padding: 5px 8px; border-radius: 7px; font-weight: 600; border: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 2px 4px rgba(2,132,199,0.25);">
+                                                        style="background: #0d9488; color: #ffffff; font-size: 11.5px; padding: 4.5px 8px; border-radius: 7px; font-weight: 600; border: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 3px rgba(13,148,136,0.25);">
                                                     <i class="bi bi-link-45deg"></i>
                                                     <span>เชื่อมโยง</span>
                                                 </button>
                                                 <button type="button" class="btn btn-sm" onclick="openCreateAssetModal({{ json_encode($audit) }})" 
                                                         title="ลงทะเบียนและเพิ่มเป็นครุภัณฑ์ใหม่ลงระบบคลังทันที" 
-                                                        style="background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); color: #ffffff; font-size: 11.5px; padding: 5px 8px; border-radius: 7px; font-weight: 700; border: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 2px 4px rgba(13,148,136,0.25);">
+                                                        style="background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: #ffffff; font-size: 11.5px; padding: 4.5px 8px; border-radius: 7px; font-weight: 700; border: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 3px rgba(5,150,105,0.25);">
                                                     <i class="bi bi-plus-circle-fill"></i>
-                                                    <span>+ เครื่องใหม่</span>
+                                                    <span>+ ครุภัณฑ์</span>
                                                 </button>
                                             @else
-                                                <button type="button" class="btn btn-sm btn-success" onclick="approveSingleAudit({{ $audit->id }}, '{{ $audit->hostname }}')" 
-                                                        title="อนุมัติและอัปเดตสเปคลงครุภัณฑ์ทันที" style="font-size: 11.5px; padding: 5px 9px; border-radius: 7px;">
+                                                <button type="button" class="btn btn-sm btn-success" onclick="approveSingleAudit({{ $audit->id }}, '{{ addslashes($audit->hostname ?: '-') }}')" 
+                                                        title="อนุมัติและอัปเดตสเปคลงครุภัณฑ์ทันที" style="font-size: 11.5px; padding: 4.5px 8px; border-radius: 7px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;">
                                                     <i class="bi bi-check-lg"></i>
+                                                    <span>อนุมัติ</span>
                                                 </button>
                                             @endif
-                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="rejectSingleAudit({{ $audit->id }}, '{{ $audit->hostname }}')" 
-                                                    title="ปฏิเสธรายการนี้" style="font-size: 11.5px; padding: 5px 9px; border-radius: 7px;">
+                                            <button type="button" class="btn btn-sm btn-outline-warning" onclick="rejectSingleAudit({{ $audit->id }}, '{{ addslashes($audit->hostname ?: '-') }}')" 
+                                                    title="ปฏิเสธรายการนี้" style="font-size: 11.5px; padding: 4.5px 7px; border-radius: 7px; border-color: #f59e0b; color: #b45309;">
                                                 <i class="bi bi-x-lg"></i>
                                             </button>
                                         @endif
+
+                                        <!-- ACTION BUTTON: Delete (With Confirmation) -->
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSingleAudit({{ $audit->id }}, '{{ addslashes($audit->hostname ?: ($audit->asset ? $audit->asset->name : 'เครื่อง ID #' . $audit->id)) }}')" 
+                                                title="ลบข้อมูลการตรวจนับนี้ออกจากระบบ" style="font-size: 11.5px; padding: 4.5px 7px; border-radius: 7px;">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -688,61 +701,49 @@
                     </div>
                 </div>
 
-                <!-- PowerShell Network Rollout Box -->
-                <div style="background: #0f172a; border-radius: 14px; padding: 20px; color: #f8fafc; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(15,23,42,0.15);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                        <span style="font-size: 13px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-                            <i class="bi bi-terminal-fill"></i> คำสั่ง PowerShell One-Liner (รันได้ทันทีบนเครื่องลูกข่าย):
-                        </span>
-                        <div style="display: flex; gap: 8px;">
-                            <button type="button" class="btn btn-sm btn-outline-info" onclick="copyUtf8Command()" style="font-size: 12px; padding: 4px 12px; border-radius: 6px;">
-                                <i class="bi bi-shield-check me-1"></i> คัดลอกแบบการันตี UTF-8
-                            </button>
-                            <button type="button" class="btn btn-sm btn-primary" onclick="copyNetworkCommand()" style="font-size: 12px; padding: 4px 12px; border-radius: 6px;">
-                                <i class="bi bi-clipboard me-1"></i> คัดลอกคำสั่งสั้น
-                            </button>
-                        </div>
-                    </div>
-                    <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 14px;">
-                        <code id="networkCmdText" style="font-family: Consolas, monospace; font-size: 13px; color: #38bdf8; display: block; word-break: break-all;">
-                            irm "{{ url('/agent/thc_audit_agent.ps1') }}" | iex
-                        </code>
-                    </div>
-                    <div style="font-size: 11.5px; color: #94a3b8; margin-top: 8px;">
-                        * เปิด PowerShell (Run as administrator) แล้ววางคำสั่งด้านบน กด Enter ระบบจะตรวจนับและส่งข้อมูลเข้าคิวเซิร์ฟเวอร์อัตโนมัติ (รองรับ TLS 1.2 และ UTF-8 อัตโนมัติ)
-                    </div>
-                </div>
-
-                <!-- Installer Packages Grid -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                <!-- Streamlined 2-Column Agent Deployment Section -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; margin-bottom: 24px;">
                     
-                    {{-- Package 1: Permanent Installer --}}
+                    {{-- Method 1: Web One-Liner (No file download needed) --}}
+                    <div style="background: #0f172a; border-radius: 14px; padding: 20px; color: #f8fafc; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 20px rgba(15,23,42,0.15);">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 13.5px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                                    <i class="bi bi-terminal-fill"></i> วิธีที่ 1: รันคำสั่ง PowerShell ทันที
+                                </span>
+                                <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 11px; border: 1px solid rgba(56, 189, 248, 0.3);">
+                                    ไม่ต้องโหลดไฟล์
+                                </span>
+                            </div>
+                            <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin-bottom: 12px;">
+                                เปิด PowerShell (Run as administrator) วางคำสั่งด้านล่างแล้วกด Enter ระบบจะตรวจนับและส่งสเปคเข้าเซิร์ฟเวอร์ทันที (ถอดรหัส UTF-8 ภาษาไทย 100% ไม่เพี้ยน)
+                            </p>
+                            <div style="background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; position: relative;">
+                                <code id="networkCmdText" style="font-family: Consolas, monospace; font-size: 12px; color: #38bdf8; display: block; word-break: break-all; line-height: 1.4;">[Net.ServicePointManager]::SecurityProtocol = 3072; $w = New-Object Net.WebClient; $w.Encoding = [Text.Encoding]::UTF8; iex ($w.DownloadString('{{ url('/agent/thc_audit_agent.ps1') }}'))</code>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="copyNetworkCommand()" style="font-weight: 700; padding: 9px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="bi bi-clipboard me-1"></i> คัดลอกคำสั่ง PowerShell
+                        </button>
+                    </div>
+
+                    {{-- Method 2: One-Click Self-Healing Batch Installer --}}
                     <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm);">
                         <div>
-                            <div style="font-weight: 700; font-size: 15px; color: #166534; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                                <i class="bi bi-hdd-rack-fill"></i> 1. ตัวติดตั้ง Agent ฝังประจำเครื่อง (แนะนำ)
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-weight: 700; font-size: 14px; color: #166534; display: flex; align-items: center; gap: 8px;">
+                                    <i class="bi bi-hdd-rack-fill"></i> วิธีที่ 2: ไฟล์ติดตั้งอัตโนมัติ (One-Click Installer)
+                                </span>
+                                <span class="badge" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; font-size: 11px;">
+                                    ไฟล์เดียวจบ
+                                </span>
                             </div>
                             <p style="font-size: 12.5px; color: #374151; line-height: 1.5; margin-bottom: 14px;">
-                                ติดตั้งไฟล์สคริปต์ไว้ใน <code>C:\ProgramData\THC-IT-Agent</code>, สร้าง Task และวางปุ่มไอคอนทางลัดไว้บน Desktop สะดวกสำหรับเจ้าหน้าที่ประจำแผนกกดส่งสเปคเครื่อง
+                                ดาวน์โหลดไฟล์ <code>install_thc_agent.bat</code> ไปดับเบิลคลิกบนเครื่องลูกข่าย (ระบบจะดึงไฟล์ Agent จากเซิร์ฟเวอร์ให้อัตโนมัติ ไม่ต้องโหลด .ps1 เพิ่ม), ส่งสเปคทันที และสร้างทางลัดบน Desktop สำหรับส่งซ้ำได้ตลอดเวลา
                             </p>
                         </div>
                         <a href="{{ asset('agent/install_thc_agent.bat') }}" download class="btn btn-success btn-sm" style="font-weight: 700; width: 100%; padding: 9px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
                             <i class="bi bi-download"></i> ดาวน์โหลด install_thc_agent.bat
-                        </a>
-                    </div>
-
-                    {{-- Package 2: Portable USB Runner --}}
-                    <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm);">
-                        <div>
-                            <div style="font-weight: 700; font-size: 15px; color: #334155; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                                <i class="bi bi-usb-drive-fill"></i> 2. ตัวส่งสเปคแบบพกพา (ไม่ต้องติดตั้ง)
-                            </div>
-                            <p style="font-size: 12.5px; color: #64748b; line-height: 1.5; margin-bottom: 14px;">
-                                คัดลอกใส่ใน Flash Drive ดับเบิลคลิกเพื่อรันสแกนและส่งผลเข้าคิวเซิร์ฟเวอร์ทันที เหมาะสำหรับช่างไอทีที่เดินตรวจนับตามตึก/แผนกต่างๆ
-                            </p>
-                        </div>
-                        <a href="{{ asset('agent/run_manual_audit.bat') }}" download class="btn btn-outline-secondary btn-sm" style="font-weight: 700; width: 100%; padding: 9px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                            <i class="bi bi-download"></i> ดาวน์โหลด run_manual_audit.bat
                         </a>
                     </div>
 
@@ -1221,6 +1222,103 @@
 
         document.body.appendChild(form);
         form.submit();
+    }
+
+    // -------------------------------------------------------------
+    // Single Audit Deletion (With Confirmation)
+    // -------------------------------------------------------------
+    function deleteSingleAudit(id, hostname) {
+        if (window.Swal) {
+            Swal.fire({
+                title: 'ยืนยันลบข้อมูลการตรวจนับ?',
+                html: `คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลผลตรวจสเปคของเครื่อง <b>"${hostname}"</b> ออกจากระบบ?<br><small style="color: #ef4444;">* ข้อมูลนี้จะถูกลบออกจากฐานข้อมูลและไม่สามารถกู้คืนได้</small>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-trash me-1"></i> ยืนยันลบข้อมูล',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeDeleteForm(id);
+                }
+            });
+        } else {
+            if (confirm(`ยืนยันลบข้อมูลผลตรวจสเปคของเครื่อง "${hostname}" ออกจากระบบ? (ไม่สามารถกู้คืนได้)`)) {
+                executeDeleteForm(id);
+            }
+        }
+    }
+
+    function executeDeleteForm(id) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `{{ url('/hardware-audits') }}/${id}`;
+        
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = '_token';
+        csrf.value = '{{ csrf_token() }}';
+        form.appendChild(csrf);
+
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+        form.appendChild(methodInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // -------------------------------------------------------------
+    // Batch Audit Deletion (With Confirmation)
+    // -------------------------------------------------------------
+    function submitBatchDelete() {
+        const checked = document.querySelectorAll('.audit-select-chk:checked');
+        if (checked.length === 0) {
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'กรุณาเลือกรายการ',
+                    text: 'กรุณาเลือกรายการผลตรวจนับที่ต้องการลบอย่างน้อย 1 รายการ',
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: '#0f766e'
+                });
+            } else {
+                alert('กรุณาเลือกรายการผลตรวจนับที่ต้องการลบอย่างน้อย 1 รายการ');
+            }
+            return;
+        }
+
+        if (window.Swal) {
+            Swal.fire({
+                title: `ยืนยันลบ ${checked.length} รายการ?`,
+                html: `คุณแน่ใจหรือไม่ว่าต้องการลบรายการผลตรวจสเปคที่เลือกทั้งหมด <b>${checked.length} รายการ</b> ออกจากระบบ?<br><small style="color: #ef4444;">* ข้อมูลที่ลบจะไม่สามารถกู้คืนได้</small>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: `<i class="bi bi-trash me-1"></i> ยืนยันลบ (${checked.length} รายการ)`,
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.getElementById('batchApproveForm');
+                    form.action = "{{ route('hardware-audits.batch-delete') }}";
+                    form.submit();
+                }
+            });
+        } else {
+            if (confirm(`ยืนยันลบข้อมูลผลตรวจสเปคที่เลือก ${checked.length} รายการ ออกจากระบบ? (ไม่สามารถกู้คืนได้)`)) {
+                const form = document.getElementById('batchApproveForm');
+                form.action = "{{ route('hardware-audits.batch-delete') }}";
+                form.submit();
+            }
+        }
     }
 
     // -------------------------------------------------------------
@@ -2013,23 +2111,12 @@
 
     // Copy network command button
     function copyNetworkCommand() {
-        const text = document.getElementById('networkCmdText').textContent.trim();
+        const text = `[Net.ServicePointManager]::SecurityProtocol = 3072; $w = New-Object Net.WebClient; $w.Encoding = [Text.Encoding]::UTF8; iex ($w.DownloadString('{{ url('/agent/thc_audit_agent.ps1') }}'))`;
         navigator.clipboard.writeText(text).then(() => {
             if (window.Swal) {
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'คัดลอกคำสั่งเรียบร้อยแล้ว', showConfirmButton: false, timer: 1500 });
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'คัดลอกคำสั่งเรียบร้อยแล้ว (UTF-8 100%)', showConfirmButton: false, timer: 1500 });
             } else {
-                alert('คัดลอกคำสั่งเรียบร้อยแล้ว');
-            }
-        });
-    }
-
-    function copyUtf8Command() {
-        const cmd = `[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; iex (irm "{{ url('/agent/thc_audit_agent.ps1') }}")`;
-        navigator.clipboard.writeText(cmd).then(() => {
-            if (window.Swal) {
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'คัดลอกคำสั่งการันตี UTF-8 แล้ว', showConfirmButton: false, timer: 1500 });
-            } else {
-                alert('คัดลอกคำสั่งเรียบร้อยแล้ว');
+                alert('คัดลอกคำสั่งเรียบร้อยแล้ว (UTF-8 100%)');
             }
         });
     }

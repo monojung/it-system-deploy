@@ -234,21 +234,30 @@
             <div class="form-section-body">
                 {{-- Quick Device Type Chips --}}
                 <div style="margin-bottom: 18px;">
-                    <label class="form-label" style="font-size: 12.5px; color: #64748b; margin-bottom: 6px;">
-                        เลือกประเภทอุปกรณ์ด่วน:
-                    </label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label class="form-label" style="font-size: 12.5px; color: #64748b; margin-bottom: 0;">
+                            เลือกประเภทอุปกรณ์ด่วน:
+                        </label>
+                        @if(auth()->check() && auth()->user()->isAdmin())
+                        <a href="{{ route('device-types.index') }}" target="_blank" style="font-size: 11.5px; color: #0284c7; text-decoration: none; font-weight: 500;">
+                            <i class="bi bi-gear-fill me-1"></i>จัดการประเภทอุปกรณ์
+                        </a>
+                        @endif
+                    </div>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                         @foreach($deviceTypes as $type)
                             @php
-                                $icon = 'bi-device-hdd';
-                                $lower = mb_strtolower($type->name);
-                                if (str_contains($lower, 'ตั้งโต๊ะ') || str_contains($lower, 'pc')) $icon = 'bi-pc-display';
-                                elseif (str_contains($lower, 'โน้ตบุ๊ก') || str_contains($lower, 'notebook') || str_contains($lower, 'laptop')) $icon = 'bi-laptop';
-                                elseif (str_contains($lower, 'all-in-one') || str_contains($lower, 'aio')) $icon = 'bi-display';
-                                elseif (str_contains($lower, 'server') || str_contains($lower, 'เซิร์ฟเวอร์')) $icon = 'bi-server';
-                                elseif (str_contains($lower, 'พิมพ์') || str_contains($lower, 'printer')) $icon = 'bi-printer';
-                                elseif (str_contains($lower, 'สแกนเนอร์') || str_contains($lower, 'scanner')) $icon = 'bi-scanner';
-                                elseif (str_contains($lower, 'เครือข่าย') || str_contains($lower, 'switch') || str_contains($lower, 'router')) $icon = 'bi-hdd-network';
+                                $icon = $type->icon ?: 'bi-device-hdd';
+                                if (empty($type->icon)) {
+                                    $lower = mb_strtolower($type->name);
+                                    if (str_contains($lower, 'ตั้งโต๊ะ') || str_contains($lower, 'pc')) $icon = 'bi-pc-display';
+                                    elseif (str_contains($lower, 'โน้ตบุ๊ก') || str_contains($lower, 'notebook') || str_contains($lower, 'laptop')) $icon = 'bi-laptop';
+                                    elseif (str_contains($lower, 'all-in-one') || str_contains($lower, 'aio')) $icon = 'bi-display';
+                                    elseif (str_contains($lower, 'server') || str_contains($lower, 'เซิร์ฟเวอร์')) $icon = 'bi-server';
+                                    elseif (str_contains($lower, 'พิมพ์') || str_contains($lower, 'printer')) $icon = 'bi-printer';
+                                    elseif (str_contains($lower, 'สแกนเนอร์') || str_contains($lower, 'scanner')) $icon = 'bi-scanner';
+                                    elseif (str_contains($lower, 'เครือข่าย') || str_contains($lower, 'switch') || str_contains($lower, 'router')) $icon = 'bi-hdd-network';
+                                }
                                 $isActiveType = (old('device_type_id', $asset->device_type_id) == $type->id);
                             @endphp
                             <button type="button" class="type-pill-btn {{ $isActiveType ? 'active' : '' }}"
