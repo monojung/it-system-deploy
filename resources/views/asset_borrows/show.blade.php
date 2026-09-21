@@ -72,6 +72,77 @@
     </div>
     @endif
 
+    <!-- WORKFLOW ACTION HERO PANEL (ศูนย์สั่งการสถานะคำขอยืม-คืน) -->
+    <div class="card" style="border-radius: 16px; border: 1.5px solid #0d9488; background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%); margin-bottom: 24px; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.12); padding: 20px 24px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: #0d9488; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);">
+                    <i class="bi bi-gear-wide-connected"></i>
+                </div>
+                <div>
+                    <div style="font-weight: 800; font-size: 16px; color: #0f172a; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span>ศูนย์จัดการคำขอยืม-คืนอุปกรณ์</span>
+                        <span class="badge" style="background: #ccfbf1; color: #0f766e; font-size: 11px;">Staff Action Panel</span>
+                        {!! $borrow->status_badge !!}
+                    </div>
+                    <div style="font-size: 13px; color: #475569; margin-top: 3px;">
+                        @if($borrow->status === 'pending')
+                            <span style="color: #0284c7; font-weight: 600;"><i class="bi bi-hourglass-split"></i> รอการตรวจสอบและอนุมัติจากเจ้าหน้าที่ไอที</span>
+                        @elseif($borrow->status === 'approved')
+                            <span style="color: #10b981; font-weight: 600;"><i class="bi bi-check-circle-fill"></i> อนุมัติแล้ว &bull; พร้อมตรวจสอบและส่งมอบอุปกรณ์ให้ผู้ยืม</span>
+                        @elseif($borrow->status === 'borrowed')
+                            <span style="color: #0d9488; font-weight: 600;"><i class="bi bi-box-arrow-right"></i> อุปกรณ์ถูกส่งมอบแล้ว กำลังอยู่ระหว่างการยืมใช้งาน</span>
+                        @elseif($borrow->status === 'returned')
+                            <span style="color: #16a34a; font-weight: 600;"><i class="bi bi-check2-all"></i> ส่งมอบคืนอุปกรณ์และตรวจรับสภาพเรียบร้อยแล้ว</span>
+                        @elseif($borrow->status === 'rejected')
+                            <span style="color: #ef4444; font-weight: 600;"><i class="bi bi-x-circle-fill"></i> คำขอนี้ไม่ได้รับการอนุมัติ</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician()))
+                    @if($borrow->status === 'pending')
+                        <form action="{{ route('asset-borrows.approve', $borrow->id) }}" method="POST" style="display: inline;" id="approveForm">
+                            @csrf
+                            <button type="button" onclick="confirmApprove()" class="btn btn-success" style="background: #10b981; border: none; font-weight: 700; padding: 10px 22px; border-radius: 10px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span>อนุมัติคำขอยืม</span>
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-outline-danger" onclick="document.getElementById('rejectModal').style.display='flex'" style="font-weight: 600; padding: 10px 18px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-x-circle"></i>
+                            <span>ปฏิเสธคำขอ</span>
+                        </button>
+                    @elseif($borrow->status === 'approved')
+                        <button type="button" class="btn btn-primary" onclick="document.getElementById('dispatchModal').style.display='flex'" style="background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none; font-weight: 700; padding: 10px 22px; border-radius: 10px; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25); display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>ส่งมอบอุปกรณ์ให้ผู้ยืม</span>
+                        </button>
+                    @elseif($borrow->status === 'borrowed')
+                        <button type="button" class="btn btn-success" onclick="document.getElementById('returnModal').style.display='flex'" style="background: #10b981; border: none; font-weight: 700; padding: 10px 22px; border-radius: 10px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-arrow-down-left-circle-fill"></i>
+                            <span>บันทึกรับคืนอุปกรณ์</span>
+                        </button>
+                    @endif
+                @endif
+
+                <a href="{{ route('asset-borrows.print', $borrow->id) }}" target="_blank" class="btn btn-outline-secondary" style="font-weight: 600; padding: 10px 16px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-printer"></i>
+                    <span>พิมพ์ใบยืม-คืน (A4)</span>
+                </a>
+
+                @if(in_array($borrow->status, ['pending']) || (auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician())))
+                    <a href="{{ route('asset-borrows.edit', $borrow->id) }}" class="btn btn-outline-secondary" style="font-weight: 600; padding: 10px 16px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-pencil"></i>
+                        <span>แก้ไขคำขอ</span>
+                    </a>
+                @endif
+            </div>
+        </div>
+    </div>
+
     <!-- WORKFLOW PROGRESS STEPPER -->
     <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: var(--shadow-sm); padding: 22px;">
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; position: relative;">
@@ -560,4 +631,28 @@
     </div>
 </div>
 
+<script>
+    function confirmApprove() {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'ยืนยันอนุมัติคำขอยืมอุปกรณ์?',
+                text: 'เมื่ออนุมัติแล้ว จะสามารถดำเนินการส่งมอบอุปกรณ์ให้แก่ผู้ยืมได้ทันที',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'ยืนยัน อนุมัติคำขอ',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('approveForm').submit();
+                }
+            });
+        } else {
+            if (confirm('ยืนยันการอนุมัติคำขอยืมอุปกรณ์นี้หรือไม่?')) {
+                document.getElementById('approveForm').submit();
+            }
+        }
+    }
+</script>
 @endsection

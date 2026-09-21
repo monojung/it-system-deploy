@@ -362,74 +362,189 @@
         background: #f0fdfa;
     }
 
-    /* Terminal Console Modal */
+    /* Modern Slide-over System Update Console Drawer */
     .terminal-modal-backdrop {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.8);
-        backdrop-filter: blur(8px);
+        background: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(6px);
         z-index: 10000;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
+        justify-content: flex-end;
+        align-items: stretch;
+        transition: opacity 0.3s ease;
     }
 
     .terminal-modal-box {
-        background: #0b1120;
+        background: #0b1329;
         color: #f8fafc;
         width: 100%;
-        max-width: 860px;
-        border-radius: 16px;
-        border: 1px solid #334155;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-        overflow: hidden;
+        max-width: 960px;
+        height: 100vh;
+        border-left: 1px solid #334155;
+        box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
         display: flex;
         flex-direction: column;
-        max-height: 85vh;
+        animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+    }
+
+    @keyframes slideInRight {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
     }
 
     .terminal-header {
-        padding: 14px 22px;
-        background: #1e293b;
-        border-bottom: 1px solid #334155;
+        padding: 16px 24px;
+        background: #111c38;
+        border-bottom: 1px solid #1e293b;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 16px;
+        flex-shrink: 0;
     }
 
-    .terminal-dots {
+    .terminal-title-area {
         display: flex;
-        gap: 7px;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
     }
 
-    .terminal-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
+    .terminal-kpi-summary {
+        background: #0f172a;
+        border-bottom: 1px solid #1e293b;
+        padding: 14px 24px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        flex-shrink: 0;
     }
 
-    .terminal-body {
-        padding: 22px;
-        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-        font-size: 13px;
-        line-height: 1.65;
-        color: #38bdf8;
-        overflow-y: auto;
-        flex: 1;
-        white-space: pre-wrap;
-        word-break: break-all;
-        background: #090e1a;
-    }
-
-    .terminal-footer {
-        padding: 14px 22px;
+    .kpi-box {
         background: #1e293b;
-        border-top: 1px solid #334155;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 8px 12px;
+    }
+
+    .kpi-box-label {
+        font-size: 11px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        margin-bottom: 3px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .kpi-box-val {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #f8fafc;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Live Pipeline Steps Bar inside Drawer */
+    .terminal-pipeline-bar {
+        background: #16203a;
+        border-bottom: 1px solid #1e293b;
+        padding: 10px 24px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow-x: auto;
+        flex-shrink: 0;
+    }
+
+    .pipe-step-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 600;
+        background: #0f172a;
+        color: #64748b;
+        border: 1px solid #334155;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+
+    .pipe-step-pill.active {
+        background: rgba(14, 165, 233, 0.2);
+        color: #38bdf8;
+        border-color: #0284c7;
+    }
+
+    .pipe-step-pill.completed {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border-color: #059669;
+    }
+
+    .pipe-step-pill.failed {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border-color: #dc2626;
+    }
+
+    /* Filter Toolbar */
+    .terminal-toolbar {
+        background: #090e1c;
+        border-bottom: 1px solid #1e293b;
+        padding: 8px 24px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+    }
+
+    .terminal-search-input {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        color: #f8fafc;
+        font-size: 12px;
+        padding: 5px 12px;
+        width: 220px;
+        outline: none;
+    }
+
+    .terminal-search-input:focus {
+        border-color: #0284c7;
+    }
+
+    .terminal-body {
+        padding: 18px 24px;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: #e2e8f0;
+        overflow-y: auto;
+        flex: 1;
+        white-space: pre-wrap;
+        word-break: break-all;
+        background: #070c18;
+    }
+
+    .terminal-footer {
+        padding: 12px 24px;
+        background: #111c38;
+        border-top: 1px solid #1e293b;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-shrink: 0;
     }
 
     .spin {
@@ -863,35 +978,96 @@
 
 </div>
 
-<!-- Realtime Terminal Log Modal -->
-<div id="terminalModal" class="terminal-modal-backdrop">
-    <div class="terminal-modal-box">
+<!-- Realtime Terminal Log Modal (Slide-over Drawer) -->
+<div id="terminalModal" class="terminal-modal-backdrop" onclick="handleDrawerBackdrop(event)">
+    <div class="terminal-modal-box" onclick="event.stopPropagation()">
+        <!-- Header -->
         <div class="terminal-header">
-            <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="terminal-title-area">
                 <div class="terminal-dots">
                     <div class="terminal-dot" style="background: #ef4444;"></div>
                     <div class="terminal-dot" style="background: #f59e0b;"></div>
                     <div class="terminal-dot" style="background: #10b981;"></div>
                 </div>
-                <div id="terminalTitle" style="font-size: 13px; font-weight: 600; color: #94a3b8; font-family: monospace;">
-                    System Update Console &bull; Execution Log Stream
+                <div>
+                    <div id="terminalTitle" style="font-size: 13.5px; font-weight: 700; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; gap: 8px;">
+                        <span>System Update Console</span>
+                        <span id="terminalLiveBadge" style="font-size: 10px; background: #0284c7; color: #fff; padding: 2px 7px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">LIVE</span>
+                    </div>
+                    <div style="font-size: 11px; color: #94a3b8; font-family: monospace;">Execution Log Stream &bull; Slide-Over Console</div>
                 </div>
             </div>
-            <button type="button" onclick="closeTerminalModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 18px; cursor: pointer;">
-                <i class="bi bi-x-lg"></i>
-            </button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" onclick="copyTerminalLog()" class="btn btn-secondary btn-sm" style="background: #1e293b; color: #f8fafc; border-color: #334155; font-size: 11.5px; padding: 5px 10px;">
+                    <i class="bi bi-clipboard"></i> คัดลอก
+                </button>
+                <button type="button" onclick="downloadTerminalLog()" class="btn btn-secondary btn-sm" style="background: #1e293b; color: #f8fafc; border-color: #334155; font-size: 11.5px; padding: 5px 10px;">
+                    <i class="bi bi-download"></i> บันทึกไฟล์
+                </button>
+                <button type="button" onclick="closeTerminalModal()" style="background: #1e293b; border: 1px solid #334155; color: #94a3b8; font-size: 15px; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="ปิด (Esc)">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
         </div>
-        <div id="terminalBody" class="terminal-body">กำลังโหลดข้อความบันทึก...</div>
+
+        <!-- Executive KPI Bar -->
+        <div class="terminal-kpi-summary">
+            <div class="kpi-box">
+                <div class="kpi-box-label"><i class="bi bi-activity"></i> สถานะ (Status)</div>
+                <div id="kpiStatus" class="kpi-box-val" style="color: #38bdf8;">พร้อมทำงาน (Ready)</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-box-label"><i class="bi bi-tag"></i> เวอร์ชัน (Version)</div>
+                <div id="kpiVersion" class="kpi-box-val">{{ config('version.version', '2.4.0') }}</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-box-label"><i class="bi bi-stopwatch"></i> เวลาดำเนินการ (Duration)</div>
+                <div id="kpiDuration" class="kpi-box-val">-</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-box-label"><i class="bi bi-database-check"></i> สำรองฐานข้อมูล (Backup)</div>
+                <div id="kpiBackup" class="kpi-box-val" title="-">-</div>
+            </div>
+        </div>
+
+        <!-- 6-step Pipeline Pills Bar -->
+        <div class="terminal-pipeline-bar">
+            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; margin-right: 4px; text-transform: uppercase;">Pipeline:</span>
+            <div id="stepPill1" class="pipe-step-pill"><i class="bi bi-circle"></i> 1. Maint Mode</div>
+            <div id="stepPill2" class="pipe-step-pill"><i class="bi bi-circle"></i> 2. Auto-Backup</div>
+            <div id="stepPill3" class="pipe-step-pill"><i class="bi bi-circle"></i> 3. Git Pull</div>
+            <div id="stepPill4" class="pipe-step-pill"><i class="bi bi-circle"></i> 4. DB Migrate</div>
+            <div id="stepPill5" class="pipe-step-pill"><i class="bi bi-circle"></i> 5. Optimize Cache</div>
+            <div id="stepPill6" class="pipe-step-pill"><i class="bi bi-circle"></i> 6. App Up</div>
+        </div>
+
+        <!-- Toolbar (Search & Auto-scroll) -->
+        <div class="terminal-toolbar">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="text" id="terminalSearch" class="terminal-search-input" placeholder="ค้นหาข้อความใน Log..." oninput="filterTerminalLines()">
+                <button type="button" onclick="quickFilter('ERROR')" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 11px; padding: 3px 8px; border-radius: 4px;">Errors</button>
+                <button type="button" onclick="quickFilter('DONE')" class="btn btn-sm" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); font-size: 11px; padding: 3px 8px; border-radius: 4px;">Done</button>
+                <button type="button" onclick="quickFilter('')" class="btn btn-sm" style="background: #1e293b; color: #94a3b8; border: 1px solid #334155; font-size: 11px; padding: 3px 8px; border-radius: 4px;">ล้างตัวกรอง</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: #94a3b8;">
+                <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+                    <input type="checkbox" id="autoScrollCheck" checked style="accent-color: #0284c7;">
+                    <span>เลื่อนจออัตโนมัติ (Auto-scroll)</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Terminal Log Body -->
+        <div id="terminalBody" class="terminal-body">กำลังรอคำสั่งการอัปเดตระบบ...</div>
+
+        <!-- Footer -->
         <div class="terminal-footer">
             <div id="terminalStatus" style="font-size: 12px; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
                 <i class="bi bi-terminal-fill" style="color: #38bdf8;"></i>
-                <span>Console Ready</span>
+                <span>Console Ready &bull; คลิกพื้นที่ภายนอกหรือปุ่มปิดเพื่อย่อหน้าต่าง</span>
             </div>
             <div style="display: flex; gap: 8px;">
-                <button type="button" onclick="copyTerminalLog()" class="btn btn-secondary btn-sm" style="background: #334155; color: #f8fafc; border-color: #475569; font-size: 12px;">
-                    <i class="bi bi-clipboard"></i> คัดลอก Log
-                </button>
-                <button type="button" onclick="closeTerminalModal()" class="btn btn-secondary btn-sm" style="background: #1e293b; color: #f8fafc; border-color: #475569; font-size: 12px;">
+                <button type="button" onclick="closeTerminalModal()" class="btn btn-secondary btn-sm" style="background: #1e293b; color: #f8fafc; border-color: #334155; font-size: 12px; padding: 6px 16px;">
                     ปิดหน้าต่าง
                 </button>
             </div>
@@ -1004,24 +1180,145 @@
         });
     }
 
+    // Current terminal log buffer
+    let currentTerminalLog = '';
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Format terminal output with syntax coloring
+    function formatTerminalLog(rawText) {
+        if (!rawText) return 'ไม่มีบันทึกข้อความ';
+        const lines = rawText.split('\n');
+        return lines.map(line => {
+            const escaped = escapeHtml(line);
+            const lower = line.toLowerCase();
+            if (line.includes('[ERROR]') || lower.includes('fatal') || lower.includes('exception') || lower.includes('failed')) {
+                return `<span style="color: #f87171; font-weight: 600;">${escaped}</span>`;
+            }
+            if (line.includes('[DONE]') || line.includes('[SUCCESS]') || line.includes('สำเร็จ')) {
+                return `<span style="color: #34d399; font-weight: 600;">${escaped}</span>`;
+            }
+            if (/^\[\d\/6\]/.test(line) || line.includes('>>>') || line.includes('เริ่มต้น')) {
+                return `<span style="color: #38bdf8; font-weight: 600;">${escaped}</span>`;
+            }
+            if (line.includes('[BACKUP]') || line.includes('สำรองฐานข้อมูล')) {
+                return `<span style="color: #fbbf24;">${escaped}</span>`;
+            }
+            if (line.includes('warning') || line.includes('เตือน')) {
+                return `<span style="color: #fbbf24;">${escaped}</span>`;
+            }
+            return `<span style="color: #cbd5e1;">${escaped}</span>`;
+        }).join('\n');
+    }
+
+    // Filter terminal lines based on search query
+    function filterTerminalLines() {
+        const query = document.getElementById('terminalSearch').value.trim().toLowerCase();
+        const body = document.getElementById('terminalBody');
+        if (!query) {
+            body.innerHTML = formatTerminalLog(currentTerminalLog);
+        } else {
+            const filtered = currentTerminalLog.split('\n').filter(line => line.toLowerCase().includes(query)).join('\n');
+            body.innerHTML = filtered ? formatTerminalLog(filtered) : `<span style="color: #64748b;">-- ไม่พบบรรทัดที่ตรงกับคำค้นหา: "${escapeHtml(query)}" --</span>`;
+        }
+        scrollTerminalToBottom();
+    }
+
+    function quickFilter(term) {
+        document.getElementById('terminalSearch').value = term;
+        filterTerminalLines();
+    }
+
+    function scrollTerminalToBottom() {
+        const check = document.getElementById('autoScrollCheck');
+        const body = document.getElementById('terminalBody');
+        if (check && check.checked && body) {
+            body.scrollTop = body.scrollHeight;
+        }
+    }
+
+    function setPipelineStepState(stepNum, state) {
+        const pill = document.getElementById('stepPill' + stepNum);
+        if (!pill) return;
+        pill.classList.remove('active', 'completed', 'failed');
+        if (state === 'active') {
+            pill.classList.add('active');
+            pill.innerHTML = `<i class="bi bi-arrow-repeat spin"></i> ${pill.innerText.trim().replace(/^[^a-zA-Z0-9\.]+\s*/, '')}`;
+        } else if (state === 'completed') {
+            pill.classList.add('completed');
+            pill.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${pill.innerText.trim().replace(/^[^a-zA-Z0-9\.]+\s*/, '')}`;
+        } else if (state === 'failed') {
+            pill.classList.add('failed');
+            pill.innerHTML = `<i class="bi bi-x-circle-fill"></i> ${pill.innerText.trim().replace(/^[^a-zA-Z0-9\.]+\s*/, '')}`;
+        } else {
+            pill.innerHTML = `<i class="bi bi-circle"></i> ${pill.innerText.trim().replace(/^[^a-zA-Z0-9\.]+\s*/, '')}`;
+        }
+    }
+
+    function resetPipelineSteps() {
+        const labels = [
+            '1. Maint Mode',
+            '2. Auto-Backup',
+            '3. Git Pull',
+            '4. DB Migrate',
+            '5. Optimize Cache',
+            '6. App Up'
+        ];
+        labels.forEach((lbl, idx) => {
+            const pill = document.getElementById('stepPill' + (idx + 1));
+            if (pill) {
+                pill.className = 'pipe-step-pill';
+                pill.innerHTML = `<i class="bi bi-circle"></i> ${lbl}`;
+            }
+        });
+    }
+
     // Execute System Update via AJAX with Live Terminal Display
     function executeSystemUpdate() {
         const modal = document.getElementById('terminalModal');
         const body = document.getElementById('terminalBody');
         const status = document.getElementById('terminalStatus');
+        const liveBadge = document.getElementById('terminalLiveBadge');
 
         modal.style.display = 'flex';
-        body.innerHTML = `> [${new Date().toLocaleTimeString()}] เริ่มต้นกระบวนการอัปเดตระบบ One-Click Update...\n` +
-                         `> [${new Date().toLocaleTimeString()}] กำลังส่งคำสั่งไปยังเซิร์ฟเวอร์ กรุณารอสักครู่ ห้ามปิดหน้าต่างนี้...\n\n` +
-                         `[1/6] เปิดโหมดปรับปรุงระบบ (Maintenance Mode)...\n` +
-                         `[2/6] กำลังสำรองฐานข้อมูลอัตโนมัติ (Auto-Backup it_* tables)...\n` +
-                         `[3/6] กำลังดึงโค้ดล่าสุดจาก Remote Repository (git pull deploy main)...\n` +
-                         `[4/6] กำลังปรับปรุงโครงสร้างฐานข้อมูล (artisan migrate --force)...\n` +
-                         `[5/6] กำลังล้างและสร้างแคชใหม่ (artisan optimize:clear)...\n` +
-                         `[6/6] เปิดระบบพร้อมใช้งาน (artisan up)...\n\n` +
-                         `>>> กรุณารอผลการดำเนินการจากเซิร์ฟเวอร์...`;
+        if (liveBadge) liveBadge.style.display = 'inline-block';
+        resetPipelineSteps();
+        setPipelineStepState(1, 'active');
 
-        status.innerHTML = `<i class="bi bi-arrow-repeat spin" style="color: #38bdf8;"></i> <span>กำลังดำเนินการอัปเดตระบบ...</span>`;
+        document.getElementById('kpiStatus').innerHTML = '<span style="color: #38bdf8;">กำลังอัปเดต...</span>';
+        document.getElementById('kpiDuration').innerText = 'กำลังประมวลผล';
+        document.getElementById('kpiBackup').innerText = 'กำลังสำรอง...';
+
+        currentTerminalLog = `> [${new Date().toLocaleTimeString()}] เริ่มต้นกระบวนการอัปเดตระบบ One-Click Update...\n` +
+                             `> [${new Date().toLocaleTimeString()}] กำลังส่งคำสั่งไปยังเซิร์ฟเวอร์ กรุณารอสักครู่ ห้ามปิดหน้าต่างนี้...\n\n` +
+                             `[1/6] เปิดโหมดปรับปรุงระบบ (Maintenance Mode)...\n` +
+                             `[2/6] กำลังสำรองฐานข้อมูลอัตโนมัติ (Auto-Backup it_* tables)...\n` +
+                             `[3/6] กำลังดึงโค้ดล่าสุดจาก Remote Repository (git pull deploy main)...\n` +
+                             `[4/6] กำลังปรับปรุงโครงสร้างฐานข้อมูล (artisan migrate --force)...\n` +
+                             `[5/6] กำลังล้างและสร้างแคชใหม่ (artisan optimize:clear)...\n` +
+                             `[6/6] เปิดระบบพร้อมใช้งาน (artisan up)...\n\n` +
+                             `>>> กรุณารอผลการดำเนินการจากเซิร์ฟเวอร์...`;
+
+        body.innerHTML = formatTerminalLog(currentTerminalLog);
+        status.innerHTML = `<i class="bi bi-arrow-repeat spin" style="color: #38bdf8;"></i> <span>กำลังดำเนินการอัปเดตระบบตาม Pipeline...</span>`;
+        scrollTerminalToBottom();
+
+        // Simulate step progression visually while waiting for server
+        let stepCounter = 1;
+        const progressTimer = setInterval(() => {
+            if (stepCounter < 5) {
+                setPipelineStepState(stepCounter, 'completed');
+                stepCounter++;
+                setPipelineStepState(stepCounter, 'active');
+            }
+        }, 4000);
 
         fetch("{{ route('system-updates.apply') }}", {
             method: 'POST',
@@ -1031,6 +1328,7 @@
             }
         })
         .then(async response => {
+            clearInterval(progressTimer);
             if (response.status === 419) {
                 throw new Error('เซสชันหมดอายุ (CSRF Mismatch) กรุณารีเฟรชหน้าเว็บ หรือใช้วิธีอัปเดตด้วยไฟล์ ZIP ด้านล่าง');
             }
@@ -1044,7 +1342,19 @@
             }
             const data = await response.json();
             if (response.ok && data.success) {
-                body.innerHTML = data.record.log || 'การอัปเดตระบบเสร็จสิ้นแล้ว!';
+                for (let i = 1; i <= 6; i++) {
+                    setPipelineStepState(i, 'completed');
+                }
+                currentTerminalLog = data.record.log || 'การอัปเดตระบบเสร็จสิ้นแล้ว!';
+                body.innerHTML = formatTerminalLog(currentTerminalLog);
+                scrollTerminalToBottom();
+
+                document.getElementById('kpiStatus').innerHTML = '<span style="color: #34d399;">อัปเดตเสร็จสมบูรณ์</span>';
+                document.getElementById('kpiVersion').innerText = 'v' + data.record.version;
+                document.getElementById('kpiDuration').innerText = data.record.duration;
+                document.getElementById('kpiBackup').innerText = data.record.backup_file || '-';
+                document.getElementById('kpiBackup').title = data.record.backup_file || '';
+
                 status.innerHTML = `<i class="bi bi-check-circle-fill" style="color: #10b981;"></i> <span style="color: #10b981; font-weight: bold;">อัปเดตสำเร็จเรียบร้อยแล้ว (${data.record.duration})</span>`;
 
                 Swal.fire({
@@ -1063,7 +1373,19 @@
             }
         })
         .catch(err => {
-            body.innerHTML += `\n\n[ERROR]: ${err.message}\n>>> หมายเหตุ: ระบบได้พยายามเปิดโหมดออนไลน์ (php artisan up) กลับคืนให้โดยอัตโนมัติแล้ว`;
+            clearInterval(progressTimer);
+            for (let i = 1; i <= 6; i++) {
+                const pill = document.getElementById('stepPill' + i);
+                if (pill && pill.classList.contains('active')) {
+                    setPipelineStepState(i, 'failed');
+                    break;
+                }
+            }
+            currentTerminalLog += `\n\n[ERROR]: ${err.message}\n>>> หมายเหตุ: ระบบได้พยายามเปิดโหมดออนไลน์ (php artisan up) กลับคืนให้โดยอัตโนมัติแล้ว`;
+            body.innerHTML = formatTerminalLog(currentTerminalLog);
+            scrollTerminalToBottom();
+
+            document.getElementById('kpiStatus').innerHTML = '<span style="color: #f87171;">ล้มเหลว (Failed)</span>';
             status.innerHTML = `<i class="bi bi-x-circle-fill" style="color: #ef4444;"></i> <span style="color: #ef4444; font-weight: bold;">การอัปเดตล้มเหลว</span>`;
 
             Swal.fire({
@@ -1082,17 +1404,40 @@
         const body = document.getElementById('terminalBody');
         const status = document.getElementById('terminalStatus');
         const title = document.getElementById('terminalTitle');
+        const liveBadge = document.getElementById('terminalLiveBadge');
 
         modal.style.display = 'flex';
+        if (liveBadge) liveBadge.style.display = 'none';
+        resetPipelineSteps();
+
         body.innerHTML = 'กำลังโหลด Log...';
         status.innerHTML = 'กำลังดึงข้อมูล...';
+        document.getElementById('terminalSearch').value = '';
 
         fetch(`{{ url('/system-updates') }}/${id}/log`)
         .then(res => res.json())
         .then(data => {
-            title.innerHTML = `System Update #${data.id} &bull; v${data.version} (${data.commit})`;
-            body.innerHTML = data.output_log || 'ไม่มีบันทึกข้อความ';
-            status.innerHTML = `<i class="bi bi-info-circle-fill" style="color: #38bdf8;"></i> <span>สถานะ: ${data.status_badge.label} &bull; ใช้เวลา: ${data.duration}</span>`;
+            title.innerHTML = `<span>System Update #${data.id}</span> <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(v${data.version})</span>`;
+            currentTerminalLog = data.output_log || 'ไม่มีบันทึกข้อความ';
+            body.innerHTML = formatTerminalLog(currentTerminalLog);
+            scrollTerminalToBottom();
+
+            // Populate KPIs
+            const isSuccess = data.status === 'success';
+            document.getElementById('kpiStatus').innerHTML = isSuccess 
+                ? '<span style="color: #34d399;">สำเร็จ (Success)</span>' 
+                : '<span style="color: #f87171;">ล้มเหลว (Failed)</span>';
+            document.getElementById('kpiVersion').innerText = 'v' + data.version + ' (' + (data.commit ? data.commit.substring(0, 7) : '-') + ')';
+            document.getElementById('kpiDuration').innerText = data.duration || '-';
+            document.getElementById('kpiBackup').innerText = data.backup_file ? data.backup_file.split(/[\/\\]/).pop() : '-';
+            document.getElementById('kpiBackup').title = data.backup_file || '';
+
+            // Update pipeline steps
+            for (let i = 1; i <= 6; i++) {
+                setPipelineStepState(i, isSuccess ? 'completed' : 'failed');
+            }
+
+            status.innerHTML = `<i class="bi bi-info-circle-fill" style="color: #38bdf8;"></i> <span>สถานะ: ${data.status_badge ? data.status_badge.label : data.status} &bull; ใช้เวลา: ${data.duration}</span>`;
         })
         .catch(err => {
             body.innerHTML = 'เกิดข้อผิดพลาดในการโหลด Log: ' + err.message;
@@ -1100,9 +1445,8 @@
     }
 
     function copyTerminalLog() {
-        const body = document.getElementById('terminalBody');
-        if (body && body.innerText) {
-            navigator.clipboard.writeText(body.innerText).then(() => {
+        if (currentTerminalLog) {
+            navigator.clipboard.writeText(currentTerminalLog).then(() => {
                 Swal.fire({
                     toast: true,
                     position: 'top-end',
@@ -1114,6 +1458,32 @@
             });
         }
     }
+
+    function downloadTerminalLog() {
+        if (!currentTerminalLog) return;
+        const blob = new Blob([currentTerminalLog], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `system-update-log-${new Date().toISOString().slice(0,10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function handleDrawerBackdrop(event) {
+        if (event.target.id === 'terminalModal') {
+            closeTerminalModal();
+        }
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeTerminalModal();
+        }
+    });
 
     function confirmPatchUpload(event) {
         const fileInput = document.getElementById('patch_file');

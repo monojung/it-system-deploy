@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.4.0'),
+    'version' => env('APP_VERSION', '2.4.1'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-21',
-    'build' => '20260921.1',
+    'build' => '20260921.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,18 @@ return [
     |
     */
     'changelog' => [
+        '2.4.1' => [
+            'date' => '2026-09-21',
+            'badge' => 'Maintenance & UX Enhancement: Console Drawer & Borrow Workflow',
+            'badge_color' => '#0284c7',
+            'title' => 'แก้ไข URL เส้นทาง Subdirectory (Users Identity 404), ออกแบบ Console อัปเดตระบบใหม่ (Slide-Over Drawer), ปรับปรุงระบบอนุมัติขอยืมอุปกรณ์ และจัดฟอร์มพิมพ์ A4 หน้าเดียวพอดี',
+            'highlights' => [
+                'แก้ไขปัญหา 404 เส้นทาง Subdirectory บนเซิร์ฟเวอร์จริง: ปรับปรุง endpoints การดึงข้อมูลอัตลักษณ์ผู้ใช้งาน (Identity Details), รีเซ็ต MFA และสลับสถานะ MFA ในหน้าจัดการผู้ใช้ให้ใช้ Blade {{ url(\'/users\') }}/... แทน hardcoded absolute path รองรับการติดตั้งบน Subfolder เช่น https://thchospital.moph.go.th/it-system/ ได้ 100%',
+                'ยกเครื่อง UI ศูนย์ควบคุมการอัปเดตระบบ (System Update Console Drawer): ออกแบบใหม่เป็น Slide-Over Console Drawer จากฝั่งขวาเต็มความสูงหน้าจอ (Full-height 100vh) ไม่ต้องเลื่อนหาจอ, เพิ่มการ์ดสรุป KPI ด้านบน (สถานะ, เวอร์ชัน, เวลาที่ใช้, ไฟล์สำรอง), เพิ่มแถบขั้นตอน Pipeline แบบเรียลไทม์ 6 สเต็ป, ระบบกรองค้นหา Log (Quick Filter Errors/Done), ระบบเลื่อนจออัตโนมัติ (Auto-scroll toggle) และปุ่มดาวน์โหลดไฟล์ Log ลงเครื่อง',
+                'แก้ไขและเปิดใช้งานระบบอนุมัติขอยืมอุปกรณ์ไอที (Equipment Borrow Approval Workflow): แก้ไขปัญหาปุ่มอนุมัติไม่แสดงผลด้วยการเพิ่ม @yield(\'topbar-actions\') ใน Main Layout และเพิ่มแถบปฏิบัติงานด่วน (Staff Workflow Action Panel) ในหน้ารายละเอียดคำขอ พร้อมปุ่มอนุมัติ, ปฏิเสธ, ส่งมอบ และบันทึกรับคืนอุปกรณ์ รวมถึงปุ่มอนุมัติด่วนจากตารางรายการยืม-คืน',
+                'ปรับปรุงการพิมพ์ใบขอยืม-คืนอุปกรณ์ไอที (A4 Print Perfect Fit): ปรับปรุง @page margins, สัดส่วนตาราง และจัดวางบล็อกลายมือชื่อ 4 ฝ่ายให้เป็นแถวเดียวแนวนอน (4-column layout) การันตีพิมพ์ลงกระดาษ A4 หน้าเดียวพอดี ไม่ล้นขึ้นหน้าที่สอง',
+            ],
+        ],
         '2.4.0' => [
             'date' => '2026-09-21',
             'badge' => 'Major Release: Device Types Management & Self-Healing Audit Agent',

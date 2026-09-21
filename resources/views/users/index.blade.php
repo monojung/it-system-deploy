@@ -477,9 +477,10 @@ async function openIdentityModal(userId) {
     const backdrop = document.getElementById('identityModalBackdrop');
     backdrop.style.display = 'flex';
 
+    const userBaseUrl = "{{ url('/users') }}";
     try {
-        const res = await fetch(`/users/${userId}/identity-details`);
-        if (!res.ok) throw new Error('ไม่สามารถดึงข้อมูลได้');
+        const res = await fetch(`${userBaseUrl}/${userId}/identity-details`);
+        if (!res.ok) throw new Error('ไม่สามารถดึงข้อมูลได้ (Status: ' + res.status + ')');
         const data = await res.json();
 
         document.getElementById('modalUserName').innerText = `${data.name} (@${data.username})`;
@@ -507,8 +508,8 @@ async function openIdentityModal(userId) {
         document.getElementById('modalMfaEnrolledAt').innerHTML = `<i class="bi bi-clock-history"></i> วันที่เปิดใช้งาน: ${data.mfa_enrolled_at || 'ยังไม่ได้เปิดใช้งาน'}`;
 
         // Action form targets
-        document.getElementById('modalResetMfaForm').action = `/users/${userId}/reset-mfa`;
-        document.getElementById('modalToggleMfaForm').action = `/users/${userId}/toggle-mfa`;
+        document.getElementById('modalResetMfaForm').action = `${userBaseUrl}/${userId}/reset-mfa`;
+        document.getElementById('modalToggleMfaForm').action = `${userBaseUrl}/${userId}/toggle-mfa`;
 
         const toggleBtn = document.getElementById('modalToggleMfaBtn');
         if (data.mfa_enabled || data.mfa_enforced) {

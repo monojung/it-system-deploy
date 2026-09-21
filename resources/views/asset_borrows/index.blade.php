@@ -269,7 +269,15 @@
 
                         {{-- 7. Actions --}}
                         <td style="text-align: right; white-space: nowrap;">
-                            <div style="display: inline-flex; gap: 4px;">
+                            <div style="display: inline-flex; gap: 4px; align-items: center;">
+                                @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician()) && $borrow->status === 'pending')
+                                    <form action="{{ route('asset-borrows.approve', $borrow->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('ยืนยันอนุมัติคำขอยืมอุปกรณ์ {{ $borrow->borrow_no }}?')">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-success" style="padding: 4px 8px; font-size: 12px;" title="อนุมัติคำขอยืมทันที">
+                                            <i class="bi bi-check-lg"></i> อนุมัติ
+                                        </button>
+                                    </form>
+                                @endif
                                 <a href="{{ route('asset-borrows.show', $borrow->id) }}" class="btn btn-sm btn-outline-primary" title="ดูรายละเอียดและดำเนินการ">
                                     <i class="bi bi-eye"></i>
                                 </a>

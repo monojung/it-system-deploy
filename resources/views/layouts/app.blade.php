@@ -1383,6 +1383,7 @@
                     </div>
                 </div>
                 <div class="topbar-right">
+                    @yield('topbar-actions')
                     <a href="{{ route('repairs.create') }}" class="topbar-btn topbar-btn-primary" title="แจ้งซ่อมอุปกรณ์หรือปัญหาไอที">
                         <i class="bi bi-plus-lg"></i>
                         <span>แจ้งซ่อมด่วน</span>
