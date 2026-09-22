@@ -286,14 +286,15 @@
 
     .filter-input-wrap .form-control {
         padding-left: 36px;
-        height: 38px;
-        font-size: 13px;
+        height: 40px;
+        font-size: 13.5px;
         border-radius: 8px;
     }
 
     .filter-select {
-        height: 38px;
-        font-size: 13px;
+        height: 40px;
+        min-height: 40px;
+        font-size: 13.5px;
         border-radius: 8px;
     }
 
@@ -1234,10 +1235,10 @@
 
                 {{-- Action Buttons --}}
                 <div style="display: flex; gap: 6px;">
-                    <button type="submit" class="btn btn-primary" style="height: 38px; padding: 0 16px; font-weight: 600; font-size: 13px;">
+                    <button type="submit" class="btn btn-primary" style="height: 40px; padding: 0 16px; font-weight: 600; font-size: 13.5px;">
                         <i class="bi bi-funnel-fill"></i> ค้นหา
                     </button>
-                    <a href="{{ route('assets.index') }}" class="btn btn-secondary" style="height: 38px; width: 38px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="ล้างตัวกรอง">
+                    <a href="{{ route('assets.index') }}" class="btn btn-secondary" style="height: 40px; width: 40px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="ล้างตัวกรอง">
                         <i class="bi bi-arrow-counterclockwise" style="font-size: 15px;"></i>
                     </a>
                 </div>
@@ -1250,8 +1251,8 @@
                         <i class="bi bi-clipboard-check text-info"></i>
                         <span>ตรวจนับสเปค:</span>
                     </div>
-                    <div style="min-width: 150px;">
-                        <select name="audited_fiscal_year" class="form-select form-select-sm" style="border-radius: 8px; font-size: 12px; height: 32px;" onchange="this.form.submit()">
+                    <div style="min-width: 160px;">
+                        <select name="audited_fiscal_year" class="form-select form-select-sm" style="border-radius: 8px; font-size: 13px; min-height: 38px; height: 38px; padding: 6px 32px 6px 12px;" onchange="this.form.submit()">
                             <option value="">-- ทุกปีงบประมาณ --</option>
                             @php
                                 $fyOptions = collect([$currentFiscalYear ?? 2569, ($currentFiscalYear ?? 2569) - 1, ($currentFiscalYear ?? 2569) - 2])
@@ -1267,8 +1268,8 @@
                             @endforeach
                         </select>
                     </div>
-                    <div style="min-width: 160px;">
-                        <select name="audit_status" class="form-select form-select-sm" style="border-radius: 8px; font-size: 12px; height: 32px;" onchange="this.form.submit()">
+                    <div style="min-width: 170px;">
+                        <select name="audit_status" class="form-select form-select-sm" style="border-radius: 8px; font-size: 13px; min-height: 38px; height: 38px; padding: 6px 32px 6px 12px;" onchange="this.form.submit()">
                             <option value="">-- สถานะการตรวจนับ --</option>
                             <option value="audited" {{ request('audit_status') == 'audited' ? 'selected' : '' }}>✅ ตรวจนับสเปคแล้ว</option>
                             <option value="not_audited" {{ request('audit_status') == 'not_audited' ? 'selected' : '' }}>⏳ ยังไม่ได้ตรวจนับ</option>

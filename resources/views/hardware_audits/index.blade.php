@@ -218,10 +218,10 @@
                     <div style="position: relative; width: 280px;">
                         <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
                         <input type="text" name="search" class="form-control form-control-sm" placeholder="ค้นหา Hostname, S/N, IP หรือ CPU..." 
-                               value="{{ request('search') }}" style="padding-left: 32px; border-radius: 8px; height: 36px;">
+                               value="{{ request('search') }}" style="padding-left: 32px; border-radius: 8px; height: 38px; font-size: 13px;">
                     </div>
 
-                    <select name="status" class="form-select form-select-sm" style="width: 175px; border-radius: 8px; height: 36px;">
+                    <select name="status" class="form-select form-select-sm" style="width: 185px; border-radius: 8px; height: 38px; font-size: 13px;">
                         <option value="pending" {{ request('status', 'pending') === 'pending' ? 'selected' : '' }}>⏳ รอตรวจสอบ ({{ $pendingCount }})</option>
                         <option value="unlinked" {{ request('status') === 'unlinked' ? 'selected' : '' }}>🆕 เครื่องใหม่ยังไม่ผูก ({{ $unlinkedCount }})</option>
                         <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>✓ อนุมัติแล้ว ({{ $approvedCount }})</option>
@@ -229,12 +229,12 @@
                         <option value="" {{ request('status') === '' ? 'selected' : '' }}>📋 ทุกสถานะ</option>
                     </select>
 
-                    <button type="submit" class="btn btn-primary btn-sm" style="height: 36px; padding: 0 16px; border-radius: 8px;">
+                    <button type="submit" class="btn btn-primary btn-sm" style="height: 38px; padding: 0 16px; border-radius: 8px;">
                         <i class="bi bi-funnel"></i> คัดกรอง
                     </button>
 
                     @if(request('search') || (request('status') && request('status') !== 'pending'))
-                        <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'pending']) }}" class="btn btn-outline-secondary btn-sm" style="height: 36px; border-radius: 8px; display: inline-flex; align-items: center;">
+                        <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'pending']) }}" class="btn btn-outline-secondary btn-sm" style="height: 38px; border-radius: 8px; display: inline-flex; align-items: center;">
                             <i class="bi bi-x-circle me-1"></i> ล้างตัวกรอง
                         </a>
                     @endif

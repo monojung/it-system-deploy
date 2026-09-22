@@ -247,6 +247,7 @@ class SettingController extends Controller
         $endpoint = $request->filled('endpoint') ? $request->input('endpoint') : setting('moph_notify_endpoint');
         $clientKey = $request->has('client_key') ? $request->input('client_key') : setting('moph_notify_client_key');
         $secretKey = $request->has('secret_key') ? $request->input('secret_key') : setting('moph_notify_secret_key');
+        $messageType = $request->filled('message_type') ? $request->input('message_type') : setting('moph_notify_message_type', 'flex');
 
         if (empty($clientKey) || empty($secretKey)) {
             return response()->json([
@@ -258,7 +259,7 @@ class SettingController extends Controller
         $user = auth()->user();
         $senderName = $user ? $user->name : 'Admin';
 
-        $result = MophNotifyService::sendTestMessage($senderName, $endpoint, $clientKey, $secretKey);
+        $result = MophNotifyService::sendTestMessage($senderName, $endpoint, $clientKey, $secretKey, $messageType);
 
         return response()->json($result, $result['success'] ? 200 : 400);
     }

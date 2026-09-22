@@ -48,16 +48,49 @@ class MophNotifyService
             ];
         }
 
+        $result = self::executeHttpSend($payload, $endpoint, $clientKey, $secretKey);
+
+        // If sending flex message failed (e.g. status 400 Bad Request or LINE flex rejected by endpoint),
+        // automatically fallback to Plain Text so notification is NEVER lost!
+        if (!$result['success'] && isset($payload['messages'][0]['type']) && $payload['messages'][0]['type'] === 'flex') {
+            Log::warning("MOPH Notify Flex Message failed (Status: {$result['status']}), attempting automatic Plain Text fallback...");
+
+            $altText = $payload['messages'][0]['altText'] ?? '🔔 แจ้งเตือนจากระบบสารสนเทศ รพ.ทุ่งหัวช้าง';
+            $fallbackPayload = [
+                'messages' => [
+                    ['type' => 'text', 'text' => $altText]
+                ]
+            ];
+            $fallbackResult = self::executeHttpSend($fallbackPayload, $endpoint, $clientKey, $secretKey);
+            if ($fallbackResult['success']) {
+                $fallbackResult['message'] .= ' (ส่งผ่านโหมดข้อความธรรมดาสำรองอัตโนมัติ เนื่องจากปลายทางไม่รองรับ Flex)';
+                return $fallbackResult;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Execute HTTP POST to MOPH Notify API with timeout and SSL flexibility
+     */
+    protected static function executeHttpSend(
+        array $payload,
+        string $endpoint,
+        string $clientKey,
+        string $secretKey
+    ): array {
         try {
             $version = config('version.version', '2.4.4');
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'client-key' => $clientKey,
-                'secret-key' => $secretKey,
-                'User-Agent' => "MOPH-IT-System/{$version} (ThungHuaChang Hospital)",
-            ])
-            ->timeout(15)
-            ->post($endpoint, $payload);
+            $response = Http::withoutVerifying()
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'client-key' => $clientKey,
+                    'secret-key' => $secretKey,
+                    'User-Agent' => "MOPH-IT-System/{$version} (ThungHuaChang Hospital)",
+                ])
+                ->timeout(15)
+                ->post($endpoint, $payload);
 
             if ($response->successful()) {
                 Log::info("MOPH Notify message sent successfully to {$endpoint}");
@@ -86,6 +119,20 @@ class MophNotifyService
                 'status' => 500,
             ];
         }
+    }
+
+    /**
+     * Generate a public, LINE-compliant URL for actions
+     * (Avoids localhost/127.0.0.1 which causes LINE API validation rejection)
+     */
+    public static function getSafePublicUrl(string $path): string
+    {
+        $base = url('/');
+        if (preg_match('/localhost|127\.0\.0\.1|::1/i', $base)) {
+            $fallbackDomain = setting('hospital_public_url') ?: 'https://thchospital.moph.go.th/it-system';
+            return rtrim($fallbackDomain, '/') . '/' . ltrim($path, '/');
+        }
+        return url($path);
     }
 
     /**
@@ -216,26 +263,63 @@ class MophNotifyService
     }
 
     /**
-     * Send test notification
+     * Send test notification (Supports both Flex and Plain Text mode)
      *
      * @param string $senderName
      * @param string|null $endpoint
      * @param string|null $clientKey
      * @param string|null $secretKey
+     * @param string|null $messageType
      * @return array
      */
     public static function sendTestMessage(
         string $senderName = 'Admin',
         ?string $endpoint = null,
         ?string $clientKey = null,
-        ?string $secretKey = null
+        ?string $secretKey = null,
+        ?string $messageType = null
     ): array {
-        $flex = self::buildTestFlexMessage($senderName);
-        $payload = [
-            'messages' => [$flex]
-        ];
+        $messageType = $messageType ?: setting('moph_notify_message_type', 'flex');
+
+        if ($messageType === 'text') {
+            $text = self::buildTestText($senderName);
+            $payload = [
+                'messages' => [
+                    ['type' => 'text', 'text' => $text]
+                ]
+            ];
+        } else {
+            $flex = self::buildTestFlexMessage($senderName);
+            $payload = [
+                'messages' => [$flex]
+            ];
+        }
 
         return self::sendMophMessage($payload, $endpoint, $clientKey, $secretKey);
+    }
+
+    /**
+     * Build Plain Text for 1-Click Test
+     *
+     * @param string $senderName
+     * @return string
+     */
+    public static function buildTestText(string $senderName = 'Admin'): string
+    {
+        $hospitalName = setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง');
+        $departmentName = setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล');
+        $nowThai = now()->addYears(543)->format('d/m/Y H:i:s');
+        $systemUrl = self::getSafePublicUrl('/dashboard');
+
+        return "🧪 [ทดสอบระบบ MOPH Notify]\n"
+            . "🏥 {$hospitalName}\n"
+            . "--------------------------------\n"
+            . "✅ การเชื่อมต่อระบบสำเร็จสมบูรณ์!\n"
+            . "ระบบสารสนเทศพร้อมส่งการแจ้งเตือนผ่านช่องทาง MOPH Notify (หมอพร้อม LINE OA)\n"
+            . "🏢 หน่วยงาน: {$departmentName}\n"
+            . "👤 ผู้ทดสอบ: {$senderName}\n"
+            . "🕒 เวลา: {$nowThai} น.\n"
+            . "🌐 ระบบ: {$systemUrl}";
     }
 
     /**
@@ -263,14 +347,14 @@ class MophNotifyService
             : ($repair->other_device_info ?: 'ไม่ระบุครุภัณฑ์');
 
         $nowThai = now()->addYears(543)->format('d/m/Y H:i:s');
-        $viewUrl = url('/repairs/' . $repair->id);
+        $viewUrl = self::getSafePublicUrl('/repairs/' . $repair->id);
 
         return [
             'type' => 'flex',
             'altText' => "🔔 แจ้งซ่อมใหม่ #{$repair->ticket_number}: {$repair->title} ({$hospitalName})",
             'contents' => [
                 'type' => 'bubble',
-                'size' => 'giga',
+                'size' => 'mega',
                 'header' => [
                     'type' => 'box',
                     'layout' => 'vertical',
@@ -303,7 +387,7 @@ class MophNotifyService
                         [
                             'type' => 'text',
                             'text' => "{$hospitalName} • ฝ่ายสุขภาพดิจิทัล",
-                            'color' => 'rgba(255,255,255,0.85)',
+                            'color' => '#ffffffd9',
                             'size' => 'xxs',
                             'margin' => 'xs',
                         ]
@@ -473,14 +557,14 @@ class MophNotifyService
         $target = $statusLabels[$newStatus] ?? ['label' => $newStatus, 'color' => '#0d9488'];
         $oldLabel = $statusLabels[$oldStatus]['label'] ?? $oldStatus;
         $nowThai = now()->addYears(543)->format('d/m/Y H:i:s');
-        $viewUrl = url('/repairs/' . $repair->id);
+        $viewUrl = self::getSafePublicUrl('/repairs/' . $repair->id);
 
         return [
             'type' => 'flex',
             'altText' => "🔄 อัปเดตสถานะ #{$repair->ticket_number} -> {$target['label']} ({$hospitalName})",
             'contents' => [
                 'type' => 'bubble',
-                'size' => 'giga',
+                'size' => 'mega',
                 'header' => [
                     'type' => 'box',
                     'layout' => 'vertical',
@@ -497,7 +581,7 @@ class MophNotifyService
                         [
                             'type' => 'text',
                             'text' => "สถานะปัจจุบัน: {$target['label']}",
-                            'color' => 'rgba(255,255,255,0.9)',
+                            'color' => '#ffffffe6',
                             'size' => 'xs',
                             'margin' => 'xs',
                             'weight' => 'bold',
@@ -601,14 +685,14 @@ class MophNotifyService
         $nowThai = now()->addYears(543)->format('d/m/Y H:i:s');
         $asset = $borrow->asset;
         $assetName = $asset ? "{$asset->asset_code} ({$asset->name})" : 'ไม่ระบุอุปกรณ์';
-        $viewUrl = url('/asset-borrows/' . $borrow->id);
+        $viewUrl = self::getSafePublicUrl('/asset-borrows/' . $borrow->id);
 
         return [
             'type' => 'flex',
             'altText' => "{$title} #{$borrow->borrow_no} ({$hospitalName})",
             'contents' => [
                 'type' => 'bubble',
-                'size' => 'giga',
+                'size' => 'mega',
                 'header' => [
                     'type' => 'box',
                     'layout' => 'vertical',
@@ -625,7 +709,7 @@ class MophNotifyService
                         [
                             'type' => 'text',
                             'text' => "รหัสใบยืม: #{$borrow->borrow_no}",
-                            'color' => 'rgba(255,255,255,0.9)',
+                            'color' => '#ffffffe6',
                             'size' => 'xs',
                             'margin' => 'xs',
                         ]
@@ -725,14 +809,14 @@ class MophNotifyService
         $hospitalName = setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง');
         $departmentName = setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล');
         $nowThai = now()->addYears(543)->format('d/m/Y H:i:s');
-        $systemUrl = url('/dashboard');
+        $systemUrl = self::getSafePublicUrl('/dashboard');
 
         return [
             'type' => 'flex',
             'altText' => "🧪 ทดสอบระบบ MOPH Notify ({$hospitalName})",
             'contents' => [
                 'type' => 'bubble',
-                'size' => 'giga',
+                'size' => 'mega',
                 'header' => [
                     'type' => 'box',
                     'layout' => 'vertical',

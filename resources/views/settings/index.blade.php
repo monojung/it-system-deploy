@@ -759,7 +759,6 @@
                 </div>
             </div>
         </div>
-        </div>
 
         <!-- SMTP & Mail Settings Card -->
         <div class="settings-card">
@@ -1422,9 +1421,11 @@
     // Test MOPH Notify via AJAX
     function runTestMophNotify() {
         const btn = document.getElementById('btn_test_moph');
-        const endpoint = document.getElementById('moph_notify_endpoint').value.trim();
-        const clientKey = document.getElementById('moph_notify_client_key').value.trim();
-        const secretKey = document.getElementById('moph_notify_secret_key').value.trim();
+        const endpoint = document.getElementById('moph_notify_endpoint') ? document.getElementById('moph_notify_endpoint').value.trim() : '';
+        const clientKey = document.getElementById('moph_notify_client_key') ? document.getElementById('moph_notify_client_key').value.trim() : '';
+        const secretKey = document.getElementById('moph_notify_secret_key') ? document.getElementById('moph_notify_secret_key').value.trim() : '';
+        const messageTypeEl = document.getElementById('moph_notify_message_type');
+        const messageType = messageTypeEl ? messageTypeEl.value : 'flex';
         const originalHtml = btn.innerHTML;
 
         if (!clientKey || !secretKey) {
@@ -1438,7 +1439,7 @@
         }
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> กำลังทดสอบส่ง...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> กำลังทดสอบส่ง (' + (messageType === 'flex' ? 'LINE Flex Card' : 'Plain Text') + ')...';
 
         fetch("{{ route('settings.test-moph') }}", {
             method: "POST",
@@ -1449,7 +1450,8 @@
             body: JSON.stringify({
                 endpoint: endpoint,
                 client_key: clientKey,
-                secret_key: secretKey
+                secret_key: secretKey,
+                message_type: messageType
             })
         })
         .then(response => response.json().then(data => ({ status: response.status, body: data })))
@@ -1457,14 +1459,16 @@
             btn.disabled = false;
             btn.innerHTML = originalHtml;
             if (res.body.success) {
+                const formatLabel = messageType === 'flex' ? '✨ LINE Flex Message (การ์ด)' : '📄 ข้อความธรรมดา (Plain Text)';
                 Swal.fire({
                     icon: 'success',
                     title: 'เชื่อมต่อ MOPH Notify สำเร็จ!',
                     html: `
                         <p style="font-size: 14px; color: #334155; margin-bottom: 8px;">${res.body.message}</p>
-                        <div style="background: #f1f5f9; padding: 10px 14px; border-radius: 8px; font-size: 12px; color: #64748b; text-align: left;">
-                            <div><strong>📡 Endpoint:</strong> ${endpoint}</div>
-                            <div style="margin-top: 3px;"><strong>💬 ผลลัพธ์:</strong> ส่ง Flex Message แจ้งเตือนทดสอบเข้า LINE OA หมอพร้อม เรียบร้อยแล้ว</div>
+                        <div style="background: #f1f5f9; padding: 12px 14px; border-radius: 8px; font-size: 12.5px; color: #475569; text-align: left; line-height: 1.6;">
+                            <div><strong>📡 Endpoint:</strong> <span style="font-family: monospace; font-size: 11.5px;">${endpoint}</span></div>
+                            <div style="margin-top: 4px;"><strong>🎨 รูปแบบที่ทดสอบ:</strong> ${formatLabel}</div>
+                            <div style="margin-top: 4px;"><strong>💬 ผลลัพธ์:</strong> ส่งข้อความแจ้งเตือนทดสอบเข้า LINE OA หมอพร้อม เรียบร้อยแล้ว</div>
                         </div>
                     `,
                     confirmButtonColor: '#0d9488',

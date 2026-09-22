@@ -900,19 +900,57 @@
             color: var(--danger);
         }
 
-        .form-control, .form-select {
+        .form-control, .form-select, select.form-control {
             width: 100%;
-            padding: 10px 14px;
+            height: 42px;
+            min-height: 42px;
+            padding: 8px 14px;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border);
             background-color: #ffffff;
             font-family: inherit;
-            font-size: 14px;
+            font-size: 13.5px;
+            line-height: 1.5;
             color: var(--text-main);
+            box-sizing: border-box;
+            vertical-align: middle;
             transition: border-color 0.2s var(--ease-fluid), box-shadow 0.2s var(--ease-fluid), transform 0.2s var(--ease-fluid);
         }
 
-        .form-control:focus, .form-select:focus {
+        .form-select, select.form-control {
+            padding-right: 36px;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 14px 12px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        .form-control-sm, .form-select-sm, select.form-control-sm {
+            height: 38px !important;
+            min-height: 38px !important;
+            padding: 6px 12px !important;
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            box-sizing: border-box !important;
+        }
+
+        .form-select-sm, select.form-control-sm {
+            padding-right: 32px !important;
+        }
+
+        .form-select option, select option {
+            font-size: 13.5px;
+            padding: 6px 10px;
+            color: #1e293b;
+            background: #ffffff;
+            line-height: 1.6;
+        }
+
+        .form-control:focus, .form-select:focus, select.form-control:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3.5px var(--primary-glow);
