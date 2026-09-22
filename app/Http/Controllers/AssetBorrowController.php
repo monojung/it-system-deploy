@@ -233,6 +233,13 @@ class AssetBorrowController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
+        // Send MOPH Notify notification for new borrow request
+        try {
+            \App\Services\MophNotifyService::sendAssetBorrowNotification($borrow, 'created');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed sending asset borrow notification: ' . $e->getMessage());
+        }
+
         return redirect()->route('asset-borrows.show', $borrow->id)
             ->with('success', "บันทึกคำขอยืมอุปกรณ์เรียบร้อยแล้ว รหัสคำขอ: {$borrowNo}");
     }
@@ -389,6 +396,13 @@ class AssetBorrowController extends Controller
             'approved_by' => Auth::id(),
             'approved_at' => Carbon::now(),
         ]);
+
+        // Send MOPH Notify notification for approved borrow request
+        try {
+            \App\Services\MophNotifyService::sendAssetBorrowNotification($borrow, 'approved');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed sending asset borrow approval notification: ' . $e->getMessage());
+        }
 
         return redirect()->route('asset-borrows.show', $borrow->id)
             ->with('success', 'อนุมัติคำขอยืมอุปกรณ์เรียบร้อยแล้ว (พร้อมส่งมอบอุปกรณ์)');

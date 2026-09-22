@@ -186,11 +186,12 @@ class RepairController extends Controller
             'created_at' => Carbon::now(),
         ]);
 
-        // Send LINE notification if enabled
+        // Send notifications via MOPH Notify / LINE Notify if enabled
         try {
+            \App\Services\MophNotifyService::sendRepairTicketNotification($repair);
             \App\Services\LineNotificationService::sendRepairTicketNotification($repair);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Failed sending LINE repair notification: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::warning('Failed sending repair notification: ' . $e->getMessage());
         }
 
         return redirect()->route('repairs.show', $repair)->with('success', "สร้างรายการแจ้งซ่อมรหัส {$ticketNumber} สำเร็จ");
@@ -317,6 +318,13 @@ class RepairController extends Controller
         ]);
 
         AuditLog::record('status_change', 'repairs', "เปลี่ยนสถานะใบแจ้งซ่อม {$repair->ticket_number} จาก '{$prevStatus}' เป็น '{$newStatus}'", $repair, ['status' => $prevStatus], ['status' => $newStatus]);
+
+        // Send status change notification via MOPH Notify
+        try {
+            \App\Services\MophNotifyService::sendRepairStatusNotification($repair, $prevStatus, $newStatus, $comment);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed sending repair status notification: ' . $e->getMessage());
+        }
 
         return back()->with('success', 'อัปเดตสถานะงานซ่อมเรียบร้อยแล้ว');
     }

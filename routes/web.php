@@ -264,6 +264,7 @@ Route::middleware(['auth'])->group(function () {
         // System Settings & Data Management
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::post('/settings/test-moph', [SettingController::class, 'testMophNotify'])->name('settings.test-moph');
         Route::post('/settings/test-line', [SettingController::class, 'testLineNotify'])->name('settings.test-line');
         Route::post('/settings/test-mail', [SettingController::class, 'testMail'])->name('settings.test-mail');
         Route::post('/settings/clear-data', [SystemResetController::class, 'clearData'])->name('settings.clear-data');

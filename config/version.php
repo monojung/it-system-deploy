@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.4.3'),
+    'version' => env('APP_VERSION', '2.4.4'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
-    'release_date' => '2026-09-21',
-    'build' => '20260921.4',
+    'release_date' => '2026-09-22',
+    'build' => '20260922.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,18 @@ return [
     |
     */
     'changelog' => [
+        '2.4.4' => [
+            'date' => '2026-09-22',
+            'badge' => 'Major Feature: MOPH Notify API & Mor Prom LINE OA Integration',
+            'badge_color' => '#0d9488',
+            'title' => 'พัฒนาระบบแจ้งเตือน MOPH Notify (สำนักสุขภาพดิจิทัล กระทรวงสาธารณสุข - LINE OA หมอพร้อม)',
+            'highlights' => [
+                'ยกระดับระบบแจ้งเตือนสู่มาตรฐานกระทรวงสาธารณสุข: พัฒนา Service สำหรับเชื่อมต่อ MOPH Notify API (ทดแทน LINE Notify ที่ยุติการให้บริการ) รองรับทั้งสภาพแวดล้อม Production (morpromt2c.moph.go.th) และ UAT (morpromt2f.moph.go.th)',
+                'การ์ดแจ้งเตือน LINE Flex Message ระดับพรีเมียม: ออกแบบการ์ดแจ้งเตือนอินเตอร์แอคทีฟแยกสีตามความเร่งด่วน (CRITICAL แดงเข้ม, HIGH แดงส้ม, NORMAL ฟ้า, LOW เขียว) พร้อมระบุรหัสตั๋ว แผนก อาการเสีย เป้าหมาย SLA และปุ่มกดเข้าดูใบงานซ่อมบำรุงได้ทันที',
+                'แจ้งเตือนครอบคลุมทุกเหตุการณ์สำคัญ: รองรับการแจ้งเตือนเมื่อสร้างใบแจ้งซ่อมใหม่, เมื่อช่างอัปเดตสถานะงานซ่อม (รับงาน, รออะไหล่, ซ่อมเสร็จ), และเมื่อมีการขอยืมหรืออนุมัติยืมอุปกรณ์ไอที (Asset Borrow)',
+                'หน้าจอควบคุมการตั้งค่า MOPH Notify และระบบทดสอบ 1-Click: เพิ่มเมนูตั้งค่า Client Key และ Secret Key พร้อมปุ่มทดสอบส่งการแจ้งเตือนจริงแบบเรียลไทม์ และรองรับ Subdirectory URL Routing สำหรับโรงพยาบาลอย่างสมบูรณ์แบบ',
+            ],
+        ],
         '2.4.3' => [
             'date' => '2026-09-21',
             'badge' => 'Hotfix: Subdirectory Deletion Routing & Asset Safety Modal',

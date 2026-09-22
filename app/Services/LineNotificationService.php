@@ -65,14 +65,22 @@ class LineNotificationService
      */
     public static function sendRepairTicketNotification(Repair $repair): bool
     {
+        // Try MOPH Notify first
+        $mophResult = false;
+        try {
+            $mophResult = MophNotifyService::sendRepairTicketNotification($repair);
+        } catch (Throwable $e) {
+            Log::warning('MOPH Notify forwarding failed in LineNotificationService: ' . $e->getMessage());
+        }
+
         $enabled = (bool) setting('line_notify_enabled', false);
         if (!$enabled) {
-            return false;
+            return $mophResult;
         }
 
         $token = setting('line_notify_token', '');
         if (empty($token)) {
-            return false;
+            return $mophResult;
         }
 
         $criticalOnly = (bool) setting('notify_on_critical_only', false);

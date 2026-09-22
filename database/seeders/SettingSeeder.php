@@ -28,10 +28,17 @@ class SettingSeeder extends Seeder
             ['key' => 'sla_critical', 'value' => '1', 'group' => 'helpdesk', 'type' => 'integer', 'description' => 'SLA งานซ่อมด่วนที่สุดกระทบผู้ป่วย (ชั่วโมง)'],
             ['key' => 'default_min_stock', 'value' => '3', 'group' => 'helpdesk', 'type' => 'integer', 'description' => 'จุดเตือนสต็อกขั้นต่ำเริ่มต้น'],
 
-            // Notifications
+            // Notifications (MOPH Notify & LINE Notify)
+            ['key' => 'moph_notify_enabled', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'เปิดใช้งานระบบแจ้งเตือนผ่าน MOPH Notify'],
+            ['key' => 'moph_notify_endpoint', 'value' => 'https://morpromt2c.moph.go.th/api/notify/send', 'group' => 'notification', 'type' => 'text', 'description' => 'MOPH Notify API Endpoint URL'],
+            ['key' => 'moph_notify_client_key', 'value' => '', 'group' => 'notification', 'type' => 'text', 'description' => 'MOPH Notify Client Key'],
+            ['key' => 'moph_notify_secret_key', 'value' => '', 'group' => 'notification', 'type' => 'text', 'description' => 'MOPH Notify Secret Key'],
+            ['key' => 'moph_notify_message_type', 'value' => 'flex', 'group' => 'notification', 'type' => 'text', 'description' => 'รูปแบบข้อความ MOPH Notify (flex / text)'],
             ['key' => 'line_notify_token', 'value' => '', 'group' => 'notification', 'type' => 'text', 'description' => 'LINE Notify Token สำหรับแจ้งเตือนกลุ่มช่าง'],
             ['key' => 'line_notify_enabled', 'value' => '0', 'group' => 'notification', 'type' => 'boolean', 'description' => 'เปิดใช้งาน LINE Notify'],
             ['key' => 'notify_on_new_ticket', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนเมื่อมีใบแจ้งซ่อมใหม่'],
+            ['key' => 'notify_on_status_change', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนเมื่ออัปเดตสถานะงานซ่อม'],
+            ['key' => 'notify_on_borrow_request', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนเมื่อมีคำขอยืมอุปกรณ์ไอที'],
             ['key' => 'notify_on_critical_only', 'value' => '0', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนเฉพาะเคสด่วนและด่วนที่สุด'],
 
             // Security & Auth

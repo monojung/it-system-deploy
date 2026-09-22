@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\AuditLog;
+use App\Models\Department;
 use App\Models\SystemSetting;
+use App\Models\User;
 use App\Services\LineNotificationService;
+use App\Services\MophNotifyService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -38,9 +42,16 @@ class SettingController extends Controller
             'enforce_ict_standard' => setting('enforce_ict_standard', true),
 
             // Notification
+            'moph_notify_enabled' => setting('moph_notify_enabled', true),
+            'moph_notify_endpoint' => setting('moph_notify_endpoint', 'https://morpromt2c.moph.go.th/api/notify/send'),
+            'moph_notify_client_key' => setting('moph_notify_client_key', ''),
+            'moph_notify_secret_key' => setting('moph_notify_secret_key', ''),
+            'moph_notify_message_type' => setting('moph_notify_message_type', 'flex'),
             'line_notify_token' => setting('line_notify_token', ''),
             'line_notify_enabled' => setting('line_notify_enabled', false),
             'notify_on_new_ticket' => setting('notify_on_new_ticket', true),
+            'notify_on_status_change' => setting('notify_on_status_change', true),
+            'notify_on_borrow_request' => setting('notify_on_borrow_request', true),
             'notify_on_critical_only' => setting('notify_on_critical_only', false),
             'notify_email_admin' => setting('notify_email_admin', ''),
 
@@ -130,15 +141,31 @@ class SettingController extends Controller
             SystemSetting::set('default_min_stock', (int)$data['default_min_stock'], 'assets', 'integer');
             SystemSetting::set('enforce_ict_standard', $request->boolean('enforce_ict_standard'), 'assets', 'boolean');
         } elseif ($group === 'notification') {
+            $mophEnabled = $request->boolean('moph_notify_enabled');
+            $mophEndpoint = $request->input('moph_notify_endpoint', 'https://morpromt2c.moph.go.th/api/notify/send');
+            $mophClientKey = $request->input('moph_notify_client_key', '');
+            $mophSecretKey = $request->input('moph_notify_secret_key', '');
+            $mophMsgType = $request->input('moph_notify_message_type', 'flex');
+
             $lineToken = $request->input('line_notify_token', '');
             $lineEnabled = $request->boolean('line_notify_enabled');
             $notifyNew = $request->boolean('notify_on_new_ticket');
+            $notifyStatus = $request->boolean('notify_on_status_change');
+            $notifyBorrow = $request->boolean('notify_on_borrow_request');
             $notifyCritical = $request->boolean('notify_on_critical_only');
             $notifyEmail = $request->input('notify_email_admin', '');
+
+            SystemSetting::set('moph_notify_enabled', $mophEnabled, 'notification', 'boolean');
+            SystemSetting::set('moph_notify_endpoint', $mophEndpoint, 'notification', 'text');
+            SystemSetting::set('moph_notify_client_key', $mophClientKey, 'notification', 'text');
+            SystemSetting::set('moph_notify_secret_key', $mophSecretKey, 'notification', 'text');
+            SystemSetting::set('moph_notify_message_type', $mophMsgType, 'notification', 'text');
 
             SystemSetting::set('line_notify_token', $lineToken, 'notification', 'text');
             SystemSetting::set('line_notify_enabled', $lineEnabled, 'notification', 'boolean');
             SystemSetting::set('notify_on_new_ticket', $notifyNew, 'notification', 'boolean');
+            SystemSetting::set('notify_on_status_change', $notifyStatus, 'notification', 'boolean');
+            SystemSetting::set('notify_on_borrow_request', $notifyBorrow, 'notification', 'boolean');
             SystemSetting::set('notify_on_critical_only', $notifyCritical, 'notification', 'boolean');
             SystemSetting::set('notify_email_admin', $notifyEmail, 'notification', 'text');
         } elseif ($group === 'mail') {
@@ -210,6 +237,30 @@ class SettingController extends Controller
         $result = LineNotificationService::sendTestMessage($token, $senderName);
 
         return response()->json($result);
+    }
+
+    /**
+     * Test MOPH Notify API
+     */
+    public function testMophNotify(Request $request)
+    {
+        $endpoint = $request->filled('endpoint') ? $request->input('endpoint') : setting('moph_notify_endpoint');
+        $clientKey = $request->has('client_key') ? $request->input('client_key') : setting('moph_notify_client_key');
+        $secretKey = $request->has('secret_key') ? $request->input('secret_key') : setting('moph_notify_secret_key');
+
+        if (empty($clientKey) || empty($secretKey)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'กรุณาระบุ Client Key และ Secret Key ของ MOPH Notify ก่อนทำการทดสอบ',
+            ], 422);
+        }
+
+        $user = auth()->user();
+        $senderName = $user ? $user->name : 'Admin';
+
+        $result = MophNotifyService::sendTestMessage($senderName, $endpoint, $clientKey, $secretKey);
+
+        return response()->json($result, $result['success'] ? 200 : 400);
     }
 
     /**
