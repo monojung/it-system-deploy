@@ -1074,7 +1074,7 @@
 <div class="active-filters-banner">
     <div class="d-flex align-items-center gap-2 flex-wrap">
         <i class="bi bi-funnel-fill text-primary" style="font-size: 15px;"></i>
-        <span style="font-weight: 600;">กำลังกรอง:</span>
+        <span style="font-weight: 600;">{{ $hasHardwareFilters ? 'กำลังกรองตามสเปคเครื่อง:' : 'กำลังกรอง:' }}</span>
         <div class="active-filters-tags">
             @if(request('search'))
                 <span class="active-filter-pill">
@@ -1110,7 +1110,7 @@
             @endif
             @if(request('ram_type'))
                 <span class="active-filter-pill">
-                    <i class="bi bi-memory"></i> RAM: {{ request('ram_type') }}
+                    <i class="bi bi-memory"></i> RAM Type: {{ request('ram_type') }}
                     <a href="{{ route('assets.index', request()->except(['ram_type', 'page'])) }}" title="ลบตัวกรอง RAM Type">✕</a>
                 </span>
             @endif
@@ -1148,7 +1148,7 @@
         <span style="font-weight: 700; color: #0f172a; margin-left: 4px;">(พบ {{ number_format($assets->total()) }} เครื่อง)</span>
     </div>
     <a href="{{ route('assets.index') }}" class="btn btn-sm btn-outline-danger" style="border-radius: 8px; font-size: 12px; padding: 3px 10px; background: #ffffff;">
-        <i class="bi bi-x-circle me-1"></i> ล้างตัวกรองทั้งหมด
+        <i class="bi bi-x-circle me-1"></i> {{ $hasHardwareFilters ? 'ล้างตัวกรองสเปคทั้งหมด' : 'ล้างตัวกรองทั้งหมด' }}
     </a>
 </div>
 @endif
@@ -1280,7 +1280,7 @@
                     {{-- Toggle Hardware Specs Drawer --}}
                     <button type="button" class="filter-toggle-btn {{ $hasHardwareFilters ? 'active' : '' }}" onclick="toggleHwDrawer()" id="hwDrawerBtn">
                         <i class="bi bi-cpu-fill text-primary"></i>
-                        <span>สเปคฮาร์ดแวร์ & ตัวกรองชิป</span>
+                        <span>สเปคฮาร์ดแวร์ (Hardware Specs Explorer)</span>
                         @if($hasHardwareFilters)
                             <span class="badge bg-primary" style="font-size: 10px; padding: 2px 6px; border-radius: 999px;">ใช้งาน</span>
                         @endif
@@ -1290,7 +1290,7 @@
                     {{-- Fleet Overview Modal Button --}}
                     <button type="button" class="filter-toggle-btn" onclick="openFleetModal()" title="ดูสัดส่วนสเปคเครื่องทั้งโรงพยาบาล">
                         <i class="bi bi-pie-chart-fill text-success"></i>
-                        <span>สรุปสเปค รพ.</span>
+                        <span>สรุปภาพรวมสเปค รพ.</span>
                     </button>
                 </div>
             </div>
