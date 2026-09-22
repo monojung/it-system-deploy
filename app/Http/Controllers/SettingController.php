@@ -59,7 +59,7 @@ class SettingController extends Controller
             'notify_on_critical_only' => setting('notify_on_critical_only', false),
             'notify_email_admin' => setting('notify_email_admin', ''),
 
-            // User Personal LINE OA Notifications
+            // User Personal Notifications (MOPH Alert & LINE OA)
             'user_notify_enabled' => setting('user_notify_enabled', true),
             'user_notify_channel' => setting('user_notify_channel', 'both'),
             'line_oa_channel_access_token' => setting('line_oa_channel_access_token', ''),
@@ -70,6 +70,9 @@ class SettingController extends Controller
             'notify_user_on_data_status' => setting('notify_user_on_data_status', true),
             'notify_user_on_borrow_status' => setting('notify_user_on_borrow_status', true),
             'notify_user_on_transfer_status' => setting('notify_user_on_transfer_status', true),
+            'moph_alert_custom_keys' => setting('moph_alert_custom_keys', false),
+            'moph_alert_client_key' => setting('moph_alert_client_key', ''),
+            'moph_alert_secret_key' => setting('moph_alert_secret_key', ''),
 
             // SMTP & Email
             'mail_mailer' => setting('mail_mailer', config('mail.default', 'smtp')),
@@ -156,7 +159,10 @@ class SettingController extends Controller
             SystemSetting::set('asset_code_prefix', $data['asset_code_prefix'], 'assets', 'text');
             SystemSetting::set('default_min_stock', (int)$data['default_min_stock'], 'assets', 'integer');
             SystemSetting::set('enforce_ict_standard', $request->boolean('enforce_ict_standard'), 'assets', 'boolean');
-        } elseif ($group === 'notification') {
+        } elseif ($group === 'moph_notify') {
+            // =========================================================================
+            // MOPH Notify: สำหรับผู้ดูแลระบบและทีมช่าง IT (Admin Notifications)
+            // =========================================================================
             $mophEnabled = $request->boolean('moph_notify_enabled');
             $mophEndpoint = $request->input('moph_notify_endpoint', 'https://morpromt2c.moph.go.th/api/notify/send');
             $mophClientKey = $request->input('moph_notify_client_key', '');
@@ -189,7 +195,12 @@ class SettingController extends Controller
             SystemSetting::set('notify_on_critical_only', $notifyCritical, 'notification', 'boolean');
             SystemSetting::set('notify_email_admin', $notifyEmail, 'notification', 'text');
 
-            // Save User LINE OA settings
+            return back()->with('success', 'บันทึกการตั้งค่าระบบแจ้งเตือน MOPH Notify (สำหรับผู้ดูแลระบบและช่าง IT) เรียบร้อยแล้ว');
+
+        } elseif ($group === 'moph_alert' || $group === 'user_notify') {
+            // =========================================================================
+            // MOPH Alert: สำหรับการแจ้งเตือนผู้ใช้งานทั่วไป (End-User Direct Notifications)
+            // =========================================================================
             SystemSetting::set('user_notify_enabled', $request->boolean('user_notify_enabled'), 'notification', 'boolean');
             SystemSetting::set('user_notify_channel', $request->input('user_notify_channel', 'both'), 'notification', 'text');
             SystemSetting::set('line_oa_channel_access_token', $request->input('line_oa_channel_access_token', ''), 'notification', 'text');
@@ -200,6 +211,50 @@ class SettingController extends Controller
             SystemSetting::set('notify_user_on_data_status', $request->boolean('notify_user_on_data_status'), 'notification', 'boolean');
             SystemSetting::set('notify_user_on_borrow_status', $request->boolean('notify_user_on_borrow_status'), 'notification', 'boolean');
             SystemSetting::set('notify_user_on_transfer_status', $request->boolean('notify_user_on_transfer_status'), 'notification', 'boolean');
+
+            $customKeys = $request->boolean('moph_alert_custom_keys');
+            SystemSetting::set('moph_alert_custom_keys', $customKeys, 'notification', 'boolean');
+            if ($customKeys || $request->has('moph_alert_client_key')) {
+                SystemSetting::set('moph_alert_client_key', $request->input('moph_alert_client_key', ''), 'notification', 'text');
+                SystemSetting::set('moph_alert_secret_key', $request->input('moph_alert_secret_key', ''), 'notification', 'text');
+            }
+
+            return back()->with('success', 'บันทึกการตั้งค่าระบบแจ้งเตือน MOPH Alert (สำหรับผู้ใช้งานทั่วไป) เรียบร้อยแล้ว');
+
+        } elseif ($group === 'notification') {
+            // Defensive fallback for legacy requests: only save fields that were actually submitted!
+            if ($request->has('moph_notify_endpoint') || $request->has('moph_notify_client_key')) {
+                SystemSetting::set('moph_notify_enabled', $request->boolean('moph_notify_enabled'), 'notification', 'boolean');
+                SystemSetting::set('moph_notify_endpoint', $request->input('moph_notify_endpoint', 'https://morpromt2c.moph.go.th/api/notify/send'), 'notification', 'text');
+                SystemSetting::set('moph_notify_client_key', $request->input('moph_notify_client_key', ''), 'notification', 'text');
+                SystemSetting::set('moph_notify_secret_key', $request->input('moph_notify_secret_key', ''), 'notification', 'text');
+                SystemSetting::set('moph_notify_message_type', $request->input('moph_notify_message_type', 'flex'), 'notification', 'text');
+
+                SystemSetting::set('line_notify_token', $request->input('line_notify_token', ''), 'notification', 'text');
+                SystemSetting::set('line_notify_enabled', $request->boolean('line_notify_enabled'), 'notification', 'boolean');
+                SystemSetting::set('notify_on_new_ticket', $request->boolean('notify_on_new_ticket'), 'notification', 'boolean');
+                SystemSetting::set('notify_on_status_change', $request->boolean('notify_on_status_change'), 'notification', 'boolean');
+                SystemSetting::set('notify_on_borrow_request', $request->boolean('notify_on_borrow_request'), 'notification', 'boolean');
+                SystemSetting::set('notify_on_data_request', $request->boolean('notify_on_data_request'), 'notification', 'boolean');
+                SystemSetting::set('notify_on_transfer_request', $request->boolean('notify_on_transfer_request'), 'notification', 'boolean');
+                SystemSetting::set('notify_on_critical_only', $request->boolean('notify_on_critical_only'), 'notification', 'boolean');
+                SystemSetting::set('notify_email_admin', $request->input('notify_email_admin', ''), 'notification', 'text');
+            }
+
+            if ($request->has('line_oa_basic_id') || $request->has('line_oa_channel_access_token') || $request->has('user_notify_channel') || $request->has('user_notify_enabled')) {
+                SystemSetting::set('user_notify_enabled', $request->boolean('user_notify_enabled'), 'notification', 'boolean');
+                SystemSetting::set('user_notify_channel', $request->input('user_notify_channel', 'both'), 'notification', 'text');
+                SystemSetting::set('line_oa_channel_access_token', $request->input('line_oa_channel_access_token', ''), 'notification', 'text');
+                SystemSetting::set('line_oa_channel_secret', $request->input('line_oa_channel_secret', ''), 'notification', 'text');
+                SystemSetting::set('line_oa_basic_id', $request->input('line_oa_basic_id', ''), 'notification', 'text');
+                SystemSetting::set('user_notify_via_moph_cid', $request->boolean('user_notify_via_moph_cid'), 'notification', 'boolean');
+                SystemSetting::set('notify_user_on_repair_status', $request->boolean('notify_user_on_repair_status'), 'notification', 'boolean');
+                SystemSetting::set('notify_user_on_data_status', $request->boolean('notify_user_on_data_status'), 'notification', 'boolean');
+                SystemSetting::set('notify_user_on_borrow_status', $request->boolean('notify_user_on_borrow_status'), 'notification', 'boolean');
+                SystemSetting::set('notify_user_on_transfer_status', $request->boolean('notify_user_on_transfer_status'), 'notification', 'boolean');
+            }
+
+            return back()->with('success', 'บันทึกการตั้งค่าระบบแจ้งเตือนเรียบร้อยแล้ว');
         } elseif ($group === 'mail') {
             $mailData = [
                 'mail_mailer' => $request->input('mail_mailer', 'smtp'),
@@ -358,7 +413,7 @@ class SettingController extends Controller
     }
 
     /**
-     * Test notification sending to a user via LINE OA or MOPH Notify
+     * Test notification sending to a user via MOPH Alert (CID) or LINE OA
      */
     public function testUserNotify(Request $request)
     {
@@ -374,19 +429,25 @@ class SettingController extends Controller
             return response()->json(['success' => false, 'message' => 'ไม่พบข้อมูลผู้ใช้งานที่ระบุ'], 404);
         }
 
+        // Clone so we don't modify real DB record during testing
+        $testUser = clone $targetUser;
+
         if ($request->filled('target_id')) {
-            $targetType = $request->input('target_type', 'line_id');
-            $targetUser = clone $targetUser;
-            if ($targetType === 'cid') {
-                $targetUser->cid = $request->input('target_id');
+            $rawTarget = trim($request->input('target_id'));
+            $digitsOnly = preg_replace('/[^0-9]/', '', $rawTarget);
+            $targetType = $request->input('target_type', 'auto');
+
+            if ($targetType === 'cid' || ($targetType === 'auto' && strlen($digitsOnly) === 13)) {
+                $testUser->cid = $digitsOnly;
+                $testUser->line_user_id = null; // force CID test
             } else {
-                $targetUser->line_user_id = $request->input('target_id');
+                $testUser->line_user_id = $rawTarget;
             }
-            $targetUser->notify_line_enabled = true;
+            $testUser->notify_line_enabled = true;
         }
 
         $customToken = $request->input('channel_access_token');
-        $result = UserLineNotificationService::sendTestToUser($targetUser, $customToken);
+        $result = UserLineNotificationService::sendTestToUser($testUser, $customToken);
         return response()->json($result, $result['success'] ? 200 : 400);
     }
 }

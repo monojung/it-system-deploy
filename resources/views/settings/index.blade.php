@@ -551,16 +551,19 @@
     <!-- Tab 4: Notifications (LINE Notify & SMTP Email)                  -->
     <!-- ================================================================ -->
     <div id="tab-notification" class="tab-content-panel">
-        <!-- MOPH Notify Card -->
-        <div class="settings-card">
+        <!-- MOPH Notify Card (สำหรับแอดมินและช่าง IT) -->
+        <div class="settings-card" style="border-top: 3px solid #0d9488;">
             <div class="settings-card-header">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <div style="width: 38px; height: 38px; border-radius: 10px; background: #ccfbf1; color: #0d9488; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                         <i class="bi bi-bell-fill"></i>
                     </div>
                     <div>
-                        <strong style="font-size: 15.5px; color: #0f172a;">ระบบแจ้งเตือนผ่าน MOPH Notify (LINE OA หมอพร้อม)</strong>
-                        <div style="font-size: 12px; color: #64748b;">MOPH Notify & LINE Notify Service สำหรับส่งการแจ้งเตือนงานซ่อมบำรุงและกิจกรรมสำคัญเข้ากลุ่มช่าง รพ.ทุ่งหัวช้าง</div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <strong style="font-size: 15.5px; color: #0f172a;">ระบบแจ้งเตือน MOPH Notify (สำหรับผู้ดูแลระบบและทีมช่าง IT)</strong>
+                            <span style="background: #f0fdfa; color: #0d9488; border: 1px solid #99f6e4; font-size: 11px; padding: 1px 8px; border-radius: 12px; font-weight: 600;">Admin & Technicians</span>
+                        </div>
+                        <div style="font-size: 12px; color: #64748b;">MOPH Notify Service สำหรับส่งการแจ้งเตือนงานซ่อมบำรุง, SLA ด่วน และกิจกรรมสำคัญเข้ากลุ่มช่าง รพ.ทุ่งหัวช้าง</div>
                     </div>
                 </div>
                 @php
@@ -573,7 +576,7 @@
             <div class="settings-card-body">
                 <form action="{{ route('settings.update') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="setting_group" value="notification">
+                    <input type="hidden" name="setting_group" value="moph_notify">
 
                     <!-- MOPH Notify Hero Banner -->
                     <div style="background: linear-gradient(135deg, #0d9488 0%, #059669 100%); color: white; border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);">
@@ -753,7 +756,7 @@
 
                     <div style="display: flex; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
                         <button type="submit" class="btn btn-primary" style="padding: 11px 28px; font-weight: 700; background: #0d9488; border-color: #0d9488;">
-                            <i class="bi bi-floppy-fill"></i> บันทึกการตั้งค่าระบบแจ้งเตือน MOPH Notify
+                            <i class="bi bi-floppy-fill"></i> บันทึกการตั้งค่า MOPH Notify (Admin & ช่าง IT)
                         </button>
                     </div>
                 </form>
@@ -776,66 +779,143 @@
             </div>
         </div>
 
-        <!-- End-User Personal LINE OA Notification Settings Card -->
-        <div class="settings-card">
+        <!-- MOPH Alert Settings Card (สำหรับผู้ใช้งานทั่วไป) -->
+        <div class="settings-card" style="border-top: 3px solid #7c3aed;">
             <div class="settings-card-header">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                         <i class="bi bi-chat-dots-fill"></i>
                     </div>
                     <div>
-                        <strong style="font-size: 15.5px; color: #0f172a;">ระบบแจ้งเตือนผู้ใช้งานผ่าน LINE OA (End-User Personal Notification)</strong>
-                        <div style="font-size: 12px; color: #64748b;">ส่งการแจ้งเตือนความคืบหน้าตรงเข้า LINE ส่วนตัวของผู้ส่งซ่อม, ผู้ขอข้อมูล, ผู้ขอยืมคืน และผู้ย้ายจุดติดตั้ง</div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <strong style="font-size: 15.5px; color: #0f172a;">ระบบแจ้งเตือน MOPH Alert (สำหรับผู้ใช้งานทั่วไป - End-User Personal Notifications)</strong>
+                            <span style="background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; font-size: 11px; padding: 1px 8px; border-radius: 12px; font-weight: 600;">Direct to Citizen & Staff</span>
+                        </div>
+                        <div style="font-size: 12px; color: #64748b;">ส่งการแจ้งเตือนความคืบหน้าตรงเข้า LINE ส่วนตัวของผู้ส่งซ่อม, ผู้ขอข้อมูล, ผู้ขอยืมคืน และผู้ย้ายจุดติดตั้ง ผ่านหมอพร้อม (CID 13 หลัก) หรือ LINE OA</div>
                     </div>
                 </div>
                 <span class="status-pill {{ ($settings['user_notify_enabled'] ?? true) ? 'status-pill-success' : 'status-pill-secondary' }}">
-                    {{ ($settings['user_notify_enabled'] ?? true) ? '🟢 เปิดใช้งานแจ้งเตือนผู้ใช้' : '⚪ ปิดใช้งาน' }}
+                    {{ ($settings['user_notify_enabled'] ?? true) ? '🟢 เปิดใช้งาน MOPH Alert' : '⚪ ปิดใช้งาน MOPH Alert' }}
                 </span>
             </div>
             <div class="settings-card-body">
                 <form action="{{ route('settings.update') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="setting_group" value="notification">
+                    <input type="hidden" name="setting_group" value="moph_alert">
+
+                    <!-- MOPH Alert Hero Banner -->
+                    <div style="background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%); color: white; border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                            <div style="display: flex; align-items: center; gap: 14px;">
+                                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0;">
+                                    <i class="bi bi-person-check-fill"></i>
+                                </div>
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <strong style="font-size: 16px;">MOPH Alert & LINE OA Platform (สำหรับผู้ใช้งาน)</strong>
+                                        <span style="background: rgba(255,255,255,0.25); font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600;">แยกการบันทึกปลอดภัย 100%</span>
+                                    </div>
+                                    <div style="font-size: 12.5px; opacity: 0.92; margin-top: 3px;">
+                                        แจ้งเตือนสถานะงานบริการไอทีตรงถึงผู้ใช้งานรายบุคคลแบบเรียลไทม์ ผ่านหมอพร้อม LINE OA (ด้วยเลขบัตรประชาชน 13 หลัก) หรือ LINE Official Account โรงพยาบาล
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; padding: 8px 14px; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-link-45deg"></i>
+                                <span>สัมพันธ์กับ MOPH Notify: <strong>{{ $isMophReady ? 'แชร์การเชื่อมต่อพร้อมใช้งาน' : 'กรุณาระบุ Key ในการตั้งค่า' }}</strong></span>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Master Switch -->
-                    <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
+                    <div style="background: #faf5ff; border: 1.5px solid #e9d5ff; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
                         <div class="form-check form-switch" style="font-size: 15px;">
                             <input class="form-check-input" type="checkbox" name="user_notify_enabled" id="user_notify_enabled" value="1" {{ ($settings['user_notify_enabled'] ?? true) ? 'checked' : '' }} style="cursor: pointer;">
                             <label class="form-check-label" for="user_notify_enabled" style="font-weight: 700; color: #0f172a; cursor: pointer;">
-                                เปิดระบบส่งการแจ้งเตือนความคืบหน้าถึงผู้ใช้งานส่วนตัว (Direct User Notifications)
+                                เปิดระบบส่งการแจ้งเตือนความคืบหน้า MOPH Alert ถึงผู้ใช้งานส่วนตัว (Direct User Notifications)
                             </label>
                         </div>
-                        <div style="font-size: 12.5px; color: #64748b; margin-top: 4px; padding-left: 2.2rem;">
-                            เมื่อเปิดใช้งาน ผู้ใช้งานจะได้รับการแจ้งเตือนความคืบหน้าในงานของตนเองผ่าน LINE OA หรือหมอพร้อม (CID)
+                        <div style="font-size: 12.5px; color: #6b21a8; margin-top: 4px; padding-left: 2.2rem;">
+                            เมื่อเปิดใช้งาน ผู้ใช้งานจะได้รับการแจ้งเตือนความคืบหน้าในงานของตนเองผ่าน LINE OA หรือหมอพร้อม (CID) ทันทีที่สถานะมีการเปลี่ยนแปลง
+                        </div>
+                    </div>
+
+                    <!-- MOPH Alert Connection Mode (สัมพันธ์กับ MOPH Notify) -->
+                    <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px;">
+                        <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                            <span><i class="bi bi-hospital text-teal"></i> รูปแบบการเชื่อมต่อ MOPH Alert (หมอพร้อม กระทรวงสาธารณสุข)</span>
+                            <span class="badge" style="background: #ccfbf1; color: #0d9488; font-weight: 600;">CID 13 หลัก</span>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <label style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 16px; cursor: pointer; display: flex; align-items: flex-start; gap: 12px; background: #f8fafc;">
+                                <input type="checkbox" name="user_notify_via_moph_cid" value="1" {{ ($settings['user_notify_via_moph_cid'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; margin-top: 2px; accent-color: #7c3aed;">
+                                <div>
+                                    <div style="font-weight: 700; font-size: 13.5px; color: #0f172a;">เปิดรับการแจ้งเตือนผ่านหมอพร้อม LINE OA ด้วยเลขประจำตัวประชาชน (CID 13 หลัก)</div>
+                                    <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                                        ผู้ใช้งานที่ระบุเลขบัตรประชาชน 13 หลัก ในระบบ จะได้รับข้อความแจ้งเตือนจากหมอพร้อม LINE OA โดยอัตโนมัติ โดยไม่ต้องผูก LINE User ID
+                                    </div>
+                                    <div style="margin-top: 6px; font-size: 11.5px;">
+                                        @if($isMophReady)
+                                            <span style="color: #059669; font-weight: 600;"><i class="bi bi-check-circle-fill"></i> ระบบเชื่อมโยง API และ Key กับ MOPH Notify หลักเรียบร้อยแล้ว</span>
+                                        @else
+                                            <span style="color: #d97706; font-weight: 600;"><i class="bi bi-exclamation-triangle-fill"></i> แนะนำ: กรุณากำหนด Client Key และ Secret Key ในกล่อง MOPH Notify (Admin) ด้านบน</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Custom Key Option for MOPH Alert if hospital wants dedicated key -->
+                            <details style="border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px 14px; background: #fdfdfe;" {{ ($settings['moph_alert_custom_keys'] ?? false) ? 'open' : '' }}>
+                                <summary style="font-size: 12.5px; font-weight: 600; color: #64748b; cursor: pointer;">
+                                    <i class="bi bi-gear-fill"></i> ตัวเลือกเพิ่มเติม: แยก Client Key & Secret Key เฉพาะสำหรับ MOPH Alert (ไม่จำเป็น หากใช้ Key เดียวกันกับ MOPH Notify)
+                                </summary>
+                                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 12px;">
+                                        <input type="checkbox" name="moph_alert_custom_keys" id="moph_alert_custom_keys" value="1" {{ ($settings['moph_alert_custom_keys'] ?? false) ? 'checked' : '' }} onchange="toggleCustomMophKeys(this.checked)" style="width: 16px; height: 16px; accent-color: #7c3aed;">
+                                        <span style="font-size: 13px; font-weight: 600; color: #334155;">ใช้ Client Key / Secret Key แยกเฉพาะสำหรับ MOPH Alert</span>
+                                    </label>
+                                    <div id="custom_moph_keys_box" style="display: {{ ($settings['moph_alert_custom_keys'] ?? false) ? 'grid' : 'none' }}; grid-template-columns: 1fr 1fr; gap: 14px;">
+                                        <div class="form-group">
+                                            <label class="form-label" style="font-size: 12px;" for="moph_alert_client_key">MOPH Alert Client Key (เฉพาะผู้ใช้)</label>
+                                            <input type="password" id="moph_alert_client_key" name="moph_alert_client_key" class="form-control" value="{{ old('moph_alert_client_key', $settings['moph_alert_client_key'] ?? '') }}" placeholder="เว้นว่างหากต้องการแชร์ Key จาก MOPH Notify ด้านบน">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" style="font-size: 12px;" for="moph_alert_secret_key">MOPH Alert Secret Key (เฉพาะผู้ใช้)</label>
+                                            <input type="password" id="moph_alert_secret_key" name="moph_alert_secret_key" class="form-control" value="{{ old('moph_alert_secret_key', $settings['moph_alert_secret_key'] ?? '') }}" placeholder="เว้นว่างหากต้องการแชร์ Key จาก MOPH Notify ด้านบน">
+                                        </div>
+                                    </div>
+                                </div>
+                            </details>
                         </div>
                     </div>
 
                     <!-- Channel & LINE OA Credentials -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 20px;">
                         <div class="form-group">
-                            <label class="form-label" for="line_oa_basic_id">
-                                <i class="bi bi-line text-success"></i> LINE Official Account Basic ID / Link
-                            </label>
-                            <input type="text" id="line_oa_basic_id" name="line_oa_basic_id" class="form-control" value="{{ old('line_oa_basic_id', $settings['line_oa_basic_id'] ?? '') }}" placeholder="เช่น @thchospital หรือ https://line.me/R/ti/p/@xxx">
-                            <span class="form-text">ระบุ Basic ID หรือลิงก์ LINE OA เพื่อให้ผู้ใช้งานกดเพิ่มเพื่อนและรับการแจ้งเตือน</span>
-                        </div>
-
-                        <div class="form-group">
                             <label class="form-label" for="user_notify_channel">
-                                <i class="bi bi-signpost-split-fill text-indigo"></i> ช่องทางหลักในการส่งถึงผู้ใช้
+                                <i class="bi bi-signpost-split-fill text-indigo"></i> ลำดับช่องทางการส่งแจ้งเตือนผู้ใช้ (Smart Route)
                             </label>
                             <select name="user_notify_channel" id="user_notify_channel" class="form-select">
                                 <option value="both" {{ ($settings['user_notify_channel'] ?? 'both') === 'both' ? 'selected' : '' }}>
-                                    ✨ อัตโนมัติ (Smart Route: ส่ง LINE OA หรือ หมอพร้อม ตามที่ผู้ใช้ผูกไว้)
-                                </option>
-                                <option value="line_oa" {{ ($settings['user_notify_channel'] ?? '') === 'line_oa' ? 'selected' : '' }}>
-                                    📱 LINE Official Account (LINE Messaging API Push Message)
+                                    ✨ อัตโนมัติ (Smart Route: ส่ง LINE OA หรือ MOPH Alert หมอพร้อม ตามข้อมูลที่ผู้ใช้มี)
                                 </option>
                                 <option value="moph_cid" {{ ($settings['user_notify_channel'] ?? '') === 'moph_cid' ? 'selected' : '' }}>
-                                    🏥 หมอพร้อม LINE OA (ผ่าน MOPH Notify เลขบัตร ปชช. 13 หลัก / CID)
+                                    🏥 MOPH Alert หมอพร้อม LINE OA (ส่งผ่านเลขบัตร ปชช. 13 หลัก เป็นหลัก)
+                                </option>
+                                <option value="line_oa" {{ ($settings['user_notify_channel'] ?? '') === 'line_oa' ? 'selected' : '' }}>
+                                    📱 LINE Official Account โรงพยาบาล (ผ่าน LINE Messaging API Push)
                                 </option>
                             </select>
-                            <span class="form-text">แนะนำแบบ 'อัตโนมัติ' เพื่อรองรับทั้งผู้ใช้งานที่ผูก LINE ID และเลขบัตร ปชช.</span>
+                            <span class="form-text">แนะนำแบบ 'อัตโนมัติ' เพื่อให้ระบบค้นหาช่องทางที่เหมาะสมที่สุดของผู้ใช้แต่ละท่านโดยอัตโนมัติ</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="line_oa_basic_id">
+                                <i class="bi bi-line text-success"></i> LINE Official Account Basic ID / ลิงก์เพิ่มเพื่อน
+                            </label>
+                            <input type="text" id="line_oa_basic_id" name="line_oa_basic_id" class="form-control" value="{{ old('line_oa_basic_id', $settings['line_oa_basic_id'] ?? '') }}" placeholder="เช่น @thchospital หรือ https://line.me/R/ti/p/@xxx">
+                            <span class="form-text">Basic ID หรือลิงก์สำหรับให้ผู้ใช้งานกดเพิ่มเพื่อน LINE OA ของโรงพยาบาล</span>
                         </div>
 
                         <div class="form-group" style="grid-column: span 2;">
@@ -844,24 +924,24 @@
                             </label>
                             <div style="position: relative;">
                                 <input type="password" id="line_oa_channel_access_token" name="line_oa_channel_access_token" class="form-control" value="{{ old('line_oa_channel_access_token', $settings['line_oa_channel_access_token'] ?? '') }}" placeholder="ระบุ Channel Access Token จาก LINE Developers Console" style="padding-right: 44px; font-family: monospace;">
-                                <button type="button" onclick="togglePasswordVisibility('line_oa_channel_access_token', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer;">
+                                <button type="button" onclick="togglePasswordVisibility('line_oa_channel_access_token', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer;" title="แสดง/ซ่อน Token">
                                     <i class="bi bi-eye"></i>
                                 </button>
                             </div>
-                            <span class="form-text">Token สำหรับส่ง Push Message ตรงถึง LINE User ID ของผู้ใช้งาน (ไม่บังคับหากใช้เฉพาะ MOPH หมอพร้อม)</span>
+                            <span class="form-text">Channel Access Token สำหรับส่ง Push Message ตรงถึง LINE ID ของผู้ใช้งาน (ไม่บังคับหากส่งผ่าน MOPH Alert หมอพร้อม CID)</span>
                         </div>
                     </div>
 
                     <!-- Individual Modules Toggles -->
                     <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-bottom: 12px;">
-                        <i class="bi bi-check2-square text-primary"></i> เลือกขั้นตอนที่ต้องการแจ้งเตือนผู้ใช้งาน:
+                        <i class="bi bi-check2-square text-primary"></i> เลือกโมดูลที่ต้องการส่งแจ้งเตือน MOPH Alert ไปยังผู้ใช้งาน:
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
                         <label style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; background: #ffffff;">
                             <input type="checkbox" name="notify_user_on_repair_status" value="1" {{ ($settings['notify_user_on_repair_status'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: #7c3aed;">
                             <div>
                                 <div style="font-weight: 700; font-size: 13px; color: #0f172a;">งานแจ้งซ่อมบำรุง (Repairs)</div>
-                                <div style="font-size: 11.5px; color: #64748b;">เตือนเมื่อรับเรื่อง, กำลังซ่อม, ซ่อมเสร็จพร้อมให้รับเครื่อง และปุ่มประเมิน</div>
+                                <div style="font-size: 11.5px; color: #64748b;">เตือนผู้แจ้งเมื่อรับเรื่อง, กำลังซ่อม, ซ่อมเสร็จพร้อมให้รับเครื่อง และปุ่มประเมิน</div>
                             </div>
                         </label>
 
@@ -869,7 +949,7 @@
                             <input type="checkbox" name="notify_user_on_data_status" value="1" {{ ($settings['notify_user_on_data_status'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: #7c3aed;">
                             <div>
                                 <div style="font-weight: 700; font-size: 13px; color: #0f172a;">คำขอข้อมูลและสถิติ (Data Requests)</div>
-                                <div style="font-size: 11.5px; color: #64748b;">เตือนเมื่ออนุมัติ และเมื่อสกัดไฟล์เสร็จสิ้นพร้อมปุ่มกดดาวน์โหลด</div>
+                                <div style="font-size: 11.5px; color: #64748b;">เตือนผู้ขอเมื่ออนุมัติ และเมื่อสกัดไฟล์ HosXP เสร็จสิ้นพร้อมปุ่มดาวน์โหลด</div>
                             </div>
                         </label>
 
@@ -877,7 +957,7 @@
                             <input type="checkbox" name="notify_user_on_borrow_status" value="1" {{ ($settings['notify_user_on_borrow_status'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: #7c3aed;">
                             <div>
                                 <div style="font-weight: 700; font-size: 13px; color: #0f172a;">ขอยืม-คืนอุปกรณ์ไอที (Asset Borrows)</div>
-                                <div style="font-size: 11.5px; color: #64748b;">เตือนเมื่ออนุมัติให้ไปรับของ, เตือนกำหนดส่งคืน, ยืนยันการรับคืน</div>
+                                <div style="font-size: 11.5px; color: #64748b;">เตือนผู้ยืมเมื่ออนุมัติให้ไปรับของ, เตือนกำหนดส่งคืน, ยืนยันการรับคืน</div>
                             </div>
                         </label>
 
@@ -885,32 +965,44 @@
                             <input type="checkbox" name="notify_user_on_transfer_status" value="1" {{ ($settings['notify_user_on_transfer_status'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: #7c3aed;">
                             <div>
                                 <div style="font-weight: 700; font-size: 13px; color: #0f172a;">ย้ายจุดติดตั้งครุภัณฑ์ (Asset Transfers)</div>
-                                <div style="font-size: 11.5px; color: #64748b;">เตือนเมื่อช่างเข้าดำเนินการ และเมื่อติดตั้งทดสอบระบบเสร็จสิ้น</div>
+                                <div style="font-size: 11.5px; color: #64748b;">เตือนผู้ยื่นเรื่องเมื่อช่างเข้าดำเนินการ และเมื่อติดตั้งทดสอบระบบเสร็จสิ้น</div>
                             </div>
                         </label>
                     </div>
 
                     <div style="display: flex; justify-content: flex-end; padding-top: 14px; border-top: 1px solid var(--border);">
                         <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700; background: #7c3aed; border-color: #7c3aed;">
-                            <i class="bi bi-floppy-fill"></i> บันทึกการตั้งค่าแจ้งเตือนผู้ใช้งาน
+                            <i class="bi bi-floppy-fill"></i> บันทึกการตั้งค่า MOPH Alert (ผู้ใช้งานทั่วไป)
                         </button>
                     </div>
                 </form>
 
-                <!-- 1-Click Interactive Test User Notify Box -->
-                <div class="test-action-box" style="margin-top: 20px; border-left: 4px solid #7c3aed; background: #faf5ff;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #ede9fe; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
-                            <i class="bi bi-chat-heart-fill"></i>
-                        </div>
-                        <div>
-                            <strong style="font-size: 14px; color: #0f172a;">ทดสอบส่งข้อความแจ้งเตือนผู้ใช้งานส่วนตัว</strong>
-                            <div style="font-size: 12px; color: #64748b;">ทดสอบส่งข้อความต้อนรับและสรุปสถานะเข้า LINE OA ของบัญชีแอดมินที่กำลังเข้าสู่ระบบขณะนี้</div>
+                <!-- 1-Click Interactive Test MOPH Alert Box -->
+                <div class="test-action-box" style="margin-top: 20px; border-left: 4px solid #7c3aed; background: #faf5ff; padding: 16px 20px; border-radius: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: #ede9fe; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                                <i class="bi bi-chat-heart-fill"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 14px; color: #0f172a;">ทดสอบส่งข้อความแจ้งเตือน MOPH Alert ถึงผู้ใช้งาน</strong>
+                                <div style="font-size: 12px; color: #64748b;">ส่ง Flex Message จำลองการแจ้งเตือนความคืบหน้าเข้า LINE OA หรือ หมอพร้อม (CID)</div>
+                            </div>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-sm" onclick="runTestUserNotify()" id="btn_test_user_notify" style="background: #7c3aed; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 8px;">
-                        <i class="bi bi-send-check-fill"></i> ทดสอบส่งแจ้งเตือนถึงผู้ใช้
-                    </button>
+
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;">
+                        <div style="position: relative;">
+                            <input type="text" id="test_user_target_id" class="form-control" placeholder="พิมพ์เลขบัตร ปชช. (CID 13 หลัก) หรือ LINE User ID (เว้นว่างไว้เพื่อส่งเข้าบัญชีของคุณที่ล็อกอินอยู่)" style="font-size: 13px; padding-left: 36px;">
+                            <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
+                        </div>
+                        <button type="button" class="btn btn-sm" onclick="runTestUserNotify()" id="btn_test_user_notify" style="background: #7c3aed; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <i class="bi bi-send-check-fill"></i> ทดสอบส่ง MOPH Alert
+                        </button>
+                    </div>
+                    <div style="font-size: 11.5px; color: #64748b; margin-top: 6px;">
+                        💡 บัญชีปัจจุบัน: <strong>{{ auth()->user()->name }}</strong> (CID: {{ auth()->user()->cid ?: 'ยังไม่ระบุ' }} | LINE ID: {{ auth()->user()->line_user_id ?: 'ยังไม่ผูก' }})
+                    </div>
                 </div>
             </div>
         </div>
@@ -1762,9 +1854,18 @@
         });
     }
 
-    // Test End-User Personal Notification via AJAX
+    function toggleCustomMophKeys(checked) {
+        const box = document.getElementById('custom_moph_keys_box');
+        if (box) {
+            box.style.display = checked ? 'grid' : 'none';
+        }
+    }
+
+    // Test End-User Personal Notification (MOPH Alert) via AJAX
     function runTestUserNotify() {
         const btn = document.getElementById('btn_test_user_notify');
+        const targetInput = document.getElementById('test_user_target_id');
+        const targetId = targetInput ? targetInput.value.trim() : '';
         const originalHtml = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> กำลังทดสอบส่ง...';
@@ -1775,7 +1876,9 @@
                 "Content-Type": "application/json",
                 "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
-            body: JSON.stringify({})
+            body: JSON.stringify({
+                target_id: targetId
+            })
         })
         .then(response => response.json().then(data => ({ status: response.status, body: data })))
         .then(res => {
@@ -1784,15 +1887,15 @@
             if (res.body.success) {
                 Swal.fire({
                     icon: 'success',
-                    title: 'ส่งแจ้งเตือนถึงผู้ใช้สำเร็จ!',
+                    title: 'ส่งแจ้งเตือน MOPH Alert สำเร็จ!',
                     text: res.body.message,
                     confirmButtonColor: '#7c3aed',
                 });
             } else {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'ผลการทดสอบการแจ้งเตือน',
-                    text: res.body.message || 'ไม่สามารถส่งข้อความได้ โปรดตรวจสอบการตั้งค่า LINE User ID หรือ CID',
+                    title: 'ผลการทดสอบ MOPH Alert',
+                    text: res.body.message || 'ไม่สามารถส่งข้อความได้ โปรดตรวจสอบการตั้งค่า LINE User ID หรือเลขบัตร ปชช. (CID 13 หลัก)',
                     confirmButtonColor: '#f59e0b',
                 });
             }

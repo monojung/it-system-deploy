@@ -89,13 +89,15 @@ class UserLineNotificationService
     }
 
     /**
-     * Send direct message to user's MorPromt LINE OA via MOPH Notify using Citizen ID (CID)
+     * Send direct message to user's MorPromt LINE OA via MOPH Alert / MOPH Notify using Citizen ID (CID)
      *
      * @param string $cid 13-digit citizen ID
      * @param array $messages
+     * @param string|null $clientKey
+     * @param string|null $secretKey
      * @return array
      */
-    public static function sendMophCidPush(string $cid, array $messages): array
+    public static function sendMophCidPush(string $cid, array $messages, ?string $clientKey = null, ?string $secretKey = null): array
     {
         $cid = preg_replace('/[^0-9]/', '', $cid);
         if (strlen($cid) !== 13) {
@@ -107,11 +109,17 @@ class UserLineNotificationService
             'messages' => $messages,
         ];
 
-        return MophNotifyService::sendMophMessage($payload);
+        // Determine MOPH credentials: use custom MOPH Alert keys if configured, otherwise share main MOPH Notify keys
+        $useCustom = (bool) setting('moph_alert_custom_keys', false);
+        $endpoint = setting('moph_notify_endpoint', MophNotifyService::DEFAULT_PROD_ENDPOINT);
+        $cKey = $clientKey ?: ($useCustom && setting('moph_alert_client_key') ? setting('moph_alert_client_key') : setting('moph_notify_client_key'));
+        $sKey = $secretKey ?: ($useCustom && setting('moph_alert_secret_key') ? setting('moph_alert_secret_key') : setting('moph_notify_secret_key'));
+
+        return MophNotifyService::sendMophMessage($payload, $endpoint, $cKey, $sKey);
     }
 
     /**
-     * Dispatch notification to user using available channels (LINE OA User ID, or MOPH CID)
+     * Dispatch notification to user using available channels (LINE OA User ID, or MOPH Alert CID)
      *
      * @param User|null $user
      * @param array $flexMessage
@@ -138,10 +146,11 @@ class UserLineNotificationService
             ? [$flexMessage] 
             : [['type' => 'text', 'text' => $plainText]];
 
+        $channelPreference = setting('user_notify_channel', 'both');
         $sent = false;
 
-        // Channel 1: LINE OA Push via line_user_id
-        if (!empty($user->line_user_id)) {
+        // Channel 1: LINE OA Push via line_user_id (if enabled in channel preference)
+        if ($channelPreference !== 'moph_cid' && !empty($user->line_user_id)) {
             $oaToken = setting('line_oa_channel_access_token', '');
             if (!empty($oaToken)) {
                 $res = self::sendLineOaPush($user->line_user_id, $messages, $oaToken);
@@ -151,10 +160,13 @@ class UserLineNotificationService
             }
         }
 
-        // Channel 2: MOPH Notify via CID (หมอพร้อม LINE OA)
-        if (!$sent && !empty($user->cid)) {
+        // Channel 2: MOPH Alert via CID (หมอพร้อม LINE OA)
+        if (!$sent && $channelPreference !== 'line_oa' && !empty($user->cid)) {
             $mophUserEnabled = (bool) setting('user_notify_via_moph_cid', true);
-            if ($mophUserEnabled && (bool) setting('moph_notify_enabled', true)) {
+            $hasMophAlertCustomKeys = (bool) setting('moph_alert_custom_keys', false) && !empty(setting('moph_alert_client_key'));
+            $mainMophEnabled = (bool) setting('moph_notify_enabled', true) && !empty(setting('moph_notify_client_key'));
+
+            if ($mophUserEnabled && ($hasMophAlertCustomKeys || $mainMophEnabled)) {
                 $res = self::sendMophCidPush($user->cid, $messages);
                 if ($res['success']) {
                     $sent = true;
@@ -904,28 +916,30 @@ class UserLineNotificationService
 
         $text = "✅ ทดสอบการเชื่อมต่อ LINE OA สำเร็จ!\nยินดีต้อนรับคุณ {$user->name}\nระบบพร้อมส่งการแจ้งเตือนงานซ่อม ข้อมูล และยืมคืนให้ท่านแล้ว";
 
-        if (!empty($user->line_user_id)) {
+        $channelPreference = setting('user_notify_channel', 'both');
+
+        if ($channelPreference !== 'moph_cid' && !empty($user->line_user_id)) {
             $token = $customToken ?: setting('line_oa_channel_access_token', '');
             if (!empty($token)) {
                 $res = self::sendLineOaPush($user->line_user_id, [$flex], $token);
                 if ($res['success']) {
-                    return ['success' => true, 'message' => "ส่งข้อความทดสอบไปยัง LINE OA ของคุณ {$user->name} สำเร็จเรียบร้อยแล้ว", 'channel' => 'line_oa'];
+                    return ['success' => true, 'message' => "ส่งข้อความแจ้งเตือน MOPH Alert ทดสอบไปยัง LINE OA ของคุณ {$user->name} สำเร็จเรียบร้อยแล้ว", 'channel' => 'line_oa'];
                 }
                 return $res;
             }
         }
 
-        if (!empty($user->cid)) {
+        if ($channelPreference !== 'line_oa' && !empty($user->cid)) {
             $res = self::sendMophCidPush($user->cid, [$flex]);
             if ($res['success']) {
-                return ['success' => true, 'message' => "ส่งข้อความทดสอบไปยัง LINE หมอพร้อมของคุณ {$user->name} สำเร็จเรียบร้อยแล้ว", 'channel' => 'moph_cid'];
+                return ['success' => true, 'message' => "ส่งข้อความแจ้งเตือน MOPH Alert ทดสอบไปยัง LINE หมอพร้อมของคุณ {$user->name} สำเร็จเรียบร้อยแล้ว (CID: {$user->cid})", 'channel' => 'moph_cid'];
             }
             return $res;
         }
 
         return [
             'success' => false,
-            'message' => "ไม่สามารถส่งข้อความได้ กรุณาตรวจสอบว่าคุณ {$user->name} ได้ระบุ LINE User ID หรือเลขบัตร ปชช. (CID) และเปิดรับการแจ้งเตือนแล้วหรือไม่",
+            'message' => "ไม่สามารถส่งข้อความได้ กรุณาตรวจสอบว่าคุณ {$user->name} ได้ระบุ LINE User ID หรือเลขบัตร ปชช. (CID 13 หลัก) และเปิดรับการแจ้งเตือนแล้วหรือไม่",
         ];
     }
 }
