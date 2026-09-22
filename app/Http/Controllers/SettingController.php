@@ -62,6 +62,9 @@ class SettingController extends Controller
             // User Personal Notifications (MOPH Alert & LINE OA)
             'user_notify_enabled' => setting('user_notify_enabled', true),
             'user_notify_channel' => setting('user_notify_channel', 'both'),
+            'moph_alert_endpoint' => setting('moph_alert_endpoint', 'https://morpromt2c.moph.go.th/api/notify/send'),
+            'moph_alert_client_key' => setting('moph_alert_client_key', ''),
+            'moph_alert_secret_key' => setting('moph_alert_secret_key', ''),
             'line_oa_channel_access_token' => setting('line_oa_channel_access_token', ''),
             'line_oa_channel_secret' => setting('line_oa_channel_secret', ''),
             'line_oa_basic_id' => setting('line_oa_basic_id', ''),
@@ -70,9 +73,6 @@ class SettingController extends Controller
             'notify_user_on_data_status' => setting('notify_user_on_data_status', true),
             'notify_user_on_borrow_status' => setting('notify_user_on_borrow_status', true),
             'notify_user_on_transfer_status' => setting('notify_user_on_transfer_status', true),
-            'moph_alert_custom_keys' => setting('moph_alert_custom_keys', false),
-            'moph_alert_client_key' => setting('moph_alert_client_key', ''),
-            'moph_alert_secret_key' => setting('moph_alert_secret_key', ''),
 
             // SMTP & Email
             'mail_mailer' => setting('mail_mailer', config('mail.default', 'smtp')),
@@ -214,6 +214,9 @@ class SettingController extends Controller
 
             $customKeys = $request->boolean('moph_alert_custom_keys');
             SystemSetting::set('moph_alert_custom_keys', $customKeys, 'notification', 'boolean');
+            if ($request->has('moph_alert_endpoint')) {
+                SystemSetting::set('moph_alert_endpoint', $request->input('moph_alert_endpoint', 'https://morpromt2c.moph.go.th/api/notify/send'), 'notification', 'text');
+            }
             if ($customKeys || $request->has('moph_alert_client_key')) {
                 SystemSetting::set('moph_alert_client_key', $request->input('moph_alert_client_key', ''), 'notification', 'text');
                 SystemSetting::set('moph_alert_secret_key', $request->input('moph_alert_secret_key', ''), 'notification', 'text');
@@ -252,6 +255,13 @@ class SettingController extends Controller
                 SystemSetting::set('notify_user_on_data_status', $request->boolean('notify_user_on_data_status'), 'notification', 'boolean');
                 SystemSetting::set('notify_user_on_borrow_status', $request->boolean('notify_user_on_borrow_status'), 'notification', 'boolean');
                 SystemSetting::set('notify_user_on_transfer_status', $request->boolean('notify_user_on_transfer_status'), 'notification', 'boolean');
+            }
+
+            if ($request->has('moph_alert_endpoint') || $request->has('moph_alert_client_key')) {
+                SystemSetting::set('moph_alert_custom_keys', $request->boolean('moph_alert_custom_keys'), 'notification', 'boolean');
+                SystemSetting::set('moph_alert_endpoint', $request->input('moph_alert_endpoint', 'https://morpromt2c.moph.go.th/api/notify/send'), 'notification', 'text');
+                SystemSetting::set('moph_alert_client_key', $request->input('moph_alert_client_key', ''), 'notification', 'text');
+                SystemSetting::set('moph_alert_secret_key', $request->input('moph_alert_secret_key', ''), 'notification', 'text');
             }
 
             return back()->with('success', 'บันทึกการตั้งค่าระบบแจ้งเตือนเรียบร้อยแล้ว');
@@ -447,7 +457,16 @@ class SettingController extends Controller
         }
 
         $customToken = $request->input('channel_access_token');
-        $result = UserLineNotificationService::sendTestToUser($testUser, $customToken);
+        $customClientKey = $request->input('moph_alert_client_key');
+        $customSecretKey = $request->input('moph_alert_secret_key');
+        $customEndpoint = $request->input('moph_alert_endpoint');
+        $result = UserLineNotificationService::sendTestToUser(
+            $testUser,
+            $customToken,
+            $customClientKey,
+            $customSecretKey,
+            $customEndpoint
+        );
         return response()->json($result, $result['success'] ? 200 : 400);
     }
 }

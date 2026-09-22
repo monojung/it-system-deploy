@@ -97,7 +97,7 @@ class UserLineNotificationService
      * @param string|null $secretKey
      * @return array
      */
-    public static function sendMophCidPush(string $cid, array $messages, ?string $clientKey = null, ?string $secretKey = null): array
+    public static function sendMophCidPush(string $cid, array $messages, ?string $clientKey = null, ?string $secretKey = null, ?string $endpoint = null): array
     {
         $cid = preg_replace('/[^0-9]/', '', $cid);
         if (strlen($cid) !== 13) {
@@ -109,13 +109,17 @@ class UserLineNotificationService
             'messages' => $messages,
         ];
 
-        // Determine MOPH credentials: use custom MOPH Alert keys if configured, otherwise share main MOPH Notify keys
-        $useCustom = (bool) setting('moph_alert_custom_keys', false);
-        $endpoint = setting('moph_notify_endpoint', MophNotifyService::DEFAULT_PROD_ENDPOINT);
-        $cKey = $clientKey ?: ($useCustom && setting('moph_alert_client_key') ? setting('moph_alert_client_key') : setting('moph_notify_client_key'));
-        $sKey = $secretKey ?: ($useCustom && setting('moph_alert_secret_key') ? setting('moph_alert_secret_key') : setting('moph_notify_secret_key'));
+        // Determine MOPH credentials: use dedicated MOPH Alert endpoint/keys if configured, otherwise fallback to main MOPH Notify
+        $alertEndpoint = trim(setting('moph_alert_endpoint', ''));
+        $resolvedEndpoint = $endpoint ?: (!empty($alertEndpoint) ? $alertEndpoint : setting('moph_notify_endpoint', MophNotifyService::DEFAULT_PROD_ENDPOINT));
 
-        return MophNotifyService::sendMophMessage($payload, $endpoint, $cKey, $sKey);
+        $alertClientKey = trim(setting('moph_alert_client_key', ''));
+        $alertSecretKey = trim(setting('moph_alert_secret_key', ''));
+
+        $cKey = $clientKey ?: (!empty($alertClientKey) ? $alertClientKey : setting('moph_notify_client_key'));
+        $sKey = $secretKey ?: (!empty($alertSecretKey) ? $alertSecretKey : setting('moph_notify_secret_key'));
+
+        return MophNotifyService::sendMophMessage($payload, $resolvedEndpoint, $cKey, $sKey);
     }
 
     /**
@@ -163,10 +167,10 @@ class UserLineNotificationService
         // Channel 2: MOPH Alert via CID (หมอพร้อม LINE OA)
         if (!$sent && $channelPreference !== 'line_oa' && !empty($user->cid)) {
             $mophUserEnabled = (bool) setting('user_notify_via_moph_cid', true);
-            $hasMophAlertCustomKeys = (bool) setting('moph_alert_custom_keys', false) && !empty(setting('moph_alert_client_key'));
+            $hasMophAlertKeys = !empty(setting('moph_alert_client_key')) && !empty(setting('moph_alert_secret_key'));
             $mainMophEnabled = (bool) setting('moph_notify_enabled', true) && !empty(setting('moph_notify_client_key'));
 
-            if ($mophUserEnabled && ($hasMophAlertCustomKeys || $mainMophEnabled)) {
+            if ($mophUserEnabled && ($hasMophAlertKeys || $mainMophEnabled)) {
                 $res = self::sendMophCidPush($user->cid, $messages);
                 if ($res['success']) {
                     $sent = true;
@@ -881,8 +885,13 @@ class UserLineNotificationService
     /**
      * Send test notification to a specific user
      */
-    public static function sendTestToUser(User $user, ?string $customToken = null): array
-    {
+    public static function sendTestToUser(
+        User $user,
+        ?string $customToken = null,
+        ?string $customClientKey = null,
+        ?string $customSecretKey = null,
+        ?string $customEndpoint = null
+    ): array {
         $hospitalName = setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง');
         $now = now()->addYears(543)->format('d/m/Y H:i:s');
 
@@ -930,7 +939,7 @@ class UserLineNotificationService
         }
 
         if ($channelPreference !== 'line_oa' && !empty($user->cid)) {
-            $res = self::sendMophCidPush($user->cid, [$flex]);
+            $res = self::sendMophCidPush($user->cid, [$flex], $customClientKey, $customSecretKey, $customEndpoint);
             if ($res['success']) {
                 return ['success' => true, 'message' => "ส่งข้อความแจ้งเตือน MOPH Alert ทดสอบไปยัง LINE หมอพร้อมของคุณ {$user->name} สำเร็จเรียบร้อยแล้ว (CID: {$user->cid})", 'channel' => 'moph_cid'];
             }

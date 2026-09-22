@@ -820,9 +820,13 @@
                                     </div>
                                 </div>
                             </div>
-                            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; padding: 8px 14px; font-size: 12px; display: flex; align-items: center; gap: 8px;">
-                                <i class="bi bi-link-45deg"></i>
-                                <span>สัมพันธ์กับ MOPH Notify: <strong>{{ $isMophReady ? 'แชร์การเชื่อมต่อพร้อมใช้งาน' : 'กรุณาระบุ Key ในการตั้งค่า' }}</strong></span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <button type="button" onclick="setMophAlertEndpoint('https://morpromt2c.moph.go.th/api/notify/send')" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); border-radius: 8px; padding: 6px 12px; font-size: 11.5px;">
+                                    <i class="bi bi-shield-check"></i> Production
+                                </button>
+                                <button type="button" onclick="setMophAlertEndpoint('https://morpromt2f.moph.go.th/api/notify/send')" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); border-radius: 8px; padding: 6px 12px; font-size: 11.5px;">
+                                    <i class="bi bi-flask"></i> UAT / Test
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -840,54 +844,81 @@
                         </div>
                     </div>
 
-                    <!-- MOPH Alert Connection Mode (สัมพันธ์กับ MOPH Notify) -->
-                    <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px;">
-                        <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                            <span><i class="bi bi-hospital text-teal"></i> รูปแบบการเชื่อมต่อ MOPH Alert (หมอพร้อม กระทรวงสาธารณสุข)</span>
-                            <span class="badge" style="background: #ccfbf1; color: #0d9488; font-weight: 600;">CID 13 หลัก</span>
+                    <!-- MOPH Alert API & Key Configuration (แยกเฉพาะสำหรับ MOPH Alert) -->
+                    <div style="background: #ffffff; border: 1.5px solid #ede9fe; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(124, 58, 237, 0.05);">
+                        <div style="font-size: 14.5px; font-weight: 700; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-hospital text-purple" style="color: #7c3aed; font-size: 16px;"></i>
+                                การตั้งค่า MOPH Alert API Endpoint & กุญแจเชื่อมต่อ (หมอพร้อม กระทรวงสาธารณสุข)
+                            </span>
+                            @if(!empty($settings['moph_alert_client_key']))
+                                <span class="badge" style="background: #ede9fe; color: #6d28d9; font-weight: 600; font-size: 11.5px; padding: 5px 10px;">
+                                    <i class="bi bi-shield-check text-success"></i> ใช้งาน Key & Endpoint แยกเฉพาะ
+                                </span>
+                            @else
+                                <span class="badge" style="background: #f1f5f9; color: #475569; font-weight: 600; font-size: 11.5px; padding: 5px 10px;">
+                                    <i class="bi bi-arrow-repeat"></i> Key ร่วมกับ MOPH Notify (แชร์อัตโนมัติหากเว้นว่าง)
+                                </span>
+                            @endif
                         </div>
-                        
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <label style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 16px; cursor: pointer; display: flex; align-items: flex-start; gap: 12px; background: #f8fafc;">
-                                <input type="checkbox" name="user_notify_via_moph_cid" value="1" {{ ($settings['user_notify_via_moph_cid'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; margin-top: 2px; accent-color: #7c3aed;">
-                                <div>
-                                    <div style="font-weight: 700; font-size: 13.5px; color: #0f172a;">เปิดรับการแจ้งเตือนผ่านหมอพร้อม LINE OA ด้วยเลขประจำตัวประชาชน (CID 13 หลัก)</div>
-                                    <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-                                        ผู้ใช้งานที่ระบุเลขบัตรประชาชน 13 หลัก ในระบบ จะได้รับข้อความแจ้งเตือนจากหมอพร้อม LINE OA โดยอัตโนมัติ โดยไม่ต้องผูก LINE User ID
-                                    </div>
-                                    <div style="margin-top: 6px; font-size: 11.5px;">
-                                        @if($isMophReady)
-                                            <span style="color: #059669; font-weight: 600;"><i class="bi bi-check-circle-fill"></i> ระบบเชื่อมโยง API และ Key กับ MOPH Notify หลักเรียบร้อยแล้ว</span>
-                                        @else
-                                            <span style="color: #d97706; font-weight: 600;"><i class="bi bi-exclamation-triangle-fill"></i> แนะนำ: กรุณากำหนด Client Key และ Secret Key ในกล่อง MOPH Notify (Admin) ด้านบน</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </label>
+                        <div style="font-size: 12px; color: #64748b; margin-bottom: 16px; line-height: 1.5;">
+                            MOPH Alert ใช้สำหรับส่งข้อความตรงถึงประชาชนและผู้ใช้งานทั่วไป จึงรองรับการกำหนด <strong>API Endpoint URL, Client Key & Secret Key</strong> แยกอิสระจาก MOPH Notify ของ Admin
+                        </div>
 
-                            <!-- Custom Key Option for MOPH Alert if hospital wants dedicated key -->
-                            <details style="border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px 14px; background: #fdfdfe;" {{ ($settings['moph_alert_custom_keys'] ?? false) ? 'open' : '' }}>
-                                <summary style="font-size: 12.5px; font-weight: 600; color: #64748b; cursor: pointer;">
-                                    <i class="bi bi-gear-fill"></i> ตัวเลือกเพิ่มเติม: แยก Client Key & Secret Key เฉพาะสำหรับ MOPH Alert (ไม่จำเป็น หากใช้ Key เดียวกันกับ MOPH Notify)
-                                </summary>
-                                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
-                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 12px;">
-                                        <input type="checkbox" name="moph_alert_custom_keys" id="moph_alert_custom_keys" value="1" {{ ($settings['moph_alert_custom_keys'] ?? false) ? 'checked' : '' }} onchange="toggleCustomMophKeys(this.checked)" style="width: 16px; height: 16px; accent-color: #7c3aed;">
-                                        <span style="font-size: 13px; font-weight: 600; color: #334155;">ใช้ Client Key / Secret Key แยกเฉพาะสำหรับ MOPH Alert</span>
-                                    </label>
-                                    <div id="custom_moph_keys_box" style="display: {{ ($settings['moph_alert_custom_keys'] ?? false) ? 'grid' : 'none' }}; grid-template-columns: 1fr 1fr; gap: 14px;">
-                                        <div class="form-group">
-                                            <label class="form-label" style="font-size: 12px;" for="moph_alert_client_key">MOPH Alert Client Key (เฉพาะผู้ใช้)</label>
-                                            <input type="password" id="moph_alert_client_key" name="moph_alert_client_key" class="form-control" value="{{ old('moph_alert_client_key', $settings['moph_alert_client_key'] ?? '') }}" placeholder="เว้นว่างหากต้องการแชร์ Key จาก MOPH Notify ด้านบน">
-                                        </div>
-                                        <div class="form-group">
-                                            <label class="form-label" style="font-size: 12px;" for="moph_alert_secret_key">MOPH Alert Secret Key (เฉพาะผู้ใช้)</label>
-                                            <input type="password" id="moph_alert_secret_key" name="moph_alert_secret_key" class="form-control" value="{{ old('moph_alert_secret_key', $settings['moph_alert_secret_key'] ?? '') }}" placeholder="เว้นว่างหากต้องการแชร์ Key จาก MOPH Notify ด้านบน">
-                                        </div>
-                                    </div>
-                                </div>
-                            </details>
+                        <input type="hidden" name="moph_alert_custom_keys" value="1">
+
+                        <!-- MOPH Alert API Endpoint URL -->
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label class="form-label" for="moph_alert_endpoint" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span><i class="bi bi-link-45deg" style="color: #7c3aed;"></i> <strong>MOPH Alert API Endpoint URL</strong></span>
+                                <span style="font-size: 11.5px; color: #64748b;">ค่าเริ่มต้นมาตรฐาน: https://morpromt2c.moph.go.th/api/notify/send</span>
+                            </label>
+                            <input type="text" id="moph_alert_endpoint" name="moph_alert_endpoint" class="form-control" value="{{ old('moph_alert_endpoint', $settings['moph_alert_endpoint'] ?? 'https://morpromt2c.moph.go.th/api/notify/send') }}" placeholder="https://morpromt2c.moph.go.th/api/notify/send" style="font-family: monospace; font-size: 13px;">
+                            <span class="form-text">Endpoint สำหรับส่งการแจ้งเตือนความคืบหน้าถึงผู้ใช้งาน (สามารถกดปุ่ม Production / UAT ด้านบนเพื่อเปลี่ยนได้)</span>
                         </div>
+
+                        <!-- Client Key & Secret Key Grid -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                            <div class="form-group">
+                                <label class="form-label" for="moph_alert_client_key">
+                                    <i class="bi bi-key-fill" style="color: #7c3aed;"></i> MOPH Alert Client Key (เฉพาะผู้ใช้งาน)
+                                </label>
+                                <div style="position: relative;">
+                                    <input type="password" id="moph_alert_client_key" name="moph_alert_client_key" class="form-control" value="{{ old('moph_alert_client_key', $settings['moph_alert_client_key'] ?? '') }}" placeholder="ระบุ Client Key เฉพาะสำหรับผู้ใช้งาน (หรือเว้นว่างเพื่อใช้ร่วมกัน)" style="padding-right: 44px; font-family: monospace;">
+                                    <button type="button" onclick="togglePasswordVisibility('moph_alert_client_key', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer;" title="แสดง/ซ่อน Key">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <span class="form-text">Client Key จากหมอพร้อมสำหรับส่งแจ้งเตือนผู้ใช้งานรายบุคคล</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="moph_alert_secret_key">
+                                    <i class="bi bi-shield-lock-fill" style="color: #7c3aed;"></i> MOPH Alert Secret Key (เฉพาะผู้ใช้งาน)
+                                </label>
+                                <div style="position: relative;">
+                                    <input type="password" id="moph_alert_secret_key" name="moph_alert_secret_key" class="form-control" value="{{ old('moph_alert_secret_key', $settings['moph_alert_secret_key'] ?? '') }}" placeholder="ระบุ Secret Key เฉพาะสำหรับผู้ใช้งาน (หรือเว้นว่างเพื่อใช้ร่วมกัน)" style="padding-right: 44px; font-family: monospace;">
+                                    <button type="button" onclick="togglePasswordVisibility('moph_alert_secret_key', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer;" title="แสดง/ซ่อน Key">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <span class="form-text">Secret Key จากหมอพร้อมสำหรับสร้าง Signature ความปลอดภัย HMAC-SHA256</span>
+                            </div>
+                        </div>
+
+                        <!-- CID 13 Digits Option Checkbox -->
+                        <label style="border: 1px solid #e9d5ff; border-radius: 10px; padding: 12px 16px; cursor: pointer; display: flex; align-items: flex-start; gap: 12px; background: #faf5ff;">
+                            <input type="checkbox" name="user_notify_via_moph_cid" value="1" {{ ($settings['user_notify_via_moph_cid'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; margin-top: 2px; accent-color: #7c3aed;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 13.5px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                    <span>เปิดรับการแจ้งเตือนผ่านหมอพร้อม LINE OA ด้วยเลขประจำตัวประชาชน (CID 13 หลัก)</span>
+                                    <span class="badge" style="background: #7c3aed; color: white; font-size: 10.5px; font-weight: 600;">CID 13 หลัก</span>
+                                </div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                                    ผู้ใช้งานที่ระบุเลขบัตรประชาชน 13 หลัก ในระบบ จะได้รับข้อความแจ้งเตือนจากหมอพร้อม LINE OA โดยอัตโนมัติ โดยไม่ต้องผูก LINE User ID
+                                </div>
+                            </div>
+                        </label>
                     </div>
 
                     <!-- Channel & LINE OA Credentials -->
@@ -1854,10 +1885,11 @@
         });
     }
 
-    function toggleCustomMophKeys(checked) {
-        const box = document.getElementById('custom_moph_keys_box');
-        if (box) {
-            box.style.display = checked ? 'grid' : 'none';
+    function setMophAlertEndpoint(url) {
+        const input = document.getElementById('moph_alert_endpoint');
+        if (input) {
+            input.value = url;
+            input.focus();
         }
     }
 
@@ -1867,6 +1899,12 @@
         const targetInput = document.getElementById('test_user_target_id');
         const targetId = targetInput ? targetInput.value.trim() : '';
         const originalHtml = btn.innerHTML;
+
+        const alertEndpoint = document.getElementById('moph_alert_endpoint') ? document.getElementById('moph_alert_endpoint').value.trim() : '';
+        const alertClientKey = document.getElementById('moph_alert_client_key') ? document.getElementById('moph_alert_client_key').value.trim() : '';
+        const alertSecretKey = document.getElementById('moph_alert_secret_key') ? document.getElementById('moph_alert_secret_key').value.trim() : '';
+        const lineOaToken = document.getElementById('line_oa_channel_access_token') ? document.getElementById('line_oa_channel_access_token').value.trim() : '';
+
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> กำลังทดสอบส่ง...';
 
@@ -1877,7 +1915,11 @@
                 "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             body: JSON.stringify({
-                target_id: targetId
+                target_id: targetId,
+                moph_alert_endpoint: alertEndpoint,
+                moph_alert_client_key: alertClientKey,
+                moph_alert_secret_key: alertSecretKey,
+                channel_access_token: lineOaToken
             })
         })
         .then(response => response.json().then(data => ({ status: response.status, body: data })))
@@ -1888,7 +1930,13 @@
                 Swal.fire({
                     icon: 'success',
                     title: 'ส่งแจ้งเตือน MOPH Alert สำเร็จ!',
-                    text: res.body.message,
+                    html: `
+                        <p style="font-size: 14px; color: #334155; margin-bottom: 8px;">${res.body.message}</p>
+                        <div style="background: #faf5ff; border: 1px solid #e9d5ff; padding: 12px 14px; border-radius: 8px; font-size: 12.5px; color: #581c87; text-align: left; line-height: 1.6;">
+                            <div><strong>📡 MOPH Alert Endpoint:</strong> <span style="font-family: monospace; font-size: 11.5px;">${alertEndpoint || 'https://morpromt2c.moph.go.th/api/notify/send'}</span></div>
+                            <div style="margin-top: 4px;"><strong>🎯 ช่องทางที่ส่ง:</strong> ${res.body.channel === 'moph_cid' ? 'หมอพร้อม LINE OA (CID 13 หลัก)' : 'LINE OA โรงพยาบาล'}</div>
+                        </div>
+                    `,
                     confirmButtonColor: '#7c3aed',
                 });
             } else {
