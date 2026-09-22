@@ -419,6 +419,13 @@ class AssetBorrowController extends Controller
             'notes' => $borrow->notes . ($reason ? "\n[เหตุผลที่ไม่อนุมัติ: {$reason}]" : ''),
         ]);
 
+        // Send MOPH Notify notification for rejected borrow request
+        try {
+            \App\Services\MophNotifyService::sendAssetBorrowNotification($borrow, 'rejected');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed sending asset borrow rejection notification: ' . $e->getMessage());
+        }
+
         return redirect()->route('asset-borrows.show', $borrow->id)
             ->with('info', 'ปฏิเสธคำขอยืมอุปกรณ์เรียบร้อยแล้ว');
     }
@@ -441,6 +448,13 @@ class AssetBorrowController extends Controller
         // Update asset status
         if ($borrow->asset) {
             $borrow->asset->update(['status' => 'borrowed']);
+        }
+
+        // Send MOPH Notify notification for dispatched borrow request
+        try {
+            \App\Services\MophNotifyService::sendAssetBorrowNotification($borrow, 'dispatched');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed sending asset borrow dispatch notification: ' . $e->getMessage());
         }
 
         return redirect()->route('asset-borrows.show', $borrow->id)
@@ -473,6 +487,13 @@ class AssetBorrowController extends Controller
             $borrow->asset->update([
                 'status' => $returnCondition === 'ชำรุดเสียหาย' ? 'broken' : $targetStatus,
             ]);
+        }
+
+        // Send MOPH Notify notification for returned borrow request
+        try {
+            \App\Services\MophNotifyService::sendAssetBorrowNotification($borrow, 'returned');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed sending asset borrow return notification: ' . $e->getMessage());
         }
 
         return redirect()->route('asset-borrows.show', $borrow->id)

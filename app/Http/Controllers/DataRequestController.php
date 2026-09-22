@@ -130,6 +130,13 @@ class DataRequestController extends Controller
             'status' => 'pending',
         ]);
 
+        // Send MOPH Notify notification for new data request
+        try {
+            \App\Services\MophNotifyService::sendDataRequestNotification($dataRequest, 'created');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed sending data request notification: ' . $e->getMessage());
+        }
+
         return redirect()->route('data-requests.show', $dataRequest->id)
             ->with('success', "ยื่นคำขอข้อมูลสารสนเทศรหัส {$reqNo} เรียบร้อยแล้ว กลุ่มงานสุขภาพดิจิทัลจะดำเนินการตรวจสอบต่อไป");
     }
@@ -196,6 +203,13 @@ class DataRequestController extends Controller
 
         $dataRequest->update($data);
 
+        // Send MOPH Notify notification for status update
+        try {
+            \App\Services\MophNotifyService::sendDataRequestNotification($dataRequest, $request->status, $request->admin_notes);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed sending data request status notification: ' . $e->getMessage());
+        }
+
         return back()->with('success', "อัปเดตสถานะคำขอเป็น '{$dataRequest->status_label}' เรียบร้อยแล้ว");
     }
 
@@ -234,6 +248,13 @@ class DataRequestController extends Controller
         }
 
         $dataRequest->update($updateData);
+
+        // Send MOPH Notify notification for completed data request
+        try {
+            \App\Services\MophNotifyService::sendDataRequestNotification($dataRequest, 'completed', $dataRequest->admin_notes);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed sending data request completion notification: ' . $e->getMessage());
+        }
 
         return back()->with('success', "บันทึกข้อมูลและปิดงานคำขอสารสนเทศเรียบร้อยแล้ว ผู้ขอสามารถดาวน์โหลดไฟล์ข้อมูลได้ทันที");
     }
@@ -488,6 +509,13 @@ class DataRequestController extends Controller
                 'admin_notes' => $request->admin_notes ?: "สกัดข้อมูลจากระบบ HosXP อัตโนมัติเรียบร้อยแล้ว (รวม {$rowCount} รายการ)",
                 'completed_at' => now(),
             ]);
+
+            // Send MOPH Notify notification for completed data query
+            try {
+                \App\Services\MophNotifyService::sendDataRequestNotification($dataRequest, 'completed', $dataRequest->admin_notes);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Failed sending data request query notification: ' . $e->getMessage());
+            }
 
             return back()->with('success', "สกัดข้อมูลและสร้างไฟล์ CSV เรียบร้อยแล้ว (จำนวน {$rowCount} แถว) ผู้ขอสามารถดาวน์โหลดไฟล์ได้ทันที");
         } catch (\Exception $e) {

@@ -38,7 +38,8 @@ class SettingSeeder extends Seeder
             ['key' => 'line_notify_enabled', 'value' => '0', 'group' => 'notification', 'type' => 'boolean', 'description' => 'เปิดใช้งาน LINE Notify'],
             ['key' => 'notify_on_new_ticket', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนเมื่อมีใบแจ้งซ่อมใหม่'],
             ['key' => 'notify_on_status_change', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนเมื่ออัปเดตสถานะงานซ่อม'],
-            ['key' => 'notify_on_borrow_request', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนเมื่อมีคำขอยืมอุปกรณ์ไอที'],
+            ['key' => 'notify_on_borrow_request', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนระบบยืม-คืนอุปกรณ์ไอทีทุกกระบวนการ'],
+            ['key' => 'notify_on_data_request', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนระบบขอข้อมูลสารสนเทศ (Data Request)'],
             ['key' => 'notify_on_critical_only', 'value' => '0', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนเฉพาะเคสด่วนและด่วนที่สุด'],
 
             // Security & Auth

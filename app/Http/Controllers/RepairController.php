@@ -189,7 +189,9 @@ class RepairController extends Controller
         // Send notifications via MOPH Notify / LINE Notify if enabled
         try {
             \App\Services\MophNotifyService::sendRepairTicketNotification($repair);
-            \App\Services\LineNotificationService::sendRepairTicketNotification($repair);
+            if (setting('line_notify_enabled', false)) {
+                \App\Services\LineNotificationService::sendRepairTicketNotification($repair);
+            }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Failed sending repair notification: ' . $e->getMessage());
         }

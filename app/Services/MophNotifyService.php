@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Repair;
 use App\Models\AssetBorrow;
+use App\Models\DataRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -227,7 +228,7 @@ class MophNotifyService
      * Send notification for asset borrow events
      *
      * @param AssetBorrow $borrow
-     * @param string $action 'created' or 'approved'
+     * @param string $action 'created', 'approved', 'rejected', 'dispatched', 'returned'
      * @return bool
      */
     public static function sendAssetBorrowNotification(AssetBorrow $borrow, string $action = 'created'): bool
@@ -251,6 +252,51 @@ class MophNotifyService
             ];
         } else {
             $text = self::buildAssetBorrowText($borrow, $action);
+            $payload = [
+                'messages' => [
+                    ['type' => 'text', 'text' => $text]
+                ]
+            ];
+        }
+
+        $res = self::sendMophMessage($payload);
+        return $res['success'];
+    }
+
+    /**
+     * Send notification for data request events
+     *
+     * @param DataRequest $dataRequest
+     * @param string $action 'created', 'approved', 'in_progress', 'rejected', 'completed'
+     * @param string|null $comment
+     * @return bool
+     */
+    public static function sendDataRequestNotification(DataRequest $dataRequest, string $action = 'created', ?string $comment = null): bool
+    {
+        $enabled = (bool) setting('moph_notify_enabled', true);
+        if (!$enabled) {
+            return false;
+        }
+
+        $notifyOnData = (bool) setting('notify_on_data_request', true);
+        if (!$notifyOnData) {
+            return false;
+        }
+
+        $criticalOnly = (bool) setting('notify_on_critical_only', false);
+        if ($criticalOnly && !in_array($dataRequest->urgency, ['urgent', 'very_urgent'])) {
+            return false;
+        }
+
+        $format = setting('moph_notify_message_type', 'flex');
+
+        if ($format === 'flex') {
+            $flex = self::buildDataRequestFlexMessage($dataRequest, $action, $comment);
+            $payload = [
+                'messages' => [$flex]
+            ];
+        } else {
+            $text = self::buildDataRequestText($dataRequest, $action, $comment);
             $payload = [
                 'messages' => [
                     ['type' => 'text', 'text' => $text]
@@ -670,22 +716,137 @@ class MophNotifyService
     }
 
     /**
-     * Build Flex Message for Asset Borrowing
+     * Build Flex Message for Asset Borrowing (All Lifecycle Stages)
      *
      * @param AssetBorrow $borrow
-     * @param string $action 'created' or 'approved'
+     * @param string $action 'created', 'approved', 'rejected', 'dispatched', 'returned'
      * @return array
      */
     public static function buildAssetBorrowFlexMessage(AssetBorrow $borrow, string $action = 'created'): array
     {
         $hospitalName = setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง');
-        $isApproved = ($action === 'approved');
-        $headerColor = $isApproved ? '#059669' : '#0284c7';
-        $title = $isApproved ? '✅ อนุมัติการยืมอุปกรณ์ไอทีแล้ว' : '📦 มีคำขอยืมอุปกรณ์ไอทีใหม่';
+
+        switch ($action) {
+            case 'approved':
+                $title = '✅ อนุมัติคำขอยืมอุปกรณ์แล้ว';
+                $headerColor = '#059669';
+                $btnLabel = '📦 ดูรายละเอียดและส่งมอบอุปกรณ์';
+                break;
+            case 'rejected':
+                $title = '❌ ปฏิเสธคำขอยืมอุปกรณ์ไอที';
+                $headerColor = '#dc2626';
+                $btnLabel = '🔎 ดูรายละเอียดคำขอยืม';
+                break;
+            case 'dispatched':
+                $title = '🚀 ส่งมอบอุปกรณ์แล้ว (กำลังยืมใช้งาน)';
+                $headerColor = '#7c3aed';
+                $btnLabel = '🔎 ดูประวัติและกำหนดคืน';
+                break;
+            case 'returned':
+                $title = '📥 ส่งคืนอุปกรณ์เรียบร้อยแล้ว';
+                $headerColor = '#0d9488';
+                $btnLabel = '🔎 ดูรายละเอียดการส่งคืน';
+                break;
+            case 'created':
+            default:
+                $title = '📦 มีคำขอยืมอุปกรณ์ไอทีใหม่';
+                $headerColor = '#0284c7';
+                $btnLabel = '🔎 ตรวจสอบและจัดการคำขอยืม';
+                break;
+        }
+
         $nowThai = now()->addYears(543)->format('d/m/Y H:i:s');
         $asset = $borrow->asset;
         $assetName = $asset ? "{$asset->asset_code} ({$asset->name})" : 'ไม่ระบุอุปกรณ์';
         $viewUrl = self::getSafePublicUrl('/asset-borrows/' . $borrow->id);
+
+        $bodyContents = [
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '👤 ผู้ขอยืม:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => "{$borrow->borrower_name} (โทร: " . ($borrow->contact_phone ?: '-') . ")", 'size' => 'xs', 'color' => '#0f172a', 'weight' => 'bold', 'flex' => 8, 'wrap' => true],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '🏢 แผนก/หน่วย:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $borrow->department ? $borrow->department->name : '-', 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '💻 ครุภัณฑ์:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $assetName, 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8, 'wrap' => true],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '🎯 วัตถุประสงค์:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $borrow->purpose ?: '-', 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8, 'wrap' => true],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '📅 กำหนดคืน:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $borrow->expected_return_date ? $borrow->expected_return_date->format('d/m/Y') : 'ไม่ระบุ', 'size' => 'xs', 'color' => '#ea580c', 'weight' => 'bold', 'flex' => 8],
+                ]
+            ],
+        ];
+
+        if ($action === 'rejected' && $borrow->rejection_reason) {
+            $bodyContents[] = [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '❗ เหตุผลที่ปฏิเสธ:', 'size' => 'xs', 'color' => '#dc2626', 'flex' => 4],
+                    ['type' => 'text', 'text' => $borrow->rejection_reason, 'size' => 'xs', 'color' => '#dc2626', 'weight' => 'bold', 'flex' => 8, 'wrap' => true],
+                ]
+            ];
+        }
+
+        if ($action === 'dispatched' && $borrow->dispatch_condition) {
+            $bodyContents[] = [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '📦 สภาพส่งมอบ:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $borrow->dispatch_condition, 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8, 'wrap' => true],
+                ]
+            ];
+        }
+
+        if ($action === 'returned') {
+            if ($borrow->return_condition) {
+                $bodyContents[] = [
+                    'type' => 'box',
+                    'layout' => 'horizontal',
+                    'contents' => [
+                        ['type' => 'text', 'text' => '📥 สภาพรับคืน:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                        ['type' => 'text', 'text' => $borrow->return_condition, 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8, 'wrap' => true],
+                    ]
+                ];
+            }
+            if ($borrow->actual_return_date) {
+                $bodyContents[] = [
+                    'type' => 'box',
+                    'layout' => 'horizontal',
+                    'contents' => [
+                        ['type' => 'text', 'text' => '🕒 วันที่ส่งคืน:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                        ['type' => 'text', 'text' => $borrow->actual_return_date->format('d/m/Y'), 'size' => 'xs', 'color' => '#0d9488', 'weight' => 'bold', 'flex' => 8],
+                    ]
+                ];
+            }
+        }
 
         return [
             'type' => 'flex',
@@ -724,48 +885,7 @@ class MophNotifyService
                             'type' => 'box',
                             'layout' => 'vertical',
                             'spacing' => 'sm',
-                            'contents' => [
-                                [
-                                    'type' => 'box',
-                                    'layout' => 'horizontal',
-                                    'contents' => [
-                                        ['type' => 'text', 'text' => '👤 ผู้ขอยืม:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
-                                        ['type' => 'text', 'text' => "{$borrow->borrower_name} (โทร: " . ($borrow->contact_phone ?: '-') . ")", 'size' => 'xs', 'color' => '#0f172a', 'weight' => 'bold', 'flex' => 8, 'wrap' => true],
-                                    ]
-                                ],
-                                [
-                                    'type' => 'box',
-                                    'layout' => 'horizontal',
-                                    'contents' => [
-                                        ['type' => 'text', 'text' => '🏢 แผนก/หน่วย:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
-                                        ['type' => 'text', 'text' => $borrow->department ? $borrow->department->name : '-', 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8],
-                                    ]
-                                ],
-                                [
-                                    'type' => 'box',
-                                    'layout' => 'horizontal',
-                                    'contents' => [
-                                        ['type' => 'text', 'text' => '💻 ครุภัณฑ์:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
-                                        ['type' => 'text', 'text' => $assetName, 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8, 'wrap' => true],
-                                    ]
-                                ],
-                                [
-                                    'type' => 'box',
-                                    'layout' => 'horizontal',
-                                    'contents' => [
-                                        ['type' => 'text', 'text' => '🎯 วัตถุประสงค์:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
-                                        ['type' => 'text', 'text' => $borrow->purpose ?: '-', 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8, 'wrap' => true],
-                                    ]
-                                ],
-                                [
-                                    'type' => 'box',
-                                    'layout' => 'horizontal',
-                                    'contents' => [
-                                        ['type' => 'text', 'text' => '📅 กำหนดคืน:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
-                                        ['type' => 'text', 'text' => $borrow->expected_return_date ? $borrow->expected_return_date->format('d/m/Y') : 'ไม่ระบุ', 'size' => 'xs', 'color' => '#ea580c', 'weight' => 'bold', 'flex' => 8],
-                                    ]
-                                ],
-                            ]
+                            'contents' => $bodyContents,
                         ],
                         [
                             'type' => 'text',
@@ -785,7 +905,195 @@ class MophNotifyService
                             'type' => 'button',
                             'action' => [
                                 'type' => 'uri',
-                                'label' => '🔎 ตรวจสอบและจัดการคำขอยืม',
+                                'label' => $btnLabel,
+                                'uri' => $viewUrl,
+                            ],
+                            'style' => 'primary',
+                            'color' => $headerColor,
+                            'height' => 'sm',
+                        ]
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Build Flex Message for Data Request (All Lifecycle Stages)
+     *
+     * @param DataRequest $dataRequest
+     * @param string $action 'created', 'approved', 'in_progress', 'rejected', 'completed'
+     * @param string|null $comment
+     * @return array
+     */
+    public static function buildDataRequestFlexMessage(DataRequest $dataRequest, string $action = 'created', ?string $comment = null): array
+    {
+        $hospitalName = setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง');
+
+        switch ($action) {
+            case 'approved':
+                $title = '✅ อนุมัติ/รับเรื่องคำขอข้อมูลสารสนเทศ';
+                $headerColor = '#059669';
+                $btnLabel = '🔎 ตรวจสอบและดำเนินการสกัดข้อมูล';
+                break;
+            case 'in_progress':
+                $title = '⚙️ กำลังสกัดข้อมูลสารสนเทศ (In Progress)';
+                $headerColor = '#d97706';
+                $btnLabel = '🔎 ตรวจสอบความคืบหน้า';
+                break;
+            case 'rejected':
+                $title = '❌ ไม่อนุมัติคำขอข้อมูลสารสนเทศ';
+                $headerColor = '#dc2626';
+                $btnLabel = '🔎 ดูรายละเอียดคำขอข้อมูล';
+                break;
+            case 'completed':
+                $title = '🎉 สกัดข้อมูลเสร็จสิ้นแล้ว (พร้อมดาวน์โหลด)';
+                $headerColor = '#0d9488';
+                $btnLabel = '📥 เปิดดูและดาวน์โหลดไฟล์ข้อมูล';
+                break;
+            case 'created':
+            default:
+                $title = '📄 มีคำขอข้อมูลสารสนเทศใหม่ (Data Request)';
+                $headerColor = '#0284c7';
+                $btnLabel = '🔎 ตรวจสอบคำขอข้อมูลสารสนเทศ';
+                break;
+        }
+
+        $nowThai = now()->addYears(543)->format('d/m/Y H:i:s');
+        $viewUrl = self::getSafePublicUrl('/data-requests/' . $dataRequest->id);
+        $requesterName = $dataRequest->user ? $dataRequest->user->name : 'ไม่ระบุผู้ขอ';
+        $requesterPhone = $dataRequest->user ? ($dataRequest->user->phone ?: '-') : '-';
+        $departmentName = $dataRequest->department ? $dataRequest->department->name : '-';
+        $formatName = strtoupper($dataRequest->file_format ?: 'EXCEL');
+
+        $urgencyBadges = [
+            'normal' => '🟢 ปกติ',
+            'urgent' => '🟡 ด่วน',
+            'very_urgent' => '🔴 ด่วนที่สุด',
+        ];
+        $urgencyText = $urgencyBadges[$dataRequest->urgency] ?? $dataRequest->urgency_label ?? $dataRequest->urgency;
+
+        $bodyContents = [
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '👤 ผู้ยื่นคำขอ:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => "{$requesterName} (โทร: {$requesterPhone})", 'size' => 'xs', 'color' => '#0f172a', 'weight' => 'bold', 'flex' => 8, 'wrap' => true],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '🏢 แผนก/หน่วย:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $departmentName, 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '📌 หัวข้อข้อมูล:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $dataRequest->title, 'size' => 'xs', 'color' => '#0f172a', 'weight' => 'bold', 'flex' => 8, 'wrap' => true],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '🎯 วัตถุประสงค์:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $dataRequest->objective_label ?: $dataRequest->objective_type, 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8, 'wrap' => true],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '🚨 ความเร่งด่วน:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $urgencyText, 'size' => 'xs', 'color' => '#ea580c', 'weight' => 'bold', 'flex' => 8],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '💾 รูปแบบไฟล์:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $formatName, 'size' => 'xs', 'color' => '#0284c7', 'weight' => 'bold', 'flex' => 8],
+                ]
+            ],
+        ];
+
+        $note = $comment ?: $dataRequest->admin_notes;
+        if ($note) {
+            $bodyContents[] = [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '💬 บันทึก/ผล:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $note, 'size' => 'xs', 'color' => '#334155', 'flex' => 8, 'wrap' => true],
+                ]
+            ];
+        }
+
+        return [
+            'type' => 'flex',
+            'altText' => "{$title} #{$dataRequest->request_no} ({$hospitalName})",
+            'contents' => [
+                'type' => 'bubble',
+                'size' => 'mega',
+                'header' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'backgroundColor' => $headerColor,
+                    'paddingAll' => '16px',
+                    'contents' => [
+                        [
+                            'type' => 'text',
+                            'text' => $title,
+                            'color' => '#ffffff',
+                            'weight' => 'bold',
+                            'size' => 'md',
+                        ],
+                        [
+                            'type' => 'text',
+                            'text' => "เลขที่คำขอ: #{$dataRequest->request_no}",
+                            'color' => '#ffffffe6',
+                            'size' => 'xs',
+                            'margin' => 'xs',
+                        ]
+                    ]
+                ],
+                'body' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'paddingAll' => '16px',
+                    'contents' => [
+                        [
+                            'type' => 'box',
+                            'layout' => 'vertical',
+                            'spacing' => 'sm',
+                            'contents' => $bodyContents,
+                        ],
+                        [
+                            'type' => 'text',
+                            'text' => "🕒 เวลา: {$nowThai} น.",
+                            'size' => 'xxs',
+                            'color' => '#94a3b8',
+                            'margin' => 'md',
+                        ]
+                    ]
+                ],
+                'footer' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'paddingAll' => '12px',
+                    'contents' => [
+                        [
+                            'type' => 'button',
+                            'action' => [
+                                'type' => 'uri',
+                                'label' => $btnLabel,
                                 'uri' => $viewUrl,
                             ],
                             'style' => 'primary',
@@ -989,12 +1297,19 @@ class MophNotifyService
     }
 
     /**
-     * Fallback Plain Text for Asset Borrow
+     * Fallback Plain Text for Asset Borrow (All Lifecycle Stages)
      */
     public static function buildAssetBorrowText(AssetBorrow $borrow, string $action = 'created'): string
     {
         $hospitalName = setting('hospital_name_th', 'รพ.ทุ่งหัวช้าง');
-        $title = ($action === 'approved') ? 'อนุมัติการยืมอุปกรณ์ไอทีแล้ว' : 'มีคำขอยืมอุปกรณ์ไอทีใหม่';
+        $titles = [
+            'created' => 'มีคำขอยืมอุปกรณ์ไอทีใหม่',
+            'approved' => 'อนุมัติการยืมอุปกรณ์ไอทีแล้ว',
+            'rejected' => 'ปฏิเสธคำขอยืมอุปกรณ์ไอที',
+            'dispatched' => 'ส่งมอบอุปกรณ์แล้ว (กำลังใช้งาน)',
+            'returned' => 'ส่งคืนอุปกรณ์เรียบร้อยแล้ว',
+        ];
+        $title = $titles[$action] ?? 'รายการยืมอุปกรณ์ไอที';
         $viewUrl = url('/asset-borrows/' . $borrow->id);
 
         $msg = "\n📦 {$title} ({$hospitalName})\n";
@@ -1004,7 +1319,61 @@ class MophNotifyService
         $msg .= "🏢 แผนก: " . ($borrow->department ? $borrow->department->name : '-') . "\n";
         $msg .= "💻 ครุภัณฑ์: " . ($borrow->asset ? $borrow->asset->asset_code . ' ' . $borrow->asset->name : '-') . "\n";
         $msg .= "🎯 วัตถุประสงค์: {$borrow->purpose}\n";
+        if ($borrow->expected_return_date) {
+            $msg .= "📅 กำหนดคืน: " . $borrow->expected_return_date->format('d/m/Y') . "\n";
+        }
+        if ($action === 'rejected' && $borrow->rejection_reason) {
+            $msg .= "❌ เหตุผลที่ปฏิเสธ: {$borrow->rejection_reason}\n";
+        }
+        if ($action === 'dispatched' && $borrow->dispatch_condition) {
+            $msg .= "📦 สภาพส่งมอบ: {$borrow->dispatch_condition}\n";
+        }
+        if ($action === 'returned') {
+            if ($borrow->return_condition) {
+                $msg .= "📥 สภาพส่งคืน: {$borrow->return_condition}\n";
+            }
+            if ($borrow->actual_return_date) {
+                $msg .= "🕒 วันที่ส่งคืนจริง: " . $borrow->actual_return_date->format('d/m/Y') . "\n";
+            }
+        }
         $msg .= "🔗 จัดการรายการ: {$viewUrl}";
+
+        return $msg;
+    }
+
+    /**
+     * Fallback Plain Text for Data Request (All Lifecycle Stages)
+     */
+    public static function buildDataRequestText(DataRequest $dataRequest, string $action = 'created', ?string $comment = null): string
+    {
+        $hospitalName = setting('hospital_name_th', 'รพ.ทุ่งหัวช้าง');
+        $titles = [
+            'created' => 'มีคำขอข้อมูลสารสนเทศใหม่',
+            'approved' => 'อนุมัติ/รับเรื่องคำขอข้อมูลสารสนเทศ',
+            'in_progress' => 'กำลังดำเนินการสกัดข้อมูล',
+            'rejected' => 'ไม่อนุมัติคำขอข้อมูลสารสนเทศ',
+            'completed' => 'สกัดข้อมูลสารสนเทศเสร็จสิ้นแล้ว',
+        ];
+        $title = $titles[$action] ?? 'คำขอข้อมูลสารสนเทศ';
+        $viewUrl = url('/data-requests/' . $dataRequest->id);
+        $requesterName = $dataRequest->user ? $dataRequest->user->name : '-';
+        $departmentName = $dataRequest->department ? $dataRequest->department->name : '-';
+        $formatName = strtoupper($dataRequest->file_format ?: 'EXCEL');
+
+        $msg = "\n📄 {$title} ({$hospitalName})\n";
+        $msg .= "━━━━━━━━━━━━━━━━━━\n";
+        $msg .= "🔖 เลขที่คำขอ: {$dataRequest->request_no}\n";
+        $msg .= "📌 หัวข้อ: {$dataRequest->title}\n";
+        $msg .= "👤 ผู้ยื่นคำขอ: {$requesterName}\n";
+        $msg .= "🏢 แผนก: {$departmentName}\n";
+        $msg .= "🎯 วัตถุประสงค์: " . ($dataRequest->objective_label ?: $dataRequest->objective_type) . "\n";
+        $msg .= "🚨 ความเร่งด่วน: " . ($dataRequest->urgency_label ?: $dataRequest->urgency) . "\n";
+        $msg .= "💾 รูปแบบไฟล์: {$formatName}\n";
+        $note = $comment ?: $dataRequest->admin_notes;
+        if ($note) {
+            $msg .= "💬 บันทึก/ผล: {$note}\n";
+        }
+        $msg .= "🔗 รายละเอียด: {$viewUrl}";
 
         return $msg;
     }

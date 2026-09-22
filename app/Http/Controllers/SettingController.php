@@ -52,6 +52,7 @@ class SettingController extends Controller
             'notify_on_new_ticket' => setting('notify_on_new_ticket', true),
             'notify_on_status_change' => setting('notify_on_status_change', true),
             'notify_on_borrow_request' => setting('notify_on_borrow_request', true),
+            'notify_on_data_request' => setting('notify_on_data_request', true),
             'notify_on_critical_only' => setting('notify_on_critical_only', false),
             'notify_email_admin' => setting('notify_email_admin', ''),
 
@@ -152,6 +153,7 @@ class SettingController extends Controller
             $notifyNew = $request->boolean('notify_on_new_ticket');
             $notifyStatus = $request->boolean('notify_on_status_change');
             $notifyBorrow = $request->boolean('notify_on_borrow_request');
+            $notifyDataRequest = $request->boolean('notify_on_data_request');
             $notifyCritical = $request->boolean('notify_on_critical_only');
             $notifyEmail = $request->input('notify_email_admin', '');
 
@@ -166,6 +168,7 @@ class SettingController extends Controller
             SystemSetting::set('notify_on_new_ticket', $notifyNew, 'notification', 'boolean');
             SystemSetting::set('notify_on_status_change', $notifyStatus, 'notification', 'boolean');
             SystemSetting::set('notify_on_borrow_request', $notifyBorrow, 'notification', 'boolean');
+            SystemSetting::set('notify_on_data_request', $notifyDataRequest, 'notification', 'boolean');
             SystemSetting::set('notify_on_critical_only', $notifyCritical, 'notification', 'boolean');
             SystemSetting::set('notify_email_admin', $notifyEmail, 'notification', 'text');
         } elseif ($group === 'mail') {

@@ -693,8 +693,16 @@
                         <label style="border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; cursor: pointer; display: flex; align-items: center; gap: 14px; background: #ffffff;">
                             <input type="checkbox" name="notify_on_borrow_request" value="1" {{ ($settings['notify_on_borrow_request'] ?? true) ? 'checked' : '' }} style="width: 20px; height: 20px; accent-color: #0d9488;">
                             <div>
-                                <div style="font-weight: 700; font-size: 14px; color: #0f172a;">แจ้งเตือนเมื่อมีคำขอยืมอุปกรณ์ไอที (Asset Borrow Request & Approval)</div>
-                                <div style="font-size: 12px; color: #64748b; margin-top: 1px;">ส่งเตือนทีมไอทีเมื่อมีเจ้าหน้าที่ยื่นคำขอยืมอุปกรณ์คอมพิวเตอร์หรือโน้ตบุ๊กทดแทน</div>
+                                <div style="font-weight: 700; font-size: 14px; color: #0f172a;">แจ้งเตือนระบบยืม-คืนอุปกรณ์ไอทีทุกกระบวนการ (Borrow Lifecycle: ขอ, อนุมัติ, ส่งมอบ, รับคืน)</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 1px;">ส่งข้อความแจ้งเตือนทันทีเมื่อมีคำขอยืมใหม่, อนุมัติ, ปฏิเสธ, ส่งมอบอุปกรณ์ และเมื่อผู้ใช้งานส่งคืนอุปกรณ์</div>
+                            </div>
+                        </label>
+
+                        <label style="border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; cursor: pointer; display: flex; align-items: center; gap: 14px; background: #ffffff;">
+                            <input type="checkbox" name="notify_on_data_request" value="1" {{ ($settings['notify_on_data_request'] ?? true) ? 'checked' : '' }} style="width: 20px; height: 20px; accent-color: #0d9488;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 14px; color: #0f172a;">แจ้งเตือนระบบคำขอข้อมูลสารสนเทศ (Data Request & SQL Export)</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 1px;">ส่งเตือนเมื่อมีผู้ยื่นคำขอข้อมูลใหม่, เจ้าหน้าที่รับเรื่อง/เปลี่ยนสถานะ และเมื่อดำเนินการสกัดข้อมูลเสร็จสิ้นพร้อมดาวน์โหลด</div>
                             </div>
                         </label>
 
