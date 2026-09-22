@@ -707,6 +707,14 @@
                         </label>
 
                         <label style="border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; cursor: pointer; display: flex; align-items: center; gap: 14px; background: #ffffff;">
+                            <input type="checkbox" name="notify_on_transfer_request" value="1" {{ ($settings['notify_on_transfer_request'] ?? true) ? 'checked' : '' }} style="width: 20px; height: 20px; accent-color: #0d9488;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 14px; color: #0f172a;">แจ้งเตือนระบบย้ายจุดติดตั้งครุภัณฑ์ IT (Asset Transfer & Relocation)</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 1px;">ส่งเตือนเมื่อมีรายการยื่นขอย้ายเครื่อง, ช่างเข้าดำเนินการ และเมื่อติดตั้งทดสอบสำเร็จ</div>
+                            </div>
+                        </label>
+
+                        <label style="border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; cursor: pointer; display: flex; align-items: center; gap: 14px; background: #ffffff;">
                             <input type="checkbox" name="notify_on_critical_only" value="1" {{ ($settings['notify_on_critical_only'] ?? false) ? 'checked' : '' }} style="width: 20px; height: 20px; accent-color: #0d9488;">
                             <div>
                                 <div style="font-weight: 700; font-size: 14px; color: #0f172a;">แจ้งเตือนเฉพาะเคส "ด่วน" และ "ด่วนที่สุด (Critical)" เท่านั้น</div>
@@ -763,6 +771,145 @@
                     </div>
                     <button type="button" class="btn btn-sm" onclick="runTestMophNotify()" id="btn_test_moph" style="background: #0d9488; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 8px;">
                         <i class="bi bi-send-check-fill"></i> ทดสอบส่งผ่าน MOPH Notify
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- End-User Personal LINE OA Notification Settings Card -->
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="bi bi-chat-dots-fill"></i>
+                    </div>
+                    <div>
+                        <strong style="font-size: 15.5px; color: #0f172a;">ระบบแจ้งเตือนผู้ใช้งานผ่าน LINE OA (End-User Personal Notification)</strong>
+                        <div style="font-size: 12px; color: #64748b;">ส่งการแจ้งเตือนความคืบหน้าตรงเข้า LINE ส่วนตัวของผู้ส่งซ่อม, ผู้ขอข้อมูล, ผู้ขอยืมคืน และผู้ย้ายจุดติดตั้ง</div>
+                    </div>
+                </div>
+                <span class="status-pill {{ ($settings['user_notify_enabled'] ?? true) ? 'status-pill-success' : 'status-pill-secondary' }}">
+                    {{ ($settings['user_notify_enabled'] ?? true) ? '🟢 เปิดใช้งานแจ้งเตือนผู้ใช้' : '⚪ ปิดใช้งาน' }}
+                </span>
+            </div>
+            <div class="settings-card-body">
+                <form action="{{ route('settings.update') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="setting_group" value="notification">
+
+                    <!-- Master Switch -->
+                    <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
+                        <div class="form-check form-switch" style="font-size: 15px;">
+                            <input class="form-check-input" type="checkbox" name="user_notify_enabled" id="user_notify_enabled" value="1" {{ ($settings['user_notify_enabled'] ?? true) ? 'checked' : '' }} style="cursor: pointer;">
+                            <label class="form-check-label" for="user_notify_enabled" style="font-weight: 700; color: #0f172a; cursor: pointer;">
+                                เปิดระบบส่งการแจ้งเตือนความคืบหน้าถึงผู้ใช้งานส่วนตัว (Direct User Notifications)
+                            </label>
+                        </div>
+                        <div style="font-size: 12.5px; color: #64748b; margin-top: 4px; padding-left: 2.2rem;">
+                            เมื่อเปิดใช้งาน ผู้ใช้งานจะได้รับการแจ้งเตือนความคืบหน้าในงานของตนเองผ่าน LINE OA หรือหมอพร้อม (CID)
+                        </div>
+                    </div>
+
+                    <!-- Channel & LINE OA Credentials -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label class="form-label" for="line_oa_basic_id">
+                                <i class="bi bi-line text-success"></i> LINE Official Account Basic ID / Link
+                            </label>
+                            <input type="text" id="line_oa_basic_id" name="line_oa_basic_id" class="form-control" value="{{ old('line_oa_basic_id', $settings['line_oa_basic_id'] ?? '') }}" placeholder="เช่น @thchospital หรือ https://line.me/R/ti/p/@xxx">
+                            <span class="form-text">ระบุ Basic ID หรือลิงก์ LINE OA เพื่อให้ผู้ใช้งานกดเพิ่มเพื่อนและรับการแจ้งเตือน</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="user_notify_channel">
+                                <i class="bi bi-signpost-split-fill text-indigo"></i> ช่องทางหลักในการส่งถึงผู้ใช้
+                            </label>
+                            <select name="user_notify_channel" id="user_notify_channel" class="form-select">
+                                <option value="both" {{ ($settings['user_notify_channel'] ?? 'both') === 'both' ? 'selected' : '' }}>
+                                    ✨ อัตโนมัติ (Smart Route: ส่ง LINE OA หรือ หมอพร้อม ตามที่ผู้ใช้ผูกไว้)
+                                </option>
+                                <option value="line_oa" {{ ($settings['user_notify_channel'] ?? '') === 'line_oa' ? 'selected' : '' }}>
+                                    📱 LINE Official Account (LINE Messaging API Push Message)
+                                </option>
+                                <option value="moph_cid" {{ ($settings['user_notify_channel'] ?? '') === 'moph_cid' ? 'selected' : '' }}>
+                                    🏥 หมอพร้อม LINE OA (ผ่าน MOPH Notify เลขบัตร ปชช. 13 หลัก / CID)
+                                </option>
+                            </select>
+                            <span class="form-text">แนะนำแบบ 'อัตโนมัติ' เพื่อรองรับทั้งผู้ใช้งานที่ผูก LINE ID และเลขบัตร ปชช.</span>
+                        </div>
+
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label class="form-label" for="line_oa_channel_access_token">
+                                <i class="bi bi-key-fill text-primary"></i> LINE OA Channel Access Token (Long-lived)
+                            </label>
+                            <div style="position: relative;">
+                                <input type="password" id="line_oa_channel_access_token" name="line_oa_channel_access_token" class="form-control" value="{{ old('line_oa_channel_access_token', $settings['line_oa_channel_access_token'] ?? '') }}" placeholder="ระบุ Channel Access Token จาก LINE Developers Console" style="padding-right: 44px; font-family: monospace;">
+                                <button type="button" onclick="togglePasswordVisibility('line_oa_channel_access_token', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer;">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <span class="form-text">Token สำหรับส่ง Push Message ตรงถึง LINE User ID ของผู้ใช้งาน (ไม่บังคับหากใช้เฉพาะ MOPH หมอพร้อม)</span>
+                        </div>
+                    </div>
+
+                    <!-- Individual Modules Toggles -->
+                    <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-bottom: 12px;">
+                        <i class="bi bi-check2-square text-primary"></i> เลือกขั้นตอนที่ต้องการแจ้งเตือนผู้ใช้งาน:
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                        <label style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; background: #ffffff;">
+                            <input type="checkbox" name="notify_user_on_repair_status" value="1" {{ ($settings['notify_user_on_repair_status'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: #7c3aed;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 13px; color: #0f172a;">งานแจ้งซ่อมบำรุง (Repairs)</div>
+                                <div style="font-size: 11.5px; color: #64748b;">เตือนเมื่อรับเรื่อง, กำลังซ่อม, ซ่อมเสร็จพร้อมให้รับเครื่อง และปุ่มประเมิน</div>
+                            </div>
+                        </label>
+
+                        <label style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; background: #ffffff;">
+                            <input type="checkbox" name="notify_user_on_data_status" value="1" {{ ($settings['notify_user_on_data_status'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: #7c3aed;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 13px; color: #0f172a;">คำขอข้อมูลและสถิติ (Data Requests)</div>
+                                <div style="font-size: 11.5px; color: #64748b;">เตือนเมื่ออนุมัติ และเมื่อสกัดไฟล์เสร็จสิ้นพร้อมปุ่มกดดาวน์โหลด</div>
+                            </div>
+                        </label>
+
+                        <label style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; background: #ffffff;">
+                            <input type="checkbox" name="notify_user_on_borrow_status" value="1" {{ ($settings['notify_user_on_borrow_status'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: #7c3aed;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 13px; color: #0f172a;">ขอยืม-คืนอุปกรณ์ไอที (Asset Borrows)</div>
+                                <div style="font-size: 11.5px; color: #64748b;">เตือนเมื่ออนุมัติให้ไปรับของ, เตือนกำหนดส่งคืน, ยืนยันการรับคืน</div>
+                            </div>
+                        </label>
+
+                        <label style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; background: #ffffff;">
+                            <input type="checkbox" name="notify_user_on_transfer_status" value="1" {{ ($settings['notify_user_on_transfer_status'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: #7c3aed;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 13px; color: #0f172a;">ย้ายจุดติดตั้งครุภัณฑ์ (Asset Transfers)</div>
+                                <div style="font-size: 11.5px; color: #64748b;">เตือนเมื่อช่างเข้าดำเนินการ และเมื่อติดตั้งทดสอบระบบเสร็จสิ้น</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; padding-top: 14px; border-top: 1px solid var(--border);">
+                        <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700; background: #7c3aed; border-color: #7c3aed;">
+                            <i class="bi bi-floppy-fill"></i> บันทึกการตั้งค่าแจ้งเตือนผู้ใช้งาน
+                        </button>
+                    </div>
+                </form>
+
+                <!-- 1-Click Interactive Test User Notify Box -->
+                <div class="test-action-box" style="margin-top: 20px; border-left: 4px solid #7c3aed; background: #faf5ff;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #ede9fe; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                            <i class="bi bi-chat-heart-fill"></i>
+                        </div>
+                        <div>
+                            <strong style="font-size: 14px; color: #0f172a;">ทดสอบส่งข้อความแจ้งเตือนผู้ใช้งานส่วนตัว</strong>
+                            <div style="font-size: 12px; color: #64748b;">ทดสอบส่งข้อความต้อนรับและสรุปสถานะเข้า LINE OA ของบัญชีแอดมินที่กำลังเข้าสู่ระบบขณะนี้</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm" onclick="runTestUserNotify()" id="btn_test_user_notify" style="background: #7c3aed; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-send-check-fill"></i> ทดสอบส่งแจ้งเตือนถึงผู้ใช้
                     </button>
                 </div>
             </div>
@@ -1600,6 +1747,53 @@
                     title: 'ส่งอีเมลไม่สำเร็จ',
                     text: res.body.message || 'โปรดตรวจสอบการตั้งค่า SMTP Host/Port/Password',
                     confirmButtonColor: '#ef4444',
+                });
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาดในการเชื่อมต่อ',
+                text: err.toString(),
+                confirmButtonColor: '#ef4444',
+            });
+        });
+    }
+
+    // Test End-User Personal Notification via AJAX
+    function runTestUserNotify() {
+        const btn = document.getElementById('btn_test_user_notify');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> กำลังทดสอบส่ง...';
+
+        fetch("{{ route('settings.test-user-notify') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+        .then(res => {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            if (res.body.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'ส่งแจ้งเตือนถึงผู้ใช้สำเร็จ!',
+                    text: res.body.message,
+                    confirmButtonColor: '#7c3aed',
+                });
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ผลการทดสอบการแจ้งเตือน',
+                    text: res.body.message || 'ไม่สามารถส่งข้อความได้ โปรดตรวจสอบการตั้งค่า LINE User ID หรือ CID',
+                    confirmButtonColor: '#f59e0b',
                 });
             }
         })

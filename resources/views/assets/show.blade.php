@@ -31,6 +31,10 @@
             <span>ขอยืมอุปกรณ์นี้</span>
         </a>
         @endif
+        <a href="{{ route('asset-transfers.create', ['asset_id' => $asset->id]) }}" class="btn btn-secondary" style="background: #f5f3ff; color: #7c3aed; border-color: #ddd6fe;" title="บันทึกหรือยื่นคำขอย้ายจุดติดตั้งครุภัณฑ์นี้">
+            <i class="bi bi-arrows-move"></i>
+            <span>ย้ายจุดติดตั้ง</span>
+        </a>
         <a href="{{ route('assets.label', $asset) }}" target="_blank" class="btn btn-secondary">
             <i class="bi bi-qr-code"></i>
             <span>พิมพ์สติกเกอร์ QR</span>
@@ -678,6 +682,81 @@
         </div>
     </div>
 </div>
+
+<!-- Asset Relocation & Transfer History Table -->
+<div class="card" style="margin-top: 24px;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div class="card-title">
+            <i class="bi bi-arrows-move text-primary" style="color: #7c3aed !important;"></i>
+            <span>ประวัติการย้ายจุดติดตั้งและโอนย้ายอุปกรณ์นี้ ({{ $asset->transfers->count() }} ครั้ง)</span>
+        </div>
+        <a href="{{ route('asset-transfers.create', ['asset_id' => $asset->id]) }}" class="btn btn-primary btn-sm" style="background: #7c3aed; border-color: #7c3aed;">
+            <i class="bi bi-plus-circle"></i> บันทึกการย้ายเครื่องนี้
+        </a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="table" style="margin: 0; vertical-align: middle;">
+                <thead>
+                    <tr>
+                        <th>เลขที่เอกสาร</th>
+                        <th>ประเภท</th>
+                        <th>การย้ายจุดติดตั้ง (จุดเดิม &rarr; จุดใหม่)</th>
+                        <th>ผู้รับผิดชอบใหม่</th>
+                        <th>วันที่ย้าย</th>
+                        <th>สถานะ</th>
+                        <th style="text-align: center;">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($asset->transfers as $transfer)
+                    <tr>
+                        <td>
+                            <a href="{{ route('asset-transfers.show', $transfer) }}" style="font-weight: 700; color: #7c3aed; text-decoration: none; font-family: monospace;">
+                                {{ $transfer->transfer_no }}
+                            </a>
+                        </td>
+                        <td>
+                            {!! $transfer->transfer_type_badge !!}
+                        </td>
+                        <td style="font-size: 12.5px;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="color: #64748b;">{{ $transfer->fromDepartment?->name ?? $transfer->from_department_name ?? 'ไม่ระบุ' }} ({{ $transfer->from_location_detail ?: '-' }})</span>
+                                <i class="bi bi-arrow-right text-muted"></i>
+                                <strong style="color: #166534;">{{ $transfer->toDepartment?->name ?? $transfer->to_department_name ?? 'ไม่ระบุ' }} ({{ $transfer->to_location_detail ?: '-' }})</strong>
+                            </div>
+                        </td>
+                        <td style="font-size: 12.5px;">
+                            <i class="bi bi-person me-1 text-muted"></i>{{ $transfer->to_custodian_name ?: '-' }}
+                        </td>
+                        <td style="font-size: 12px; color: #475569; white-space: nowrap;">
+                            {{ $transfer->transfer_date ? $transfer->transfer_date->format('d/m/Y') : '-' }}
+                        </td>
+                        <td style="white-space: nowrap;">
+                            {!! $transfer->status_badge !!}
+                        </td>
+                        <td style="text-align: center; white-space: nowrap;">
+                            <a href="{{ route('asset-transfers.show', $transfer) }}" class="btn btn-secondary btn-sm" title="ดูรายละเอียด">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{{ route('asset-transfers.print', $transfer) }}" target="_blank" class="btn btn-secondary btn-sm" title="พิมพ์ใบย้าย">
+                                <i class="bi bi-printer"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                            ยังไม่มีประวัติการย้ายจุดติดตั้งสำหรับครุภัณฑ์นี้ (ติดตั้งอยู่ที่เดิมตั้งแต่ลงทะเบียน)
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 
 <!-- Asset Deletion Confirmation Modal -->
 <div id="deleteAssetModal" class="custom-modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(4px); z-index: 1050; align-items: center; justify-content: center; padding: 20px;">

@@ -1063,4 +1063,51 @@ class AuthController extends Controller
 
         return back()->with('success', "เชื่อมโยงเลขประจำตัวประชาชน Thai ID ({$user->formatted_cid}) สำเร็จแล้ว");
     }
+
+    public function linkLine(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'line_user_id' => 'required|string|max:100',
+        ], [
+            'line_user_id.required' => 'กรุณาระบุ LINE User ID ของคุณ',
+        ]);
+
+        $lineUserId = trim($request->line_user_id);
+
+        $user->update([
+            'line_user_id' => $lineUserId,
+            'notify_line_enabled' => true,
+        ]);
+
+        AuditLog::record('link_line', 'auth', "เชื่อมโยง LINE OA ID ({$lineUserId}) ให้กับผู้ใช้งาน {$user->name}", $user);
+
+        return back()->with('success', 'เชื่อมโยงบัญชี LINE Official Account สำหรับรับการแจ้งเตือนส่วนตัวเรียบร้อยแล้ว');
+    }
+
+    public function unlinkLine(Request $request)
+    {
+        $user = Auth::user();
+
+        $user->update([
+            'line_user_id' => null,
+        ]);
+
+        AuditLog::record('unlink_line', 'auth', "ยกเลิกการเชื่อมโยง LINE OA ให้กับผู้ใช้งาน {$user->name}", $user);
+
+        return back()->with('success', 'ยกเลิกการเชื่อมโยงบัญชี LINE เรียบร้อยแล้ว');
+    }
+
+    public function toggleLineNotify(Request $request)
+    {
+        $user = Auth::user();
+
+        $user->update([
+            'notify_line_enabled' => $request->boolean('notify_line_enabled'),
+        ]);
+
+        $status = $user->notify_line_enabled ? 'เปิดใช้งาน' : 'ปิดใช้งาน';
+        return back()->with('success', "{$status}การแจ้งเตือนความคืบหน้าผ่าน LINE เรียบร้อยแล้ว");
+    }
 }

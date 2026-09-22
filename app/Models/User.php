@@ -19,6 +19,8 @@ class User extends Authenticatable
         'name',
         'username',
         'cid',
+        'line_user_id',
+        'notify_line_enabled',
         'google_id',
         'google_email',
         'mfa_enabled',
@@ -48,6 +50,7 @@ class User extends Authenticatable
     protected $casts = [
         'password' => 'hashed',
         'is_active' => 'boolean',
+        'notify_line_enabled' => 'boolean',
         'mfa_enabled' => 'boolean',
         'mfa_enforced' => 'boolean',
         'mfa_enrolled_at' => 'datetime',
@@ -128,6 +131,16 @@ class User extends Authenticatable
     public function hasThaidLinked(): bool
     {
         return !empty($this->cid);
+    }
+
+    public function hasLineLinked(): bool
+    {
+        return !empty($this->line_user_id);
+    }
+
+    public function isLineNotifyActive(): bool
+    {
+        return (bool) $this->notify_line_enabled && (!empty($this->line_user_id) || !empty($this->cid));
     }
 
     public function getMfaStatusLabelAttribute(): string

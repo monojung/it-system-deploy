@@ -133,6 +133,7 @@ class DataRequestController extends Controller
         // Send MOPH Notify notification for new data request
         try {
             \App\Services\MophNotifyService::sendDataRequestNotification($dataRequest, 'created');
+            \App\Services\UserLineNotificationService::notifyDataRequestUser($dataRequest, 'created');
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Failed sending data request notification: ' . $e->getMessage());
         }
@@ -206,6 +207,7 @@ class DataRequestController extends Controller
         // Send MOPH Notify notification for status update
         try {
             \App\Services\MophNotifyService::sendDataRequestNotification($dataRequest, $request->status, $request->admin_notes);
+            \App\Services\UserLineNotificationService::notifyDataRequestUser($dataRequest, $request->status, $request->admin_notes);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Failed sending data request status notification: ' . $e->getMessage());
         }
@@ -252,6 +254,7 @@ class DataRequestController extends Controller
         // Send MOPH Notify notification for completed data request
         try {
             \App\Services\MophNotifyService::sendDataRequestNotification($dataRequest, 'completed', $dataRequest->admin_notes);
+            \App\Services\UserLineNotificationService::notifyDataRequestUser($dataRequest, 'completed', $dataRequest->admin_notes);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Failed sending data request completion notification: ' . $e->getMessage());
         }
@@ -513,6 +516,7 @@ class DataRequestController extends Controller
             // Send MOPH Notify notification for completed data query
             try {
                 \App\Services\MophNotifyService::sendDataRequestNotification($dataRequest, 'completed', $dataRequest->admin_notes);
+                \App\Services\UserLineNotificationService::notifyDataRequestUser($dataRequest, 'completed', $dataRequest->admin_notes);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('Failed sending data request query notification: ' . $e->getMessage());
             }

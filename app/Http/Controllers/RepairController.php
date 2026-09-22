@@ -192,6 +192,8 @@ class RepairController extends Controller
             if (setting('line_notify_enabled', false)) {
                 \App\Services\LineNotificationService::sendRepairTicketNotification($repair);
             }
+            // Personal notification to requester (LINE OA / MOPH CID)
+            \App\Services\UserLineNotificationService::notifyRepairUser($repair, 'created');
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Failed sending repair notification: ' . $e->getMessage());
         }
@@ -324,6 +326,8 @@ class RepairController extends Controller
         // Send status change notification via MOPH Notify
         try {
             \App\Services\MophNotifyService::sendRepairStatusNotification($repair, $prevStatus, $newStatus, $comment);
+            // Personal notification to requester (LINE OA / MOPH CID)
+            \App\Services\UserLineNotificationService::notifyRepairUser($repair, $newStatus, $comment);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Failed sending repair status notification: ' . $e->getMessage());
         }

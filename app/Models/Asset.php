@@ -93,6 +93,16 @@ class Asset extends Model
             ->latestOfMany();
     }
 
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(AssetTransfer::class, 'asset_id')->latest();
+    }
+
+    public function latestTransfer()
+    {
+        return $this->hasOne(AssetTransfer::class, 'asset_id')->latestOfMany();
+    }
+
     public function scopeAuditedInFiscalYear($query, int $fiscalYear)
     {
         return $query->where('last_audited_fiscal_year', $fiscalYear);

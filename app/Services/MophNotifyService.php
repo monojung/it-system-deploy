@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Repair;
 use App\Models\AssetBorrow;
 use App\Models\DataRequest;
+use App\Models\AssetTransfer;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -297,6 +298,45 @@ class MophNotifyService
             ];
         } else {
             $text = self::buildDataRequestText($dataRequest, $action, $comment);
+            $payload = [
+                'messages' => [
+                    ['type' => 'text', 'text' => $text]
+                ]
+            ];
+        }
+
+        $res = self::sendMophMessage($payload);
+        return $res['success'];
+    }
+
+    /**
+     * Send notification for asset transfer / relocation events
+     *
+     * @param AssetTransfer $transfer
+     * @param string $action 'created', 'in_progress', 'completed', 'cancelled'
+     * @return bool
+     */
+    public static function sendAssetTransferNotification(AssetTransfer $transfer, string $action = 'created'): bool
+    {
+        $enabled = (bool) setting('moph_notify_enabled', true);
+        if (!$enabled) {
+            return false;
+        }
+
+        $notifyOnTransfer = (bool) setting('notify_on_transfer_request', true);
+        if (!$notifyOnTransfer) {
+            return false;
+        }
+
+        $format = setting('moph_notify_message_type', 'flex');
+
+        if ($format === 'flex') {
+            $flex = self::buildAssetTransferFlexMessage($transfer, $action);
+            $payload = [
+                'messages' => [$flex]
+            ];
+        } else {
+            $text = self::buildAssetTransferText($transfer, $action);
             $payload = [
                 'messages' => [
                     ['type' => 'text', 'text' => $text]
@@ -1377,4 +1417,250 @@ class MophNotifyService
 
         return $msg;
     }
+
+    /**
+     * Build Flex Message for Asset Transfer / Relocation
+     *
+     * @param AssetTransfer $transfer
+     * @param string $action 'created', 'in_progress', 'completed', 'cancelled'
+     * @return array
+     */
+    public static function buildAssetTransferFlexMessage(AssetTransfer $transfer, string $action = 'created'): array
+    {
+        $hospitalName = setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง');
+
+        switch ($action) {
+            case 'completed':
+                $title = '✅ ดำเนินการย้าย/ติดตั้งครุภัณฑ์เรียบร้อยแล้ว';
+                $headerColor = '#059669';
+                $btnLabel = '🔎 ดูรายละเอียดและใบส่งมอบ';
+                break;
+            case 'in_progress':
+                $title = '🛠️ ช่างกำลังดำเนินการย้ายจุดติดตั้ง';
+                $headerColor = '#0284c7';
+                $btnLabel = '🔎 ดูสถานะการย้าย';
+                break;
+            case 'cancelled':
+                $title = '❌ ยกเลิกคำขอย้ายจุดติดตั้งครุภัณฑ์';
+                $headerColor = '#dc2626';
+                $btnLabel = '🔎 ดูรายละเอียดคำขอ';
+                break;
+            case 'created':
+            default:
+                $title = '🚚 มีรายการย้ายจุดติดตั้งครุภัณฑ์ IT ใหม่';
+                $headerColor = '#7c3aed';
+                $btnLabel = '🔎 ตรวจสอบและดำเนินการย้าย';
+                break;
+        }
+
+        $nowThai = now()->addYears(543)->format('d/m/Y H:i:s');
+        $asset = $transfer->asset;
+        $assetName = $asset ? "{$asset->asset_code} ({$asset->name})" : 'ไม่ระบุอุปกรณ์';
+        $viewUrl = self::getSafePublicUrl('/asset-transfers/' . $transfer->id);
+
+        $fromDept = $transfer->fromDepartment ? $transfer->fromDepartment->name : ($transfer->from_department_name ?: '-');
+        $toDept = $transfer->toDepartment ? $transfer->toDepartment->name : ($transfer->to_department_name ?: '-');
+        $fromLoc = $transfer->from_location_detail ?: '-';
+        $toLoc = $transfer->to_location_detail ?: '-';
+
+        $bodyContents = [
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '🔖 เลขที่เอกสาร:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $transfer->transfer_no, 'size' => 'xs', 'color' => '#7c3aed', 'weight' => 'bold', 'flex' => 8],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '💻 ครุภัณฑ์:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $assetName, 'size' => 'xs', 'color' => '#0f172a', 'weight' => 'bold', 'flex' => 8, 'wrap' => true],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '🏷️ ประเภท:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $transfer->transfer_type_label, 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'vertical',
+                'margin' => 'md',
+                'paddingAll' => 'sm',
+                'backgroundColor' => '#f8fafc',
+                'cornerRadius' => 'md',
+                'contents' => [
+                    [
+                        'type' => 'box',
+                        'layout' => 'horizontal',
+                        'contents' => [
+                            ['type' => 'text', 'text' => '📍 จุดติดตั้งเดิม:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                            ['type' => 'text', 'text' => "{$fromDept} ({$fromLoc})", 'size' => 'xs', 'color' => '#475569', 'flex' => 8, 'wrap' => true],
+                        ]
+                    ],
+                    [
+                        'type' => 'box',
+                        'layout' => 'horizontal',
+                        'margin' => 'xs',
+                        'contents' => [
+                            ['type' => 'text', 'text' => '🎯 ย้ายไปที่:', 'size' => 'xs', 'color' => '#7c3aed', 'weight' => 'bold', 'flex' => 4],
+                            ['type' => 'text', 'text' => "{$toDept} ({$toLoc})", 'size' => 'xs', 'color' => '#1e1b4b', 'weight' => 'bold', 'flex' => 8, 'wrap' => true],
+                        ]
+                    ],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'margin' => 'md',
+                'contents' => [
+                    ['type' => 'text', 'text' => '👤 ผู้รับผิดชอบใหม่:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $transfer->to_custodian_name ?: '-', 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8],
+                ]
+            ],
+            [
+                'type' => 'box',
+                'layout' => 'horizontal',
+                'contents' => [
+                    ['type' => 'text', 'text' => '📝 เหตุผล:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                    ['type' => 'text', 'text' => $transfer->reason ?: '-', 'size' => 'xs', 'color' => '#0f172a', 'flex' => 8, 'wrap' => true],
+                ]
+            ],
+        ];
+
+        if ($action === 'completed') {
+            if ($transfer->test_result) {
+                $bodyContents[] = [
+                    'type' => 'box',
+                    'layout' => 'horizontal',
+                    'contents' => [
+                        ['type' => 'text', 'text' => '🧪 ผลการทดสอบ:', 'size' => 'xs', 'color' => '#059669', 'flex' => 4],
+                        ['type' => 'text', 'text' => $transfer->test_result, 'size' => 'xs', 'color' => '#065f46', 'weight' => 'bold', 'flex' => 8, 'wrap' => true],
+                    ]
+                ];
+            }
+            if ($transfer->receiver_name) {
+                $bodyContents[] = [
+                    'type' => 'box',
+                    'layout' => 'horizontal',
+                    'contents' => [
+                        ['type' => 'text', 'text' => '✍️ ผู้รับมอบ:', 'size' => 'xs', 'color' => '#64748b', 'flex' => 4],
+                        ['type' => 'text', 'text' => $transfer->receiver_name, 'size' => 'xs', 'color' => '#0f172a', 'weight' => 'bold', 'flex' => 8],
+                    ]
+                ];
+            }
+        }
+
+        return [
+            'type' => 'flex',
+            'altText' => "{$title} [{$transfer->transfer_no}]",
+            'contents' => [
+                'type' => 'bubble',
+                'size' => 'mega',
+                'header' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'backgroundColor' => $headerColor,
+                    'paddingAll' => 'lg',
+                    'contents' => [
+                        [
+                            'type' => 'text',
+                            'text' => $title,
+                            'weight' => 'bold',
+                            'size' => 'sm',
+                            'color' => '#ffffff',
+                            'wrap' => true,
+                        ],
+                        [
+                            'type' => 'text',
+                            'text' => "{$hospitalName} • {$nowThai}",
+                            'size' => 'xxs',
+                            'color' => '#ffffffd9',
+                            'margin' => 'xs',
+                        ]
+                    ]
+                ],
+                'body' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'spacing' => 'sm',
+                    'contents' => $bodyContents
+                ],
+                'footer' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'contents' => [
+                        [
+                            'type' => 'button',
+                            'action' => [
+                                'type' => 'uri',
+                                'label' => $btnLabel,
+                                'uri' => $viewUrl,
+                            ],
+                            'style' => 'primary',
+                            'color' => $headerColor,
+                            'height' => 'sm',
+                        ]
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Fallback Plain Text for Asset Transfer / Relocation
+     *
+     * @param AssetTransfer $transfer
+     * @param string $action
+     * @return string
+     */
+    public static function buildAssetTransferText(AssetTransfer $transfer, string $action = 'created'): string
+    {
+        $hospitalName = setting('hospital_name_th', 'รพ.ทุ่งหัวช้าง');
+        $titles = [
+            'created' => 'มีรายการย้ายจุดติดตั้งครุภัณฑ์ IT ใหม่',
+            'in_progress' => 'กำลังดำเนินการย้ายและติดตั้งครุภัณฑ์',
+            'completed' => 'ดำเนินการย้ายและติดตั้งครุภัณฑ์เรียบร้อยแล้ว',
+            'cancelled' => 'ยกเลิกคำขอย้ายจุดติดตั้งครุภัณฑ์',
+        ];
+        $title = $titles[$action] ?? 'การย้ายจุดติดตั้งครุภัณฑ์';
+        $viewUrl = url('/asset-transfers/' . $transfer->id);
+
+        $asset = $transfer->asset;
+        $assetName = $asset ? "{$asset->asset_code} ({$asset->name})" : '-';
+        $fromDept = $transfer->fromDepartment ? $transfer->fromDepartment->name : ($transfer->from_department_name ?: '-');
+        $toDept = $transfer->toDepartment ? $transfer->toDepartment->name : ($transfer->to_department_name ?: '-');
+        $fromLoc = $transfer->from_location_detail ?: '-';
+        $toLoc = $transfer->to_location_detail ?: '-';
+
+        $msg = "\n🚚 {$title} ({$hospitalName})\n";
+        $msg .= "━━━━━━━━━━━━━━━━━━\n";
+        $msg .= "🔖 เลขที่เอกสาร: {$transfer->transfer_no}\n";
+        $msg .= "💻 ครุภัณฑ์: {$assetName}\n";
+        $msg .= "🏷️ ประเภท: {$transfer->transfer_type_label}\n";
+        $msg .= "📍 จุดเดิม: {$fromDept} ({$fromLoc})\n";
+        $msg .= "🎯 ย้ายไป: {$toDept} ({$toLoc})\n";
+        $msg .= "👤 ผู้รับผิดชอบใหม่: " . ($transfer->to_custodian_name ?: '-') . "\n";
+        $msg .= "📝 เหตุผล: " . ($transfer->reason ?: '-') . "\n";
+
+        if ($action === 'completed') {
+            if ($transfer->test_result) {
+                $msg .= "🧪 ผลการทดสอบ: {$transfer->test_result}\n";
+            }
+            if ($transfer->receiver_name) {
+                $msg .= "✍️ ผู้รับมอบ: {$transfer->receiver_name}\n";
+            }
+        }
+
+        $msg .= "🔗 รายละเอียด: {$viewUrl}";
+
+        return $msg;
+    }
 }
+

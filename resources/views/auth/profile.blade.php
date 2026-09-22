@@ -95,6 +95,30 @@
                             </div>
                         @endif
                     </div>
+
+                    <!-- LINE OA Status Indicator -->
+                    <div style="background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(6px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; padding: 12px 16px; min-width: 140px; text-align: center;">
+                        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85; margin-bottom: 4px;">LINE Notify</div>
+                        @if($user->hasLineLinked())
+                            @if($user->notify_line_enabled)
+                                <div style="color: #4ade80; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <i class="bi bi-line"></i> แจ้งเตือนเปิดอยู่
+                                </div>
+                            @else
+                                <div style="color: #fcd34d; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <i class="bi bi-bell-slash"></i> ปิดแจ้งเตือน
+                                </div>
+                            @endif
+                        @elseif($user->hasThaidLinked())
+                            <div style="color: #38bdf8; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="bi bi-bell"></i> ผ่านหมอพร้อม CID
+                            </div>
+                        @else
+                            <div style="color: #e2e8f0; font-weight: 500; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="bi bi-bell-slash"></i> ยังไม่เชื่อมต่อ
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -305,6 +329,98 @@
                             </button>
                         </div>
                     </form>
+                </div>
+
+                <!-- LINE OA Card -->
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 36px; height: 36px; border-radius: 10px; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                    <i class="bi bi-line"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 700; color: #0f172a; font-size: 14px;">LINE Official Account (LINE OA)</div>
+                                    <div style="font-size: 11px; color: #64748b;">รับการแจ้งเตือนสถานะงานซ่อม ขอยืม และขอข้อมูลตรงถึงคุณ</div>
+                                </div>
+                            </div>
+                            @if($user->hasLineLinked())
+                                <span class="badge badge-success" style="font-size: 11px; padding: 4px 8px;">
+                                    <i class="bi bi-check-circle-fill"></i> ผูก LINE แล้ว
+                                </span>
+                            @elseif($user->hasThaidLinked())
+                                <span class="badge badge-info" style="font-size: 11px; padding: 4px 8px;">
+                                    <i class="bi bi-bell"></i> พร้อมรับทางหมอพร้อม
+                                </span>
+                            @else
+                                <span class="badge badge-light" style="font-size: 11px; padding: 4px 8px; color: #64748b;">
+                                    ยังไม่เชื่อมต่อ
+                                </span>
+                            @endif
+                        </div>
+
+                        @if($user->hasLineLinked())
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                                <div style="font-size: 11px; color: #166534; margin-bottom: 2px;">LINE User ID ของคุณ:</div>
+                                <div style="font-size: 13px; font-weight: 700; font-family: monospace; color: #0f766e;">
+                                    {{ substr($user->line_user_id, 0, 8) . '...' . substr($user->line_user_id, -6) }}
+                                </div>
+                                <div style="font-size: 11px; color: #15803d; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                                    <i class="bi bi-bell-fill"></i> สถานะ: <strong>{{ $user->notify_line_enabled ? 'เปิดรับข้อความแจ้งเตือน' : 'ปิดการแจ้งเตือนชั่วคราว' }}</strong>
+                                </div>
+                            </div>
+                        @else
+                            <p style="font-size: 12px; color: #64748b; line-height: 1.6; margin-bottom: 12px;">
+                                เชื่อมต่อ LINE เพื่อรับข้อความแจ้งเตือนทันทีเมื่อช่างรับงานซ่อม, อะไหล่มาถึง, ซ่อมเสร็จ, ไฟล์ข้อมูลพร้อมดาวน์โหลด หรือคำขอยืมครุภัณฑ์ได้รับอนุมัติ
+                            </p>
+                            @if($user->hasThaidLinked())
+                                <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 11px; color: #0369a1;">
+                                    <i class="bi bi-info-circle-fill"></i> คุณผูกเลขบัตรประชาชนแล้ว ระบบสามารถส่งการแจ้งเตือนผ่าน <strong>LINE หมอพร้อม (MOPH Notify)</strong> ได้อัตโนมัติ หรือจะระบุ LINE User ID เพื่อรับทาง LINE OA ได้เช่นกัน
+                                </div>
+                            @endif
+                        @endif
+                    </div>
+
+                    <div>
+                        @if($user->hasLineLinked())
+                            <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                                <form action="{{ route('profile.toggle-line-notify') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="notify_line_enabled" value="{{ $user->notify_line_enabled ? '0' : '1' }}">
+                                    <button type="submit" class="btn btn-sm {{ $user->notify_line_enabled ? 'btn-outline-warning' : 'btn-outline-success' }}">
+                                        @if($user->notify_line_enabled)
+                                            <i class="bi bi-bell-slash"></i> ปิดแจ้งเตือนชั่วคราว
+                                        @else
+                                            <i class="bi bi-bell"></i> เปิดรับแจ้งเตือน LINE
+                                        @endif
+                                    </button>
+                                </form>
+                                <form action="{{ route('profile.unlink-line') }}" method="POST" onsubmit="return confirm('คุณต้องการยกเลิกการเชื่อมโยง LINE นี้ใช่หรือไม่?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-link-45deg"></i> ยกเลิกเชื่อมต่อ LINE
+                                    </button>
+                                </form>
+                            </div>
+                        @else
+                            <form action="{{ route('profile.link-line') }}" method="POST">
+                                @csrf
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" name="line_user_id" class="form-control form-control-sm" placeholder="LINE User ID (ขึ้นต้นด้วย U...)" value="{{ old('line_user_id', $user->line_user_id) }}" required style="font-family: monospace;">
+                                    <button type="submit" class="btn btn-success btn-sm" style="flex-shrink: 0; background: #06c755; border-color: #06c755;">
+                                        <i class="bi bi-link"></i> ผูก LINE
+                                    </button>
+                                </div>
+                            </form>
+                            <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">
+                                @if(setting('line_oa_basic_id'))
+                                    เพิ่มเพื่อน LINE OA ของโรงพยาบาล: <strong>{{ setting('line_oa_basic_id') }}</strong>
+                                @else
+                                    ติดต่อศูนย์คอมพิวเตอร์ / เพิ่มเพื่อน LINE OA ของโรงพยาบาลเพื่อดู User ID
+                                @endif
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

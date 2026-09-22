@@ -1670,6 +1670,11 @@
                                 <i class="bi bi-qr-code"></i>
                             </a>
 
+                            {{-- Relocate / Transfer --}}
+                            <a href="{{ route('asset-transfers.create', ['asset_id' => $asset->id]) }}" class="action-icon-btn" title="ย้ายจุดติดตั้ง / โอนย้าย" style="color: #7c3aed;">
+                                <i class="bi bi-arrows-move"></i>
+                            </a>
+
                             @if(auth()->user()->isAdmin() || auth()->user()->isTechnician())
                                 {{-- Edit --}}
                                 <a href="{{ route('assets.edit', $asset) }}" class="action-icon-btn" title="แก้ไขข้อมูล">

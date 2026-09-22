@@ -8,9 +8,11 @@ use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\LineNotificationService;
 use App\Services\MophNotifyService;
+use App\Services\UserLineNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Throwable;
 
 class SettingController extends Controller
@@ -53,8 +55,21 @@ class SettingController extends Controller
             'notify_on_status_change' => setting('notify_on_status_change', true),
             'notify_on_borrow_request' => setting('notify_on_borrow_request', true),
             'notify_on_data_request' => setting('notify_on_data_request', true),
+            'notify_on_transfer_request' => setting('notify_on_transfer_request', true),
             'notify_on_critical_only' => setting('notify_on_critical_only', false),
             'notify_email_admin' => setting('notify_email_admin', ''),
+
+            // User Personal LINE OA Notifications
+            'user_notify_enabled' => setting('user_notify_enabled', true),
+            'user_notify_channel' => setting('user_notify_channel', 'both'),
+            'line_oa_channel_access_token' => setting('line_oa_channel_access_token', ''),
+            'line_oa_channel_secret' => setting('line_oa_channel_secret', ''),
+            'line_oa_basic_id' => setting('line_oa_basic_id', ''),
+            'user_notify_via_moph_cid' => setting('user_notify_via_moph_cid', true),
+            'notify_user_on_repair_status' => setting('notify_user_on_repair_status', true),
+            'notify_user_on_data_status' => setting('notify_user_on_data_status', true),
+            'notify_user_on_borrow_status' => setting('notify_user_on_borrow_status', true),
+            'notify_user_on_transfer_status' => setting('notify_user_on_transfer_status', true),
 
             // SMTP & Email
             'mail_mailer' => setting('mail_mailer', config('mail.default', 'smtp')),
@@ -154,6 +169,7 @@ class SettingController extends Controller
             $notifyStatus = $request->boolean('notify_on_status_change');
             $notifyBorrow = $request->boolean('notify_on_borrow_request');
             $notifyDataRequest = $request->boolean('notify_on_data_request');
+            $notifyTransfer = $request->boolean('notify_on_transfer_request');
             $notifyCritical = $request->boolean('notify_on_critical_only');
             $notifyEmail = $request->input('notify_email_admin', '');
 
@@ -169,8 +185,21 @@ class SettingController extends Controller
             SystemSetting::set('notify_on_status_change', $notifyStatus, 'notification', 'boolean');
             SystemSetting::set('notify_on_borrow_request', $notifyBorrow, 'notification', 'boolean');
             SystemSetting::set('notify_on_data_request', $notifyDataRequest, 'notification', 'boolean');
+            SystemSetting::set('notify_on_transfer_request', $notifyTransfer, 'notification', 'boolean');
             SystemSetting::set('notify_on_critical_only', $notifyCritical, 'notification', 'boolean');
             SystemSetting::set('notify_email_admin', $notifyEmail, 'notification', 'text');
+
+            // Save User LINE OA settings
+            SystemSetting::set('user_notify_enabled', $request->boolean('user_notify_enabled'), 'notification', 'boolean');
+            SystemSetting::set('user_notify_channel', $request->input('user_notify_channel', 'both'), 'notification', 'text');
+            SystemSetting::set('line_oa_channel_access_token', $request->input('line_oa_channel_access_token', ''), 'notification', 'text');
+            SystemSetting::set('line_oa_channel_secret', $request->input('line_oa_channel_secret', ''), 'notification', 'text');
+            SystemSetting::set('line_oa_basic_id', $request->input('line_oa_basic_id', ''), 'notification', 'text');
+            SystemSetting::set('user_notify_via_moph_cid', $request->boolean('user_notify_via_moph_cid'), 'notification', 'boolean');
+            SystemSetting::set('notify_user_on_repair_status', $request->boolean('notify_user_on_repair_status'), 'notification', 'boolean');
+            SystemSetting::set('notify_user_on_data_status', $request->boolean('notify_user_on_data_status'), 'notification', 'boolean');
+            SystemSetting::set('notify_user_on_borrow_status', $request->boolean('notify_user_on_borrow_status'), 'notification', 'boolean');
+            SystemSetting::set('notify_user_on_transfer_status', $request->boolean('notify_user_on_transfer_status'), 'notification', 'boolean');
         } elseif ($group === 'mail') {
             $mailData = [
                 'mail_mailer' => $request->input('mail_mailer', 'smtp'),
@@ -326,5 +355,38 @@ class SettingController extends Controller
                 'message' => 'ไม่สามารถส่งอีเมลได้: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Test notification sending to a user via LINE OA or MOPH Notify
+     */
+    public function testUserNotify(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'กรุณาเข้าสู่ระบบก่อนทดสอบ'], 401);
+        }
+
+        $targetUserId = $request->input('user_id');
+        $targetUser = $targetUserId ? User::find($targetUserId) : $user;
+
+        if (!$targetUser) {
+            return response()->json(['success' => false, 'message' => 'ไม่พบข้อมูลผู้ใช้งานที่ระบุ'], 404);
+        }
+
+        if ($request->filled('target_id')) {
+            $targetType = $request->input('target_type', 'line_id');
+            $targetUser = clone $targetUser;
+            if ($targetType === 'cid') {
+                $targetUser->cid = $request->input('target_id');
+            } else {
+                $targetUser->line_user_id = $request->input('target_id');
+            }
+            $targetUser->notify_line_enabled = true;
+        }
+
+        $customToken = $request->input('channel_access_token');
+        $result = UserLineNotificationService::sendTestToUser($targetUser, $customToken);
+        return response()->json($result, $result['success'] ? 200 : 400);
     }
 }

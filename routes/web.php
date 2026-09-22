@@ -18,6 +18,7 @@ use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\ServerInitController;
 use App\Http\Controllers\HardwareAuditController;
 use App\Http\Controllers\AssetBorrowController;
+use App\Http\Controllers\AssetTransferController;
 use App\Http\Controllers\DeviceTypeController;
 
 // Initial Server Setup Route (Storage link, cache clear, migrations)
@@ -113,10 +114,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/profile/mfa/disable', [AuthController::class, 'disableMfa'])->name('profile.mfa.disable');
     Route::post('/profile/mfa/reset', [AuthController::class, 'resetMfaSecret'])->name('profile.mfa.reset');
 
-    // Profile Account Linking (Google & ThaiD)
+    // Profile Account Linking (Google, ThaiD, LINE OA)
     Route::get('/profile/link-google', [AuthController::class, 'redirectToGoogleLink'])->name('profile.link-google');
     Route::post('/profile/unlink-google', [AuthController::class, 'unlinkGoogle'])->name('profile.unlink-google');
     Route::post('/profile/link-cid', [AuthController::class, 'linkCid'])->name('profile.link-cid');
+    Route::post('/profile/link-line', [AuthController::class, 'linkLine'])->name('profile.link-line');
+    Route::post('/profile/unlink-line', [AuthController::class, 'unlinkLine'])->name('profile.unlink-line');
+    Route::post('/profile/toggle-line-notify', [AuthController::class, 'toggleLineNotify'])->name('profile.toggle-line-notify');
 
     // Repair Tickets (Accessible by all users with varied permissions)
     Route::get('/repairs', [RepairController::class, 'index'])->name('repairs.index');
@@ -198,6 +202,18 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/asset-borrows/{assetBorrow}/receive-return', [AssetBorrowController::class, 'receiveReturn'])->name('asset-borrows.receive-return');
     });
 
+    // IT Asset Transfers & Relocations (ระบบย้ายครุภัณฑ์และย้ายจุดติดตั้งอุปกรณ์)
+    Route::get('/asset-transfers/export/csv', [AssetTransferController::class, 'exportCsv'])->name('asset-transfers.export');
+    Route::get('/asset-transfers', [AssetTransferController::class, 'index'])->name('asset-transfers.index');
+    Route::get('/asset-transfers/create', [AssetTransferController::class, 'create'])->name('asset-transfers.create');
+    Route::post('/asset-transfers', [AssetTransferController::class, 'store'])->name('asset-transfers.store');
+    Route::get('/asset-transfers/{assetTransfer}', [AssetTransferController::class, 'show'])->name('asset-transfers.show');
+    Route::get('/asset-transfers/{assetTransfer}/edit', [AssetTransferController::class, 'edit'])->name('asset-transfers.edit');
+    Route::put('/asset-transfers/{assetTransfer}', [AssetTransferController::class, 'update'])->name('asset-transfers.update');
+    Route::delete('/asset-transfers/{assetTransfer}', [AssetTransferController::class, 'destroy'])->name('asset-transfers.destroy');
+    Route::get('/asset-transfers/{assetTransfer}/print', [AssetTransferController::class, 'print'])->name('asset-transfers.print');
+    Route::post('/asset-transfers/{assetTransfer}/status', [AssetTransferController::class, 'updateStatus'])->name('asset-transfers.status');
+
     // Reports (รายงานสรุป ไตรมาส / เดือน / ครุภัณฑ์)
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/assets', [ReportController::class, 'assets'])->name('reports.assets');
@@ -267,6 +283,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/settings/test-moph', [SettingController::class, 'testMophNotify'])->name('settings.test-moph');
         Route::post('/settings/test-line', [SettingController::class, 'testLineNotify'])->name('settings.test-line');
         Route::post('/settings/test-mail', [SettingController::class, 'testMail'])->name('settings.test-mail');
+        Route::post('/settings/test-user-notify', [SettingController::class, 'testUserNotify'])->name('settings.test-user-notify');
         Route::post('/settings/clear-data', [SystemResetController::class, 'clearData'])->name('settings.clear-data');
 
         // Audit Logs (บันทึกกิจกรรมและความปลอดภัยระบบ)

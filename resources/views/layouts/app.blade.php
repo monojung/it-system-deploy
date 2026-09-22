@@ -1308,9 +1308,19 @@
                 </a>
 
                 <div class="nav-section-title">คลังและพัสดุ (Inventory)</div>
-                <a href="{{ route('assets.index') }}" class="nav-item {{ request()->routeIs('assets.*') ? 'active' : '' }}">
+                <a href="{{ route('assets.index') }}" class="nav-item {{ request()->routeIs('assets.*') && !request()->routeIs('asset-transfers.*') ? 'active' : '' }}">
                     <i class="bi bi-pc-display"></i>
                     <span>คลังคอมพิวเตอร์ & ครุภัณฑ์</span>
+                </a>
+                <a href="{{ Route::has('asset-transfers.index') ? route('asset-transfers.index') : url('/asset-transfers') }}" class="nav-item {{ request()->routeIs('asset-transfers.*') || request()->is('asset-transfers*') ? 'active' : '' }}">
+                    <i class="bi bi-arrows-move"></i>
+                    <span>ย้ายจุดติดตั้งครุภัณฑ์</span>
+                    @php
+                        $navPendingTransfers = \App\Models\AssetTransfer::where('status', 'pending')->count();
+                    @endphp
+                    @if($navPendingTransfers > 0)
+                        <span class="nav-badge" style="background: #7c3aed;" title="{{ $navPendingTransfers }} รายการรอย้าย">{{ $navPendingTransfers }}</span>
+                    @endif
                 </a>
                 @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician()))
                 <a href="{{ Route::has('hardware-audits.index') ? route('hardware-audits.index') : url('/hardware-audits') }}" class="nav-item {{ request()->routeIs('hardware-audits.*') || request()->is('hardware-audits*') ? 'active' : '' }}">

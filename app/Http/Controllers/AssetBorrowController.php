@@ -236,6 +236,7 @@ class AssetBorrowController extends Controller
         // Send MOPH Notify notification for new borrow request
         try {
             \App\Services\MophNotifyService::sendAssetBorrowNotification($borrow, 'created');
+            \App\Services\UserLineNotificationService::notifyBorrowUser($borrow, 'created');
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Failed sending asset borrow notification: ' . $e->getMessage());
         }
@@ -400,6 +401,7 @@ class AssetBorrowController extends Controller
         // Send MOPH Notify notification for approved borrow request
         try {
             \App\Services\MophNotifyService::sendAssetBorrowNotification($borrow, 'approved');
+            \App\Services\UserLineNotificationService::notifyBorrowUser($borrow, 'approved');
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Failed sending asset borrow approval notification: ' . $e->getMessage());
         }
@@ -422,6 +424,7 @@ class AssetBorrowController extends Controller
         // Send MOPH Notify notification for rejected borrow request
         try {
             \App\Services\MophNotifyService::sendAssetBorrowNotification($borrow, 'rejected');
+            \App\Services\UserLineNotificationService::notifyBorrowUser($borrow, 'rejected');
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Failed sending asset borrow rejection notification: ' . $e->getMessage());
         }
@@ -453,6 +456,7 @@ class AssetBorrowController extends Controller
         // Send MOPH Notify notification for dispatched borrow request
         try {
             \App\Services\MophNotifyService::sendAssetBorrowNotification($borrow, 'dispatched');
+            \App\Services\UserLineNotificationService::notifyBorrowUser($borrow, 'dispatched');
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Failed sending asset borrow dispatch notification: ' . $e->getMessage());
         }
@@ -492,6 +496,7 @@ class AssetBorrowController extends Controller
         // Send MOPH Notify notification for returned borrow request
         try {
             \App\Services\MophNotifyService::sendAssetBorrowNotification($borrow, 'returned');
+            \App\Services\UserLineNotificationService::notifyBorrowUser($borrow, 'returned');
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Failed sending asset borrow return notification: ' . $e->getMessage());
         }
