@@ -16,5 +16,7 @@ class VerifyCsrfToken extends Middleware
         'system-updates/upload-patch',
         'api/hardware-audit/*',
         'hardware-audit/submit',
+        'hardware-audit/agent-command*',
+        'api/hardware-audit/agent-command*',
     ];
 }

@@ -6,6 +6,15 @@
 
 @section('topbar-actions')
 <div style="display: flex; gap: 8px; align-items: center;">
+    <button type="button" class="topbar-btn" onclick="triggerScanAllConfirm()" 
+            title="ส่งคำสั่งไปยัง Agent ทุกเครื่องให้ทำการสแกนสเปคใหม่เดี๋ยวนี้ (Remote Scan All)" 
+            style="background: linear-gradient(135deg, #0284c7 0%, #0f766e 100%); color: #ffffff; border: none; font-weight: 700; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35); display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; cursor: pointer;">
+        <i class="bi bi-broadcast-pin" style="color: #38bdf8; font-size: 15px;"></i>
+        <span>สั่งสแกนทุกเครื่อง</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); color: #ffffff; font-size: 11px; padding: 2px 7px; border-radius: 99px;">
+            {{ $agentInstalledCount ?? 0 }} เครื่อง
+        </span>
+    </button>
     <a href="{{ route('hardware-audits.print-report', ['fiscal_year' => $fiscalYear]) }}" target="_blank" class="topbar-btn" title="พิมพ์รายงานสรุปประจำปีงบประมาณ A4">
         <i class="bi bi-printer text-primary"></i>
         <span>พิมพ์รายงาน A4</span>
@@ -45,19 +54,35 @@
                     </div>
                 </div>
 
-                <!-- Fiscal Year Form Selector -->
-                <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 12px; padding: 8px 14px; display: flex; align-items: center; gap: 10px;">
-                    <form method="GET" action="{{ route('hardware-audits.index') }}" id="fiscalYearForm" style="display: flex; align-items: center; gap: 8px; margin: 0;">
-                        <input type="hidden" name="tab" value="{{ $tab }}">
-                        <i class="bi bi-calendar-check" style="font-size: 16px; opacity: 0.9;"></i>
-                        <label for="fiscal_year" style="font-size: 13px; font-weight: 600; white-space: nowrap; margin: 0;">ปีงบประมาณ:</label>
-                        <select name="fiscal_year" id="fiscal_year" class="form-select form-select-sm" onchange="document.getElementById('fiscalYearForm').submit()" 
-                                style="font-weight: 700; width: 120px; border-radius: 8px; border: none; background: #ffffff; color: #0f766e; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
-                            @foreach($availableFiscalYears as $fy)
-                                <option value="{{ $fy }}" {{ $fiscalYear == $fy ? 'selected' : '' }}>พ.ศ. {{ $fy }}</option>
-                            @endforeach
-                        </select>
-                    </form>
+                <!-- Right Action Bar: Scan All Agent Button & Fiscal Year Form Selector -->
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    
+                    <!-- Scan All Agent Devices Hero Button -->
+                    <button type="button" class="btn btn-sm" onclick="triggerScanAllConfirm()" 
+                            style="background: rgba(255,255,255,0.18); backdrop-filter: blur(8px); border: 1.5px solid rgba(255,255,255,0.35); color: #ffffff; font-weight: 700; padding: 8px 16px; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s; cursor: pointer;"
+                            onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='translateY(-1px)'" 
+                            onmouseout="this.style.background='rgba(255,255,255,0.18)'; this.style.transform='none'">
+                        <i class="bi bi-broadcast-pin text-warning" style="font-size: 17px;"></i>
+                        <span>สั่งสแกนทุกเครื่องที่ติดตั้ง Agent</span>
+                        <span style="background: #ffffff; color: #0f766e; font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 800;">
+                            {{ $agentInstalledCount ?? 0 }} เครื่อง
+                        </span>
+                    </button>
+
+                    <!-- Fiscal Year Form Selector -->
+                    <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 12px; padding: 8px 14px; display: flex; align-items: center; gap: 10px;">
+                        <form method="GET" action="{{ route('hardware-audits.index') }}" id="fiscalYearForm" style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                            <input type="hidden" name="tab" value="{{ $tab }}">
+                            <i class="bi bi-calendar-check" style="font-size: 16px; opacity: 0.9;"></i>
+                            <label for="fiscal_year" style="font-size: 13px; font-weight: 600; white-space: nowrap; margin: 0;">ปีงบประมาณ:</label>
+                            <select name="fiscal_year" id="fiscal_year" class="form-select form-select-sm" onchange="document.getElementById('fiscalYearForm').submit()" 
+                                    style="font-weight: 700; width: 120px; border-radius: 8px; border: none; background: #ffffff; color: #0f766e; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+                                @foreach($availableFiscalYears as $fy)
+                                    <option value="{{ $fy }}" {{ $fiscalYear == $fy ? 'selected' : '' }}>พ.ศ. {{ $fy }}</option>
+                                @endforeach
+                            </select>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -427,6 +452,15 @@
                                 <td style="text-align: right; white-space: nowrap;">
                                     <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end;">
                                         
+                                        <!-- BUTTON 0: Trigger Remote Scan on this machine -->
+                                        <button type="button" class="btn btn-sm btn-outline-info" id="btn-scan-{{ $audit->id }}"
+                                                onclick="triggerSingleScan({{ $audit->id }}, '{{ addslashes($audit->hostname ?: '-') }}')"
+                                                title="สั่งให้ Agent บนเครื่องนี้สแกนและส่งผลสเปคใหม่อัตโนมัติทันที (Remote Scan)"
+                                                style="font-size: 11.5px; padding: 4.5px 8px; border-radius: 7px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; border-color: #38bdf8; color: #0284c7; background: #f0f9ff; transition: all 0.15s;">
+                                            <i class="bi bi-broadcast-pin"></i>
+                                            <span>สั่งสแกน</span>
+                                        </button>
+
                                         <!-- BUTTON 1: Open Agent Inspector Modal -->
                                         <button type="button" class="btn btn-sm" onclick="openAgentInspectionModal({{ $audit->id }})" 
                                                 title="เปิดดูผลการตรวจเช็คสเปคฮาร์ดแวร์เชิงลึก และผลตรวจเกณฑ์มาตรฐาน ICT" 
@@ -1064,10 +1098,118 @@
     </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL 4: REMOTE SCAN ALL AGENT MACHINES MONITORING HUB                     -->
+<!-- ========================================================================= -->
+<div id="remoteScanAllModal" class="custom-modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 1080; align-items: center; justify-content: center; padding: 16px;">
+    <div class="custom-modal-dialog" style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 760px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: 0 25px 60px -15px rgba(0,0,0,0.35); overflow: hidden; animation: modalScaleIn 0.2s ease-out;">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #0f766e 100%); padding: 18px 24px; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.2); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                    <i class="bi bi-broadcast-pin"></i>
+                </div>
+                <div>
+                    <div style="font-weight: 800; font-size: 17px; line-height: 1.2;">ศูนย์สั่งสแกนฮาร์ดแวร์ระยะไกล (Remote Scan Console)</div>
+                    <div style="font-size: 12.5px; opacity: 0.9; margin-top: 3px;">
+                        ส่งสัญญาณคำสั่งไปยัง Agent ทุกเครื่อง และติดตามผลการส่งสเปคแบบ Real-Time
+                    </div>
+                </div>
+            </div>
+            <button type="button" onclick="closeRemoteScanAllModal()" style="background: rgba(255,255,255,0.18); border: none; color: #ffffff; width: 34px; height: 34px; border-radius: 8px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.18)'">&times;</button>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 22px; overflow-y: auto; flex: 1;">
+            
+            <!-- Progress Status Banner -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="scanStatusPulse" style="width: 10px; height: 10px; border-radius: 50%; background: #0284c7; display: inline-block; animation: pulseGlow 1.5s infinite;"></span>
+                        <strong style="font-size: 14px; color: #0f172a;" id="scanStatusTitle">กำลังสั่งสแกนและรอเครื่องตอบสนอง...</strong>
+                    </div>
+                    <span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 11px; font-family: monospace;" id="scanBatchBadge">Batch: -</span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress" style="height: 12px; background: #e2e8f0; border-radius: 99px; overflow: hidden; margin-bottom: 12px;">
+                    <div id="scanProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%; transition: width 0.4s ease;"></div>
+                </div>
+
+                <!-- 3 Mini KPIs -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px;">
+                        <div style="font-size: 11.5px; color: #64748b; font-weight: 600;">เป้าหมายทั้งหมด</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 2px;" id="scanStatTotal">0</div>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #bbf7d0; border-radius: 10px; padding: 10px;">
+                        <div style="font-size: 11.5px; color: #166534; font-weight: 600;">สแกนสำเร็จแล้ว</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #15803d; margin-top: 2px;" id="scanStatCompleted">0</div>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #fef08a; border-radius: 10px; padding: 10px;">
+                        <div style="font-size: 11.5px; color: #854d0e; font-weight: 600;">รอดึงคำสั่ง / สแกน</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #ca8a04; margin-top: 2px;" id="scanStatPending">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Machines List Table -->
+            <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; font-weight: 700; color: #334155;">
+                    <i class="bi bi-pc-display me-1 text-primary"></i> รายชื่อเครื่องลูกข่ายที่ส่งคำสั่ง:
+                </span>
+                <span style="font-size: 11.5px; color: #94a3b8;">รีเฟรชสถานะอัตโนมัติทุก 2.5 วินาที</span>
+            </div>
+
+            <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 12px; max-height: 260px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0" style="font-size: 12.5px;">
+                    <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 2;">
+                        <tr>
+                            <th style="padding: 10px 14px;">ชื่อเครื่อง (Hostname)</th>
+                            <th style="padding: 10px 14px;">ยี่ห้อ / สเปค / IP</th>
+                            <th style="padding: 10px 14px; text-align: center; width: 140px;">สถานะคำสั่ง</th>
+                            <th style="padding: 10px 14px; text-align: right; width: 110px;">เวลาสำเร็จ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scanTargetsTableBody">
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 25px; color: #94a3b8;">
+                                กำลังโหลดข้อมูลเป้าหมาย...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 12px; color: #64748b;" id="scanModalFooterInfo">
+                <i class="bi bi-info-circle me-1"></i>เครื่องลูกข่ายจะดึงคำสั่งทันทีผ่าน Agent Daemon หรือภายใน 5 นาทีผ่าน Watchdog
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeRemoteScanAllModal()">ปิดหน้าต่าง</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="finishAndReloadScan()" id="btnScanFinishReload" style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-arrow-clockwise"></i> รีเฟรชหน้ารายการ
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
 <style>
 @keyframes modalScaleIn {
     from { transform: scale(0.96); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
+}
+@keyframes pulseGlow {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(2, 132, 199, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
 }
 .stat-card:hover {
     transform: translateY(-2px);
@@ -1079,6 +1221,282 @@
 </style>
 
 <script>
+    // -------------------------------------------------------------
+    // Remote Hardware Scan Engine (Scan All & Single Machine)
+    // -------------------------------------------------------------
+    let currentScanBatchId = null;
+    let scanAllPollingInterval = null;
+
+    function triggerScanAllConfirm() {
+        const agentCount = {{ $agentInstalledCount ?? 0 }};
+        Swal.fire({
+            title: 'สั่งสแกนทุกเครื่องที่ติดตั้ง Agent?',
+            html: `ระบบจะส่งสัญญาณคำสั่งไปยังคอมพิวเตอร์ที่ติดตั้ง Agent ทั้งหมด <b>${agentCount}</b> เครื่อง เพื่อทำการตรวจนับสเปคฮาร์ดแวร์ล่าสุดและส่งกลับเข้าสู่ระบบทันที`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#0284c7',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: '<i class="bi bi-broadcast-pin me-1"></i> เริ่มส่งคำสั่งสแกนเดี๋ยวนี้',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                executeScanAll();
+            }
+        });
+    }
+
+    function executeScanAll() {
+        const modal = document.getElementById('remoteScanAllModal');
+        modal.style.display = 'flex';
+        
+        document.getElementById('scanStatusTitle').textContent = 'กำลังส่งคำสั่งสแกนไปยังเครื่องลูกข่าย...';
+        document.getElementById('scanBatchBadge').textContent = 'กำลังเริ่มต้น...';
+        document.getElementById('scanProgressBar').style.width = '5%';
+        document.getElementById('scanProgressBar').className = 'progress-bar progress-bar-striped progress-bar-animated bg-info';
+        document.getElementById('scanStatTotal').textContent = '...';
+        document.getElementById('scanStatCompleted').textContent = '0';
+        document.getElementById('scanStatPending').textContent = '...';
+        document.getElementById('scanTargetsTableBody').innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 25px; color: #64748b;">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    กำลังกระจายคำสั่งสแกนไปยังคิวระบบ...
+                </td>
+            </tr>
+        `;
+
+        fetch(`{{ route('hardware-audits.trigger-scan-all') }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                fiscal_year: {{ $fiscalYear }}
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                Swal.fire('เกิดข้อผิดพลาด', data.message || 'ไม่สามารถส่งคำสั่งสแกนได้', 'error');
+                closeRemoteScanAllModal();
+                return;
+            }
+
+            currentScanBatchId = data.batch_id;
+            document.getElementById('scanBatchBadge').textContent = `Batch: ${data.batch_id}`;
+            document.getElementById('scanStatTotal').textContent = data.total_targets;
+            document.getElementById('scanStatPending').textContent = data.total_targets;
+
+            renderScanTargetsTable(data.targets || []);
+
+            // Start live polling every 2.5 seconds
+            if (scanAllPollingInterval) clearInterval(scanAllPollingInterval);
+            scanAllPollingInterval = setInterval(pollScanAllStatus, 2500);
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: data.message,
+                showConfirmButton: false,
+                timer: 3500
+            });
+        })
+        .catch(err => {
+            Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
+            closeRemoteScanAllModal();
+        });
+    }
+
+    function renderScanTargetsTable(items) {
+        const tbody = document.getElementById('scanTargetsTableBody');
+        if (!items || items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color:#94a3b8;">ไม่พบรายการเครื่องเป้าหมาย</td></tr>`;
+            return;
+        }
+
+        let html = '';
+        items.forEach(item => {
+            let statusBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="bi bi-clock me-1"></i>รอเครื่องรับ</span>';
+            if (item.status === 'processing') {
+                statusBadge = '<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1"><span class="spinner-border spinner-border-sm me-1" style="width:10px;height:10px;"></span>กำลังสแกน</span>';
+            } else if (item.status === 'completed') {
+                statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check-circle me-1"></i>สแกนสำเร็จ</span>';
+            } else if (item.status === 'failed') {
+                statusBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-x-circle me-1"></i>ล้มเหลว</span>';
+            }
+
+            html += `
+                <tr>
+                    <td style="padding: 10px 14px;">
+                        <strong style="color: #0f172a; font-family: monospace;">${item.hostname || '-'}</strong>
+                        ${item.hardware_id ? `<div style="font-size: 10.5px; color: #a21caf; font-family: monospace;">HWID: ${item.hardware_id.substring(0, 13)}...</div>` : ''}
+                    </td>
+                    <td style="padding: 10px 14px; color: #64748b;">
+                        <div>${item.brand_model || '-'}</div>
+                        ${item.ip ? `<div style="font-size: 11px; color: #0284c7;">IP: <code>${item.ip}</code></div>` : ''}
+                    </td>
+                    <td style="padding: 10px 14px; text-align: center;">
+                        ${statusBadge}
+                    </td>
+                    <td style="padding: 10px 14px; text-align: right; color: #64748b; font-size: 11px;">
+                        ${item.executed_at || '-'}
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function pollScanAllStatus() {
+        if (!currentScanBatchId) return;
+
+        fetch(`{{ route('hardware-audits.command-status') }}?batch_id=${currentScanBatchId}`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) return;
+
+            document.getElementById('scanStatTotal').textContent = data.total;
+            document.getElementById('scanStatCompleted').textContent = data.completed;
+            document.getElementById('scanStatPending').textContent = (data.pending + data.processing);
+
+            const pct = data.percentage || 0;
+            const pBar = document.getElementById('scanProgressBar');
+            pBar.style.width = `${pct}%`;
+
+            if (pct >= 100) {
+                pBar.className = 'progress-bar bg-success';
+                document.getElementById('scanStatusTitle').textContent = `สแกนครบทุกเครื่องแล้ว 100% (${data.completed}/${data.total} เครื่อง)`;
+                document.getElementById('scanStatusPulse').style.background = '#10b981';
+                document.getElementById('scanStatusPulse').style.animation = 'none';
+                if (scanAllPollingInterval) {
+                    clearInterval(scanAllPollingInterval);
+                    scanAllPollingInterval = null;
+                }
+            } else {
+                document.getElementById('scanStatusTitle').textContent = `กำลังสั่งสแกน... เสร็จแล้ว ${data.completed}/${data.total} เครื่อง (${pct}%)`;
+            }
+
+            if (data.items) {
+                renderScanTargetsTable(data.items);
+            }
+        })
+        .catch(() => {});
+    }
+
+    function closeRemoteScanAllModal() {
+        if (scanAllPollingInterval) {
+            clearInterval(scanAllPollingInterval);
+            scanAllPollingInterval = null;
+        }
+        document.getElementById('remoteScanAllModal').style.display = 'none';
+    }
+
+    function finishAndReloadScan() {
+        closeRemoteScanAllModal();
+        window.location.reload();
+    }
+
+    function triggerSingleScan(auditId, hostname) {
+        const btn = document.getElementById(`btn-scan-${auditId}`);
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" style="width:11px;height:11px;"></span> <span>ส่งคำสั่ง...</span>`;
+        }
+
+        fetch(`{{ url('/hardware-audits') }}/${auditId}/trigger-scan`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                Swal.fire('เกิดข้อผิดพลาด', data.message || 'ไม่สามารถส่งคำสั่งสแกนได้', 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="bi bi-broadcast-pin"></i> <span>สั่งสแกน</span>`;
+                }
+                return;
+            }
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: `ส่งคำสั่งสแกนไปยังเครื่อง ${hostname} แล้ว!`,
+                text: 'กำลังรอเครื่องดึงคำสั่งและรายงานสเปค...',
+                showConfirmButton: false,
+                timer: 4000
+            });
+
+            if (btn) {
+                btn.className = 'btn btn-sm btn-info text-white';
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" style="width:11px;height:11px;"></span> <span>รอเครื่องตอบรับ...</span>`;
+            }
+
+            // Poll for single command completion
+            let singlePollTimer = null;
+            let pollAttempts = 0;
+            const cmdId = data.command_id;
+
+            singlePollTimer = setInterval(() => {
+                pollAttempts++;
+                if (pollAttempts > 30) {
+                    clearInterval(singlePollTimer);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.className = 'btn btn-sm btn-outline-info';
+                        btn.innerHTML = `<i class="bi bi-broadcast-pin"></i> <span>สั่งสแกนอีกครั้ง</span>`;
+                    }
+                    return;
+                }
+
+                fetch(`{{ route('hardware-audits.command-status') }}?command_id=${cmdId}`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(pollData => {
+                    if (pollData.success && pollData.command && pollData.command.status === 'completed') {
+                        clearInterval(singlePollTimer);
+                        if (btn) {
+                            btn.className = 'btn btn-sm btn-success';
+                            btn.innerHTML = `<i class="bi bi-check-circle"></i> <span>สแกนสำเร็จ</span>`;
+                        }
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: `เครื่อง ${hostname} สแกนสำเร็จแล้ว!`,
+                            text: 'อัปเดตข้อมูลสเปคฮาร์ดแวร์ล่าสุดเรียบร้อยแล้ว',
+                            showConfirmButton: false,
+                            timer: 4000
+                        });
+                    }
+                })
+                .catch(() => {});
+            }, 2500);
+
+        })
+        .catch(err => {
+            Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi bi-broadcast-pin"></i> <span>สั่งสแกน</span>`;
+            }
+        });
+    }
+
     // -------------------------------------------------------------
     // Toggle Select All Checkbox for Batch Approvals
     // -------------------------------------------------------------
@@ -1541,12 +1959,32 @@
 
             <!-- TAB PANE 4: RESCAN COMMAND -->
             <div id="pane-tab-cmd" style="display: none;">
+                <!-- 1-Click Remote Scan Action Card -->
+                <div style="background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%); border: 1.5px solid #99f6e4; border-radius: 14px; padding: 18px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <div style="font-weight: 800; font-size: 14.5px; color: #0f766e; display: flex; align-items: center; gap: 6px;">
+                                <i class="bi bi-broadcast-pin" style="font-size: 18px;"></i>
+                                <span>สั่งสแกนเครื่องนี้ทันทีจากระบบ (1-Click Remote Scan)</span>
+                            </div>
+                            <div style="font-size: 12.5px; color: #334155; margin-top: 4px;">
+                                ระบบจะส่งคำสั่งไปยัง Agent บนเครื่อง <strong>${audit.hostname}</strong> เพื่อทำการสแกนสเปคฮาร์ดแวร์ล่าสุดและส่งกลับเข้าสู่ระบบอัตโนมัติ
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm" onclick="triggerSingleScan(${audit.id}, '${audit.hostname}'); closeAgentInspectionModal();" 
+                                style="background: linear-gradient(135deg, #0284c7 0%, #0f766e 100%); color: #ffffff; font-weight: 700; padding: 8px 18px; border-radius: 8px; border: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(2,132,199,0.3);">
+                            <i class="bi bi-play-circle-fill"></i>
+                            <span>ส่งคำสั่งสแกนเดี๋ยวนี้</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
                     <div style="font-weight: 700; font-size: 13.5px; color: #0f172a; margin-bottom: 6px;">
-                        คำสั่งเรียกตรวจสเปคซ้ำจากเครื่องลูกข่าย (PowerShell One-Liner):
+                        หรือคัดลอกคำสั่งสำหรับรันด้วยตนเอง (PowerShell One-Liner):
                     </div>
                     <p style="font-size: 12.5px; color: #64748b; margin-bottom: 12px;">
-                        หากต้องการให้เครื่อง <strong>${audit.hostname}</strong> สแกนและส่งผลตรวจสอบเข้ามาใหม่อีกครั้ง สามารถคัดลอกคำสั่งด้านล่างไปรันใน PowerShell (Run as Administrator) บนเครื่องนั้นได้ทันที:
+                        หากต้องการสั่งสแกนจากหน้าเครื่องโดยตรง สามารถคัดลอกคำสั่งด้านล่างไปรันใน PowerShell (Run as Administrator):
                     </p>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="rescanCmdInput" class="form-control form-control-sm" value="${rescanCmd}" readonly style="font-family: Consolas, monospace; background: #ffffff;">

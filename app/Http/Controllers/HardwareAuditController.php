@@ -8,9 +8,11 @@ use App\Models\Asset;
 use App\Models\Department;
 use App\Models\DeviceType;
 use App\Models\AuditLog;
+use App\Models\AgentCommand;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class HardwareAuditController extends Controller
 {
@@ -300,6 +302,31 @@ class HardwareAuditController extends Controller
         ]);
         $audit->save();
 
+        // Acknowledge and complete any pending AgentCommand for this machine
+        $commandId = $request->input('command_id');
+        if (!empty($commandId)) {
+            $cmd = AgentCommand::find($commandId);
+            if ($cmd) {
+                $cmd->markAsCompleted("สแกนสำเร็จจาก {$hostname} (Audit #{$audit->id})", $ip);
+            }
+        } else {
+            // Auto-complete any active pending commands for this machine
+            $pendingCmds = AgentCommand::whereIn('status', ['pending', 'processing'])
+                ->where(function ($q) use ($hardwareId, $hostname) {
+                    if (!empty($hardwareId)) {
+                        $q->where('target_hardware_id', $hardwareId);
+                    }
+                    if (!empty($hostname)) {
+                        $q->orWhere('target_hostname', $hostname);
+                    }
+                })
+                ->get();
+
+            foreach ($pendingCmds as $pCmd) {
+                $pCmd->markAsCompleted("สแกนสำเร็จอัตโนมัติจาก {$hostname} (Audit #{$audit->id})", $ip);
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'ส่งรายงานสเปคคอมพิวเตอร์เข้าสู่ระบบเรียบร้อยแล้ว (สถานะ: รอแอดมินตรวจสอบและอนุมัติ)',
@@ -320,6 +347,87 @@ class HardwareAuditController extends Controller
         ], 200, [
             'Content-Type' => 'application/json; charset=utf-8',
         ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Agent Polling Endpoint: Check if there are any pending commands for this client machine (GET/POST)
+     * CSRF-exempt, accessible by THC-IT-Agent PowerShell script
+     */
+    public function pollCommand(Request $request)
+    {
+        $hardwareId = trim((string)$request->input('hardware_id', ''));
+        $hostname = trim((string)$request->input('hostname', ''));
+        $mac = trim((string)$request->input('mac_address', ''));
+        $clientVersion = trim((string)$request->input('client_version', ''));
+        $ip = $request->ip() ?: $request->input('ip_address');
+
+        if (preg_match('/^[0F-]{36}$/i', $hardwareId) || preg_match('/Default string|To be filled by O\.E\.M\.|None/i', $hardwareId)) {
+            $hardwareId = '';
+        }
+
+        // 1. Check for direct command targeted to this machine
+        $cmd = null;
+        if (!empty($hardwareId) || !empty($hostname)) {
+            $query = AgentCommand::whereIn('status', ['pending', 'processing']);
+            $query->where(function ($q) use ($hardwareId, $hostname) {
+                if (!empty($hardwareId)) {
+                    $q->where('target_hardware_id', $hardwareId);
+                }
+                if (!empty($hostname)) {
+                    if (!empty($hardwareId)) {
+                        $q->orWhere('target_hostname', $hostname);
+                    } else {
+                        $q->where('target_hostname', $hostname);
+                    }
+                }
+            });
+            $cmd = $query->orderBy('id', 'desc')->first();
+        }
+
+        // 2. Fallback: Broadcast command (target_type = 'all')
+        if (!$cmd) {
+            $cmd = AgentCommand::where('status', 'pending')
+                ->where('target_type', 'all')
+                ->where('created_at', '>=', now()->subHours(2))
+                ->orderBy('id', 'desc')
+                ->first();
+        }
+
+        if ($cmd) {
+            $cmd->markAsDispatched($ip);
+
+            return response()->json([
+                'has_command' => true,
+                'command_id' => $cmd->id,
+                'batch_id' => $cmd->batch_id,
+                'command' => $cmd->command, // 'scan'
+                'target_type' => $cmd->target_type,
+                'parameters' => $cmd->parameters ?: [],
+                'requested_at' => $cmd->created_at ? $cmd->created_at->toIso8601String() : now()->toIso8601String(),
+                'server_time' => now()->toIso8601String(),
+            ], 200, ['Content-Type' => 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
+        }
+
+        return response()->json([
+            'has_command' => false,
+            'message' => 'ไม่มีคำสั่งสแกนค้างสำหรับเครื่องนี้',
+            'poll_interval_sec' => 30,
+            'server_time' => now()->toIso8601String(),
+        ], 200, ['Content-Type' => 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Agent Command Direct Completion Endpoint
+     */
+    public function completeCommand(Request $request, $id)
+    {
+        $cmd = AgentCommand::find($id);
+        if ($cmd) {
+            $summary = $request->input('summary', 'สำเร็จผ่าน Agent Direct Ack');
+            $cmd->markAsCompleted($summary, $request->ip());
+            return response()->json(['success' => true, 'message' => 'บันทึกสถานะคำสั่งสำเร็จ']);
+        }
+        return response()->json(['success' => false, 'message' => 'ไม่พบคำสั่ง'], 404);
     }
 
     /**
@@ -474,6 +582,17 @@ class HardwareAuditController extends Controller
 
         $deviceTypes = DeviceType::orderBy('name')->get();
 
+        // Total devices with installed agent
+        $agentInstalledCount = HardwareAudit::where(function($q) {
+                $q->whereNotNull('client_agent_version')
+                  ->orWhereNotNull('hardware_id');
+            })
+            ->distinct('hostname')
+            ->count('hostname');
+        if ($agentInstalledCount === 0) {
+            $agentInstalledCount = HardwareAudit::distinct('hostname')->count('hostname');
+        }
+
         return view('hardware_audits.index', compact(
             'fiscalYear',
             'currentFiscalYear',
@@ -494,7 +613,8 @@ class HardwareAuditController extends Controller
             'ramDistribution',
             'osDistribution',
             'storageDistribution',
-            'agedOver5YearsCount'
+            'agedOver5YearsCount',
+            'agentInstalledCount'
         ));
     }
 
@@ -1185,5 +1305,207 @@ class HardwareAuditController extends Controller
             'is_mdes_standard' => empty($mdesIssues),
             'rescan_command' => $rescanCommand,
         ]);
+    }
+
+    /**
+     * Admin Action: Trigger remote scan for a single machine
+     */
+    public function triggerScanSingle(Request $request, $id)
+    {
+        $user = Auth::user();
+        if ($user && $user->isUser()) {
+            abort(403, 'เฉพาะเจ้าหน้าที่ไอทีหรือแอดมินเท่านั้นที่มีสิทธิ์สั่งสแกน');
+        }
+
+        $audit = HardwareAudit::findOrFail($id);
+
+        // Check for existing pending command in the last 2 minutes
+        $existing = AgentCommand::where('target_audit_id', $audit->id)
+            ->whereIn('status', ['pending', 'processing'])
+            ->where('created_at', '>=', now()->subMinutes(2))
+            ->latest()
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'success' => true,
+                'message' => "มีคำสั่งสแกนสำหรับเครื่อง {$audit->hostname} ค้างอยู่ในระบบแล้ว กำลังรอเครื่องตอบกลับ...",
+                'command_id' => $existing->id,
+                'status' => $existing->status,
+                'hostname' => $audit->hostname,
+                'is_existing' => true,
+            ]);
+        }
+
+        $cmd = AgentCommand::create([
+            'command' => 'scan',
+            'target_type' => 'single',
+            'target_hardware_id' => $audit->hardware_id,
+            'target_hostname' => $audit->hostname,
+            'target_audit_id' => $audit->id,
+            'target_asset_id' => $audit->asset_id,
+            'status' => 'pending',
+            'requested_by' => Auth::id(),
+            'parameters' => [
+                'fiscal_year' => $audit->fiscal_year,
+                'trigger_source' => 'web_single_action',
+            ],
+        ]);
+
+        AuditLog::record('scan_trigger_single', 'hardware_audits', "สั่งสแกนเครื่อง {$audit->hostname} (Audit #{$audit->id})", $audit);
+
+        return response()->json([
+            'success' => true,
+            'message' => "ส่งคำสั่งสแกนไปยังเครื่อง {$audit->hostname} เรียบร้อยแล้ว (รอเครื่องลูกข่ายดึงคำสั่ง)",
+            'command_id' => $cmd->id,
+            'hostname' => $audit->hostname,
+            'hardware_id' => $audit->hardware_id,
+        ]);
+    }
+
+    /**
+     * Admin Action: Trigger remote scan for ALL machines with Agent installed
+     */
+    public function triggerScanAll(Request $request)
+    {
+        $user = Auth::user();
+        if ($user && $user->isUser()) {
+            abort(403, 'เฉพาะเจ้าหน้าที่ไอทีหรือแอดมินเท่านั้นที่มีสิทธิ์สั่งสแกน');
+        }
+
+        $fiscalYear = (int)$request->input('fiscal_year', $this->getCurrentFiscalYear());
+
+        // Find all distinct machines that have ever reported with an agent
+        $agentAudits = HardwareAudit::where(function($q) {
+                $q->whereNotNull('client_agent_version')
+                  ->orWhereNotNull('hardware_id');
+            })
+            ->latest()
+            ->get()
+            ->unique(function ($item) {
+                return !empty($item->hardware_id) ? $item->hardware_id : $item->hostname;
+            });
+
+        if ($agentAudits->isEmpty()) {
+            $agentAudits = HardwareAudit::latest()
+                ->get()
+                ->unique('hostname');
+        }
+
+        $batchId = 'batch_' . Str::random(12);
+
+        // 1. Broadcast command
+        $broadcast = AgentCommand::create([
+            'command' => 'scan',
+            'batch_id' => $batchId,
+            'target_type' => 'all',
+            'status' => 'pending',
+            'requested_by' => Auth::id(),
+            'parameters' => [
+                'fiscal_year' => $fiscalYear,
+                'trigger_source' => 'web_scan_all_button',
+            ],
+        ]);
+
+        // 2. Individual target records for tracking in UI
+        $targets = [];
+        foreach ($agentAudits as $aud) {
+            if (empty($aud->hostname) && empty($aud->hardware_id)) continue;
+
+            $cmd = AgentCommand::create([
+                'command' => 'scan',
+                'batch_id' => $batchId,
+                'target_type' => 'single',
+                'target_hardware_id' => $aud->hardware_id,
+                'target_hostname' => $aud->hostname,
+                'target_audit_id' => $aud->id,
+                'target_asset_id' => $aud->asset_id,
+                'status' => 'pending',
+                'requested_by' => Auth::id(),
+                'parameters' => [
+                    'fiscal_year' => $fiscalYear,
+                    'trigger_source' => 'batch_scan_all',
+                ],
+            ]);
+
+            $targets[] = [
+                'id' => $cmd->id,
+                'hostname' => $aud->hostname ?: 'เครื่อง ID #' . $aud->id,
+                'hardware_id' => $aud->hardware_id,
+                'ip' => $aud->ip_address,
+                'brand_model' => trim(($aud->brand ?: '') . ' ' . ($aud->model ?: '')),
+                'status' => 'pending',
+            ];
+        }
+
+        AuditLog::record('scan_trigger_all', 'hardware_audits', "สั่งสแกนคอมพิวเตอร์ทุกเครื่องที่มี Agent (จำนวน " . count($targets) . " เครื่อง)", null);
+
+        return response()->json([
+            'success' => true,
+            'message' => "ส่งคำสั่งสแกนไปยังเครื่องทั้งหมด " . count($targets) . " เครื่อง เรียบร้อยแล้ว",
+            'batch_id' => $batchId,
+            'total_targets' => count($targets),
+            'targets' => $targets,
+        ]);
+    }
+
+    /**
+     * Query status of a command or batch
+     */
+    public function getCommandStatus(Request $request)
+    {
+        if ($request->filled('command_id')) {
+            $cmd = AgentCommand::find($request->input('command_id'));
+            if (!$cmd) {
+                return response()->json(['success' => false, 'message' => 'ไม่พบคำสั่ง'], 404);
+            }
+            return response()->json([
+                'success' => true,
+                'command' => [
+                    'id' => $cmd->id,
+                    'status' => $cmd->status,
+                    'hostname' => $cmd->target_hostname,
+                    'hardware_id' => $cmd->target_hardware_id,
+                    'executed_at' => $cmd->executed_at ? $cmd->executed_at->format('d/m/Y H:i:s น.') : null,
+                    'result_summary' => $cmd->result_summary,
+                ]
+            ]);
+        }
+
+        if ($request->filled('batch_id')) {
+            $batchId = $request->input('batch_id');
+            $commands = AgentCommand::where('batch_id', $batchId)
+                ->where('target_type', 'single')
+                ->get();
+
+            $total = $commands->count();
+            $completed = $commands->where('status', 'completed')->count();
+            $processing = $commands->where('status', 'processing')->count();
+            $pending = $commands->where('status', 'pending')->count();
+            $failed = $commands->where('status', 'failed')->count();
+
+            return response()->json([
+                'success' => true,
+                'batch_id' => $batchId,
+                'total' => $total,
+                'completed' => $completed,
+                'processing' => $processing,
+                'pending' => $pending,
+                'failed' => $failed,
+                'percentage' => $total > 0 ? round(($completed / $total) * 100) : 0,
+                'items' => $commands->map(function ($c) {
+                    return [
+                        'id' => $c->id,
+                        'hostname' => $c->target_hostname,
+                        'hardware_id' => $c->target_hardware_id,
+                        'status' => $c->status,
+                        'executed_at' => $c->executed_at ? $c->executed_at->format('H:i:s น.') : null,
+                        'result_summary' => $c->result_summary,
+                    ];
+                }),
+            ]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'โปรดระบุ command_id หรือ batch_id'], 400);
     }
 }

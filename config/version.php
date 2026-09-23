@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.4.5'),
+    'version' => env('APP_VERSION', '2.4.6'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-23',
-    'build' => '20260923.1',
+    'build' => '20260923.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,19 @@ return [
     |
     */
     'changelog' => [
+        '2.4.6' => [
+            'date' => '2026-09-23',
+            'badge' => 'Hotfix & Feature: Remote Hardware Scan & Scan-All Console',
+            'badge_color' => '#0284c7',
+            'title' => 'ระบบสั่งสแกนสเปคคอมพิวเตอร์ระยะไกลผ่านเว็บ: สั่งสแกนรายเครื่อง และสั่งสแกนทุกเครื่องที่มี Agent ทั่วทั้งโรงพยาบาล',
+            'highlights' => [
+                'สั่งสแกนสเปคได้จากทุกที่ผ่านเว็บเบราว์เซอร์: เจ้าหน้าที่ไอทีสามารถกดสั่งให้เครื่องลูกข่ายที่ติดตั้ง Agent ดำเนินการสแกนสเปคฮาร์ดแวร์ล่าสุดและรายงานผลเข้าสู่ระบบได้ทันที ไม่ว่าจะเข้าใช้งานระบบจากที่ใดก็ตาม',
+                'ปุ่มสั่งสแกนทุกเครื่องที่ติดตั้ง Agent (Scan All): เพิ่มปุ่มสั่งสแกนหมู่บนส่วนหัวของหน้าติดตามสเปค (/hardware-audits) พร้อมแถบแสดงจำนวนเครื่องที่มี Agent และหน้าต่างมอนิเตอร์สถานะแบบ Real-time (Live Progress Modal) แสดงเปอร์เซ็นต์และสถานะรายเครื่อง',
+                'ปุ่มสั่งสแกนเครื่องนี้ (Single Machine Scan): เพิ่มปุ่มสั่งสแกนทันทีในตารางรายการทุกแถว และในหน้าต่างตรวจสอบสเปคเชิงลึก (Inspector Modal)',
+                'สถาปัตยกรรม Command Queue & Agent Polling Engine: ทะลุผ่านไฟร์วอลล์และเราเตอร์ NAT ของโรงพยาบาลได้ 100% โดยไม่ต้องเปิด Port ขาเข้าที่เครื่องลูกข่าย',
+                'อัปเกรด Agent สู่ v2.2.0: รองรับโหมด Background Daemon ตรวจจับคำสั่งทุก 30 วินาที พร้อมระบบสำรอง Watchdog Scheduled Task ทุก 5 นาที',
+            ],
+        ],
         '2.4.5' => [
             'date' => '2026-09-23',
             'badge' => 'Feature & UI Redesign: Dedicated MOPH Alert Endpoint & Credentials',

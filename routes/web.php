@@ -57,6 +57,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Public Hardware Audit API Endpoint (for embedded client PowerShell Agent & Browser Status Check)
 Route::match(['get', 'post'], '/api/hardware-audit/submit', [HardwareAuditController::class, 'submit'])->name('hardware-audit.submit');
 Route::match(['get', 'post'], '/hardware-audit/submit', [HardwareAuditController::class, 'submit']);
+Route::match(['get', 'post'], '/api/hardware-audit/agent-command', [HardwareAuditController::class, 'pollCommand'])->name('hardware-audit.agent-command');
+Route::match(['get', 'post'], '/hardware-audit/agent-command', [HardwareAuditController::class, 'pollCommand']);
+Route::post('/api/hardware-audit/agent-command/{id}/complete', [HardwareAuditController::class, 'completeCommand'])->name('hardware-audit.agent-command.complete');
+Route::post('/hardware-audit/agent-command/{id}/complete', [HardwareAuditController::class, 'completeCommand']);
 
 // Public Client Scripts & Agents Endpoints (Serve PowerShell & Batch files with text/plain for irm / download)
 Route::get('/agent/{filename}', function ($filename) {
@@ -235,6 +239,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/hardware-audits/batch-delete', [HardwareAuditController::class, 'batchDestroy'])->name('hardware-audits.batch-delete');
         Route::post('/hardware-audits/{id}/reject', [HardwareAuditController::class, 'reject'])->name('hardware-audits.reject');
         Route::delete('/hardware-audits/{id}', [HardwareAuditController::class, 'destroy'])->name('hardware-audits.destroy');
+        Route::post('/hardware-audits/trigger-scan-all', [HardwareAuditController::class, 'triggerScanAll'])->name('hardware-audits.trigger-scan-all');
+        Route::post('/hardware-audits/{id}/trigger-scan', [HardwareAuditController::class, 'triggerScanSingle'])->name('hardware-audits.trigger-scan-single');
+        Route::get('/hardware-audits/command-status', [HardwareAuditController::class, 'getCommandStatus'])->name('hardware-audits.command-status');
         Route::get('/hardware-audits/print-report', [HardwareAuditController::class, 'printAnnualReport'])->name('hardware-audits.print-report');
         Route::get('/hardware-audits/export-csv', [HardwareAuditController::class, 'exportCsv'])->name('hardware-audits.export-csv');
     });
