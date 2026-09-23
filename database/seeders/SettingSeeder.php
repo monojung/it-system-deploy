@@ -42,6 +42,20 @@ class SettingSeeder extends Seeder
             ['key' => 'notify_on_data_request', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนระบบขอข้อมูลสารสนเทศ (Data Request)'],
             ['key' => 'notify_on_critical_only', 'value' => '0', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนเฉพาะเคสด่วนและด่วนที่สุด'],
 
+            // User Personal Notifications (MOPH Alert & LINE OA)
+            ['key' => 'user_notify_enabled', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'เปิดใช้งานระบบแจ้งเตือนผู้ใช้งานส่วนบุคคล (MOPH Alert / LINE OA)'],
+            ['key' => 'user_notify_channel', 'value' => 'both', 'group' => 'notification', 'type' => 'text', 'description' => 'ช่องทางการแจ้งเตือนผู้ใช้ (both / moph_cid / line_oa)'],
+            ['key' => 'moph_alert_endpoint', 'value' => 'https://morpromt2c.moph.go.th/api/notify/send', 'group' => 'notification', 'type' => 'text', 'description' => 'MOPH Alert API Endpoint URL (เฉพาะผู้ใช้งาน)'],
+            ['key' => 'moph_alert_client_key', 'value' => '', 'group' => 'notification', 'type' => 'text', 'description' => 'MOPH Alert Client Key (เฉพาะผู้ใช้งาน)'],
+            ['key' => 'moph_alert_secret_key', 'value' => '', 'group' => 'notification', 'type' => 'text', 'description' => 'MOPH Alert Secret Key (เฉพาะผู้ใช้งาน)'],
+            ['key' => 'user_notify_via_moph_cid', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'เปิดรับแจ้งเตือนผ่านหมอพร้อมด้วยเลขบัตรประชาชน 13 หลัก'],
+            ['key' => 'line_oa_basic_id', 'value' => '', 'group' => 'notification', 'type' => 'text', 'description' => 'LINE Official Account Basic ID ของโรงพยาบาล'],
+            ['key' => 'line_oa_channel_access_token', 'value' => '', 'group' => 'notification', 'type' => 'text', 'description' => 'LINE OA Channel Access Token'],
+            ['key' => 'notify_user_on_repair_status', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนผู้ใช้เมื่อสถานะงานซ่อมเปลี่ยนแปลง'],
+            ['key' => 'notify_user_on_data_status', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนผู้ใช้เมื่อคำขอข้อมูล HosXP อัปเดต'],
+            ['key' => 'notify_user_on_borrow_status', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนผู้ใช้เมื่อการยืม-คืนอุปกรณ์ไอทีอัปเดต'],
+            ['key' => 'notify_user_on_transfer_status', 'value' => '1', 'group' => 'notification', 'type' => 'boolean', 'description' => 'แจ้งเตือนผู้ใช้เมื่อการย้ายจุดติดตั้งครุภัณฑ์อัปเดต'],
+
             // Security & Auth
             ['key' => 'allow_thai_id_login', 'value' => '1', 'group' => 'security', 'type' => 'boolean', 'description' => 'อนุญาตให้เข้าสู่ระบบด้วย ThaID / เลขบัตรประชาชน 13 หลัก'],
             ['key' => 'backup_auto_enabled', 'value' => '0', 'group' => 'security', 'type' => 'boolean', 'description' => 'เปิดใช้งานระบบสำรองฐานข้อมูลอัตโนมัติ (Auto-Backup)'],

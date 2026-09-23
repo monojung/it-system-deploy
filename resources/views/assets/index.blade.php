@@ -953,7 +953,7 @@
             <i class="bi bi-hdd-network"></i>
             <span>ประเภทอุปกรณ์</span>
         </a>
-        <a href="{{ route('hardware-audits.index') }}" class="btn-hero-ghost" title="ติดตามสเปคและตรวจนับครุภัณฑ์ประจำปีงบประมาณ">
+        <a href="{{ route('hardware-audits.index') }}" class="btn-hero-ghost" title="การตรวจนับสเปคประจำปีงบประมาณ">
             <i class="bi bi-cpu"></i>
             <span>ตรวจนับสเปค</span>
             @if(isset($pendingAuditsCount) && $pendingAuditsCount > 0)

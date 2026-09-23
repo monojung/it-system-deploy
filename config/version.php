@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.4.4'),
+    'version' => env('APP_VERSION', '2.4.5'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
-    'release_date' => '2026-09-22',
-    'build' => '20260922.1',
+    'release_date' => '2026-09-23',
+    'build' => '20260923.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,17 @@ return [
     |
     */
     'changelog' => [
+        '2.4.5' => [
+            'date' => '2026-09-23',
+            'badge' => 'Feature & UI Redesign: Dedicated MOPH Alert Endpoint & Credentials',
+            'badge_color' => '#7c3aed',
+            'title' => 'ยกระดับระบบแจ้งเตือน MOPH Alert: แยก API Endpoint URL และกุญแจเชื่อมต่อเฉพาะสำหรับผู้ใช้งาน',
+            'highlights' => [
+                'เพิ่มช่องกำหนด MOPH Alert API Endpoint URL แยกอิสระ: รองรับการเชื่อมต่อ API หมอพร้อม สำหรับผู้ใช้งานทั่วไปแยกจาก MOPH Notify ของช่าง IT พร้อมปุ่มลัดสลับสภาพแวดล้อม Production (morpromt2c) และ UAT Sandbox (morpromt2f) ทันใจ 1-Click',
+                'ออกแบบ UI/UX สวยงามทันสมัยระดับพรีเมียม: ดีไซน์การ์ด MOPH Alert ในหน้า /settings#notification ใหม่ทั้งหมด คุมโทนสีม่วง-อินดิโก้ พร้อมสถานะการเชื่อมต่อ และแถบปุ่มตัวช่วยคัดลอกกุญแจ (Copy from MOPH Notify) / ล้างค่าเพื่อแชร์กุญแจอัตโนมัติ',
+                'ระบบทดสอบ 1-Click Interactive Test MOPH Alert: ส่งข้อความทดสอบจริงผ่านเลขบัตรประชาชน 13 หลัก หรือ LINE User ID พร้อมปุ่มใช้ข้อมูลตนเอง และกล่องผลลัพธ์ระบุ Endpoint และ Channel อย่างชัดเจน',
+            ],
+        ],
         '2.4.4' => [
             'date' => '2026-09-22',
             'badge' => 'Major Feature: MOPH Notify API & Mor Prom LINE OA Integration',
