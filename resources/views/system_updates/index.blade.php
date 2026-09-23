@@ -697,12 +697,26 @@
             <!-- Dynamic Status Banner -->
             <div id="statusBannerContainer">
                 @if(!($gitStatus['is_git_repo'] ?? false))
-                    <div class="status-banner git-error">
-                        <div class="status-banner-icon"><i class="bi bi-exclamation-octagon-fill"></i></div>
-                        <div>
-                            <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">ไม่พบ Git Repository บนเซิร์ฟเวอร์</div>
-                            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">{{ $gitStatus['message'] ?? 'โปรเจกต์นี้ไม่ได้ถูกติดตั้งผ่าน Git หรือไม่มีโฟลเดอร์ .git' }}</div>
-                            <div style="font-size: 12.5px;">คุณสามารถใช้งานฟังก์ชัน <strong>"อัปเดตระบบด้วยไฟล์แพตช์ ZIP (Manual Patch Upload)"</strong> ด้านล่างเพื่ออัปเดตระบบได้ทันที</div>
+                    <div class="status-banner git-error" style="background: #eff6ff; border-color: #93c5fd; color: #1e3a8a;">
+                        <div class="status-banner-icon" style="color: #2563eb;"><i class="bi bi-info-circle-fill"></i></div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                                ไม่พบ Git Repository บนเซิร์ฟเวอร์ (ติดตั้งระบบผ่านไฟล์ ZIP)
+                                <span style="background: #dbeafe; color: #1e40af; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 700;">ZIP DEPLOYED</span>
+                            </div>
+                            <div style="font-size: 13px; margin-bottom: 10px; color: #334155; line-height: 1.5;">
+                                เนื่องจากเซิร์ฟเวอร์นี้ติดตั้งระบบผ่านไฟล์ ZIP จึงไม่มีโฟลเดอร์ <code>.git</code> ในระบบ (นี่เป็นสถานะปกติของการติดตั้งแบบ Standalone ZIP) คุณสามารถเลือกวิธีอัปเดตระบบได้ 2 วิธีดังนี้:
+                            </div>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                                <a href="#patchUploadForm" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; background: #0284c7; border-color: #0284c7; text-decoration: none; color: #fff;">
+                                    <i class="bi bi-file-earmark-zip-fill"></i>
+                                    <span>วิธีที่ 1: อัปเดตด้วยไฟล์แพตช์ ZIP ด้านล่าง (แนะนำ / ไม่ต้องใช้ Git)</span>
+                                </a>
+                                <button type="button" onclick="confirmAndInitGit()" id="btnInitGit" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                                    <i class="bi bi-git"></i>
+                                    <span>วิธีที่ 2: เริ่มต้นเชื่อมต่อ Git บนเซิร์ฟเวอร์ (Init Git Repository)</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 @elseif(!($gitStatus['success'] ?? true))
@@ -1502,6 +1516,77 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> กำลังติดตั้งแพตช์ กรุณารอสักครู่...';
         return true;
+    }
+
+    function confirmAndInitGit() {
+        Swal.fire({
+            title: 'เริ่มต้นเชื่อมต่อ Git บนเซิร์ฟเวอร์?',
+            html: `<div style="text-align: left; font-size: 13.5px; line-height: 1.6; color: #334155;">
+                   ระบบจะทำการสร้างโฟลเดอร์ <code>.git</code> (git init) และเชื่อมต่อไปยัง Repository:<br>
+                   <strong style="color: #0284c7;">{{ $targetRepoUrl }}</strong><br><br>
+                   <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 10px; font-size: 12px; color: #64748b;">
+                       💡 <strong>หมายเหตุ:</strong> เซิร์ฟเวอร์ต้องมีคำสั่ง <code>git</code> ติดตั้งอยู่ หากเซิร์ฟเวอร์ไม่มี Git แนะนำให้อัปเดตผ่านกล่อง <strong>"ไฟล์แพตช์ ZIP"</strong> ด้านล่างแทน
+                   </div>
+                   </div>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#0d9488',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: '<i class="bi bi-git"></i> เริ่มต้นเชื่อมต่อ Git ทันที',
+            cancelButtonText: 'ยกเลิก',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'กำลังเชื่อมต่อ Git Repository...',
+                    html: 'กรุณารอสักครู่ ระบบกำลังรันคำสั่ง <code>git init</code> และดึงข้อมูลจาก Remote...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                fetch("{{ route('system-updates.init-git') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'เชื่อมต่อ Git สำเร็จ!',
+                            text: data.message,
+                            confirmButtonColor: '#0d9488',
+                            confirmButtonText: 'รีเฟรชหน้าเว็บ'
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'ไม่สามารถเชื่อมต่อ Git ได้',
+                            html: `<div style="text-align: left; font-size: 13px; color: #b91c1c; background: #fef2f2; padding: 12px; border-radius: 6px; margin-bottom: 12px;">${escapeHtml(data.message)}</div>
+                                   <div style="font-size: 13px; color: #475569;">คุณสามารถใช้งานวิธี <strong>"อัปเดตระบบด้วยไฟล์แพตช์ ZIP (Manual Patch Upload)"</strong> ด้านล่างเพื่ออัปเดตระบบได้ทันทีโดยไม่ต้องมี Git</div>`,
+                            confirmButtonColor: '#0284c7',
+                            confirmButtonText: 'เข้าใจแล้ว'
+                        });
+                    }
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาดในการเชื่อมต่อ',
+                        text: err.message,
+                        confirmButtonColor: '#0284c7'
+                    });
+                });
+            }
+        });
     }
 
     function closeTerminalModal() {

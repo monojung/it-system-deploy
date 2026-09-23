@@ -78,6 +78,74 @@ class SystemUpdateService
     }
 
     /**
+     * Initialize git repository in base_path and connect to deploy repository
+     */
+    public function initializeGitRepository(): array
+    {
+        $basePath = base_path();
+        $config = $this->getUpdateConfig();
+        $targetRepoUrl = $config['repo_url'];
+        $targetBranch = $config['branch'] ?: 'main';
+        $remoteName = $config['remote_name'] ?: 'deploy';
+
+        $outputLogs = [];
+        $append = function (string $text) use (&$outputLogs) {
+            $outputLogs[] = $text;
+        };
+
+        // 1. Verify Git executable exists
+        try {
+            $gitVer = $this->runProcess(['git', '--version'], 5);
+            $append("ตรวจพบโปรแกรม Git: " . trim($gitVer));
+        } catch (\Exception $e) {
+            throw new \Exception("ไม่พบโปรแกรม Git บนเซิร์ฟเวอร์เครื่องนี้ ({$e->getMessage()}) กรุณาติดตั้ง Git หรืออัปเดตผ่านไฟล์แพตช์ ZIP แทน");
+        }
+
+        // 2. git init
+        $out = $this->runProcess(['git', 'init'], 10);
+        $append("1. สร้าง Git Repository (git init): " . trim($out));
+
+        // 3. safe.directory config (Windows / Linux ownership safety)
+        try {
+            $this->runProcess(['git', 'config', '--global', '--add', 'safe.directory', str_replace('\\', '/', $basePath)], 5);
+            $append("2. ตั้งค่า git safe.directory สำเร็จ");
+        } catch (\Exception $e) {
+            // ignore
+        }
+
+        // 4. remote setup
+        try {
+            $this->runProcess(['git', 'remote', 'remove', $remoteName], 5);
+        } catch (\Exception $e) {
+            // ignore
+        }
+        $out = $this->runProcess(['git', 'remote', 'add', $remoteName, $targetRepoUrl], 10);
+        $append("3. เพิ่ม Remote '{$remoteName}' ({$targetRepoUrl}) สำเร็จ");
+
+        // 5. git fetch
+        $append("4. กำลังดึงข้อมูลจาก Deploy Repo (git fetch {$remoteName} {$targetBranch})...");
+        $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 60);
+        $append("   Fetch สำเร็จ");
+
+        // 6. align local branch to remote
+        $remoteRef = "{$remoteName}/{$targetBranch}";
+        try {
+            $this->runProcess(['git', 'branch', '-M', $targetBranch], 5);
+            $this->runProcess(['git', 'reset', '--soft', $remoteRef], 10);
+            $this->runProcess(['git', 'branch', "--set-upstream-to={$remoteRef}", $targetBranch], 5);
+            $append("5. ซิงค์ Local Branch '{$targetBranch}' กับ {$remoteRef} สำเร็จ");
+        } catch (\Exception $e) {
+            $append("หมายเหตุในการซิงค์ Branch: " . $e->getMessage());
+        }
+
+        return [
+            'success' => true,
+            'message' => 'เริ่มต้นและเชื่อมต่อ Git Repository กับเซิร์ฟเวอร์เรียบร้อยแล้ว!',
+            'log' => implode("\n", $outputLogs),
+        ];
+    }
+
+    /**
      * Check if git is available and get repository update status from target deploy repo
      */
     public function checkRemoteUpdates(): array

@@ -297,6 +297,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/system-updates/check', [SystemUpdateController::class, 'check'])->name('system-updates.check');
         Route::post('/system-updates/apply', [SystemUpdateController::class, 'apply'])->name('system-updates.apply');
         Route::post('/system-updates/upload-patch', [SystemUpdateController::class, 'uploadPatch'])->name('system-updates.upload-patch');
+        Route::post('/system-updates/init-git', [SystemUpdateController::class, 'initGit'])->name('system-updates.init-git');
         Route::get('/system-updates/{id}/log', [SystemUpdateController::class, 'log'])->name('system-updates.log');
     });
 });
