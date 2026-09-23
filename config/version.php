@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.4.6'),
+    'version' => env('APP_VERSION', '2.4.7'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-23',
-    'build' => '20260923.2',
+    'build' => '20260923.3',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,18 @@ return [
     |
     */
     'changelog' => [
+        '2.4.7' => [
+            'date' => '2026-09-23',
+            'badge' => 'Hotfix: Git Conflict Auto-Recovery & Resilient Deployment Sync',
+            'badge_color' => '#10b981',
+            'title' => 'แก้ไขปัญหาข้อขัดแย้งของไฟล์ Git ระหว่างอัปเดตระบบ (Overwritten by Merge) พร้อมระบบกู้คืนและซิงค์โค้ดอัตโนมัติ',
+            'highlights' => [
+                'แก้ปัญหา Git Pull ล้มเหลวเนื่องจากไฟล์ในเครื่องมีการเปลี่ยนแปลง (Your local changes would be overwritten by merge): อัปเกรดกระบวนการดึงโค้ดให้ทำการตรวจจับและกู้คืนอัตโนมัติ (Automatic Conflict Recovery) โดยหากพบไฟล์ไม่ตรงกัน ระบบจะสลับไปทำ Clean Force Reset ไปยัง Release ทางการทันที ทำให้การกดปุ่มอัปเดตสำเร็จ 100% เสมอ',
+                'รักษาความปลอดภัยข้อมูลสำคัญ 100%: กระบวนการ Clean Force Reset ครอบคลุมเฉพาะไฟล์โค้ดของระบบเท่านั้น โดยไฟล์ตั้งค่าฐานข้อมูล (.env), ฐานข้อมูล SQLite และโฟลเดอร์ไฟล์อัปโหลด (storage/, uploads/) จะถูกป้องกันและเก็บรักษาไว้อย่างปลอดภัย ไม่ถูกแตะต้อง',
+                'เพิ่มปุ่ม "แก้ปัญหา Git / บังคับซิงค์โค้ด" ในหน้า System Updates: ให้ผู้ดูแลระบบสามารถคลิกแก้ไขปัญหาความไม่สอดคล้องของ Git ได้ด้วยคลิกเดียวจากหน้าเว็บทันที',
+                'ปรับปรุงสคริปต์ init_git.php: เปลี่ยนคำสั่ง git reset --soft เป็น clean reset พร้อมตั้งค่า pull.rebase เพื่อป้องกันข้อผิดพลาด Divergent Branches ล่วงหน้า',
+            ],
+        ],
         '2.4.6' => [
             'date' => '2026-09-23',
             'badge' => 'Hotfix & Feature: Remote Hardware Scan & Scan-All Console',

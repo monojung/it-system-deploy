@@ -130,10 +130,20 @@ class SystemUpdateService
         // 6. align local branch to remote
         $remoteRef = "{$remoteName}/{$targetBranch}";
         try {
+            try {
+                $this->runProcess(['git', 'config', 'pull.rebase', 'false'], 5);
+            } catch (\Exception $e) {
+                // ignore
+            }
             $this->runProcess(['git', 'branch', '-M', $targetBranch], 5);
-            $this->runProcess(['git', 'reset', '--soft', $remoteRef], 10);
+            try {
+                $this->runProcess(['git', 'checkout', '-f', '-B', $targetBranch, $remoteRef], 10);
+            } catch (\Exception $coEx) {
+                // ignore
+            }
+            $this->runProcess(['git', 'reset', '--hard', $remoteRef], 15);
             $this->runProcess(['git', 'branch', "--set-upstream-to={$remoteRef}", $targetBranch], 5);
-            $append("5. ซิงค์ Local Branch '{$targetBranch}' กับ {$remoteRef} สำเร็จ");
+            $append("5. ซิงค์ Local Branch '{$targetBranch}' กับ {$remoteRef} แบบ Clean Reset สำเร็จ");
         } catch (\Exception $e) {
             $append("หมายเหตุในการซิงค์ Branch: " . $e->getMessage());
         }
@@ -439,27 +449,75 @@ class SystemUpdateService
                 $appendLog("Step 2 skipped: Auto-backup is disabled in system settings.");
             }
 
-            // STEP 3: Git Pull / Fetch & Reset to latest
+            // STEP 3: Git Fetch & Force Sync to latest release
             $remoteName = $this->ensureUpdateRemote();
             $updateConfig = $this->getUpdateConfig();
             $targetBranch = $updateConfig['branch'] ?? 'main';
+            $remoteRef = "{$remoteName}/{$targetBranch}";
 
-            $notify(3, 'ดึงโค้ดล่าสุดจาก Git Deploy Repository', "กำลังดึงโค้ดจาก {$remoteName}/{$targetBranch}");
+            $notify(3, 'ดึงโค้ดล่าสุดจาก Git Deploy Repository', "กำลังดึงโค้ดจาก {$remoteRef}");
             $gitOutput = '';
             try {
-                // First fetch with 30s timeout
-                $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 30);
+                // 1. Fetch latest commits from remote repository (60s timeout for slower network)
+                $fetchOutput = $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 60);
+                if (!empty(trim($fetchOutput))) {
+                    $appendLog("Git fetch output:\n" . trim($fetchOutput));
+                }
 
-                // Then pull with 30s timeout
+                // 2. Set pull.rebase = false to silence divergent branch hint
+                try {
+                    $this->runProcess(['git', 'config', 'pull.rebase', 'false'], 5);
+                } catch (Exception $e) {
+                    // non-critical
+                }
+
+                // 3. Attempt standard pull
+                $syncSuccessful = false;
                 try {
                     $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', $remoteName, $targetBranch], 30);
+                    $syncSuccessful = true;
                 } catch (Exception $pullEx) {
-                    if (str_contains($pullEx->getMessage(), 'unrelated histories')) {
-                        $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', '--allow-unrelated-histories', $remoteName, $targetBranch], 30);
-                    } else {
-                        throw $pullEx;
+                    $pullErr = $pullEx->getMessage();
+                    $appendLog("Notice: Standard git pull failed ({$pullErr}). Attempting automatic recovery...");
+
+                    // If unrelated histories, attempt with --allow-unrelated-histories
+                    if (str_contains($pullErr, 'unrelated histories')) {
+                        try {
+                            $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', '--allow-unrelated-histories', $remoteName, $targetBranch], 30);
+                            $syncSuccessful = true;
+                        } catch (Exception $unrelatedEx) {
+                            $appendLog("Notice: Pull with unrelated histories also failed. Proceeding with robust force reset...");
+                        }
                     }
                 }
+
+                // 4. Automatic Conflict Recovery / Force Reset:
+                // Production servers are deployment targets; they must cleanly match the latest release on $remoteRef.
+                // If standard pull failed due to local uncommitted changes, divergent branches, or CRLF differences:
+                // We cleanly reset tracked files to $remoteRef (safely preserving untracked files: .env, storage/*, uploads/*, sqlite).
+                if (!$syncSuccessful) {
+                    $appendLog("Overcoming local changes/divergence: Synchronizing codebase cleanly to {$remoteRef}...");
+
+                    // Force checkout target branch
+                    try {
+                        $this->runProcess(['git', 'checkout', '-f', '-B', $targetBranch, $remoteRef], 20);
+                    } catch (Exception $coEx) {
+                        $appendLog("Checkout note: " . $coEx->getMessage());
+                    }
+
+                    // Reset index and tracked files to the exact fetched commit
+                    $gitOutput = $this->runProcess(['git', 'reset', '--hard', $remoteRef], 30);
+
+                    // Re-set tracking branch
+                    try {
+                        $this->runProcess(['git', 'branch', "--set-upstream-to={$remoteRef}", $targetBranch], 10);
+                    } catch (Exception $upEx) {
+                        // non-critical
+                    }
+
+                    $appendLog("Successfully synchronized codebase to {$remoteRef} via force reset.");
+                }
+
                 $appendLog("Git output:\n" . $gitOutput);
             } catch (Exception $e) {
                 throw new Exception("ไม่สามารถดึงโค้ดจาก Git Deploy Repository ได้: " . $e->getMessage());

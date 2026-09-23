@@ -72,8 +72,10 @@ if (!$hasErrors) {
         "4. เชื่อมต่อไปยัง Deploy Repository" => "{$gitBin} remote add deploy \"{$repoUrl}\"",
         "5. ดึงข้อมูลโค้ดล่าสุด (git fetch)" => "{$gitBin} fetch deploy main 2>&1",
         "6. กำหนด Branch หลักเป็น main" => "{$gitBin} branch -M main 2>&1",
-        "7. ซิงค์ Local Commit ให้ตรงกับ Remote" => "{$gitBin} reset --soft deploy/main 2>&1",
-        "8. ตั้งค่า Upstream Tracking" => "{$gitBin} branch --set-upstream-to=deploy/main main 2>&1",
+        "7. ป้องกันปัญหา Divergence (pull.rebase false)" => "{$gitBin} config pull.rebase false 2>&1",
+        "8. บังคับเปลี่ยน Branch ไปที่ deploy/main (Checkout Force)" => "{$gitBin} checkout -f -B main deploy/main 2>&1",
+        "9. ซิงค์และรีเซ็ตโค้ดให้ตรงกับ Remote (Clean Reset)" => "{$gitBin} reset --hard deploy/main 2>&1",
+        "10. ตั้งค่า Upstream Tracking" => "{$gitBin} branch --set-upstream-to=deploy/main main 2>&1",
     ];
 
     foreach ($commands as $step => $cmd) {

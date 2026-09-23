@@ -848,6 +848,13 @@
                             <span>บังคับอัปเดตซ้ำ (Force Re-deploy)</span>
                         </button>
                     @endif
+
+                    @if($gitStatus['is_git_repo'] ?? false)
+                        <button type="button" onclick="confirmAndInitGit()" class="btn btn-secondary" title="ล้างข้อขัดแย้งของไฟล์และซิงค์โค้ดให้ตรงกับ Deploy Repository ล่าสุด" style="padding: 9px 14px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-sm); background: #f8fafc; border: 1px solid #cbd5e1; color: #475569;">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            <span>แก้ปัญหา Git / บังคับซิงค์โค้ด</span>
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>
@@ -1402,13 +1409,45 @@
             document.getElementById('kpiStatus').innerHTML = '<span style="color: #f87171;">ล้มเหลว (Failed)</span>';
             status.innerHTML = `<i class="bi bi-x-circle-fill" style="color: #ef4444;"></i> <span style="color: #ef4444; font-weight: bold;">การอัปเดตล้มเหลว</span>`;
 
-            Swal.fire({
-                title: 'การอัปเดตระบบล้มเหลว',
-                text: err.message,
-                icon: 'error',
-                confirmButtonColor: '#ef4444',
-                confirmButtonText: 'ปิด'
-            });
+            const errLower = (err.message || '').toLowerCase();
+            const isGitConflict = errLower.includes('overwritten by merge') || 
+                                 errLower.includes('divergent branches') || 
+                                 errLower.includes('local changes') ||
+                                 errLower.includes('unrelated histories');
+
+            let errorHtml = `<div style="text-align: left; font-size: 13px; color: #b91c1c; background: #fef2f2; padding: 12px; border-radius: 6px; margin-bottom: 12px; max-height: 180px; overflow-y: auto; white-space: pre-wrap; font-family: monospace;">${escapeHtml(err.message)}</div>`;
+
+            if (isGitConflict) {
+                errorHtml += `<div style="text-align: left; font-size: 12.5px; color: #334155; line-height: 1.5; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                    <strong style="color: #166534;"><i class="bi bi-lightbulb-fill" style="color: #f59e0b;"></i> วิธีแก้ไขปัญหา Git Conflict:</strong><br>
+                    ตรวจพบว่าไฟล์ในเครื่องเซิร์ฟเวอร์มีการเปลี่ยนแปลง หรือประวัติ Git ไม่ตรงกัน ทำให้ Git ปฏิเสธการดึงโค้ด<br><br>
+                    👉 <strong>แนวทางแก้ไขที่ 1 (แนะนำ / คลิกเดียว):</strong> กดปุ่ม <em>"รีเซ็ตและซิงค์ Git ทันที"</em> ด้านล่าง ระบบจะทำการซิงค์โค้ดให้สะอาดตรงกับ Remote Release โดยไฟล์ฐานข้อมูล <code>.env</code> และโฟลเดอร์ <code>storage/</code> จะปลอดภัย 100%<br>
+                    👉 <strong>แนวทางแก้ไขที่ 2:</strong> ใช้แท็บ <em>"อัปเดตระบบด้วยไฟล์แพตช์ ZIP (Manual Patch Upload)"</em> ด้านล่าง
+                </div>`;
+
+                Swal.fire({
+                    title: 'พบข้อขัดแย้งของไฟล์ Git บนเซิร์ฟเวอร์',
+                    html: errorHtml,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d9488',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: '<i class="bi bi-arrow-repeat"></i> รีเซ็ตและซิงค์ Git ทันที',
+                    cancelButtonText: 'ปิด'
+                }).then((r) => {
+                    if (r.isConfirmed) {
+                        confirmAndInitGit();
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: 'การอัปเดตระบบล้มเหลว',
+                    html: errorHtml,
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444',
+                    confirmButtonText: 'ปิด'
+                });
+            }
         });
     }
 
@@ -1519,20 +1558,32 @@
     }
 
     function confirmAndInitGit() {
+        const isGitConnected = {{ ($gitStatus['is_git_repo'] ?? false) ? 'true' : 'false' }};
+        const titleText = isGitConnected 
+            ? 'รีเซ็ตและซิงค์ Git ให้ตรงกับ Remote?' 
+            : 'เริ่มต้นเชื่อมต่อ Git บนเซิร์ฟเวอร์?';
+        const confirmBtnText = isGitConnected 
+            ? '<i class="bi bi-arrow-repeat"></i> ซิงค์และรีเซ็ตโค้ดทันที' 
+            : '<i class="bi bi-git"></i> เริ่มต้นเชื่อมต่อ Git ทันที';
+        const descText = isGitConnected
+            ? `ระบบจะทำการดึงข้อมูลล่าสุดจาก <strong>{{ $targetRepoUrl }}</strong> และรีเซ็ตโค้ดโปรเจกต์ให้สะอาดตรงกับ Remote Release เพื่อล้างข้อขัดแย้งของไฟล์ทั้งหมด<br><br>
+               <div style="background: #f0fdf4; border: 1px dashed #86efac; border-radius: 6px; padding: 10px; font-size: 12px; color: #166534;">
+                   🛡️ <strong>ความปลอดภัย:</strong> ไฟล์การตั้งค่าฐานข้อมูล <code>.env</code>, โฟลเดอร์อัปโหลด และ <code>storage/</code> จะถูกเก็บรักษาไว้อย่างปลอดภัย ไม่ถูกลบหรือแก้ไข
+               </div>`
+            : `ระบบจะทำการสร้างโฟลเดอร์ <code>.git</code> (git init) และเชื่อมต่อไปยัง Repository:<br>
+               <strong style="color: #0284c7;">{{ $targetRepoUrl }}</strong><br><br>
+               <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 10px; font-size: 12px; color: #64748b;">
+                   💡 <strong>หมายเหตุ:</strong> เซิร์ฟเวอร์ต้องมีคำสั่ง <code>git</code> ติดตั้งอยู่ หากเซิร์ฟเวอร์ไม่มี Git แนะนำให้อัปเดตผ่านกล่อง <strong>"ไฟล์แพตช์ ZIP"</strong> ด้านล่างแทน
+               </div>`;
+
         Swal.fire({
-            title: 'เริ่มต้นเชื่อมต่อ Git บนเซิร์ฟเวอร์?',
-            html: `<div style="text-align: left; font-size: 13.5px; line-height: 1.6; color: #334155;">
-                   ระบบจะทำการสร้างโฟลเดอร์ <code>.git</code> (git init) และเชื่อมต่อไปยัง Repository:<br>
-                   <strong style="color: #0284c7;">{{ $targetRepoUrl }}</strong><br><br>
-                   <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 10px; font-size: 12px; color: #64748b;">
-                       💡 <strong>หมายเหตุ:</strong> เซิร์ฟเวอร์ต้องมีคำสั่ง <code>git</code> ติดตั้งอยู่ หากเซิร์ฟเวอร์ไม่มี Git แนะนำให้อัปเดตผ่านกล่อง <strong>"ไฟล์แพตช์ ZIP"</strong> ด้านล่างแทน
-                   </div>
-                   </div>`,
-            icon: 'question',
+            title: titleText,
+            html: `<div style="text-align: left; font-size: 13.5px; line-height: 1.6; color: #334155;">${descText}</div>`,
+            icon: isGitConnected ? 'warning' : 'question',
             showCancelButton: true,
             confirmButtonColor: '#0d9488',
             cancelButtonColor: '#64748b',
-            confirmButtonText: '<i class="bi bi-git"></i> เริ่มต้นเชื่อมต่อ Git ทันที',
+            confirmButtonText: confirmBtnText,
             cancelButtonText: 'ยกเลิก',
             reverseButtons: true
         }).then((result) => {
