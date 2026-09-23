@@ -276,6 +276,8 @@ class SystemUpdateService
                 'has_update' => false,
                 'local_commit' => $localCommit,
                 'short_local_commit' => substr($localCommit, 0, 7),
+                'remote_commit' => '',
+                'short_remote_commit' => 'unknown',
                 'error' => $rawError,
                 'error_type' => $errorType,
                 'hint' => $hint,
@@ -597,46 +599,22 @@ class SystemUpdateService
             }
 
             // STEP 3: Extract Patch ZIP over base_path
-            $notify(3, 'แตกไฟล์แพตช์ลงในโปรเจกต์', 'กำลังคลายไฟล์จาก Patch ZIP');
-            if (!class_exists('\ZipArchive')) {
-                throw new Exception('ไม่พบโมดูล ZipArchive ใน PHP ของเซิร์ฟเวอร์ กรุณาเปิดใช้งาน extension=zip');
-            }
-
-            $zip = new \ZipArchive();
-            $res = $zip->open($zipPath);
-            if ($res !== true) {
-                throw new Exception("ไม่สามารถเปิดไฟล์ ZIP ได้ (Code: {$res})");
-            }
-
+            $notify(3, 'แตกไฟล์แพตช์ลงในโปรเจกต์', 'กำลังคลายไฟล์จาก Patch ZIP ตรงตามโครงสร้างโฟลเดอร์ 100%');
             $basePath = base_path();
-            // List of sensitive files/paths that must NOT be overwritten by patch
-            $protectedFiles = ['.env', 'storage', 'database/database.sqlite'];
-            $extractedCount = 0;
+            $extractStats = $this->extractZipArchive(
+                zipPath: $zipPath,
+                targetDir: $basePath,
+                protectedPaths: ['.env', 'storage', 'database/database.sqlite', '.git'],
+                logCallback: $appendLog
+            );
 
-            for ($i = 0; $i < $zip->numFiles; $i++) {
-                $stat = $zip->statIndex($i);
-                $filename = $stat['name'];
-
-                // Skip protected files
-                $skip = false;
-                foreach ($protectedFiles as $protected) {
-                    if (str_starts_with($filename, $protected) || $filename === $protected) {
-                        $appendLog("Skipped protected file: {$filename}");
-                        $skip = true;
-                        break;
-                    }
-                }
-
-                if ($skip) {
-                    continue;
-                }
-
-                if ($zip->extractTo($basePath, $filename)) {
-                    $extractedCount++;
-                }
+            $extractedCount = $extractStats['extracted_count'];
+            $createdDirs = $extractStats['created_dirs'];
+            $totalMb = round($extractStats['total_bytes'] / 1048576, 2);
+            $appendLog("แตกไฟล์แพตช์สำเร็จ: แตกไฟล์ {$extractedCount} ไฟล์ ({$totalMb} MB), สร้าง/ตรวจสอบโครงสร้างโฟลเดอร์ {$createdDirs} โฟลเดอร์");
+            if (!empty($extractStats['errors'])) {
+                $appendLog("คำเตือนการแตกไฟล์: " . implode('; ', array_slice($extractStats['errors'], 0, 5)));
             }
-            $zip->close();
-            $appendLog("Successfully extracted {$extractedCount} files from patch.");
 
             // STEP 4: Database Migration
             $notify(4, 'ปรับปรุงโครงสร้างฐานข้อมูล (Database Migration)', 'กำลังรัน php artisan migrate --force');
@@ -825,5 +803,195 @@ class SystemUpdateService
         }
 
         return $process->getOutput();
+    }
+
+    /**
+     * แตกไฟล์ ZIP ตรงตามโครงสร้างโฟลเดอร์สมบูรณ์ 100% (มาตรฐานเดียวกันกับ unzip.php)
+     * รองรับทั้ง Windows (\) และ Linux (/), ป้องกัน Directory Traversal,
+     * ตรวจสอบ/สร้างโฟลเดอร์แม่ล่วงหน้า, ป้องกันไฟล์ระบบสำคัญ (.env, storage, sqlite),
+     * และตัด prefix โฟลเดอร์ wrapper อัตโนมัติหากมี
+     *
+     * @param string $zipPath พาธไฟล์ ZIP
+     * @param string $targetDir โฟลเดอร์ปลายทาง (เช่น base_path())
+     * @param array $protectedPaths รายการไฟล์หรือโฟลเดอร์ที่ห้ามเขียนทับ
+     * @param callable|null $logCallback คอลแบ็กสำหรับบันทึกข้อความลง Log
+     * @return array{extracted_count: int, created_dirs: int, total_bytes: int, errors: array}
+     * @throws Exception
+     */
+    public function extractZipArchive(
+        string $zipPath,
+        string $targetDir,
+        array $protectedPaths = ['.env', 'storage', 'database/database.sqlite', '.git'],
+        ?callable $logCallback = null
+    ): array {
+        if (!class_exists('\ZipArchive')) {
+            throw new Exception('ไม่พบโมดูล ZipArchive ใน PHP ของเซิร์ฟเวอร์ กรุณาเปิดใช้งาน extension=zip');
+        }
+
+        if (!file_exists($zipPath)) {
+            throw new Exception("ไม่พบไฟล์ ZIP ที่ระบุ: {$zipPath}");
+        }
+
+        $zip = new \ZipArchive();
+        $res = $zip->open($zipPath);
+        if ($res !== true) {
+            throw new Exception("ไม่สามารถเปิดไฟล์ ZIP ได้ (Code: {$res})");
+        }
+
+        $log = function (string $msg) use ($logCallback) {
+            if (is_callable($logCallback)) {
+                $logCallback($msg);
+            }
+        };
+
+        $extractedCount = 0;
+        $createdDirs = 0;
+        $totalBytes = 0;
+        $errors = [];
+
+        // ตรวจสอบโฟลเดอร์ครอบส่วนเกิน (Wrapper Directory) เช่น update-patch/ หรือ it-system/
+        $stripPrefix = '';
+        $standardRoots = [
+            'app', 'bootstrap', 'config', 'database', 'lang', 'public',
+            'resources', 'routes', 'vendor', 'scripts', 'agent',
+            'artisan', 'composer.json', 'composer.lock', 'server_init.php', 'index.php'
+        ];
+        $firstSegments = [];
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $stat = $zip->statIndex($i);
+            $n = str_replace('\\', '/', ltrim($stat['name'], '/'));
+            $n = str_replace('../', '', $n);
+            if ($n === '' || $n === '.' || $n === './') {
+                continue;
+            }
+            $parts = explode('/', $n);
+            if (count($parts) > 1) {
+                $firstSegments[$parts[0]] = true;
+            } else {
+                $firstSegments[$parts[0]] = false;
+            }
+        }
+
+        if (count($firstSegments) === 1) {
+            $onlyRoot = array_key_first($firstSegments);
+            if (!in_array($onlyRoot, $standardRoots, true)) {
+                $stripPrefix = $onlyRoot . '/';
+                $log("ตรวจพบโฟลเดอร์ครอบ '{$onlyRoot}/' ใน ZIP - ระบบตัด prefix ออกให้อัตโนมัติเพื่อให้แตกไฟล์ลงโฟลเดอร์หลักอย่างถูกต้อง");
+            }
+        }
+
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $stat = $zip->statIndex($i);
+            $rawName = $stat['name'];
+
+            // 1. แปลง Backslash (\) ทั้งหมดเป็น Forward Slash (/) ตามมาตรฐาน Posix ป้องกันโฟลเดอร์เพี้ยน
+            $normalized = str_replace('\\', '/', $rawName);
+            $normalized = ltrim($normalized, '/');
+
+            // 2. ป้องกัน Directory Traversal
+            $normalized = str_replace('../', '', $normalized);
+
+            if ($normalized === '' || $normalized === '.' || $normalized === './') {
+                continue;
+            }
+
+            // ตัดโฟลเดอร์ wrapper ส่วนเกิน (ถ้ามี)
+            if ($stripPrefix !== '' && str_starts_with($normalized, $stripPrefix)) {
+                $normalized = substr($normalized, strlen($stripPrefix));
+                if ($normalized === '' || $normalized === '.' || $normalized === './') {
+                    continue;
+                }
+            }
+
+            // ตรวจสอบและข้ามไฟล์/โฟลเดอร์ที่ต้องได้รับการคุ้มครองความปลอดภัย
+            $skip = false;
+            foreach ($protectedPaths as $protected) {
+                $cleanProtected = str_replace('\\', '/', trim($protected, '/'));
+                if (
+                    $normalized === $cleanProtected ||
+                    str_starts_with($normalized, $cleanProtected . '/') ||
+                    ($cleanProtected === '.env' && str_starts_with($normalized, '.env.'))
+                ) {
+                    $log("ข้ามไฟล์/โฟลเดอร์ปลอดภัย: {$normalized}");
+                    $skip = true;
+                    break;
+                }
+            }
+
+            if ($skip) {
+                continue;
+            }
+
+            $destPath = rtrim($targetDir, '/\\') . '/' . $normalized;
+
+            // 3. กรณีเป็นไดเรกทอรี (ลงท้ายด้วย / หรือ \ ใน zip)
+            $isDir = str_ends_with($normalized, '/') || substr($rawName, -1) === '\\' || substr($rawName, -1) === '/';
+            if ($isDir) {
+                if (!is_dir($destPath)) {
+                    if (@mkdir($destPath, 0777, true)) {
+                        $createdDirs++;
+                    }
+                }
+                @chmod($destPath, 0755);
+                continue;
+            }
+
+            // 4. กรณีเป็นไฟล์: ตรวจสอบและสร้างโฟลเดอร์แม่ (Parent Directory) ให้ตรงตามโครงสร้าง 100% ก่อนเขียนไฟล์
+            $parentDir = dirname($destPath);
+            if (!is_dir($parentDir)) {
+                if (@mkdir($parentDir, 0777, true)) {
+                    $createdDirs++;
+                }
+            }
+
+            // 5. แตกไฟล์ด้วย Stream Copy เพื่อประหยัด Memory และรวดเร็ว (แบบเดียวกับ unzip.php)
+            $srcStream = $zip->getStream($rawName);
+            if ($srcStream) {
+                $destStream = @fopen($destPath, 'wb');
+                if ($destStream) {
+                    $bytes = stream_copy_to_stream($srcStream, $destStream);
+                    $totalBytes += $bytes;
+                    fclose($destStream);
+                    $extractedCount++;
+                    @chmod($destPath, 0644);
+                } else {
+                    // Fallback: file_put_contents
+                    $content = $zip->getFromIndex($i);
+                    if ($content !== false && @file_put_contents($destPath, $content) !== false) {
+                        $totalBytes += strlen($content);
+                        $extractedCount++;
+                        @chmod($destPath, 0644);
+                    } else {
+                        $errors[] = "ไม่สามารถเขียนไฟล์: {$normalized}";
+                        $log("ข้อผิดพลาด: ไม่สามารถเขียนไฟล์: {$normalized}");
+                    }
+                }
+                fclose($srcStream);
+            } else {
+                // Fallback: getFromIndex
+                $content = $zip->getFromIndex($i);
+                if ($content !== false && @file_put_contents($destPath, $content) !== false) {
+                    $totalBytes += strlen($content);
+                    $extractedCount++;
+                    @chmod($destPath, 0644);
+                } else {
+                    $errors[] = "ไม่สามารถอ่านไฟล์จาก ZIP: {$rawName}";
+                    $log("ข้อผิดพลาด: ไม่สามารถอ่านไฟล์จาก ZIP: {$rawName}");
+                }
+            }
+        }
+
+        $zip->close();
+
+        if (function_exists('opcache_reset')) {
+            @opcache_reset();
+        }
+
+        return [
+            'extracted_count' => $extractedCount,
+            'created_dirs' => $createdDirs,
+            'total_bytes' => $totalBytes,
+            'errors' => $errors,
+        ];
     }
 }
