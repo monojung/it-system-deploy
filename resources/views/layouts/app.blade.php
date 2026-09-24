@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="THC IT">
+    <meta name="theme-color" content="#0d9488">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'ระบบบริหารจัดการสารสนเทศ') - {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }} {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</title>
 
@@ -1146,41 +1151,175 @@
             padding: 2px;
         }
 
+        /* Touch-Friendly Global Defaults */
+        html {
+            -webkit-text-size-adjust: 100%;
+            touch-action: manipulation;
+        }
+
+        button, a.btn, input, select, textarea, .nav-item, .mobile-bottom-nav-item {
+            -webkit-tap-highlight-color: rgba(13, 148, 136, 0.12);
+        }
+
+        /* Sidebar Close Button (Shown on Mobile / Tablet) */
+        .sidebar-close-btn {
+            display: none;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            margin-left: auto;
+            flex-shrink: 0;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .sidebar-close-btn:active {
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Responsive Table with Smooth Touch Scrolling */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: var(--radius-sm);
+        }
+        .table-responsive::-webkit-scrollbar {
+            height: 6px;
+        }
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
+
+        /* Desktop only topbar action items */
+        .topbar-action-desktop-only {
+            display: inline-flex;
+        }
+
+        /* ==========================================================================
+           1. TABLET & MOBILE VIEWPORT (< 992px)
+           ========================================================================== */
         @media (max-width: 992px) {
             .sidebar {
+                width: min(300px, 84vw);
                 transform: translateX(-100%);
+                box-shadow: 12px 0 32px rgba(0, 0, 0, 0.28);
             }
             .sidebar.show {
                 transform: translateX(0);
+            }
+            .sidebar-brand {
+                padding: 18px 16px;
+            }
+            .sidebar-close-btn {
+                display: flex;
             }
             .main-wrapper {
                 margin-left: 0;
                 width: 100%;
             }
             .mobile-menu-btn {
-                display: block;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 42px;
+                height: 42px;
+                border-radius: 10px;
+                font-size: 24px;
+                color: var(--text-main);
             }
-            .topbar, .content-body, .app-footer {
-                padding-left: 14px;
-                padding-right: 14px;
+            .topbar {
+                height: 62px;
+                padding: 0 16px;
+            }
+            .topbar-left {
+                gap: 12px;
+                flex: 1;
+                min-width: 0;
+            }
+            .page-title-box {
+                min-width: 0;
+                flex: 1;
+            }
+            .page-title {
+                font-size: 16.5px;
+                font-weight: 700;
+                line-height: 1.25;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .page-breadcrumb {
+                font-size: 11.5px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .content-body {
+                padding: 18px 16px calc(84px + env(safe-area-inset-bottom, 0px)) 16px !important;
+            }
+            .app-footer {
+                padding: 16px 16px calc(84px + env(safe-area-inset-bottom, 0px)) 16px;
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
             }
             .mobile-bottom-nav {
                 display: flex;
-            }
-            .content-body {
-                padding-bottom: 84px !important;
+                height: calc(62px + env(safe-area-inset-bottom, 0px));
+                padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
             }
             .back-to-top-btn {
-                bottom: 74px !important;
+                bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
                 right: 16px;
-                width: 38px;
-                height: 38px;
-                font-size: 16px;
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            /* Collapse multi-column split layouts to 1 column on tablet portrait / mobile */
+            div[style*="grid-template-columns: 3fr 2fr"],
+            div[style*="grid-template-columns: 2fr 1fr"],
+            div[style*="grid-template-columns: 1fr 2fr"] {
+                grid-template-columns: 1fr !important;
+                gap: 18px !important;
+            }
+
+            /* Charts grid stack on tablet */
+            .charts-grid {
+                grid-template-columns: 1fr !important;
+                gap: 18px !important;
             }
         }
 
+        /* Tablet Floating Dock Navigation (768px - 992px) */
+        @media (min-width: 768px) and (max-width: 992px) {
+            .mobile-bottom-nav {
+                max-width: 540px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-radius: 20px;
+                bottom: 12px;
+                border: 1px solid rgba(226, 232, 240, 0.9);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            }
+        }
+
+        /* ==========================================================================
+           2. MOBILE PHONES (< 768px)
+           ========================================================================== */
         @media (max-width: 768px) {
-            /* Prevent iOS Safari auto-zoom on text inputs */
+            /* Prevent iOS Safari auto-zoom on inputs */
             input[type="text"],
             input[type="password"],
             input[type="email"],
@@ -1193,35 +1332,154 @@
             textarea {
                 font-size: 16px !important;
             }
+
             .topbar {
-                height: 56px;
-                padding: 0 10px;
+                height: 58px;
+                padding: 0 12px;
             }
             .topbar-right {
                 gap: 6px;
             }
             .topbar-btn {
-                padding: 7px 10px;
+                padding: 8px 10px;
                 font-size: 13px;
+                height: 38px;
+                border-radius: 8px;
             }
             .topbar-btn span {
                 display: none;
             }
+
+            /* Hide topbar action buttons that already exist in bottom nav */
+            .topbar-action-desktop-only {
+                display: none !important;
+            }
+
             .page-title {
-                font-size: 15px;
-                max-width: 135px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                font-size: 15.5px;
+                max-width: none !important;
             }
             .page-breadcrumb {
                 display: none;
             }
+
             .content-body {
-                padding: 10px 10px 84px 10px !important;
+                padding: 12px 12px calc(86px + env(safe-area-inset-bottom, 0px)) 12px !important;
             }
-            .table-responsive {
-                -webkit-overflow-scrolling: touch;
+
+            /* Cards & Padding on mobile */
+            .card {
+                border-radius: 14px !important;
+                margin-bottom: 16px !important;
+            }
+            .card-header {
+                padding: 14px 16px !important;
+                flex-wrap: wrap !important;
+                gap: 10px !important;
+            }
+            .card-title {
+                font-size: 15px !important;
+            }
+            .card-body {
+                padding: 14px 16px !important;
+            }
+
+            /* Normalize desktop-sized padding on mobile containers */
+            .content-container {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+            div[style*="padding: 28px 32px"],
+            div[style*="padding: 32px"],
+            div[style*="padding: 24px 28px"],
+            div[style*="padding: 24px"] {
+                padding: 16px 14px !important;
+            }
+            div[style*="padding: 18px 24px"] {
+                padding: 14px 12px !important;
+            }
+
+            /* Collapse 1fr 1fr grids on mobile phones */
+            div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+                gap: 14px !important;
+            }
+
+            /* Table styling for mobile */
+            .table th, .table td {
+                padding: 10px 10px !important;
+                font-size: 12.5px !important;
+            }
+
+            /* Form Controls on Mobile (comfortable tap height) */
+            .form-control, .form-select, select.form-control {
+                height: 44px !important;
+                min-height: 44px !important;
+                font-size: 14px !important;
+            }
+
+            /* Modals & SweetAlert mobile responsiveness */
+            .swal2-popup {
+                width: 92% !important;
+                max-width: 400px !important;
+                padding: 18px 14px !important;
+                border-radius: 18px !important;
+            }
+            .swal2-actions {
+                flex-direction: column-reverse !important;
+                gap: 8px !important;
+                width: 100% !important;
+            }
+            .swal2-actions button {
+                width: 100% !important;
+                margin: 0 !important;
+                min-height: 44px !important;
+                font-size: 14px !important;
+            }
+        }
+
+        /* ==========================================================================
+           3. SMALL MOBILE PHONES (< 480px)
+           ========================================================================== */
+        @media (max-width: 480px) {
+            .content-body {
+                padding: 10px 8px calc(88px + env(safe-area-inset-bottom, 0px)) 8px !important;
+            }
+            .card-header {
+                padding: 12px 14px !important;
+            }
+            .card-body {
+                padding: 12px 14px !important;
+            }
+
+            /* Stack all form grids into a clean single column */
+            .form-row, .row,
+            div[style*="repeat(auto-fit, minmax"] {
+                grid-template-columns: 1fr !important;
+                gap: 12px !important;
+            }
+
+            .btn {
+                min-height: 40px;
+                padding: 8px 14px;
+            }
+            .btn-sm {
+                min-height: 36px;
+                padding: 6px 10px;
+            }
+
+            /* Mobile Action pills inside bottom nav */
+            .mobile-action-pill span {
+                font-size: 10px !important;
+            }
+            .mobile-action-pill i {
+                font-size: 14px !important;
+            }
+            .mobile-bottom-nav-item span {
+                font-size: 9px !important;
+            }
+            .mobile-bottom-nav-item i {
+                font-size: 17px !important;
             }
         }
 
@@ -1268,6 +1526,9 @@
                     <div class="brand-title">{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}</div>
                     <div class="brand-subtitle">{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</div>
                 </div>
+                <button type="button" class="sidebar-close-btn" onclick="toggleSidebar(false)" aria-label="ปิดเมนู">
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </div>
 
             <nav class="sidebar-nav">
@@ -1435,15 +1696,15 @@
                     @hasSection('topbar-actions')
                         @yield('topbar-actions')
                     @else
-                        <a href="{{ route('repairs.create') }}" class="topbar-btn topbar-btn-primary" title="แจ้งซ่อมอุปกรณ์หรือปัญหาไอที">
+                        <a href="{{ route('repairs.create') }}" class="topbar-btn topbar-btn-primary topbar-action-desktop-only" title="แจ้งซ่อมอุปกรณ์หรือปัญหาไอที">
                             <i class="bi bi-plus-lg"></i>
                             <span>แจ้งซ่อมด่วน</span>
                         </a>
-                        <a href="{{ Route::has('asset-borrows.create') ? route('asset-borrows.create') : url('/asset-borrows/create') }}" class="topbar-btn" style="background: rgba(14, 165, 233, 0.1); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.28);" title="ยื่นคำขอยืมอุปกรณ์คอมพิวเตอร์และพัสดุ IT">
+                        <a href="{{ Route::has('asset-borrows.create') ? route('asset-borrows.create') : url('/asset-borrows/create') }}" class="topbar-btn topbar-action-desktop-only" style="background: rgba(14, 165, 233, 0.1); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.28);" title="ยื่นคำขอยืมอุปกรณ์คอมพิวเตอร์และพัสดุ IT">
                             <i class="bi bi-arrow-left-right"></i>
                             <span>ขอยืมอุปกรณ์</span>
                         </a>
-                        <a href="{{ route('data-requests.create') }}" class="topbar-btn topbar-btn-secondary" title="ยื่นคำขอข้อมูลสารสนเทศและสถิติ">
+                        <a href="{{ route('data-requests.create') }}" class="topbar-btn topbar-btn-secondary topbar-action-desktop-only" title="ยื่นคำขอข้อมูลสารสนเทศและสถิติ">
                             <i class="bi bi-plus-lg"></i>
                             <span>ขอข้อมูล</span>
                         </a>
@@ -1654,7 +1915,7 @@
     </div>
 
     <script>
-        // Sidebar Toggle with Mobile Backdrop
+        // Sidebar Toggle with Mobile Backdrop & Scroll Lock
         function toggleSidebar(forceState) {
             const sidebar = document.getElementById('sidebar');
             const backdrop = document.getElementById('sidebarBackdrop');
@@ -1663,11 +1924,52 @@
             if (isShow) {
                 sidebar.classList.add('show');
                 if (backdrop) backdrop.classList.add('show');
+                if (window.innerWidth <= 992) {
+                    document.body.style.overflow = 'hidden';
+                }
             } else {
                 sidebar.classList.remove('show');
                 if (backdrop) backdrop.classList.remove('show');
+                document.body.style.overflow = '';
             }
         }
+
+        // Mobile & Tablet Touch Swipe Gestures (Swipe Left to Close, Swipe Right from Left Edge to Open)
+        (function() {
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let touchEndX = 0;
+            let touchEndY = 0;
+
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches && e.touches.length === 1) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchend', function(e) {
+                if (e.changedTouches && e.changedTouches.length === 1) {
+                    touchEndX = e.changedTouches[0].clientX;
+                    touchEndY = e.changedTouches[0].clientY;
+                    handleSwipe();
+                }
+            }, { passive: true });
+
+            function handleSwipe() {
+                const diffX = touchEndX - touchStartX;
+                const diffY = touchEndY - touchStartY;
+                if (Math.abs(diffX) > Math.abs(diffY) * 1.5 && Math.abs(diffX) > 60) {
+                    const sidebar = document.getElementById('sidebar');
+                    const isOpen = sidebar && sidebar.classList.contains('show');
+                    if (diffX < -50 && isOpen) {
+                        toggleSidebar(false);
+                    } else if (diffX > 60 && !isOpen && touchStartX < 35 && window.innerWidth <= 992) {
+                        toggleSidebar(true);
+                    }
+                }
+            }
+        })();
 
         // Version Modal Controls
         function openVersionModal() {

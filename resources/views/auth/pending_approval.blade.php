@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>รอการตรวจสอบยืนยันตัวตน - กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลทุ่งหัวช้าง</title>
     
     <!-- Google Fonts: Prompt & Inter -->
@@ -342,6 +342,43 @@
 
         .logout-btn:hover {
             text-decoration: underline;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+            body {
+                padding: 12px 10px;
+                align-items: flex-start;
+                padding-top: max(16px, env(safe-area-inset-top));
+                padding-bottom: max(16px, env(safe-area-inset-bottom));
+            }
+            .status-card {
+                border-radius: 18px;
+            }
+            .card-header-pending,
+            .card-header-rejected {
+                padding: 24px 16px 18px;
+            }
+            .icon-pulse-box {
+                width: 64px;
+                height: 64px;
+                font-size: 28px;
+                border-radius: 20px;
+            }
+            .status-card h1 {
+                font-size: 18px;
+            }
+            .card-body {
+                padding: 20px 16px;
+            }
+            .info-item {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 4px;
+            }
+            .info-value {
+                text-align: left;
+            }
         }
     </style>
 </head>

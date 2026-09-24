@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>ระบุข้อมูลและเลือกแผนกสังกัด - กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลทุ่งหัวช้าง</title>
     
     <!-- Google Fonts: Prompt & Inter -->
@@ -199,8 +199,17 @@
         }
 
         @media (max-width: 480px) {
+            body {
+                padding: 12px 10px;
+                align-items: flex-start;
+                padding-top: max(16px, env(safe-area-inset-top));
+                padding-bottom: max(16px, env(safe-area-inset-bottom));
+            }
             .form-grid {
                 grid-template-columns: 1fr;
+            }
+            .form-control, .form-select {
+                font-size: 16px !important;
             }
         }
 

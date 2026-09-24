@@ -11,6 +11,39 @@
 </a>
 @endsection
 
+@push('styles')
+<style>
+@media (max-width: 768px) {
+    .repair-hero-header {
+        padding: 16px 14px !important;
+    }
+    .repair-hero-title {
+        font-size: 16px !important;
+    }
+    .repair-hero-subtitle {
+        font-size: 12px !important;
+    }
+    .repair-form-card-body {
+        padding: 16px 12px !important;
+    }
+    .form-actions-bar {
+        flex-direction: column-reverse;
+        gap: 12px !important;
+    }
+    .form-actions-bar .btn,
+    .form-actions-bar div {
+        width: 100% !important;
+    }
+    .form-actions-bar .btn {
+        justify-content: center !important;
+    }
+    .preset-card {
+        padding: 10px 12px !important;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 <div class="content-container" style="max-width: 1140px; margin: 0 auto; padding-bottom: 40px;">
 
@@ -18,16 +51,16 @@
     <div class="card" style="border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04); overflow: hidden;">
         
         <!-- Premium Form Header -->
-        <div style="background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); padding: 28px 32px; color: white; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+        <div class="repair-hero-header" style="background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); padding: 28px 32px; color: white; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
             <div style="display: flex; align-items: center; gap: 16px;">
-                <div style="width: 52px; height: 52px; border-radius: 14px; background: rgba(255, 255, 255, 0.18); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; font-size: 26px; color: white; border: 1px solid rgba(255, 255, 255, 0.25);">
+                <div style="width: 52px; height: 52px; border-radius: 14px; background: rgba(255, 255, 255, 0.18); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; font-size: 26px; color: white; border: 1px solid rgba(255, 255, 255, 0.25); flex-shrink: 0;">
                     <i class="bi bi-tools"></i>
                 </div>
                 <div>
-                    <h1 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.2px; color: white;">
-                        แบบฟอร์มแจ้งซ่อมคอมพิวเตอร์ & ระบบสารสนเทศ (Repair Request Form)
+                    <h1 class="repair-hero-title" style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.2px; color: white;">
+                        แบบฟอร์มแจ้งซ่อมคอมพิวเตอร์ & ระบบสารสนเทศ
                     </h1>
-                    <div style="font-size: 13.5px; opacity: 0.9; margin-top: 4px; font-weight: 300;">
+                    <div class="repair-hero-subtitle" style="font-size: 13.5px; opacity: 0.9; margin-top: 4px; font-weight: 300;">
                         กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลทุ่งหัวช้าง &bull; IT Service Desk & Maintenance
                     </div>
                 </div>
@@ -43,7 +76,7 @@
             </div>
         </div>
 
-        <div class="card-body" style="padding: 32px;">
+        <div class="card-body repair-form-card-body" style="padding: 32px;">
             <form action="{{ route('repairs.store') }}" method="POST" enctype="multipart/form-data" id="repairForm">
                 @csrf
 
@@ -379,7 +412,7 @@
                         <span>แนบรูปภาพความเสียหายหรือภาพหน้าจอ Error (ถ้ามี)</span>
                     </div>
 
-                    <div style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 24px; text-align: center; background: #f8fafc; transition: all 0.2s;" id="dropzone_box">
+                    <div style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 24px; text-align: center; background: #f8fafc; transition: all 0.2s; cursor: pointer;" id="dropzone_box" onclick="handleDropzoneClick(event)">
                         <input type="file" id="attachment_image" name="attachment_image" accept="image/*" onchange="previewImage(this)" style="display: none;">
                         
                         <div id="upload_prompt">
@@ -402,7 +435,7 @@
                             <img id="preview_img" src="#" alt="Preview" style="max-height: 220px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                             <div style="display: flex; gap: 8px;">
                                 <span id="file_name_display" style="font-size: 13px; font-weight: 500; color: #334155;"></span>
-                                <button type="button" class="btn btn-danger btn-sm" onclick="removeImage()" style="padding: 2px 8px; font-size: 12px; border-radius: 4px;">
+                                <button type="button" class="btn btn-danger btn-sm" onclick="event.stopPropagation(); removeImage()" style="padding: 2px 8px; font-size: 12px; border-radius: 4px;">
                                     <i class="bi bi-trash"></i> ลบรูป
                                 </button>
                             </div>
@@ -411,7 +444,7 @@
                 </div>
 
                 <!-- Form Action Buttons -->
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-top: 20px; border-top: 1px solid var(--border); flex-wrap: wrap;">
+                <div class="form-actions-bar" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-top: 20px; border-top: 1px solid var(--border); flex-wrap: wrap;">
                     <a href="{{ route('repairs.index') }}" class="btn btn-secondary" style="padding: 10px 22px; font-size: 14px; font-weight: 500; border-radius: 8px;">
                         <i class="bi bi-x-circle"></i> ยกเลิก
                     </a>
@@ -559,6 +592,11 @@
         document.getElementById('preview_img').src = '#';
         document.getElementById('upload_prompt').style.display = 'block';
         document.getElementById('image_preview_box').style.display = 'none';
+    }
+
+    function handleDropzoneClick(e) {
+        if (e.target.closest('#image_preview_box') || e.target.id === 'attachment_image') return;
+        document.getElementById('attachment_image').click();
     }
 
     function syncDepartmentFromAsset(select) {
