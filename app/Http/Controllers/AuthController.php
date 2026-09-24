@@ -100,6 +100,14 @@ class AuthController extends Controller
         $request->session()->regenerate();
         AuditLog::record('login', 'auth', "เข้าสู่ระบบด้วยอีเมล ({$user->email})", $user, null, null, $request, $user);
 
+        if (!$user->onboarding_completed) {
+            return redirect()->route('auth.complete-profile');
+        }
+
+        if ($user->isPendingApproval() || $user->isRejected()) {
+            return redirect()->route('auth.pending-approval');
+        }
+
         return redirect()->intended(route('dashboard'))->with('success', "ยินดีต้อนรับ {$user->name} เข้าสู่ระบบสารสนเทศสำเร็จ");
     }
 
@@ -158,6 +166,8 @@ class AuthController extends Controller
 
         $user = User::create([
             'name' => $fullName,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
             'username' => $username,
             'email' => $email,
             'department_id' => $request->department_id,
@@ -165,6 +175,8 @@ class AuthController extends Controller
             'position' => $request->position ?: 'บุคลากรโรงพยาบาล',
             'role' => 'user',
             'is_active' => true,
+            'approval_status' => 'pending',
+            'onboarding_completed' => true,
             'password' => bcrypt(Str::random(32)), // Random placeholder until first-time setup
             'email_verified_at' => null,
             'password_setup_token' => $token,
@@ -355,6 +367,10 @@ class AuthController extends Controller
         Auth::login($user, true);
         $request->session()->regenerate();
 
+        if ($user->isPendingApproval() || $user->isRejected()) {
+            return redirect()->route('auth.pending-approval')->with('success', "🎉 ยินดีต้อนรับคุณ {$user->name}! กำหนดรหัสผ่านสำเร็จแล้ว ขณะนี้บัญชีของท่านอยู่ระหว่างรอผู้ดูแลระบบตรวจสอบยืนยันตัวตน");
+        }
+
         return redirect()->route('dashboard')->with('success', "🎉 ยินดีต้อนรับคุณ {$user->name}! ตั้งรหัสผ่านและยืนยันตัวตนสำเร็จ เข้าสู่ระบบสารสนเทศเรียบร้อยแล้ว");
     }
 
@@ -523,10 +539,15 @@ class AuthController extends Controller
                     'avatar' => $user->avatar ?: $avatar,
                 ]);
             } else {
-                // Auto create user account with role 'user'
-                $defaultDept = Department::first();
+                // Auto create user account with role 'user', pending onboarding & approval
+                $nameParts = explode(' ', trim($name), 2);
+                $firstName = $nameParts[0] ?? $name;
+                $lastName = $nameParts[1] ?? '';
+
                 $user = User::create([
                     'name' => $name,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
                     'username' => 'g_' . Str::slug(explode('@', $email)[0], '_') . '_' . substr($googleId, -4),
                     'email' => $email,
                     'google_id' => $googleId,
@@ -534,8 +555,10 @@ class AuthController extends Controller
                     'avatar' => $avatar,
                     'password' => bcrypt(Str::random(24)),
                     'role' => 'user',
-                    'department_id' => $defaultDept?->id,
+                    'department_id' => null,
                     'is_active' => true,
+                    'approval_status' => 'pending',
+                    'onboarding_completed' => false,
                 ]);
             }
 
@@ -553,6 +576,14 @@ class AuthController extends Controller
             Auth::login($user, true);
             $request->session()->regenerate();
             AuditLog::record('login', 'auth', "เข้าสู่ระบบด้วย Google Account ({$user->email})", $user, null, null, $request, $user);
+
+            if (!$user->onboarding_completed) {
+                return redirect()->route('auth.complete-profile');
+            }
+
+            if ($user->isPendingApproval() || $user->isRejected()) {
+                return redirect()->route('auth.pending-approval');
+            }
 
             return redirect()->intended(route('dashboard'))->with('success', "ยินดีต้อนรับ {$user->name} เข้าสู่ระบบด้วยบัญชี Google สำเร็จ");
         } catch (\Exception $e) {
@@ -602,9 +633,14 @@ class AuthController extends Controller
                     'avatar' => $user->avatar ?: $avatar,
                 ]);
             } else {
-                $defaultDept = Department::first();
+                $nameParts = explode(' ', trim($name), 2);
+                $firstName = $nameParts[0] ?? $name;
+                $lastName = $nameParts[1] ?? '';
+
                 $user = User::create([
                     'name' => $name,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
                     'username' => 'g_' . Str::slug(explode('@', $email)[0], '_') . '_' . substr($googleId, -4),
                     'email' => $email,
                     'google_id' => $googleId,
@@ -612,8 +648,10 @@ class AuthController extends Controller
                     'avatar' => $avatar,
                     'password' => bcrypt(Str::random(24)),
                     'role' => 'user',
-                    'department_id' => $defaultDept?->id,
+                    'department_id' => null,
                     'is_active' => true,
+                    'approval_status' => 'pending',
+                    'onboarding_completed' => false,
                 ]);
             }
 
@@ -634,6 +672,22 @@ class AuthController extends Controller
             Auth::login($user, true);
             $request->session()->regenerate();
             AuditLog::record('login', 'auth', "เข้าสู่ระบบด้วย Google One-Tap/Button ({$user->email})", $user, null, null, $request, $user);
+
+            if (!$user->onboarding_completed) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "เข้าสู่ระบบด้วย Google สำเร็จ กรุณาระบุข้อมูลส่วนตัวและเลือกแผนกสังกัด",
+                    'redirect' => route('auth.complete-profile'),
+                ]);
+            }
+
+            if ($user->isPendingApproval() || $user->isRejected()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "เข้าสู่ระบบด้วย Google สำเร็จ รอการตรวจสอบยืนยันตัวตน",
+                    'redirect' => route('auth.pending-approval'),
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -717,15 +771,22 @@ class AuthController extends Controller
             $user = User::where('cid', $pid)->first();
 
             if (!$user) {
-                $defaultDept = Department::first();
+                $nameParts = explode(' ', trim($name), 2);
+                $firstName = $thaidUser['th_fname'] ?? ($nameParts[0] ?? $name);
+                $lastName = $thaidUser['th_lname'] ?? ($nameParts[1] ?? '');
+
                 $user = User::create([
                     'name' => trim($name) ?: 'บุคลากร ThaID',
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
                     'username' => 'thaid_' . substr($pid, -6),
                     'cid' => $pid,
                     'password' => bcrypt(Str::random(24)),
                     'role' => 'user',
-                    'department_id' => $defaultDept?->id,
+                    'department_id' => null,
                     'is_active' => true,
+                    'approval_status' => 'pending',
+                    'onboarding_completed' => false,
                 ]);
             }
 
@@ -742,6 +803,14 @@ class AuthController extends Controller
             Auth::login($user, true);
             $request->session()->regenerate();
             AuditLog::record('login', 'auth', "เข้าสู่ระบบด้วยบัตรประชาชนดิจิทัล ThaID (CID: {$user->formatted_cid})", $user, null, null, $request, $user);
+
+            if (!$user->onboarding_completed) {
+                return redirect()->route('auth.complete-profile');
+            }
+
+            if ($user->isPendingApproval() || $user->isRejected()) {
+                return redirect()->route('auth.pending-approval');
+            }
 
             return redirect()->intended(route('dashboard'))->with('success', "ยืนยันตัวตนด้วย ThaID (บัตรประชาชนดิจิทัล) สำเร็จ ยินดีต้อนรับ {$user->name}");
         } catch (\Exception $e) {
@@ -1109,5 +1178,107 @@ class AuthController extends Controller
 
         $status = $user->notify_line_enabled ? 'เปิดใช้งาน' : 'ปิดใช้งาน';
         return back()->with('success', "{$status}การแจ้งเตือนความคืบหน้าผ่าน LINE เรียบร้อยแล้ว");
+    }
+
+    /**
+     * Show Onboarding Form to complete profile & select hospital department
+     */
+    public function showCompleteProfile(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        // If user already completed onboarding
+        if ($user->onboarding_completed) {
+            if ($user->isApproved()) {
+                return redirect()->route('dashboard');
+            }
+            return redirect()->route('auth.pending-approval');
+        }
+
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        return view('auth.complete_profile', compact('user', 'departments'));
+    }
+
+    /**
+     * Process Onboarding Form submission
+     */
+    public function submitCompleteProfile(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $request->validate([
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'department_id' => 'required|exists:it_departments,id',
+            'position' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'cid' => 'nullable|string',
+        ], [
+            'first_name.required' => 'กรุณากรอกชื่อจริงภาษาไทย',
+            'last_name.required' => 'กรุณากรอกนามสกุลภาษาไทย',
+            'department_id.required' => 'กรุณาเลือกกลุ่มงาน / ฝ่าย / แผนกที่ท่านสังกัด',
+            'department_id.exists' => 'ไม่พบข้อมูลแผนกที่เลือก',
+        ]);
+
+        $firstName = trim($request->first_name);
+        $lastName = trim($request->last_name);
+        $fullName = trim($firstName . ' ' . $lastName);
+
+        $updateData = [
+            'name' => $fullName,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'department_id' => $request->department_id,
+            'position' => $request->position ?: ($user->position ?: 'บุคลากรโรงพยาบาล'),
+            'phone' => $request->phone ?: $user->phone,
+            'onboarding_completed' => true,
+        ];
+
+        if ($request->filled('cid')) {
+            $cid = preg_replace('/[^0-9]/', '', $request->cid);
+            if (strlen($cid) === 13 && validate_thai_id($cid)) {
+                $exists = User::where('id', '!=', $user->id)->where('cid', $cid)->exists();
+                if (!$exists) {
+                    $updateData['cid'] = $cid;
+                }
+            }
+        }
+
+        $user->update($updateData);
+
+        AuditLog::record('complete_profile', 'auth', "บันทึกข้อมูลส่วนตัวและระบุแผนก ({$user->fresh()->department?->name}) ส่งคำขอรอผู้ดูแลระบบอนุมัติ", $user, null, null, $request, $user);
+
+        if ($user->isAdmin() || $user->isApproved()) {
+            return redirect()->route('dashboard')->with('success', 'บันทึกข้อมูลและแผนกสังกัดเรียบร้อยแล้ว');
+        }
+
+        return redirect()->route('auth.pending-approval')->with('success', 'บันทึกข้อมูลและแผนกสังกัดเรียบร้อยแล้ว บัญชีของท่านอยู่ระหว่างรอผู้ดูแลระบบตรวจสอบยืนยันตัวตน');
+    }
+
+    /**
+     * Show Account Pending Approval / Verification Status
+     */
+    public function showPendingApproval(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        if ($user->isApproved() && $user->onboarding_completed) {
+            return redirect()->route('dashboard');
+        }
+
+        if (!$user->onboarding_completed) {
+            return redirect()->route('auth.complete-profile');
+        }
+
+        return view('auth.pending_approval', compact('user'));
     }
 }

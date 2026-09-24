@@ -8,7 +8,7 @@
 <div style="display: flex; flex-direction: column; gap: 20px;">
 
     <!-- Metric Cards -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
         <div class="card" style="padding: 18px 20px; display: flex; align-items: center; gap: 16px; border-left: 4px solid #0d9488;">
             <div style="width: 48px; height: 48px; border-radius: 12px; background: #ccfbf1; color: #0f766e; display: flex; align-items: center; justify-content: center; font-size: 24px;">
                 <i class="bi bi-people-fill"></i>
@@ -18,6 +18,22 @@
                 <div style="font-size: 22px; font-weight: 700; color: var(--text-main);">{{ $metrics['total'] ?? $users->total() }} <span style="font-size: 13px; font-weight: 400; color: #64748b;">บัญชี</span></div>
             </div>
         </div>
+
+        <!-- Pending Approval Metric Card -->
+        <a href="{{ route('users.index', ['approval_status' => 'pending']) }}" style="text-decoration: none;">
+            <div class="card" style="padding: 18px 20px; display: flex; align-items: center; gap: 16px; border-left: 4px solid #f59e0b; {{ request('approval_status') === 'pending' ? 'box-shadow: 0 0 0 2px #f59e0b;' : '' }} transition: all 0.2s ease;">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 24px; position: relative;">
+                    <i class="bi bi-person-check-fill"></i>
+                    @if(($metrics['pending_approval'] ?? 0) > 0)
+                        <span style="position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; background: #ef4444; border-radius: 50%; border: 2px solid white;"></span>
+                    @endif
+                </div>
+                <div>
+                    <div style="font-size: 12px; color: var(--text-muted); font-weight: 500;">รอตรวจสอบยืนยันตัวตน</div>
+                    <div style="font-size: 22px; font-weight: 700; color: #d97706;">{{ $metrics['pending_approval'] ?? 0 }} <span style="font-size: 13px; font-weight: 400; color: #64748b;">บัญชี</span></div>
+                </div>
+            </div>
+        </a>
 
         <div class="card" style="padding: 18px 20px; display: flex; align-items: center; gap: 16px; border-left: 4px solid #ea4335;">
             <div style="width: 48px; height: 48px; border-radius: 12px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 24px;">
@@ -49,6 +65,28 @@
             </div>
         </div>
     </div>
+
+    @if(($metrics['pending_approval'] ?? 0) > 0 && request('approval_status') !== 'pending')
+    <!-- Pending Approval Quick Alert Banner -->
+    <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #fde68a; border-radius: 14px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.12);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: #f59e0b; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                <i class="bi bi-person-exclamation"></i>
+            </div>
+            <div>
+                <strong style="color: #92400e; font-size: 14px;">มีบุคลากรใหม่รอตรวจสอบยืนยันตัวตน ({{ $metrics['pending_approval'] }} บัญชี)</strong>
+                <div style="font-size: 12px; color: #b45309; margin-top: 2px;">
+                    กรุณาตรวจสอบชื่อ-สกุล และแผนกงาน เพื่อกดยืนยันว่าเป็นเจ้าหน้าที่ของโรงพยาบาลจริง ก่อนเปิดสิทธิ์เข้าถึงระบบ
+                </div>
+            </div>
+        </div>
+        <div>
+            <a href="{{ route('users.index', ['approval_status' => 'pending']) }}" class="btn btn-warning btn-sm" style="background: #f59e0b; border-color: #f59e0b; color: white; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                <i class="bi bi-funnel-fill"></i> แสดงเฉพาะที่รอยืนยัน
+            </a>
+        </div>
+    </div>
+    @endif
 
     <!-- Identity Federation Banner for Admin Context -->
     <div style="background: linear-gradient(90deg, #eff6ff 0%, #f0fdf4 100%); border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
@@ -147,6 +185,16 @@
                             <option value="enabled" {{ request('mfa') == 'enabled' ? 'selected' : '' }}>🟢 เปิดใช้งาน MFA</option>
                             <option value="enforced" {{ request('mfa') == 'enforced' ? 'selected' : '' }}>🟡 บังคับใช้โดย Admin</option>
                             <option value="disabled" {{ request('mfa') == 'disabled' ? 'selected' : '' }}>⚪ ปิดใช้งาน</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-size: 12px; margin-bottom: 4px;">การยืนยันเจ้าหน้าที่ รพ.</label>
+                        <select name="approval_status" class="form-select">
+                            <option value="">-- สถานะการยืนยันทั้งหมด --</option>
+                            <option value="pending" {{ request('approval_status') == 'pending' ? 'selected' : '' }}>⏳ รอตรวจสอบ (Pending)</option>
+                            <option value="approved" {{ request('approval_status') == 'approved' ? 'selected' : '' }}>✅ เจ้าหน้าที่ รพ. จริง (Approved)</option>
+                            <option value="rejected" {{ request('approval_status') == 'rejected' ? 'selected' : '' }}>❌ ปฏิเสธ (Rejected)</option>
                         </select>
                     </div>
 
@@ -312,10 +360,13 @@
 
                             <td style="text-align: center;">
                                 <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                    <!-- Approval Badge -->
+                                    {!! $u->approval_badge !!}
+
                                     @if($u->is_active)
-                                        <span class="badge badge-success" style="font-size: 11px;">เปิดใช้งาน</span>
+                                        <span class="badge badge-success" style="font-size: 10px; padding: 2px 6px;">เปิดใช้งาน</span>
                                     @else
-                                        <span class="badge badge-danger" style="font-size: 11px;">ระงับใช้งาน</span>
+                                        <span class="badge badge-danger" style="font-size: 10px; padding: 2px 6px;">ระงับใช้งาน</span>
                                     @endif
 
                                     @if(!$u->isEmailVerified() || $u->hasPasswordSetupPending())
@@ -327,7 +378,36 @@
                             </td>
 
                             <td style="text-align: center; white-space: nowrap;">
-                                <div style="display: inline-flex; gap: 4px;">
+                                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                    @if($u->isPendingApproval())
+                                        <!-- Quick Approve Button -->
+                                        <button type="button" 
+                                                class="btn btn-sm" 
+                                                onclick="confirmApproveUser({{ $u->id }}, '{{ addslashes($u->name) }}', '{{ addslashes($u->department?->name ?? 'ยังไม่ระบุแผนก') }}')" 
+                                                style="background: #10b981; color: white; padding: 5px 9px; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);"
+                                                title="ยืนยันว่าเป็นเจ้าหน้าที่ รพ. จริง (อนุมัติเข้าใช้งาน)">
+                                            <i class="bi bi-check-circle-fill"></i> อนุมัติ
+                                        </button>
+
+                                        <!-- Quick Reject Button -->
+                                        <button type="button" 
+                                                class="btn btn-sm" 
+                                                onclick="confirmRejectUser({{ $u->id }}, '{{ addslashes($u->name) }}')" 
+                                                style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 5px 8px; border-radius: 6px;"
+                                                title="ปฏิเสธ (ไม่ใช่เจ้าหน้าที่ รพ.)">
+                                            <i class="bi bi-x-circle-fill"></i>
+                                        </button>
+                                    @elseif($u->isRejected())
+                                        <!-- Re-Approve Button -->
+                                        <button type="button" 
+                                                class="btn btn-sm" 
+                                                onclick="confirmApproveUser({{ $u->id }}, '{{ addslashes($u->name) }}', '{{ addslashes($u->department?->name ?? 'ยังไม่ระบุแผนก') }}')" 
+                                                style="background: #0d9488; color: white; padding: 5px 9px; border-radius: 6px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;"
+                                                title="อนุมัติใหม่เป็นเจ้าหน้าที่ รพ.">
+                                            <i class="bi bi-arrow-repeat"></i> อนุมัติใหม่
+                                        </button>
+                                    @endif
+
                                     <!-- Identity & Helpdesk Modal Trigger -->
                                     <button type="button" class="btn btn-secondary btn-sm" onclick="openIdentityModal({{ $u->id }})" title="ดูข้อมูลความปลอดภัย & QR Code ผู้ใช้งาน" style="padding: 6px 9px;">
                                         <i class="bi bi-shield-lock-fill" style="color: #0f766e;"></i>
@@ -555,6 +635,98 @@ function copySetupLink() {
         document.execCommand('copy');
         alert('คัดลอกลิงก์เรียบร้อยแล้ว');
     }
+}
+
+function confirmApproveUser(userId, userName, userDept) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: `ยืนยันว่า ${userName} เป็นเจ้าหน้าที่ รพ. จริง?`,
+            html: `
+                <div style="text-align: left; background: #f8fafc; padding: 14px 18px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13.5px; margin-top: 10px;">
+                    <div style="margin-bottom: 6px;"><strong>กลุ่มงาน/ฝ่าย/แผนก:</strong> <span style="color: #0f766e; font-weight: 600;">${userDept}</span></div>
+                    <div style="color: #64748b; font-size: 12px; line-height: 1.5;">
+                        <i class="bi bi-info-circle"></i> เมื่อกดยืนยัน บัญชีจะได้รับสิทธิ์เข้าใช้งานระบบสารสนเทศของโรงพยาบาลได้ทันที
+                    </div>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-check-lg"></i> อนุมัติเป็นเจ้าหน้าที่ รพ.',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#94a3b8',
+            reverseButtons: true,
+            focusConfirm: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                submitPostAction(`{{ url('/users') }}/${userId}/approve`);
+            }
+        });
+    } else {
+        if (confirm(`ยืนยันว่า ${userName} (${userDept}) เป็นเจ้าหน้าที่ของโรงพยาบาลจริงหรือไม่?`)) {
+            submitPostAction(`{{ url('/users') }}/${userId}/approve`);
+        }
+    }
+}
+
+function confirmRejectUser(userId, userName) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: `ปฏิเสธการยืนยันตัวตน?`,
+            text: `ต้องการปฏิเสธบัญชี ${userName} เนื่องจากไม่ใช่เจ้าหน้าที่ รพ. ใช่หรือไม่?`,
+            input: 'text',
+            inputPlaceholder: 'ระบุเหตุผล (เช่น ข้อมูลไม่ตรงกับฝ่ายบุคคล HR)',
+            inputValue: 'ข้อมูลไม่ตรงกับฐานข้อมูลบุคลากรของโรงพยาบาล',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-x-circle"></i> ยืนยันปฏิเสธ',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#94a3b8',
+            reverseButtons: true,
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'กรุณาระบุเหตุผลในการปฏิเสธ';
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                submitPostAction(`{{ url('/users') }}/${userId}/reject`, {
+                    rejection_reason: result.value || 'ข้อมูลไม่ตรงกับฐานข้อมูลบุคลากรของโรงพยาบาล'
+                });
+            }
+        });
+    } else {
+        const reason = prompt(`ต้องการปฏิเสธบัญชี ${userName} กรุณาระบุเหตุผล:`, 'ข้อมูลไม่ตรงกับฐานข้อมูลบุคลากรของโรงพยาบาล');
+        if (reason !== null) {
+            submitPostAction(`{{ url('/users') }}/${userId}/reject`, { rejection_reason: reason });
+        }
+    }
+}
+
+function submitPostAction(url, data = {}) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    
+    const csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = '_token';
+    csrf.value = '{{ csrf_token() }}';
+    form.appendChild(csrf);
+
+    for (const key in data) {
+        if (data.hasOwnProperty(key)) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = data[key];
+            form.appendChild(input);
+        }
+    }
+
+    document.body.appendChild(form);
+    form.submit();
 }
 </script>
 @endsection

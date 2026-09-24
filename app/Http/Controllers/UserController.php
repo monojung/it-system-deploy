@@ -64,11 +64,18 @@ class UserController extends Controller
             }
         }
 
+        // Filter by Approval Status
+        if ($request->filled('approval_status')) {
+            $query->where('approval_status', $request->approval_status);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $cleanSearch = preg_replace('/[^0-9]/', '', $search);
             $query->where(function ($q) use ($search, $cleanSearch) {
                 $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
                   ->orWhere('username', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('google_email', 'like', "%{$search}%")
@@ -80,12 +87,20 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->orderBy('name')->paginate(15)->withQueryString();
+        // If filtering by pending, sort newest first
+        if ($request->approval_status === 'pending') {
+            $users = $query->latest('created_at')->paginate(15)->withQueryString();
+        } else {
+            $users = $query->orderBy('name')->paginate(15)->withQueryString();
+        }
+
         $departments = Department::where('is_active', true)->orderBy('name')->get();
 
         // Metrics for dashboard headers
         $metrics = [
             'total' => User::count(),
+            'pending_approval' => User::pendingApproval()->count(),
+            'approved' => User::approved()->count(),
             'google_linked' => User::whereNotNull('google_id')->orWhereNotNull('google_email')->count(),
             'thaid_linked' => User::whereNotNull('cid')->where('cid', '!=', '')->count(),
             'mfa_active' => User::where('mfa_enabled', true)->orWhere('mfa_enforced', true)->count(),
@@ -163,8 +178,14 @@ class UserController extends Controller
             $emailVerifiedAt = now();
         }
 
+        $nameParts = explode(' ', trim($request->name), 2);
+        $firstName = $nameParts[0] ?? $request->name;
+        $lastName = $nameParts[1] ?? '';
+
         $user = User::create([
             'name' => $request->name,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'username' => $request->username,
             'cid' => $cid,
             'google_id' => $request->google_id ?: null,
@@ -183,6 +204,10 @@ class UserController extends Controller
             'position' => $request->position,
             'phone' => $request->phone,
             'is_active' => true,
+            'approval_status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+            'onboarding_completed' => true,
         ]);
 
         $setupUrl = null;
@@ -278,6 +303,7 @@ class UserController extends Controller
             'position' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
+            'approval_status' => 'nullable|in:approved,pending,rejected',
             'mfa_secret' => 'nullable|string|min:16|max:32',
         ], [
             'cid.size' => 'เลขประจำตัวประชาชนต้องมี 13 หลัก',
@@ -289,7 +315,7 @@ class UserController extends Controller
             return back()->withInput()->withErrors(['cid' => 'เลขประจำตัวประชาชน 13 หลักไม่ถูกต้องตามสูตรคำนวณ (Invalid Checksum)']);
         }
 
-        $oldData = $user->only(['name', 'cid', 'google_id', 'google_email', 'mfa_enabled', 'mfa_enforced', 'role', 'is_active']);
+        $oldData = $user->only(['name', 'cid', 'google_id', 'google_email', 'mfa_enabled', 'mfa_enforced', 'role', 'is_active', 'approval_status']);
 
         $data = $request->except(['password']);
         $data['cid'] = $cid;
@@ -297,6 +323,16 @@ class UserController extends Controller
         $data['google_email'] = $request->filled('google_email') ? $request->google_email : null;
         $data['mfa_enabled'] = $request->boolean('mfa_enabled');
         $data['mfa_enforced'] = $request->boolean('mfa_enforced');
+
+        if ($request->filled('approval_status')) {
+            $data['approval_status'] = $request->approval_status;
+            if ($request->approval_status === 'approved' && $user->approval_status !== 'approved') {
+                $data['approved_at'] = now();
+                $data['approved_by'] = auth()->id();
+                $data['rejection_reason'] = null;
+                $data['onboarding_completed'] = true;
+            }
+        }
 
         if (($data['mfa_enabled'] || $data['mfa_enforced']) && !$user->mfa_enrolled_at) {
             $data['mfa_enrolled_at'] = now();
@@ -472,5 +508,108 @@ class UserController extends Controller
         AuditLog::record('delete', 'users', "ลบบัญชีผู้ใช้งาน {$name}", null);
 
         return redirect()->route('users.index')->with('success', "ลบบัญชีผู้ใช้งาน {$name} สำเร็จ");
+    }
+
+    /**
+     * Approve user account as genuine hospital staff
+     */
+    public function approve(Request $request, User $user)
+    {
+        $request->validate([
+            'department_id' => 'nullable|exists:it_departments,id',
+            'role' => 'nullable|in:admin,technician,user',
+            'position' => 'nullable|string|max:255',
+        ]);
+
+        $updateData = [
+            'approval_status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+            'rejection_reason' => null,
+            'is_active' => true,
+            'onboarding_completed' => true,
+        ];
+
+        if ($request->filled('department_id')) {
+            $updateData['department_id'] = $request->department_id;
+        }
+        if ($request->filled('role')) {
+            $updateData['role'] = $request->role;
+        }
+        if ($request->filled('position')) {
+            $updateData['position'] = $request->position;
+        }
+
+        $user->update($updateData);
+
+        AuditLog::record('approve_user', 'users', "อนุมัติยืนยันตัวตนเจ้าหน้าที่ รพ. บัญชี {$user->name} ({$user->email}) สังกัด: " . ($user->fresh()->department?->name ?? 'ไม่ระบุ'), $user);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "อนุมัติยืนยันตัวตน {$user->name} เป็นเจ้าหน้าที่ของโรงพยาบาลเรียบร้อยแล้ว",
+            ]);
+        }
+
+        return back()->with('success', "อนุมัติยืนยันตัวตนเจ้าหน้าที่ รพ. บัญชี {$user->name} เรียบร้อยแล้ว สามารถเข้าใช้งานระบบได้ทันที");
+    }
+
+    /**
+     * Reject user account (not genuine hospital staff)
+     */
+    public function reject(Request $request, User $user)
+    {
+        $request->validate([
+            'rejection_reason' => 'nullable|string|max:500',
+        ]);
+
+        $reason = $request->input('rejection_reason', 'ข้อมูลไม่ตรงกับฐานข้อมูลบุคลากรของโรงพยาบาล');
+
+        $user->update([
+            'approval_status' => 'rejected',
+            'rejection_reason' => $reason,
+            'is_active' => false,
+        ]);
+
+        AuditLog::record('reject_user', 'users', "ปฏิเสธการยืนยันตัวตนบัญชี {$user->name} ({$user->email}) เหตุผล: {$reason}", $user);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "ปฏิเสธการยืนยันตัวตนบัญชี {$user->name} เรียบร้อยแล้ว",
+            ]);
+        }
+
+        return back()->with('success', "ปฏิเสธการยืนยันตัวตนบัญชี {$user->name} เรียบร้อยแล้ว");
+    }
+
+    /**
+     * Batch approve selected pending users
+     */
+    public function batchApprove(Request $request)
+    {
+        $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:it_users,id',
+        ]);
+
+        $count = 0;
+        foreach ($request->user_ids as $id) {
+            $user = User::find($id);
+            if ($user && $user->isPendingApproval()) {
+                $user->update([
+                    'approval_status' => 'approved',
+                    'approved_at' => now(),
+                    'approved_by' => auth()->id(),
+                    'rejection_reason' => null,
+                    'is_active' => true,
+                    'onboarding_completed' => true,
+                ]);
+                AuditLog::record('approve_user', 'users', "อนุมัติยืนยันตัวตนเจ้าหน้าที่ รพ. (Batch) {$user->name} ({$user->email})", $user);
+                $count++;
+            }
+        }
+
+        return back()->with('success', "อนุมัติยืนยันตัวตนเจ้าหน้าที่ รพ. สำเร็จทั้งหมด {$count} บัญชี");
     }
 }

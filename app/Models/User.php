@@ -17,6 +17,8 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'first_name',
+        'last_name',
         'username',
         'cid',
         'line_user_id',
@@ -33,6 +35,11 @@ class User extends Authenticatable
         'password_setup_expires_at',
         'password',
         'role',
+        'approval_status',
+        'approved_at',
+        'approved_by',
+        'rejection_reason',
+        'onboarding_completed',
         'department_id',
         'position',
         'phone',
@@ -53,6 +60,8 @@ class User extends Authenticatable
         'notify_line_enabled' => 'boolean',
         'mfa_enabled' => 'boolean',
         'mfa_enforced' => 'boolean',
+        'onboarding_completed' => 'boolean',
+        'approved_at' => 'datetime',
         'mfa_enrolled_at' => 'datetime',
         'email_verified_at' => 'datetime',
         'password_setup_expires_at' => 'datetime',
@@ -61,6 +70,11 @@ class User extends Authenticatable
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function repairsRequested(): HasMany
@@ -167,5 +181,60 @@ class User extends Authenticatable
     public function hasPasswordSetupPending(): bool
     {
         return !empty($this->password_setup_token);
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->isAdmin() || $this->approval_status === 'approved';
+    }
+
+    public function isPendingApproval(): bool
+    {
+        return !$this->isAdmin() && $this->approval_status === 'pending';
+    }
+
+    public function isRejected(): bool
+    {
+        return !$this->isAdmin() && $this->approval_status === 'rejected';
+    }
+
+    public function hasCompletedOnboarding(): bool
+    {
+        return (bool) $this->onboarding_completed && !empty($this->department_id);
+    }
+
+    public function getApprovalBadgeAttribute(): string
+    {
+        return match ($this->approval_status) {
+            'approved' => 'badge-success',
+            'pending' => 'badge-warning',
+            'rejected' => 'badge-danger',
+            default => 'badge-light',
+        };
+    }
+
+    public function getApprovalLabelAttribute(): string
+    {
+        return match ($this->approval_status) {
+            'approved' => 'อนุมัติแล้ว (เป็นเจ้าหน้าที่ รพ. จริง)',
+            'pending' => 'รอตรวจสอบยืนยันตัวตน',
+            'rejected' => 'ปฏิเสธ (ไม่ใช่เจ้าหน้าที่)',
+            default => 'ไม่ระบุ',
+        };
+    }
+
+    public function scopePendingApproval($query)
+    {
+        return $query->where('approval_status', 'pending');
+    }
+
+    public function scopeApproved($query)
+    {
+        return $query->where('approval_status', 'approved');
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('approval_status', 'rejected');
     }
 }

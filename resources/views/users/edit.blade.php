@@ -122,12 +122,28 @@
                     </div>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 24px;">
-                    <label class="form-label" for="is_active">สถานะการเข้าใช้งานระบบ</label>
-                    <select name="is_active" id="is_active" class="form-select">
-                        <option value="1" {{ old('is_active', $user->is_active) ? 'selected' : '' }}>🟢 เปิดใช้งานปกติ (Active)</option>
-                        <option value="0" {{ !old('is_active', $user->is_active) ? 'selected' : '' }}>🔴 ระงับการใช้งาน (Suspended)</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="approval_status">สถานะการยืนยันตัวตนเจ้าหน้าที่ รพ.</label>
+                        <select name="approval_status" id="approval_status" class="form-select">
+                            <option value="approved" {{ old('approval_status', $user->approval_status) === 'approved' ? 'selected' : '' }}>✅ เจ้าหน้าที่ รพ. จริง (Approved)</option>
+                            <option value="pending" {{ old('approval_status', $user->approval_status) === 'pending' ? 'selected' : '' }}>⏳ รอตรวจสอบยืนยันตัวตน (Pending)</option>
+                            <option value="rejected" {{ old('approval_status', $user->approval_status) === 'rejected' ? 'selected' : '' }}>❌ ปฏิเสธการยืนยัน (Rejected)</option>
+                        </select>
+                        @if($user->approver)
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
+                                <i class="bi bi-person-check"></i> อนุมัติโดย: {{ $user->approver->name }} ({{ thai_date($user->approved_at, 'full') }})
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label class="form-label" for="is_active">สถานะการเข้าใช้งานระบบ</label>
+                        <select name="is_active" id="is_active" class="form-select">
+                            <option value="1" {{ old('is_active', $user->is_active) ? 'selected' : '' }}>🟢 เปิดใช้งานปกติ (Active)</option>
+                            <option value="0" {{ !old('is_active', $user->is_active) ? 'selected' : '' }}>🔴 ระงับการใช้งาน (Suspended)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <hr style="border: 0; border-top: 1px dashed var(--border); margin: 24px 0;">

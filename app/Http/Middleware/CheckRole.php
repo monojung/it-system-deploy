@@ -23,6 +23,9 @@ class CheckRole
         $user = auth()->user();
 
         if (!$user->is_active) {
+            if ($user->approval_status === 'pending') {
+                return redirect()->route('auth.pending-approval');
+            }
             auth()->logout();
             return redirect()->route('login')->with('error', 'บัญชีผู้ใช้งานของคุณถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ IT');
         }

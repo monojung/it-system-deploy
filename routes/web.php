@@ -52,6 +52,12 @@ Route::get('/auth/thaid', [AuthController::class, 'redirectToThaID'])->name('aut
 Route::get('/auth/thaid/callback', [AuthController::class, 'handleThaIDCallback'])->name('auth.thaid.callback');
 Route::get('/auth/mfa-challenge', [AuthController::class, 'showMfaChallenge'])->name('auth.mfa-challenge');
 Route::post('/auth/mfa-verify', [AuthController::class, 'verifyMfaChallenge'])->name('auth.mfa-verify');
+
+// Staff Onboarding & Pending Approval Routes
+Route::get('/auth/complete-profile', [AuthController::class, 'showCompleteProfile'])->name('auth.complete-profile');
+Route::post('/auth/complete-profile', [AuthController::class, 'submitCompleteProfile'])->name('auth.complete-profile.post');
+Route::get('/auth/pending-approval', [AuthController::class, 'showPendingApproval'])->name('auth.pending-approval');
+
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Public Hardware Audit API Endpoint (for embedded client PowerShell Agent & Browser Status Check)
@@ -102,7 +108,7 @@ Route::get('/scripts/{filename}', function ($filename) {
 })->where('filename', '[A-Za-z0-9_\-\.]+')->name('scripts.download');
 
 // Authenticated Routes
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'approved'])->group(function () {
     // Dashboard & Profile
     Route::get('/', [DashboardController::class, 'index'])->name('home');
     Route::get('', [DashboardController::class, 'index']);
@@ -271,6 +277,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/users/{user}/unlink-google', [UserController::class, 'unlinkGoogle'])->name('users.unlink-google');
         Route::post('/users/{user}/unlink-thaid', [UserController::class, 'unlinkThaid'])->name('users.unlink-thaid');
         Route::get('/users/{user}/identity-details', [UserController::class, 'getIdentityDetails'])->name('users.identity-details');
+        Route::post('/users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
+        Route::post('/users/{user}/reject', [UserController::class, 'reject'])->name('users.reject');
+        Route::post('/users/batch-approve', [UserController::class, 'batchApprove'])->name('users.batch-approve');
 
         // Departments
         Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
