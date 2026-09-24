@@ -93,6 +93,12 @@ class SystemUpdateService
             $outputLogs[] = $text;
         };
 
+        // 0. Purge any stale Git lock files
+        $cleared = $this->clearGitLocks();
+        if (!empty($cleared)) {
+            $append("0. ปลดล็อก Git ตกค้าง: ลบไฟล์ " . implode(', ', $cleared));
+        }
+
         // 1. Verify Git executable exists
         try {
             $gitVer = $this->runProcess(['git', '--version'], 5);
@@ -123,6 +129,7 @@ class SystemUpdateService
         $append("3. เพิ่ม Remote '{$remoteName}' ({$targetRepoUrl}) สำเร็จ");
 
         // 5. git fetch
+        $this->clearGitLocks();
         $append("4. กำลังดึงข้อมูลจาก Deploy Repo (git fetch {$remoteName} {$targetBranch})...");
         $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 60);
         $append("   Fetch สำเร็จ");
@@ -135,12 +142,15 @@ class SystemUpdateService
             } catch (\Exception $e) {
                 // ignore
             }
+            $this->clearGitLocks();
             $this->runProcess(['git', 'branch', '-M', $targetBranch], 5);
             try {
+                $this->clearGitLocks();
                 $this->runProcess(['git', 'checkout', '-f', '-B', $targetBranch, $remoteRef], 10);
             } catch (\Exception $coEx) {
                 // ignore
             }
+            $this->clearGitLocks();
             $this->runProcess(['git', 'reset', '--hard', $remoteRef], 15);
             $this->runProcess(['git', 'branch', "--set-upstream-to={$remoteRef}", $targetBranch], 5);
             $append("5. ซิงค์ Local Branch '{$targetBranch}' กับ {$remoteRef} แบบ Clean Reset สำเร็จ");
@@ -180,6 +190,9 @@ class SystemUpdateService
         }
 
         try {
+            // Proactively clear any stale Git locks before checking remote updates
+            $this->clearGitLocks();
+
             // Ensure remote points to the deploy repository
             $remoteName = $this->ensureUpdateRemote();
 
@@ -455,10 +468,17 @@ class SystemUpdateService
             $targetBranch = $updateConfig['branch'] ?? 'main';
             $remoteRef = "{$remoteName}/{$targetBranch}";
 
+            // Proactively purge any stale Git lock files before fetch & sync
+            $clearedLocks = $this->clearGitLocks();
+            if (!empty($clearedLocks)) {
+                $appendLog("Cleared stale Git locks before sync: " . implode(', ', $clearedLocks));
+            }
+
             $notify(3, 'ดึงโค้ดล่าสุดจาก Git Deploy Repository', "กำลังดึงโค้ดจาก {$remoteRef}");
             $gitOutput = '';
             try {
                 // 1. Fetch latest commits from remote repository (60s timeout for slower network)
+                $this->clearGitLocks();
                 $fetchOutput = $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 60);
                 if (!empty(trim($fetchOutput))) {
                     $appendLog("Git fetch output:\n" . trim($fetchOutput));
@@ -474,6 +494,7 @@ class SystemUpdateService
                 // 3. Attempt standard pull
                 $syncSuccessful = false;
                 try {
+                    $this->clearGitLocks();
                     $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', $remoteName, $targetBranch], 30);
                     $syncSuccessful = true;
                 } catch (Exception $pullEx) {
@@ -483,6 +504,7 @@ class SystemUpdateService
                     // If unrelated histories, attempt with --allow-unrelated-histories
                     if (str_contains($pullErr, 'unrelated histories')) {
                         try {
+                            $this->clearGitLocks();
                             $gitOutput = $this->runProcess(['git', 'pull', '--no-edit', '--allow-unrelated-histories', $remoteName, $targetBranch], 30);
                             $syncSuccessful = true;
                         } catch (Exception $unrelatedEx) {
@@ -498,6 +520,9 @@ class SystemUpdateService
                 if (!$syncSuccessful) {
                     $appendLog("Overcoming local changes/divergence: Synchronizing codebase cleanly to {$remoteRef}...");
 
+                    // Purge locks before checkout & reset
+                    $this->clearGitLocks();
+
                     // Force checkout target branch
                     try {
                         $this->runProcess(['git', 'checkout', '-f', '-B', $targetBranch, $remoteRef], 20);
@@ -506,6 +531,7 @@ class SystemUpdateService
                     }
 
                     // Reset index and tracked files to the exact fetched commit
+                    $this->clearGitLocks();
                     $gitOutput = $this->runProcess(['git', 'reset', '--hard', $remoteRef], 30);
 
                     // Re-set tracking branch
@@ -520,6 +546,7 @@ class SystemUpdateService
 
                 $appendLog("Git output:\n" . $gitOutput);
             } catch (Exception $e) {
+                $this->clearGitLocks();
                 throw new Exception("ไม่สามารถดึงโค้ดจาก Git Deploy Repository ได้: " . $e->getMessage());
             }
 
@@ -625,6 +652,9 @@ class SystemUpdateService
             return $updateRecord;
 
         } catch (Exception $e) {
+            // Guarantee no stale Git lock files linger after failure
+            $this->clearGitLocks();
+
             // ALWAYS ensure system is brought back UP on failure
             try {
                 Artisan::call('up');
@@ -801,9 +831,13 @@ class SystemUpdateService
                 $updateRecord
             );
 
+            // Clean any stale Git locks so repository is immediately healthy
+            $this->clearGitLocks();
+
             return $updateRecord;
 
         } catch (Exception $e) {
+            $this->clearGitLocks();
             try {
                 Artisan::call('up');
                 $appendLog("Recovery: System brought back online after failure.");
@@ -908,14 +942,105 @@ class SystemUpdateService
     }
 
     /**
-     * Helper to run Symfony Process with timeout and error checking
+     * Check if an error output string indicates a Git lock collision
      */
-    protected function runProcess(array $command, int $timeout = 30): string
+    public function isGitLockError(string $error): bool
+    {
+        $lower = strtolower($error);
+        return str_contains($lower, '.lock') ||
+               str_contains($lower, 'cannot lock ref') ||
+               (str_contains($lower, 'unable to create') && str_contains($lower, 'lock')) ||
+               (str_contains($lower, 'file exists') && str_contains($lower, 'lock')) ||
+               str_contains($lower, 'another git process seems to be running') ||
+               str_contains($lower, 'index.lock') ||
+               str_contains($lower, 'head.lock');
+    }
+
+    /**
+     * Purge all stale Git lock files (.git/*.lock, index.lock, HEAD.lock, refs, logs)
+     * to guarantee uninterrupted updates.
+     *
+     * @param string|null $basePath
+     * @return array List of removed lock file paths
+     */
+    public function clearGitLocks(?string $basePath = null): array
+    {
+        $base = $basePath ?: base_path();
+        $gitDir = $base . DIRECTORY_SEPARATOR . '.git';
+        $cleared = [];
+
+        if (!File::isDirectory($gitDir)) {
+            return $cleared;
+        }
+
+        // 1. Common top-level lock & merge files in .git
+        $topLevelLocks = [
+            $gitDir . DIRECTORY_SEPARATOR . 'HEAD.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'index.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'config.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'packed-refs.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'FETCH_HEAD.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'ORIG_HEAD.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'COMMIT_EDITMSG.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'MERGE_HEAD',
+            $gitDir . DIRECTORY_SEPARATOR . 'AUTO_MERGE',
+        ];
+
+        foreach ($topLevelLocks as $lockFile) {
+            if (file_exists($lockFile)) {
+                if (@unlink($lockFile)) {
+                    $cleared[] = str_replace($base . DIRECTORY_SEPARATOR, '', $lockFile);
+                }
+            }
+        }
+
+        // 2. Scan recursively for any nested .lock files (e.g. .git/refs/heads/*.lock, .git/logs/**/*.lock)
+        try {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($gitDir, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::CHILD_FIRST
+            );
+
+            foreach ($iterator as $item) {
+                if ($item->isFile() && str_ends_with(strtolower($item->getFilename()), '.lock')) {
+                    $filePath = $item->getRealPath();
+                    if ($filePath && file_exists($filePath)) {
+                        if (@unlink($filePath)) {
+                            $rel = str_replace($base . DIRECTORY_SEPARATOR, '', $filePath);
+                            if (!in_array($rel, $cleared, true)) {
+                                $cleared[] = $rel;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('SystemUpdateService::clearGitLocks scan exception: ' . $e->getMessage());
+        }
+
+        if (!empty($cleared)) {
+            Log::info('SystemUpdateService::clearGitLocks cleared: ' . implode(', ', $cleared));
+        }
+
+        return $cleared;
+    }
+
+    /**
+     * Helper to run Symfony Process with timeout and error checking
+     * Features automatic Git lock recovery and single auto-retry.
+     */
+    protected function runProcess(array $command, int $timeout = 30, bool $autoRetryOnLock = true): string
     {
         if (!empty($command) && $command[0] === 'git') {
             $gitBinary = $this->resolveGitBinary();
             if ($gitBinary !== 'git') {
                 $command[0] = $gitBinary;
+            }
+
+            // Proactively clear stale locks on write commands
+            $subCmd = $command[1] ?? '';
+            if (in_array($subCmd, ['reset', 'checkout', 'pull', 'fetch', 'merge', 'branch', 'init'], true)) {
+                $this->clearGitLocks();
             }
         }
 
@@ -925,7 +1050,19 @@ class SystemUpdateService
 
         if (!$process->isSuccessful()) {
             $errorOutput = $process->getErrorOutput() ?: $process->getOutput();
-            throw new Exception("Command [" . implode(' ', $command) . "] failed: " . trim($errorOutput));
+            $errorText = trim($errorOutput);
+
+            // Automatic recovery for Git lock file collisions (HEAD.lock, index.lock, File exists)
+            if ($autoRetryOnLock && $this->isGitLockError($errorText)) {
+                Log::warning("Git lock collision detected during [" . implode(' ', $command) . "]: {$errorText}. Purging stale locks and retrying command...");
+                $this->clearGitLocks();
+                usleep(250000); // 250ms pause for file handles to release
+
+                // Retry command once with autoRetryOnLock disabled to prevent infinite loop
+                return $this->runProcess($command, $timeout, false);
+            }
+
+            throw new Exception("Command [" . implode(' ', $command) . "] failed: " . $errorText);
         }
 
         return $process->getOutput();

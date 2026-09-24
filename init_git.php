@@ -65,6 +65,41 @@ if (!$gitCheck || str_contains($gitCheck, 'not recognized') || str_contains($git
 if (!$hasErrors) {
     $logs[] = "✔ ตรวจพบโปรแกรม Git: " . trim($gitCheck);
 
+    // 0. ล้างไฟล์ล็อกตกค้าง (.lock) ก่อนรันคำสั่ง Git
+    $gitDir = $targetDir . DIRECTORY_SEPARATOR . '.git';
+    $unlockedCount = 0;
+    if (is_dir($gitDir)) {
+        $lockCandidates = [
+            $gitDir . DIRECTORY_SEPARATOR . 'HEAD.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'index.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'config.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'packed-refs.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'FETCH_HEAD.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'ORIG_HEAD.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'COMMIT_EDITMSG.lock',
+            $gitDir . DIRECTORY_SEPARATOR . 'MERGE_HEAD',
+            $gitDir . DIRECTORY_SEPARATOR . 'AUTO_MERGE',
+        ];
+        foreach ($lockCandidates as $lf) {
+            if (file_exists($lf) && @unlink($lf)) {
+                $unlockedCount++;
+            }
+        }
+        try {
+            $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($gitDir, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ($it as $f) {
+                if ($f->isFile() && str_ends_with(strtolower($f->getFilename()), '.lock')) {
+                    if (@unlink($f->getRealPath())) {
+                        $unlockedCount++;
+                    }
+                }
+            }
+        } catch (Exception $e) {}
+    }
+    if ($unlockedCount > 0) {
+        $logs[] = "✔ ล้างไฟล์ล็อก Git ตกค้างสำเร็จแล้ว ({$unlockedCount} ไฟล์)";
+    }
+
     $commands = [
         "1. สร้างโฟลเดอร์ .git (git init)" => "{$gitBin} init",
         "2. อนุญาตความปลอดภัย (safe.directory)" => "{$gitBin} config --global --add safe.directory \"{$posixDir}\"",

@@ -611,7 +611,11 @@
                 </div>
             </div>
         </div>
-        <div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <button type="button" id="btnClearLocks" onclick="confirmAndClearLocks()" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; padding: 10px 18px; border-radius: var(--radius-sm); background: #334155; border-color: #475569; color: #f8fafc; box-shadow: 0 4px 12px rgba(0,0,0,0.25);" title="ปลดล็อก Git ในกรณีเกิดข้อผิดพลาด HEAD.lock หรือ File exists">
+                <i class="bi bi-unlock-fill" id="unlockIcon"></i>
+                <span>ปลดล็อก Git</span>
+            </button>
             <button type="button" id="btnCheckUpdates" onclick="checkRemoteUpdates()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; padding: 10px 20px; border-radius: var(--radius-sm); background: #0d9488; border-color: #0d9488; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.4);">
                 <i class="bi bi-arrow-clockwise" id="checkIcon"></i>
                 <span>ตรวจสอบเวอร์ชันใหม่</span>
@@ -1410,6 +1414,11 @@
             status.innerHTML = `<i class="bi bi-x-circle-fill" style="color: #ef4444;"></i> <span style="color: #ef4444; font-weight: bold;">การอัปเดตล้มเหลว</span>`;
 
             const errLower = (err.message || '').toLowerCase();
+            const isGitLock = errLower.includes('lock') || 
+                              errLower.includes('file exists') || 
+                              errLower.includes('cannot lock ref') ||
+                              errLower.includes('another git process');
+
             const isGitConflict = errLower.includes('overwritten by merge') || 
                                  errLower.includes('divergent branches') || 
                                  errLower.includes('local changes') ||
@@ -1417,7 +1426,28 @@
 
             let errorHtml = `<div style="text-align: left; font-size: 13px; color: #b91c1c; background: #fef2f2; padding: 12px; border-radius: 6px; margin-bottom: 12px; max-height: 180px; overflow-y: auto; white-space: pre-wrap; font-family: monospace;">${escapeHtml(err.message)}</div>`;
 
-            if (isGitConflict) {
+            if (isGitLock) {
+                errorHtml += `<div style="text-align: left; font-size: 12.5px; color: #334155; line-height: 1.5; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                    <strong style="color: #b45309;"><i class="bi bi-unlock-fill" style="color: #f59e0b;"></i> วิธีแก้ไขปัญหา Git Lock File (HEAD.lock / index.lock):</strong><br>
+                    ตรวจพบว่ามีกระบวนการ Git ก่อนหน้าค้างอยู่ หรือถูกขัดจังหวะ ทำให้เกิดไฟล์ล็อกตกค้าง (.lock) ในโฟลเดอร์ <code>.git/</code><br><br>
+                    👉 <strong>คลิกเดียวเพื่อแก้ไขทันที:</strong> กดปุ่ม <em>"ปลดล็อก Git และลองใหม่อีกครั้ง"</em> ด้านล่าง ระบบจะทำการลบไฟล์ล็อกตกค้างทั้งหมดและสั่งอัปเดตระบบต่อให้อัตโนมัติ
+                </div>`;
+
+                Swal.fire({
+                    title: 'พบไฟล์ล็อก Git (.lock) ตกค้างบนเซิร์ฟเวอร์',
+                    html: errorHtml,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d9488',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: '<i class="bi bi-unlock-fill"></i> ปลดล็อก Git และลองใหม่อีกครั้ง',
+                    cancelButtonText: 'ปิด'
+                }).then((r) => {
+                    if (r.isConfirmed) {
+                        clearGitLocksAndRetry();
+                    }
+                });
+            } else if (isGitConflict) {
                 errorHtml += `<div style="text-align: left; font-size: 12.5px; color: #334155; line-height: 1.5; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
                     <strong style="color: #166534;"><i class="bi bi-lightbulb-fill" style="color: #f59e0b;"></i> วิธีแก้ไขปัญหา Git Conflict:</strong><br>
                     ตรวจพบว่าไฟล์ในเครื่องเซิร์ฟเวอร์มีการเปลี่ยนแปลง หรือประวัติ Git ไม่ตรงกัน ทำให้ Git ปฏิเสธการดึงโค้ด<br><br>
@@ -1637,6 +1667,91 @@
                     });
                 });
             }
+        });
+    }
+
+    function confirmAndClearLocks() {
+        Swal.fire({
+            title: 'ปลดล็อก Git Repository?',
+            html: 'ระบบจะทำการค้นหาและล้างไฟล์ล็อกตกค้าง (เช่น <code>HEAD.lock</code>, <code>index.lock</code>) ในโฟลเดอร์ <code>.git/</code> ทั้งหมด เพื่อให้ระบบสามารถดึงโค้ดและอัปเดตได้อย่างราบรื่น',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#0d9488',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: '<i class="bi bi-unlock-fill"></i> ยืนยันปลดล็อก',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                executeClearLocks();
+            }
+        });
+    }
+
+    function executeClearLocks(callback) {
+        const btn = document.getElementById('btnClearLocks');
+        const icon = document.getElementById('unlockIcon');
+        if (btn) btn.disabled = true;
+        if (icon) icon.className = 'bi bi-arrow-repeat spin';
+
+        fetch("{{ route('system-updates.clear-locks') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (btn) btn.disabled = false;
+            if (icon) icon.className = 'bi bi-unlock-fill';
+
+            if (data.success) {
+                if (typeof callback === 'function') {
+                    callback();
+                } else {
+                    Swal.fire({
+                        title: 'ปลดล็อกสำเร็จ!',
+                        text: data.message,
+                        icon: 'success',
+                        confirmButtonColor: '#0d9488',
+                        confirmButtonText: 'ตกลง'
+                    });
+                }
+            } else {
+                Swal.fire({
+                    title: 'ปลดล็อกไม่สำเร็จ',
+                    text: data.message || 'เกิดข้อผิดพลาด',
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444'
+                });
+            }
+        })
+        .catch(err => {
+            if (btn) btn.disabled = false;
+            if (icon) icon.className = 'bi bi-unlock-fill';
+
+            Swal.fire({
+                title: 'เกิดข้อผิดพลาด',
+                text: err.message,
+                icon: 'error',
+                confirmButtonColor: '#ef4444'
+            });
+        });
+    }
+
+    function clearGitLocksAndRetry() {
+        Swal.fire({
+            title: 'กำลังปลดล็อก Git...',
+            text: 'กรุณารอสักครู่ ระบบกำลังลบไฟล์ล็อกและเริ่มกระบวนการอัปเดตใหม่',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        executeClearLocks(() => {
+            Swal.close();
+            executeSystemUpdate();
         });
     }
 

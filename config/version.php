@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.4.8'),
+    'version' => env('APP_VERSION', '2.4.9'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-24',
-    'build' => '20260924.1',
+    'build' => '20260924.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,19 @@ return [
     |
     */
     'changelog' => [
+        '2.4.9' => [
+            'date' => '2026-09-24',
+            'badge' => 'Hotfix: Git Lock Auto-Purge & Fail-Safe Resilient System Update',
+            'badge_color' => '#0284c7',
+            'title' => 'แก้ไขปัญหาไฟล์ล็อก Git (HEAD.lock / index.lock) ตกค้าง พร้อมระบบตรวจจับ ปลดล็อกอัตโนมัติ และสั่ง Retry ทันทีโดยไม่ต้องเข้า SSH Terminal',
+            'highlights' => [
+                'ระบบตรวจจับและปลดล็อก Git อัตโนมัติ (Automated Git Lock Auto-Purge & Single Retry): เมื่อคำสั่ง Git (เช่น git reset, git pull, git checkout) ล้มเหลวเนื่องจากพบไฟล์ล็อกตกค้าง (cannot lock ref \'HEAD\': Unable to create ... HEAD.lock: File exists) ตัวจัดการ SystemUpdateService จะทำการตรวจจับและล้างไฟล์ .lock ทั้งหมดใน .git/ และสั่งรันคำสั่งซ้ำ (Retry) ให้อัตโนมัติในทันทีอย่างราบรื่น',
+                'การล้างไฟล์ล็อกเชิงรุก (Proactive Lock Clearance): เพิ่มการล้างไฟล์ล็อกตกค้างก่อนเริ่มดำเนินการคำสั่ง Git ทุกขั้นตอนใน Update Pipeline (Fetch, Pull, Checkout, Reset, Branch)',
+                'ปุ่มปลดล็อก Git บนหน้าจอควบคุม (/system-updates): เพิ่มปุ่ม "ปลดล็อก Git" ในแถบเครื่องมือหลัก และปุ่ม "ปลดล็อก Git และลองใหม่อีกครั้ง" ในกล่องข้อความแจ้งเตือนข้อผิดพลาด เพื่อให้ผู้ดูแลระบบสามารถปลดล็อกได้ด้วยคลิกเดียว',
+                'สคริปต์ Standalone กู้คืนเร่งด่วน (/clear_git_lock.php): สร้างสคริปต์ปลดล็อกแยกอิสระเพื่อเข้าถึงและปลดล็อกเซิร์ฟเวอร์ได้โดยตรงผ่าน URL: clear_git_lock.php?key=thc11143',
+                'อัปเดต init_git.php: เพิ่มขั้นตอนที่ 0 ล้างไฟล์ล็อกตกค้างก่อนเริ่มต้นเชื่อมต่อ Git Repository บนเซิร์ฟเวอร์',
+            ],
+        ],
         '2.4.8' => [
             'date' => '2026-09-24',
             'badge' => 'Security: New Staff Onboarding & Admin Identity Verification',

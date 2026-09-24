@@ -94,6 +94,13 @@ class SystemUpdateController extends Controller
             return redirect()->route('system-updates.index')->with('success', "อัปเดตระบบเสร็จสิ้นแล้ว! (Commit: {$record->short_commit})");
 
         } catch (Throwable $e) {
+            // Proactively clear Git locks so system is never stuck in a locked state
+            try {
+                $this->updateService->clearGitLocks();
+            } catch (Throwable $lockEx) {
+                // ignore
+            }
+
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
@@ -102,6 +109,39 @@ class SystemUpdateController extends Controller
             }
 
             return redirect()->route('system-updates.index')->with('error', 'เกิดข้อผิดพลาดในการอัปเดต: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Clear stale git locks
+     */
+    public function clearLocks(Request $request): JsonResponse|RedirectResponse
+    {
+        try {
+            $cleared = $this->updateService->clearGitLocks();
+            $count = count($cleared);
+            $msg = $count > 0 
+                ? "ปลดล็อก Git สำเร็จแล้ว! ลบไฟล์ล็อกตกค้างจำนวน {$count} ไฟล์: " . implode(', ', $cleared)
+                : "ไม่พบไฟล์ล็อกตกค้างในระบบ (Git Repository พร้อมทำงานตามปกติ)";
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $msg,
+                    'cleared_files' => $cleared,
+                ]);
+            }
+
+            return redirect()->route('system-updates.index')->with('success', $msg);
+        } catch (Throwable $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'เกิดข้อผิดพลาดในการปลดล็อก: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->route('system-updates.index')->with('error', 'เกิดข้อผิดพลาดในการปลดล็อก: ' . $e->getMessage());
         }
     }
 
