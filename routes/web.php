@@ -65,6 +65,8 @@ Route::match(['get', 'post'], '/api/hardware-audit/submit', [HardwareAuditContro
 Route::match(['get', 'post'], '/hardware-audit/submit', [HardwareAuditController::class, 'submit']);
 Route::match(['get', 'post'], '/api/hardware-audit/agent-command', [HardwareAuditController::class, 'pollCommand'])->name('hardware-audit.agent-command');
 Route::match(['get', 'post'], '/hardware-audit/agent-command', [HardwareAuditController::class, 'pollCommand']);
+Route::match(['get', 'post'], '/api/hardware-audit/agent-ping', [HardwareAuditController::class, 'pollCommand'])->name('hardware-audit.agent-ping');
+Route::match(['get', 'post'], '/hardware-audit/agent-ping', [HardwareAuditController::class, 'pollCommand']);
 Route::post('/api/hardware-audit/agent-command/{id}/complete', [HardwareAuditController::class, 'completeCommand'])->name('hardware-audit.agent-command.complete');
 Route::post('/hardware-audit/agent-command/{id}/complete', [HardwareAuditController::class, 'completeCommand']);
 
@@ -105,6 +107,14 @@ Route::get('/agent/{filename}', function ($filename) {
                 );
                 return response($content, 200, [
                     'Content-Type' => 'application/x-bat',
+                    'Cache-Control' => 'no-cache, must-revalidate',
+                ]);
+            }
+
+            if (str_ends_with($filename, '.exe')) {
+                return response()->file($path, [
+                    'Content-Type' => 'application/vnd.microsoft.portable-executable',
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
                     'Cache-Control' => 'no-cache, must-revalidate',
                 ]);
             }
@@ -284,6 +294,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::post('/hardware-audits/trigger-scan-all', [HardwareAuditController::class, 'triggerScanAll'])->name('hardware-audits.trigger-scan-all');
         Route::post('/hardware-audits/{id}/trigger-scan', [HardwareAuditController::class, 'triggerScanSingle'])->name('hardware-audits.trigger-scan-single');
         Route::get('/hardware-audits/command-status', [HardwareAuditController::class, 'getCommandStatus'])->name('hardware-audits.command-status');
+        Route::get('/hardware-audits/online-status', [HardwareAuditController::class, 'getOnlineStatus'])->name('hardware-audits.online-status');
         Route::get('/hardware-audits/print-report', [HardwareAuditController::class, 'printAnnualReport'])->name('hardware-audits.print-report');
         Route::get('/hardware-audits/export-csv', [HardwareAuditController::class, 'exportCsv'])->name('hardware-audits.export-csv');
     });

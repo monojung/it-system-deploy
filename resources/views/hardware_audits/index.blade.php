@@ -54,9 +54,22 @@
                     </div>
                 </div>
 
-                <!-- Right Action Bar: Scan All Agent Button & Fiscal Year Form Selector -->
+                <!-- Right Action Bar: Scan All Agent Button, Download Standalone Agent & Fiscal Year Form Selector -->
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                     
+                    <!-- Download Standalone Agent .exe Hero Button -->
+                    <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-sm"
+                       style="background: #ffffff; color: #0284c7; font-weight: 700; padding: 8px 16px; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); text-decoration: none; transition: all 0.2s;"
+                       onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.18)'"
+                       onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)'"
+                       title="ดาวน์โหลดโปรแกรม THC IT Agent (Standalone .exe 34 KB รันได้ทันที มี System Tray Icon บอกสถานะ Online/Offline)">
+                        <i class="bi bi-download text-primary" style="font-size: 16px;"></i>
+                        <span>โหลด Agent (.exe)</span>
+                        <span class="badge" style="background: #0284c7; color: #ffffff; font-size: 10px; padding: 2px 6px; border-radius: 6px;">
+                            v2.5.5
+                        </span>
+                    </a>
+
                     <!-- Pull All Agent Telemetry Hero Button (On-Demand) -->
                     <button type="button" class="btn btn-sm" onclick="triggerScanAllConfirm()" 
                             style="background: rgba(255,255,255,0.18); backdrop-filter: blur(8px); border: 1.5px solid rgba(255,255,255,0.35); color: #ffffff; font-weight: 700; padding: 8px 16px; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s; cursor: pointer;"
@@ -739,50 +752,90 @@
                     </div>
                 </div>
 
-                <!-- Streamlined 2-Column Agent Deployment Section -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                <!-- Streamlined 3-Column Agent Deployment Section -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px;">
                     
-                    {{-- Method 1: Web One-Liner (No file download needed) --}}
-                    <div style="background: #0f172a; border-radius: 14px; padding: 20px; color: #f8fafc; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 20px rgba(15,23,42,0.15);">
-                        <div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="font-size: 13.5px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-                                    <i class="bi bi-terminal-fill"></i> วิธีที่ 1: รันคำสั่ง PowerShell ทันที
-                                </span>
-                                <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 11px; border: 1px solid rgba(56, 189, 248, 0.3);">
-                                    ไม่ต้องโหลดไฟล์
-                                </span>
-                            </div>
-                            <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin-bottom: 12px;">
-                                เปิด PowerShell (Run as administrator) วางคำสั่งด้านล่างแล้วกด Enter ระบบจะตรวจนับและส่งสเปคเข้าเซิร์ฟเวอร์ทันที (ถอดรหัส UTF-8 ภาษาไทย 100% ไม่เพี้ยน)
-                            </p>
-                            <div style="background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; position: relative;">
-                                <code id="networkCmdText" style="font-family: Consolas, monospace; font-size: 12px; color: #38bdf8; display: block; word-break: break-all; line-height: 1.4;">[Net.ServicePointManager]::SecurityProtocol = 3072; $w = New-Object Net.WebClient; $w.Encoding = [Text.Encoding]::UTF8; iex ($w.DownloadString('{{ url('/agent/thc_audit_agent.ps1') }}'))</code>
-                            </div>
+                    {{-- Method 1: Standalone .EXE System Tray Agent (TOP RECOMMENDED) --}}
+                    <div style="background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #22c55e; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 25px -5px rgba(34, 197, 94, 0.2); position: relative; overflow: hidden;">
+                        <div style="position: absolute; right: -10px; top: -10px; background: #22c55e; color: #ffffff; font-size: 10.5px; font-weight: 800; padding: 4px 14px; border-radius: 0 0 0 12px; text-transform: uppercase;">
+                            แนะนำสูงสุด ★
                         </div>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="copyNetworkCommand()" style="font-weight: 700; padding: 9px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                            <i class="bi bi-clipboard me-1"></i> คัดลอกคำสั่ง PowerShell
-                        </button>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #ffffff; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                                    <i class="bi bi-window-desktop"></i>
+                                </div>
+                                <div>
+                                    <span style="font-size: 14px; font-weight: 800; color: #15803d; display: block;">
+                                        วิธีที่ 1: โปรแกรม Standalone (.exe)
+                                    </span>
+                                    <span style="font-size: 11px; color: #166534; font-weight: 600;">
+                                        THC_IT_Agent.exe &bull; ขนาด 34 KB &bull; รันได้ทันที
+                                    </span>
+                                </div>
+                            </div>
+                            <p style="font-size: 12.5px; color: #1e3a1f; line-height: 1.5; margin: 12px 0;">
+                                โหลดแล้วดับเบิลคลิกรันได้ทันที มีไอคอน 🟢 <strong>System Tray</strong> ข้างนาฬิกา แสดงสถานะ Online/Offline เชื่อมต่อกับ Server ตลอดเวลา <strong>สแตนด์บายไม่กินสเปคและไม่ส่งข้อมูลจนกว่าแอดมินจะกดดึง</strong>
+                            </p>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
+                            <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-success btn-sm" style="font-weight: 800; padding: 10px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);">
+                                <i class="bi bi-download"></i> ดาวน์โหลด THC_IT_Agent.exe (34 KB)
+                            </a>
+                        </div>
                     </div>
 
                     {{-- Method 2: One-Click Self-Healing Batch Installer --}}
-                    <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm);">
+                    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm);">
                         <div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="font-weight: 700; font-size: 14px; color: #166534; display: flex; align-items: center; gap: 8px;">
-                                    <i class="bi bi-hdd-rack-fill"></i> วิธีที่ 2: ไฟล์ติดตั้งอัตโนมัติ (One-Click Installer)
-                                </span>
-                                <span class="badge" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; font-size: 11px;">
-                                    ไฟล์เดียวจบ
-                                </span>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                    <i class="bi bi-hdd-rack-fill"></i>
+                                </div>
+                                <div>
+                                    <span style="font-weight: 800; font-size: 14px; color: #0f172a; display: block;">
+                                        วิธีที่ 2: ติดตั้งลงเครื่องถาวร (Batch)
+                                    </span>
+                                    <span style="font-size: 11px; color: #64748b;">
+                                        install_thc_agent.bat &bull; Auto-Start on Boot
+                                    </span>
+                                </div>
                             </div>
-                            <p style="font-size: 12.5px; color: #374151; line-height: 1.5; margin-bottom: 14px;">
-                                ดาวน์โหลดไฟล์ <code>install_thc_agent.bat</code> ไปดับเบิลคลิกบนเครื่องลูกข่าย (ระบบจะดึงไฟล์ Agent จากเซิร์ฟเวอร์ให้อัตโนมัติ ไม่ต้องโหลด .ps1 เพิ่ม), ส่งสเปคทันที และสร้างทางลัดบน Desktop สำหรับส่งซ้ำได้ตลอดเวลา
+                            <p style="font-size: 12.5px; color: #374151; line-height: 1.5; margin: 12px 0;">
+                                ดับเบิลคลิกไฟล์ <code>install_thc_agent.bat</code> ระบบจะคัดลอก Agent ไปยัง <code>C:\ProgramData</code> และตั้งค่าให้เริ่มทำงานอัตโนมัติเมื่อเปิดเครื่อง (Windows Startup) ทันที
                             </p>
                         </div>
-                        <a href="{{ asset('agent/install_thc_agent.bat') }}" download class="btn btn-success btn-sm" style="font-weight: 700; width: 100%; padding: 9px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                        <a href="{{ asset('agent/install_thc_agent.bat') }}" download class="btn btn-outline-primary btn-sm" style="font-weight: 700; width: 100%; padding: 10px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
                             <i class="bi bi-download"></i> ดาวน์โหลด install_thc_agent.bat
                         </a>
+                    </div>
+
+                    {{-- Method 3: Web One-Liner (No file download needed) --}}
+                    <div style="background: #0f172a; border-radius: 16px; padding: 22px; color: #f8fafc; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 20px rgba(15,23,42,0.15);">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                    <i class="bi bi-terminal-fill"></i>
+                                </div>
+                                <div>
+                                    <span style="font-size: 14px; font-weight: 800; color: #38bdf8; display: block;">
+                                        วิธีที่ 3: รันคำสั่ง PowerShell ด่วน
+                                    </span>
+                                    <span style="font-size: 11px; color: #94a3b8;">
+                                        ไม่ต้องโหลดไฟล์ &bull; ตรวจสเปกครั้งเดียว
+                                    </span>
+                                </div>
+                            </div>
+                            <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 8px 0 10px 0;">
+                                เปิด PowerShell วางคำสั่งด้านล่างแล้วกด Enter ระบบจะส่งสเปคเข้าสู่ระบบทันที:
+                            </p>
+                            <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;">
+                                <code id="networkCmdText" style="font-family: Consolas, monospace; font-size: 11px; color: #38bdf8; display: block; word-break: break-all; line-height: 1.4;">[Net.ServicePointManager]::SecurityProtocol = 3072; $w = New-Object Net.WebClient; $w.Encoding = [Text.Encoding]::UTF8; iex ($w.DownloadString('{{ url('/agent/thc_audit_agent.ps1') }}'))</code>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="copyNetworkCommand()" style="font-weight: 700; padding: 9px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="bi bi-clipboard me-1"></i> คัดลอกคำสั่ง PowerShell
+                        </button>
                     </div>
 
                 </div>
@@ -2723,5 +2776,27 @@
         }
     });
     @endif
+
+    // Live Agent Online Status Background Poller (every 8 seconds)
+    function pollLiveAgentOnlineStatus() {
+        fetch("{{ route('hardware-audits.online-status') }}", {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && Array.isArray(data.agents)) {
+                const countBadge = document.getElementById('liveOnlineAgentsCount');
+                if (countBadge) {
+                    countBadge.textContent = data.online_count;
+                }
+            }
+        })
+        .catch(() => {});
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        pollLiveAgentOnlineStatus();
+        setInterval(pollLiveAgentOnlineStatus, 8000);
+    });
 </script>
 @endsection

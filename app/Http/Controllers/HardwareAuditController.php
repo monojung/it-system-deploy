@@ -11,6 +11,7 @@ use App\Models\AuditLog;
 use App\Models\AgentCommand;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -413,6 +414,42 @@ class HardwareAuditController extends Controller
 
         if (preg_match('/^[0F-]{36}$/i', $hardwareId) || preg_match('/Default string|To be filled by O\.E\.M\.|None/i', $hardwareId)) {
             $hardwareId = '';
+        }
+
+        // Live Heartbeat Registration (Active Standby Tracking)
+        $nowIso = now()->toIso8601String();
+        $onlineTtl = now()->addSeconds(30);
+        if (!empty($hardwareId)) {
+            Cache::put('agent_online:hwid:' . strtoupper(trim($hardwareId)), $nowIso, $onlineTtl);
+        }
+        if (!empty($hostname)) {
+            Cache::put('agent_online:host:' . strtoupper(trim($hostname)), $nowIso, $onlineTtl);
+        }
+        if (!empty($ip)) {
+            Cache::put('agent_online:ip:' . trim($ip), $nowIso, $onlineTtl);
+        }
+
+        // Track active online agents list
+        $agentKey = strtoupper(trim($hardwareId ?: $hostname ?: $ip));
+        if (!empty($agentKey)) {
+            try {
+                $registry = Cache::get('agent_online_registry', []);
+                if (!is_array($registry)) $registry = [];
+                $registry[$agentKey] = [
+                    'hwid' => $hardwareId,
+                    'hostname' => $hostname,
+                    'ip' => $ip,
+                    'mode' => $request->input('mode', 'tray_agent'),
+                    'version' => $request->input('agent_version') ?: $request->input('client_version', '2.5.5'),
+                    'last_seen' => $nowIso,
+                    'expires_at' => now()->addSeconds(30)->timestamp,
+                ];
+                $nowTs = now()->timestamp;
+                $registry = array_filter($registry, function ($a) use ($nowTs) {
+                    return isset($a['expires_at']) && $a['expires_at'] > $nowTs;
+                });
+                Cache::put('agent_online_registry', $registry, now()->addMinutes(5));
+            } catch (\Throwable $e) {}
         }
 
         // 1. Check for direct command targeted to this machine
@@ -1706,5 +1743,26 @@ class HardwareAuditController extends Controller
         }
 
         return response()->json(['success' => false, 'message' => 'โปรดระบุ command_id หรือ batch_id'], 400);
+    }
+
+    /**
+     * Get live online agents connected to the system
+     */
+    public function getOnlineStatus(Request $request)
+    {
+        $registry = Cache::get('agent_online_registry', []);
+        if (!is_array($registry)) $registry = [];
+
+        $nowTs = now()->timestamp;
+        $activeAgents = array_filter($registry, function ($a) use ($nowTs) {
+            return isset($a['expires_at']) && $a['expires_at'] > $nowTs;
+        });
+
+        return response()->json([
+            'success' => true,
+            'online_count' => count($activeAgents),
+            'agents' => array_values($activeAgents),
+            'timestamp' => now()->toIso8601String(),
+        ]);
     }
 }

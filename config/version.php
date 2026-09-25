@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.5.4'),
+    'version' => env('APP_VERSION', '2.5.5'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-25',
-    'build' => '20260925.2',
+    'build' => '20260925.5',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,20 @@ return [
     |
     */
     'changelog' => [
+        '2.5.5' => [
+            'date' => '2026-09-25',
+            'badge' => 'Major Architecture: Standalone Native C# System Tray Agent & Real-Time Live Status',
+            'badge_color' => '#16a34a',
+            'title' => 'ปรับโฉม Agent ใหม่: Standalone Executable (.exe 34 KB) พร้อม System Tray Icon และสถานะ Online/Offline เชื่อมต่อ Real-time',
+            'highlights' => [
+                'Standalone Native Executable (THC_IT_Agent.exe): พัฒนาด้วย C# .NET Framework ทำงานแบบ Standalone ไฟล์เดียวขนาดเพียง 34 KB รันได้ทันทีบน Windows ทุกรุ่น ไม่ต้องใช้ PowerShell script ไม่ต้องติดตั้งรันไทม์เพิ่มเติม และไม่โดน Antivirus บล็อก',
+                'System Tray Icon แสดงสถานะเรียลไทม์: มีไอคอนที่มุมขวาล่างข้างนาฬิกา (🟢 สีเขียว = ออนไลน์พร้อมรับคำสั่ง, 🟡 สีเหลือง = กำลังดึง/ส่งสเปกเครื่อง, 🔴 สีแดง = ขาดการเชื่อมต่อ) พร้อม Tooltip และการแจ้งเตือน Balloon Notification เมื่อไอทีดึงข้อมูล',
+                'สแตนด์บายแท้จริง (On-Demand Telemetry): เครื่องลูกข่ายสแตนด์บายเงียบๆ ไม่กิน CPU/RAM และไม่ส่งข้อมูลสเปกใดๆ เข้าสู่ระบบจนกว่าแอดมินจะกดดึงข้อมูล หรือผู้ใช้สั่งส่งเองจากเมนู',
+                'ตอบสนองคำสั่งดึงข้อมูลทันที (Fast Heartbeat): Agent ส่ง Heartbeat ตรวจสอบคำสั่งทุก 3-4 วินาที เมื่อแอดมินกดดึงข้อมูล เครื่องลูกข่ายจะเริ่มสแกนและส่งผลกลับมาภายใน 3-5 วินาที ทันที',
+                'Interactive GUI & Device Inspector: ดับเบิลคลิกที่ไอคอนเพื่อดูสเปกฮาร์ดแวร์จริงของเครื่อง (CPU, RAM, Disks, OS, IP, MAC, Serial) พร้อมหน้าต่างตั้งค่า Server API URL และปุ่มเปิด/ปิดให้โปรแกรมเริ่มทำงานพร้อม Windows (Auto-start)',
+                'แถบแสดงสถานะ Live Online ในหน้าเว็บ: เพิ่มตัวชี้วัดสถานะเครื่องออนไลน์แบบเรียลไทม์ และปรับปรุงศูนย์ดาวน์โหลด Agent 3 รูปแบบ',
+            ],
+        ],
         '2.5.2' => [
             'date' => '2026-09-25',
             'badge' => 'Major Architecture: 3-Tier Hierarchical RBAC (User / Admin / Super Admin)',
