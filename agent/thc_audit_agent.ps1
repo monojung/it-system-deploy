@@ -539,22 +539,9 @@ function Install-AgentScheduledTask {
 
 if ($Background) {
     # --------------------------------------------------------------------------
-    # MODE 1: Background Polling Daemon (Runs continuously, sleeps 30 seconds)
+    # MODE 1: Background Polling Daemon (Strictly On-Demand: Waits for Admin pull)
+    # The agent stays completely idle and NEVER transmits telemetry unless commanded
     # --------------------------------------------------------------------------
-    # Initial scan if no recent audit in the last 6 hours
-    $lastAuditFile = "C:\ProgramData\THC-IT-Agent\last_audit.json"
-    $shouldInitialScan = $true
-    if (Test-Path $lastAuditFile) {
-        $lastWrite = (Get-Item $lastAuditFile).LastWriteTime
-        if ((Get-Date) - $lastWrite -lt [TimeSpan]::FromHours(6)) {
-            $shouldInitialScan = $false
-        }
-    }
-    if ($shouldInitialScan) {
-        Invoke-HardwareAudit -IsSilent $true | Out-Null
-    }
-
-    # Continuous Polling Loop
     while ($true) {
         try {
             $cmd = Check-ServerCommand
@@ -566,7 +553,7 @@ if ($Background) {
                 if ($cmdId -gt 0 -and $transmitted) {
                     foreach ($submitUrl in $candidateUrls) {
                         $ackUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', "/api/hardware-audit/agent-command/$cmdId/complete"
-                        Invoke-SafeApiRequest -Uri $ackUrl -Method 'POST' -Body '{"summary":"Agent auto-scan completed"}' -TimeoutSec 5 | Out-Null
+                        Invoke-SafeApiRequest -Uri $ackUrl -Method 'POST' -Body '{"summary":"Agent scan completed via pull request"}' -TimeoutSec 5 | Out-Null
                     }
                 }
             }

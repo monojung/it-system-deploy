@@ -309,8 +309,9 @@ class HardwareAuditController extends Controller
             $cmd = AgentCommand::find($commandId);
             if ($cmd) {
                 $activeBatchId = $cmd->batch_id;
+                $cmd->target_audit_id = $audit->id;
                 if ($cmd->target_type === 'single') {
-                    $cmd->markAsCompleted("สแกนสำเร็จจาก {$hostname} (Audit #{$audit->id})", $ip);
+                    $cmd->markAsCompleted("ได้รับข้อมูลจริงจาก {$hostname} (IP: {$ip}, Audit #{$audit->id})", $ip);
                 }
             }
         }
@@ -333,7 +334,8 @@ class HardwareAuditController extends Controller
             ->get();
 
         foreach ($pendingCmds as $pCmd) {
-            $pCmd->markAsCompleted("สแกนสำเร็จจาก {$hostname} (Audit #{$audit->id})", $ip);
+            $pCmd->target_audit_id = $audit->id;
+            $pCmd->markAsCompleted("ได้รับข้อมูลจริงจาก {$hostname} (IP: {$ip}, Audit #{$audit->id})", $ip);
         }
 
         // Check if there is an active broadcast batch from the last 2 hours without a single record for this machine
@@ -1604,10 +1606,30 @@ class HardwareAuditController extends Controller
     public function getCommandStatus(Request $request)
     {
         if ($request->filled('command_id')) {
-            $cmd = AgentCommand::find($request->input('command_id'));
+            $cmd = AgentCommand::with(['targetAudit', 'targetAsset'])->find($request->input('command_id'));
             if (!$cmd) {
                 return response()->json(['success' => false, 'message' => 'ไม่พบคำสั่ง'], 404);
             }
+
+            $audit = $cmd->targetAudit ?: HardwareAudit::where(function ($q) use ($cmd) {
+                if ($cmd->target_hardware_id) $q->where('hardware_id', $cmd->target_hardware_id);
+                if ($cmd->target_hostname) $q->orWhere('hostname', $cmd->target_hostname);
+            })->latest()->first();
+
+            $telemetry = null;
+            if ($audit && $cmd->status === 'completed') {
+                $telemetry = [
+                    'audit_id' => $audit->id,
+                    'received_at' => $audit->updated_at ? $audit->updated_at->format('H:i:s น.') : null,
+                    'ip' => $audit->ip_address ?: $cmd->ip_address,
+                    'cpu' => $audit->cpu_model,
+                    'ram' => $audit->ram_capacity ? "{$audit->ram_capacity} GB {$audit->ram_type}" : null,
+                    'storage' => "{$audit->storage_type} {$audit->storage_capacity}",
+                    'os' => $audit->os_name,
+                    'agent_version' => $audit->client_agent_version,
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'command' => [
@@ -1615,8 +1637,10 @@ class HardwareAuditController extends Controller
                     'status' => $cmd->status,
                     'hostname' => $cmd->target_hostname,
                     'hardware_id' => $cmd->target_hardware_id,
+                    'ip' => $cmd->ip_address ?: ($audit?->ip_address),
                     'executed_at' => $cmd->executed_at ? $cmd->executed_at->format('d/m/Y H:i:s น.') : null,
                     'result_summary' => $cmd->result_summary,
+                    'telemetry' => $telemetry,
                 ]
             ]);
         }
@@ -1644,10 +1668,27 @@ class HardwareAuditController extends Controller
                 'failed' => $failed,
                 'percentage' => $total > 0 ? round(($completed / $total) * 100) : 0,
                 'items' => $commands->map(function ($c) {
-                    $audit = $c->targetAudit;
+                    $audit = $c->targetAudit ?: HardwareAudit::where(function ($q) use ($c) {
+                        if ($c->target_hardware_id) $q->where('hardware_id', $c->target_hardware_id);
+                        if ($c->target_hostname) $q->orWhere('hostname', $c->target_hostname);
+                    })->latest()->first();
+
                     $asset = $c->targetAsset;
                     $brandModel = $audit ? trim(($audit->brand ?: '') . ' ' . ($audit->model ?: '')) : ($asset ? trim(($asset->brand ?: '') . ' ' . ($asset->model ?: '')) : null);
                     $ip = $c->ip_address ?: ($audit ? $audit->ip_address : ($asset ? $asset->ip_address : null));
+
+                    $telemetry = null;
+                    if ($audit && $c->status === 'completed') {
+                        $telemetry = [
+                            'audit_id' => $audit->id,
+                            'cpu' => $audit->cpu_model,
+                            'ram' => $audit->ram_capacity ? "{$audit->ram_capacity} GB" : null,
+                            'storage' => "{$audit->storage_type} {$audit->storage_capacity}",
+                            'os' => $audit->os_name,
+                            'received_at' => $audit->updated_at ? $audit->updated_at->format('H:i:s น.') : null,
+                            'agent_version' => $audit->client_agent_version,
+                        ];
+                    }
 
                     return [
                         'id' => $c->id,
@@ -1658,6 +1699,7 @@ class HardwareAuditController extends Controller
                         'status' => $c->status,
                         'executed_at' => $c->executed_at ? $c->executed_at->format('H:i:s น.') : null,
                         'result_summary' => $c->result_summary,
+                        'telemetry' => $telemetry,
                     ];
                 }),
             ]);

@@ -118,4 +118,26 @@ class HardwareAudit extends Model
             default => '<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="bi bi-clock-history me-1"></i>รอตรวจสอบ</span>',
         };
     }
+
+    public function getAgentTelemetryBadgeAttribute(): string
+    {
+        $timeStr = $this->updated_at ? $this->updated_at->format('d/m/Y H:i น.') : '-';
+        $ipStr = $this->ip_address ? "IP: {$this->ip_address}" : '';
+        $verStr = $this->client_agent_version ? "v{$this->client_agent_version}" : '';
+
+        if ($this->client_agent_version || $this->hardware_id) {
+            return '<div class="d-inline-flex flex-column align-items-start">' .
+                '<span class="badge" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="ได้รับข้อมูลจริงจาก Agent เมื่อ ' . e($timeStr) . ' ' . e($ipStr) . ' ' . e($verStr) . '">' .
+                    '<i class="bi bi-shield-check text-success"></i> ได้รับข้อมูลแล้ว' .
+                '</span>' .
+                '<div style="font-size: 10px; color: #059669; margin-top: 2px; font-weight: 600;">' .
+                    '<i class="bi bi-clock me-1"></i>' . ($this->updated_at ? $this->updated_at->diffForHumans() : '-') .
+                '</div>' .
+            '</div>';
+        }
+
+        return '<span class="badge" style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; font-size: 10.5px; font-weight: 500; padding: 3px 7px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="Agent ประจำเครื่องสแตนด์บายรอรับคำสั่ง ไม่ส่งข้อมูลจนกว่าแอดมินจะกดดึง">' .
+            '<i class="bi bi-pause-circle"></i> สแตนด์บาย (รอแอดมินกดดึง)' .
+        '</span>';
+    }
 }

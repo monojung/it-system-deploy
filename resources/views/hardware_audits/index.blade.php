@@ -57,13 +57,13 @@
                 <!-- Right Action Bar: Scan All Agent Button & Fiscal Year Form Selector -->
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                     
-                    <!-- Scan All Agent Devices Hero Button -->
+                    <!-- Pull All Agent Telemetry Hero Button (On-Demand) -->
                     <button type="button" class="btn btn-sm" onclick="triggerScanAllConfirm()" 
                             style="background: rgba(255,255,255,0.18); backdrop-filter: blur(8px); border: 1.5px solid rgba(255,255,255,0.35); color: #ffffff; font-weight: 700; padding: 8px 16px; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s; cursor: pointer;"
                             onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='translateY(-1px)'" 
                             onmouseout="this.style.background='rgba(255,255,255,0.18)'; this.style.transform='none'">
-                        <i class="bi bi-broadcast-pin text-warning" style="font-size: 17px;"></i>
-                        <span>สั่งสแกนทุกเครื่องที่ติดตั้ง Agent</span>
+                        <i class="bi bi-cloud-arrow-down-fill text-warning" style="font-size: 17px;"></i>
+                        <span>ดึงข้อมูลจากทุกเครื่องที่ติดตั้ง Agent</span>
                         <span style="background: #ffffff; color: #0f766e; font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 800;">
                             {{ $agentInstalledCount ?? 0 }} เครื่อง
                         </span>
@@ -290,7 +290,7 @@
                                 <th style="width: 38px; text-align: center;">
                                     <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)" style="cursor: pointer;">
                                 </th>
-                                <th style="width: 105px;">วันที่ส่งสแกน</th>
+                                <th style="min-width: 145px;">สถานะ Agent / รับข้อมูล</th>
                                 <th style="min-width: 140px;">ชื่อเครื่อง (Hostname / IP)</th>
                                 <th style="width: 150px;">ยี่ห้อ / รุ่น</th>
                                 <th style="width: 145px;">HardwareID / S/N</th>
@@ -298,7 +298,7 @@
                                 <th style="min-width: 190px;">สเปคจาก Agent</th>
                                 <th style="text-align: center; width: 100px;">การเปลี่ยนแปลง</th>
                                 <th style="text-align: center; width: 85px;">สถานะ</th>
-                                <th style="text-align: right; width: 280px; min-width: 280px;">การจัดการ</th>
+                                <th style="text-align: right; width: 280px; min-width: 280px;">ดึงข้อมูล / จัดการ</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -314,9 +314,13 @@
                                         <i class="bi bi-dash text-muted"></i>
                                     @endif
                                 </td>
-                                <td style="color: #64748b; font-size: 12px; white-space: nowrap;">
-                                    <div style="font-weight: 600; color: #334155;">{{ $audit->created_at ? $audit->created_at->format('d/m/Y') : '-' }}</div>
-                                    <div style="font-size: 11px; color: #94a3b8;">{{ $audit->created_at ? $audit->created_at->format('H:i น.') : '' }}</div>
+                                <td style="color: #64748b; font-size: 12px; white-space: nowrap;" id="agent-status-cell-{{ $audit->id }}">
+                                    <div id="telemetry-badge-{{ $audit->id }}">
+                                        {!! $audit->agent_telemetry_badge !!}
+                                    </div>
+                                    <div style="font-weight: 600; color: #475569; font-size: 11px; margin-top: 3px;" id="telemetry-time-{{ $audit->id }}">
+                                        <i class="bi bi-clock me-1 text-muted"></i>{{ $audit->updated_at ? $audit->updated_at->format('d/m/Y H:i น.') : '-' }}
+                                    </div>
                                 </td>
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 6px;">
@@ -452,13 +456,13 @@
                                 <td style="text-align: right; white-space: nowrap;">
                                     <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end;">
                                         
-                                        <!-- BUTTON 0: Trigger Remote Scan on this machine -->
-                                        <button type="button" class="btn btn-sm btn-outline-info" id="btn-scan-{{ $audit->id }}"
+                                        <!-- BUTTON 0: Pull Telemetry from this machine (On-Demand) -->
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-scan-{{ $audit->id }}"
                                                 onclick="triggerSingleScan({{ $audit->id }}, '{{ addslashes($audit->hostname ?: '-') }}')"
-                                                title="สั่งให้ Agent บนเครื่องนี้สแกนและส่งผลสเปคใหม่อัตโนมัติทันที (Remote Scan)"
-                                                style="font-size: 11.5px; padding: 4.5px 8px; border-radius: 7px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; border-color: #38bdf8; color: #0284c7; background: #f0f9ff; transition: all 0.15s;">
-                                            <i class="bi bi-broadcast-pin"></i>
-                                            <span>สั่งสแกน</span>
+                                                title="ส่งคำสั่งดึงข้อมูลสเปคล่าสุดจาก Agent บนเครื่องนี้ (On-Demand Telemetry Pull)"
+                                                style="font-size: 11.5px; padding: 4.5px 8px; border-radius: 7px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; border-color: #0284c7; color: #0284c7; background: #f0f9ff; transition: all 0.15s;">
+                                            <i class="bi bi-cloud-arrow-down-fill"></i>
+                                            <span>ดึงข้อมูล</span>
                                         </button>
 
                                         <!-- BUTTON 1: Open Agent Inspector Modal -->
@@ -1108,12 +1112,12 @@
         <div style="background: linear-gradient(135deg, #0284c7 0%, #0f766e 100%); padding: 18px 24px; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.2); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                    <i class="bi bi-broadcast-pin"></i>
+                    <i class="bi bi-cloud-arrow-down-fill"></i>
                 </div>
                 <div>
-                    <div style="font-weight: 800; font-size: 17px; line-height: 1.2;">ศูนย์สั่งสแกนฮาร์ดแวร์ระยะไกล (Remote Scan Console)</div>
+                    <div style="font-weight: 800; font-size: 17px; line-height: 1.2;">ศูนย์ดึงข้อมูลฮาร์ดแวร์ระยะไกล (Remote Agent Telemetry Console)</div>
                     <div style="font-size: 12.5px; opacity: 0.9; margin-top: 3px;">
-                        ส่งสัญญาณคำสั่งไปยัง Agent ทุกเครื่อง และติดตามผลการส่งสเปคแบบ Real-Time
+                        ระบบดึงข้อมูลแบบ On-Demand: ส่งสัญญาณเรียกดูสเปคจากเครื่องที่ติดตั้ง Agent และแสดงข้อมูลจริงที่ได้รับกลับมา
                     </div>
                 </div>
             </div>
@@ -1123,12 +1127,20 @@
         <!-- Body -->
         <div style="padding: 22px; overflow-y: auto; flex: 1;">
             
+            <!-- On-Demand Principle Info Banner -->
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #166534;">
+                <i class="bi bi-shield-check fs-5 text-success"></i>
+                <div>
+                    <strong>หลักการ On-Demand Telemetry:</strong> เครื่องลูกข่ายจะไม่ส่งข้อมูลใดๆ จนกว่าแอดมินจะกดดึงข้อมูล เมื่อส่งคำสั่งแล้ว เครื่องปลายทางจะตรวจนับสเปคจริงและส่งกลับมาแสดงผลที่นี่ทันที
+                </div>
+            </div>
+
             <!-- Progress Status Banner -->
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span id="scanStatusPulse" style="width: 10px; height: 10px; border-radius: 50%; background: #0284c7; display: inline-block; animation: pulseGlow 1.5s infinite;"></span>
-                        <strong style="font-size: 14px; color: #0f172a;" id="scanStatusTitle">กำลังสั่งสแกนและรอเครื่องตอบสนอง...</strong>
+                        <strong style="font-size: 14px; color: #0f172a;" id="scanStatusTitle">กำลังส่งคำสั่งดึงข้อมูลและรอเครื่องตอบสนอง...</strong>
                     </div>
                     <span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 11px; font-family: monospace;" id="scanBatchBadge">Batch: -</span>
                 </div>
@@ -1145,7 +1157,7 @@
                         <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 2px;" id="scanStatTotal">0</div>
                     </div>
                     <div style="background: #ffffff; border: 1px solid #bbf7d0; border-radius: 10px; padding: 10px;">
-                        <div style="font-size: 11.5px; color: #166534; font-weight: 600;">สแกนสำเร็จแล้ว</div>
+                        <div style="font-size: 11.5px; color: #166534; font-weight: 600;">ได้รับข้อมูลจริงแล้ว</div>
                         <div style="font-size: 18px; font-weight: 800; color: #15803d; margin-top: 2px;" id="scanStatCompleted">0</div>
                     </div>
                     <div style="background: #ffffff; border: 1px solid #fef08a; border-radius: 10px; padding: 10px;">
@@ -1163,14 +1175,14 @@
                 <span style="font-size: 11.5px; color: #94a3b8;">รีเฟรชสถานะอัตโนมัติทุก 2.5 วินาที</span>
             </div>
 
-            <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 12px; max-height: 260px; overflow-y: auto;">
+            <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 12px; max-height: 290px; overflow-y: auto;">
                 <table class="table table-hover align-middle mb-0" style="font-size: 12.5px;">
                     <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 2;">
                         <tr>
-                            <th style="padding: 10px 14px;">ชื่อเครื่อง (Hostname)</th>
-                            <th style="padding: 10px 14px;">ยี่ห้อ / สเปค / IP</th>
-                            <th style="padding: 10px 14px; text-align: center; width: 140px;">สถานะคำสั่ง</th>
-                            <th style="padding: 10px 14px; text-align: right; width: 110px;">เวลาสำเร็จ</th>
+                            <th style="padding: 10px 14px; width: 170px;">ชื่อเครื่อง (Hostname / IP)</th>
+                            <th style="padding: 10px 14px; text-align: center; width: 135px;">สถานะการดึง</th>
+                            <th style="padding: 10px 14px;">ข้อมูลจริงที่ได้รับ (Verified Telemetry)</th>
+                            <th style="padding: 10px 14px; text-align: right; width: 120px;">เวลาที่ได้รับ</th>
                         </tr>
                     </thead>
                     <tbody id="scanTargetsTableBody">
@@ -1230,13 +1242,13 @@
     function triggerScanAllConfirm() {
         const agentCount = {{ $agentInstalledCount ?? 0 }};
         Swal.fire({
-            title: 'สั่งสแกนทุกเครื่องที่ติดตั้ง Agent?',
-            html: `ระบบจะส่งสัญญาณคำสั่งไปยังคอมพิวเตอร์ที่ติดตั้ง Agent ทั้งหมด <b>${agentCount}</b> เครื่อง เพื่อทำการตรวจนับสเปคฮาร์ดแวร์ล่าสุดและส่งกลับเข้าสู่ระบบทันที`,
+            title: 'ดึงข้อมูลสเปคจากทุกเครื่องที่ติดตั้ง Agent?',
+            html: `ระบบจะส่งสัญญาณคำสั่ง On-Demand ไปยังคอมพิวเตอร์ที่ติดตั้ง Agent ทั้งหมด <b>${agentCount}</b> เครื่อง เพื่อดึงข้อมูลสเปคฮาร์ดแวร์ล่าสุดกลับมาแสดงผลทันที`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#0284c7',
             cancelButtonColor: '#64748b',
-            confirmButtonText: '<i class="bi bi-broadcast-pin me-1"></i> เริ่มส่งคำสั่งสแกนเดี๋ยวนี้',
+            confirmButtonText: '<i class="bi bi-cloud-arrow-down-fill me-1"></i> เริ่มดึงข้อมูลเดี๋ยวนี้',
             cancelButtonText: 'ยกเลิก'
         }).then((result) => {
             if (result.isConfirmed) {
@@ -1249,7 +1261,7 @@
         const modal = document.getElementById('remoteScanAllModal');
         modal.style.display = 'flex';
         
-        document.getElementById('scanStatusTitle').textContent = 'กำลังส่งคำสั่งสแกนไปยังเครื่องลูกข่าย...';
+        document.getElementById('scanStatusTitle').textContent = 'กำลังส่งคำสั่งดึงข้อมูลไปยังเครื่องลูกข่าย...';
         document.getElementById('scanBatchBadge').textContent = 'กำลังเริ่มต้น...';
         document.getElementById('scanProgressBar').style.width = '5%';
         document.getElementById('scanProgressBar').className = 'progress-bar progress-bar-striped progress-bar-animated bg-info';
@@ -1260,7 +1272,7 @@
             <tr>
                 <td colspan="4" style="text-align: center; padding: 25px; color: #64748b;">
                     <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                    กำลังกระจายคำสั่งสแกนไปยังคิวระบบ...
+                    กำลังกระจายคำสั่งดึงข้อมูลไปยังคิวระบบ...
                 </td>
             </tr>
         `;
@@ -1279,7 +1291,7 @@
         .then(res => res.json())
         .then(data => {
             if (!data.success) {
-                Swal.fire('เกิดข้อผิดพลาด', data.message || 'ไม่สามารถส่งคำสั่งสแกนได้', 'error');
+                Swal.fire('เกิดข้อผิดพลาด', data.message || 'ไม่สามารถส่งคำสั่งดึงข้อมูลได้', 'error');
                 closeRemoteScanAllModal();
                 return;
             }
@@ -1319,13 +1331,36 @@
 
         let html = '';
         items.forEach(item => {
-            let statusBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="bi bi-clock me-1"></i>รอเครื่องรับ</span>';
+            let statusBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="bi bi-hourglass-split me-1"></i>รอเครื่องรับคำสั่ง</span>';
             if (item.status === 'processing') {
-                statusBadge = '<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1"><span class="spinner-border spinner-border-sm me-1" style="width:10px;height:10px;"></span>กำลังสแกน</span>';
+                statusBadge = '<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1"><span class="spinner-border spinner-border-sm me-1" style="width:10px;height:10px;"></span>กำลังดึงข้อมูล...</span>';
             } else if (item.status === 'completed') {
-                statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check-circle me-1"></i>สแกนสำเร็จ</span>';
+                statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-shield-check me-1"></i>ได้รับข้อมูลแล้ว</span>';
             } else if (item.status === 'failed') {
                 statusBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-x-circle me-1"></i>ล้มเหลว</span>';
+            }
+
+            let telHtml = '';
+            if (item.telemetry) {
+                telHtml = `
+                    <div style="font-size: 12px; color: #0f172a;">
+                        <div style="font-weight: 700; color: #0f766e;"><i class="bi bi-cpu text-primary me-1"></i>${item.telemetry.cpu || '-'}</div>
+                        <div style="color: #0284c7; margin-top: 2px; font-size: 11px;">
+                            <span>RAM ${item.telemetry.ram || '-'}</span> | 
+                            <span>${item.telemetry.storage || '-'}</span>
+                            ${item.telemetry.os ? ` | <span>${item.telemetry.os}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            } else if (item.brand_model || item.ip) {
+                telHtml = `
+                    <div style="color: #64748b; font-size: 11.5px;">
+                        <div>${item.brand_model || '-'}</div>
+                        ${item.ip ? `<div style="font-size: 11px; color: #0284c7;">IP: <code>${item.ip}</code></div>` : ''}
+                    </div>
+                `;
+            } else {
+                telHtml = `<span style="color: #94a3b8; font-style: italic; font-size: 11.5px;">(รอเครื่องตอบรับและส่งข้อมูล)</span>`;
             }
 
             html += `
@@ -1333,16 +1368,17 @@
                     <td style="padding: 10px 14px;">
                         <strong style="color: #0f172a; font-family: monospace;">${item.hostname || '-'}</strong>
                         ${item.hardware_id ? `<div style="font-size: 10.5px; color: #a21caf; font-family: monospace;">HWID: ${item.hardware_id.substring(0, 13)}...</div>` : ''}
-                    </td>
-                    <td style="padding: 10px 14px; color: #64748b;">
-                        <div>${item.brand_model || '-'}</div>
-                        ${item.ip ? `<div style="font-size: 11px; color: #0284c7;">IP: <code>${item.ip}</code></div>` : ''}
+                        ${item.ip ? `<div style="font-size: 11px; color: #64748b; margin-top: 1px;">IP: <code>${item.ip}</code></div>` : ''}
                     </td>
                     <td style="padding: 10px 14px; text-align: center;">
                         ${statusBadge}
                     </td>
+                    <td style="padding: 10px 14px;">
+                        ${telHtml}
+                    </td>
                     <td style="padding: 10px 14px; text-align: right; color: #64748b; font-size: 11px;">
-                        ${item.executed_at || '-'}
+                        <div>${item.executed_at || '-'}</div>
+                        ${item.telemetry?.audit_id ? `<button type="button" class="btn btn-sm btn-outline-primary mt-1" style="font-size: 10.5px; padding: 2px 8px; border-radius: 6px;" onclick="openAgentInspectionModal(${item.telemetry.audit_id})"><i class="bi bi-eye me-1"></i>ดูข้อมูล</button>` : ''}
                     </td>
                 </tr>
             `;
@@ -1373,7 +1409,7 @@
 
             if (pct >= 100) {
                 pBar.className = 'progress-bar bg-success';
-                document.getElementById('scanStatusTitle').textContent = `สแกนครบทุกเครื่องแล้ว 100% (${data.completed}/${data.total} เครื่อง)`;
+                document.getElementById('scanStatusTitle').textContent = `ดึงข้อมูลครบทุกเครื่องแล้ว 100% (${data.completed}/${data.total} เครื่อง)`;
                 document.getElementById('scanStatusPulse').style.background = '#10b981';
                 document.getElementById('scanStatusPulse').style.animation = 'none';
                 if (scanAllPollingInterval) {
@@ -1381,7 +1417,7 @@
                     scanAllPollingInterval = null;
                 }
             } else {
-                document.getElementById('scanStatusTitle').textContent = `กำลังสั่งสแกน... เสร็จแล้ว ${data.completed}/${data.total} เครื่อง (${pct}%)`;
+                document.getElementById('scanStatusTitle').textContent = `กำลังดึงข้อมูล... ได้รับแล้ว ${data.completed}/${data.total} เครื่อง (${pct}%)`;
             }
 
             if (data.items) {
@@ -1411,6 +1447,11 @@
             btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" style="width:11px;height:11px;"></span> <span>ส่งคำสั่ง...</span>`;
         }
 
+        const badgeEl = document.getElementById(`telemetry-badge-${auditId}`);
+        if (badgeEl) {
+            badgeEl.innerHTML = `<span class="badge" style="background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;"><span class="spinner-border spinner-border-sm" style="width: 10px; height: 10px;"></span> กำลังดึงข้อมูล...</span>`;
+        }
+
         fetch(`{{ url('/hardware-audits') }}/${auditId}/trigger-scan`, {
             method: 'POST',
             headers: {
@@ -1422,10 +1463,10 @@
         .then(res => res.json())
         .then(data => {
             if (!data.success) {
-                Swal.fire('เกิดข้อผิดพลาด', data.message || 'ไม่สามารถส่งคำสั่งสแกนได้', 'error');
+                Swal.fire('เกิดข้อผิดพลาด', data.message || 'ไม่สามารถส่งคำสั่งดึงข้อมูลได้', 'error');
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = `<i class="bi bi-broadcast-pin"></i> <span>สั่งสแกน</span>`;
+                    btn.innerHTML = `<i class="bi bi-cloud-arrow-down-fill"></i> <span>ดึงข้อมูล</span>`;
                 }
                 return;
             }
@@ -1434,15 +1475,15 @@
                 toast: true,
                 position: 'top-end',
                 icon: 'info',
-                title: `ส่งคำสั่งสแกนไปยังเครื่อง ${hostname} แล้ว!`,
-                text: 'กำลังรอเครื่องดึงคำสั่งและรายงานสเปค...',
+                title: `ส่งคำสั่งดึงข้อมูลไปยังเครื่อง ${hostname} แล้ว!`,
+                text: 'ระบบทำงานแบบ On-Demand: เครื่องกำลังเริ่มสแกนและส่งผล...',
                 showConfirmButton: false,
                 timer: 4000
             });
 
             if (btn) {
                 btn.className = 'btn btn-sm btn-info text-white';
-                btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" style="width:11px;height:11px;"></span> <span>รอเครื่องตอบรับ...</span>`;
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" style="width:11px;height:11px;"></span> <span>รอเครื่องส่งผล...</span>`;
             }
 
             // Poll for single command completion
@@ -1452,12 +1493,12 @@
 
             singlePollTimer = setInterval(() => {
                 pollAttempts++;
-                if (pollAttempts > 30) {
+                if (pollAttempts > 35) {
                     clearInterval(singlePollTimer);
                     if (btn) {
                         btn.disabled = false;
-                        btn.className = 'btn btn-sm btn-outline-info';
-                        btn.innerHTML = `<i class="bi bi-broadcast-pin"></i> <span>สั่งสแกนอีกครั้ง</span>`;
+                        btn.className = 'btn btn-sm btn-outline-primary';
+                        btn.innerHTML = `<i class="bi bi-cloud-arrow-down-fill"></i> <span>ดึงข้อมูลอีกครั้ง</span>`;
                     }
                     return;
                 }
@@ -1470,17 +1511,41 @@
                     if (pollData.success && pollData.command && pollData.command.status === 'completed') {
                         clearInterval(singlePollTimer);
                         if (btn) {
-                            btn.className = 'btn btn-sm btn-success';
-                            btn.innerHTML = `<i class="bi bi-check-circle"></i> <span>สแกนสำเร็จ</span>`;
+                            btn.disabled = false;
+                            btn.className = 'btn btn-sm btn-success text-white';
+                            btn.innerHTML = `<i class="bi bi-shield-check"></i> <span>ได้รับข้อมูลแล้ว</span>`;
                         }
+
+                        if (badgeEl) {
+                            badgeEl.innerHTML = `<span class="badge" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;"><i class="bi bi-shield-check text-success"></i> ได้รับข้อมูลแล้ว</span>`;
+                        }
+                        const timeEl = document.getElementById(`telemetry-time-${auditId}`);
+                        if (timeEl) {
+                            timeEl.innerHTML = `<i class="bi bi-clock me-1 text-success"></i>เพิ่งได้รับเมื่อสักครู่`;
+                        }
+
+                        const tel = pollData.command.telemetry;
                         Swal.fire({
-                            toast: true,
-                            position: 'top-end',
                             icon: 'success',
-                            title: `เครื่อง ${hostname} สแกนสำเร็จแล้ว!`,
-                            text: 'อัปเดตข้อมูลสเปคฮาร์ดแวร์ล่าสุดเรียบร้อยแล้ว',
-                            showConfirmButton: false,
-                            timer: 4000
+                            title: `ได้รับข้อมูลจริงจากเครื่อง ${hostname} แล้ว!`,
+                            html: `
+                                <div style="text-align: left; font-size: 13px; line-height: 1.7; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; margin-top: 10px;">
+                                    <div style="color: #059669; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="bi bi-check-circle-fill"></i> ได้รับข้อมูลจริงจากเครื่องปลายทางสำเร็จ
+                                    </div>
+                                    <div><strong>IP เครื่อง:</strong> <code>${tel?.ip || pollData.command.ip || '-'}</code></div>
+                                    <div><strong>เวลาที่ได้รับ:</strong> ${tel?.received_at || pollData.command.executed_at || 'เมื่อสักครู่'}</div>
+                                    <div><strong>ซีพียู (CPU):</strong> ${tel?.cpu || '-'}</div>
+                                    <div><strong>หน่วยความจำ (RAM):</strong> ${tel?.ram || '-'}</div>
+                                    <div><strong>พื้นที่เก็บข้อมูล:</strong> ${tel?.storage || '-'}</div>
+                                    <div><strong>ระบบปฏิบัติการ:</strong> ${tel?.os || '-'}</div>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 8px; border-top: 1px dashed #cbd5e1; padding-top: 6px;">
+                                        <i class="bi bi-info-circle me-1"></i>ระบบ On-Demand: Agent ส่งข้อมูลกลับมาเฉพาะเมื่อแอดมินกดดึงข้อมูลเท่านั้น
+                                    </div>
+                                </div>
+                            `,
+                            confirmButtonText: 'ปิดหน้าต่าง',
+                            confirmButtonColor: '#0f766e',
                         });
                     }
                 })
@@ -1492,7 +1557,7 @@
             Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = `<i class="bi bi-broadcast-pin"></i> <span>สั่งสแกน</span>`;
+                btn.innerHTML = `<i class="bi bi-cloud-arrow-down-fill"></i> <span>ดึงข้อมูล</span>`;
             }
         });
     }
