@@ -28,9 +28,20 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label class="form-label" style="font-weight: 700;">
-                                ค้นหาและเลือกครุภัณฑ์ <span class="text-danger">*</span>
-                            </label>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                                <label class="form-label mb-0" style="font-weight: 700;">
+                                    ค้นหาและเลือกครุภัณฑ์ <span class="text-danger">*</span>
+                                </label>
+                                @if(auth()->user()->isUser())
+                                    <span class="badge" style="background: #f0fdfa; color: #0d9488; border: 1px solid #99f6e4; font-size: 11.5px; padding: 4px 8px; border-radius: 6px;">
+                                        <i class="bi bi-shield-check"></i> เฉพาะครุภัณฑ์ในกลุ่มงาน{{ auth()->user()->department?->name ?? 'ของท่าน' }} ({{ $assets->count() }} เครื่อง)
+                                    </span>
+                                @else
+                                    <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 11.5px; padding: 4px 8px; border-radius: 6px;">
+                                        <i class="bi bi-globe2"></i> ครุภัณฑ์ทุกแผนก ({{ $assets->count() }} เครื่อง)
+                                    </span>
+                                @endif
+                            </div>
                             <select name="asset_id" id="asset_select" class="form-select @error('asset_id') is-invalid @enderror" required onchange="handleAssetChange(this)">
                                 <option value="">-- กรุณาเลือกครุภัณฑ์คอมพิวเตอร์ / IT --</option>
                                 @foreach($assets as $ast)
@@ -53,9 +64,15 @@
                             @error('asset_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                            <div class="form-text" style="font-size: 12px; color: #64748b;">
-                                สามารถพิมพ์เพื่อค้นหารหัสครุภัณฑ์ หรือชื่อเครื่องได้
-                            </div>
+                            @if(auth()->user()->isUser() && $assets->isEmpty())
+                                <div class="alert alert-warning mt-2 mb-0" style="font-size: 12.5px; padding: 8px 12px; border-radius: 8px;">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ไม่พบรายการครุภัณฑ์ที่ลงทะเบียนในกลุ่มงาน/แผนกของท่าน หากต้องการลงทะเบียนครุภัณฑ์ กรุณาติดต่อกลุ่มงานสุขภาพดิจิทัล
+                                </div>
+                            @else
+                                <div class="form-text" style="font-size: 12px; color: #64748b;">
+                                    สามารถพิมพ์เพื่อค้นหารหัสครุภัณฑ์ หรือชื่อเครื่องได้
+                                </div>
+                            @endif
                         </div>
 
                         {{-- Visual Snapshot Card: Current Location --}}
@@ -108,17 +125,31 @@
                             <label class="form-label" style="font-weight: 700;">
                                 ประเภทการย้าย <span class="text-danger">*</span>
                             </label>
-                            <select name="transfer_type" class="form-select @error('transfer_type') is-invalid @enderror" required>
-                                <option value="relocation" {{ old('transfer_type') === 'relocation' ? 'selected' : '' }}>
-                                    ย้ายจุดติดตั้ง/ย้ายห้อง (ภายในหน่วยงานเดิม หรือข้ามห้อง)
-                                </option>
-                                <option value="department_transfer" {{ old('transfer_type') === 'department_transfer' ? 'selected' : '' }}>
-                                    โอนย้ายหน่วยงาน / เปลี่ยนผู้ครอบครองอุปกรณ์
-                                </option>
-                                <option value="temporary_move" {{ old('transfer_type') === 'temporary_move' ? 'selected' : '' }}>
-                                    ย้ายใช้งานชั่วคราว (เช่น จัดฝึกอบรม, ประชุม, นิทรรศการ)
-                                </option>
-                            </select>
+                            @if(auth()->user()->isUser())
+                                <select name="transfer_type" class="form-select @error('transfer_type') is-invalid @enderror" required>
+                                    <option value="relocation" {{ old('transfer_type') === 'relocation' ? 'selected' : '' }}>
+                                        ย้ายจุดติดตั้ง / ย้ายห้อง (ภายในกลุ่มงานเดิม)
+                                    </option>
+                                    <option value="temporary_move" {{ old('transfer_type') === 'temporary_move' ? 'selected' : '' }}>
+                                        ย้ายใช้งานชั่วคราว (ภายในกลุ่มงานเดิม เช่น ห้องประชุม/จัดกิจกรรม)
+                                    </option>
+                                </select>
+                                <div class="form-text" style="font-size: 12px; color: #0d9488; margin-top: 4px;">
+                                    <i class="bi bi-info-circle"></i> สิทธิ์ผู้ใช้งานทั่วไป ย้ายได้เฉพาะภายในกลุ่มงานเดิมเท่านั้น (หากต้องการโอนย้ายข้ามหน่วยงาน กรุณาติดต่อช่าง IT)
+                                </div>
+                            @else
+                                <select name="transfer_type" class="form-select @error('transfer_type') is-invalid @enderror" required>
+                                    <option value="relocation" {{ old('transfer_type') === 'relocation' ? 'selected' : '' }}>
+                                        ย้ายจุดติดตั้ง/ย้ายห้อง (ภายในหน่วยงานเดิม หรือข้ามห้อง)
+                                    </option>
+                                    <option value="department_transfer" {{ old('transfer_type') === 'department_transfer' ? 'selected' : '' }}>
+                                        โอนย้ายหน่วยงาน / เปลี่ยนผู้ครอบครองอุปกรณ์
+                                    </option>
+                                    <option value="temporary_move" {{ old('transfer_type') === 'temporary_move' ? 'selected' : '' }}>
+                                        ย้ายใช้งานชั่วคราว (เช่น จัดฝึกอบรม, ประชุม, นิทรรศการ)
+                                    </option>
+                                </select>
+                            @endif
                             @error('transfer_type')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -166,14 +197,29 @@
                             <label class="form-label" style="font-weight: 700;">
                                 หน่วยงาน/กลุ่มงานปลายทาง <span class="text-danger">*</span>
                             </label>
-                            <select name="to_department_id" id="to_department_id" class="form-select @error('to_department_id') is-invalid @enderror" required>
-                                <option value="">-- เลือกหน่วยงานปลายทาง --</option>
-                                @foreach($departments as $dept)
-                                    <option value="{{ $dept->id }}" {{ old('to_department_id') == $dept->id ? 'selected' : '' }}>
-                                        {{ $dept->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            @if(auth()->user()->isUser())
+                                <input type="hidden" name="to_department_id" id="to_department_id" value="{{ auth()->user()->department_id }}">
+                                <div class="form-control" style="background: #f8fafc; border: 1.5px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 8px;">
+                                    <span style="font-weight: 700; color: #1e293b;">
+                                        <i class="bi bi-building-check text-primary me-1"></i> {{ auth()->user()->department?->name ?? 'กลุ่มงานเดิม' }}
+                                    </span>
+                                    <span class="badge" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 6px;">
+                                        <i class="bi bi-lock-fill"></i> ย้ายภายในกลุ่มงานเดิมเท่านั้น
+                                    </span>
+                                </div>
+                                <div class="form-text" style="font-size: 12px; color: #0d9488; margin-top: 6px;">
+                                    <i class="bi bi-shield-lock-fill"></i> กำหนดให้ผู้ใช้งานทั่วไปสามารถแจ้งย้ายได้เฉพาะภายในกลุ่มงานเดิมเท่านั้น
+                                </div>
+                            @else
+                                <select name="to_department_id" id="to_department_id" class="form-select @error('to_department_id') is-invalid @enderror" required>
+                                    <option value="">-- เลือกหน่วยงานปลายทาง --</option>
+                                    @foreach($departments as $dept)
+                                        <option value="{{ $dept->id }}" {{ old('to_department_id') == $dept->id ? 'selected' : '' }}>
+                                            {{ $dept->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @endif
                             @error('to_department_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

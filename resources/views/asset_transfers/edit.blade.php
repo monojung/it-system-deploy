@@ -41,11 +41,18 @@
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
                         <label class="form-label" style="font-weight: 700;">ประเภทการย้าย <span class="text-danger">*</span></label>
-                        <select name="transfer_type" class="form-select" required>
-                            <option value="relocation" {{ old('transfer_type', $assetTransfer->transfer_type) === 'relocation' ? 'selected' : '' }}>ย้ายจุดติดตั้ง/ห้อง</option>
-                            <option value="department_transfer" {{ old('transfer_type', $assetTransfer->transfer_type) === 'department_transfer' ? 'selected' : '' }}>โอนย้ายหน่วยงาน/ผู้ครอบครอง</option>
-                            <option value="temporary_move" {{ old('transfer_type', $assetTransfer->transfer_type) === 'temporary_move' ? 'selected' : '' }}>ย้ายใช้งานชั่วคราว</option>
-                        </select>
+                        @if(auth()->user()->isUser())
+                            <select name="transfer_type" class="form-select" required>
+                                <option value="relocation" {{ old('transfer_type', $assetTransfer->transfer_type) === 'relocation' ? 'selected' : '' }}>ย้ายจุดติดตั้ง / ห้อง (ภายในกลุ่มงานเดิม)</option>
+                                <option value="temporary_move" {{ old('transfer_type', $assetTransfer->transfer_type) === 'temporary_move' ? 'selected' : '' }}>ย้ายใช้งานชั่วคราว (ภายในกลุ่มงานเดิม)</option>
+                            </select>
+                        @else
+                            <select name="transfer_type" class="form-select" required>
+                                <option value="relocation" {{ old('transfer_type', $assetTransfer->transfer_type) === 'relocation' ? 'selected' : '' }}>ย้ายจุดติดตั้ง/ห้อง</option>
+                                <option value="department_transfer" {{ old('transfer_type', $assetTransfer->transfer_type) === 'department_transfer' ? 'selected' : '' }}>โอนย้ายหน่วยงาน/ผู้ครอบครอง</option>
+                                <option value="temporary_move" {{ old('transfer_type', $assetTransfer->transfer_type) === 'temporary_move' ? 'selected' : '' }}>ย้ายใช้งานชั่วคราว</option>
+                            </select>
+                        @endif
                     </div>
                     <div class="col-md-6">
                         <label class="form-label" style="font-weight: 700;">วันที่ดำเนินการย้าย <span class="text-danger">*</span></label>
@@ -55,14 +62,26 @@
 
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label" style="font-weight: 700;">หน่วยงานปลายทาง <span class="text-danger">*</span></label>
-                        <select name="to_department_id" class="form-select" required>
-                            @foreach($departments as $dept)
-                                <option value="{{ $dept->id }}" {{ old('to_department_id', $assetTransfer->to_department_id) == $dept->id ? 'selected' : '' }}>
-                                    {{ $dept->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <label class="form-label" style="font-weight: 700;">หน่วยงาน/กลุ่มงานปลายทาง <span class="text-danger">*</span></label>
+                        @if(auth()->user()->isUser())
+                            <input type="hidden" name="to_department_id" value="{{ auth()->user()->department_id }}">
+                            <div class="form-control" style="background: #f8fafc; border: 1.5px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 8px;">
+                                <span style="font-weight: 700; color: #1e293b;">
+                                    <i class="bi bi-building-check text-primary me-1"></i> {{ auth()->user()->department?->name ?? 'กลุ่มงานเดิม' }}
+                                </span>
+                                <span class="badge" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 11.5px; font-weight: 600; padding: 4px 8px; border-radius: 6px;">
+                                    <i class="bi bi-lock-fill"></i> ย้ายภายในกลุ่มงานเดิม
+                                </span>
+                            </div>
+                        @else
+                            <select name="to_department_id" class="form-select" required>
+                                @foreach($departments as $dept)
+                                    <option value="{{ $dept->id }}" {{ old('to_department_id', $assetTransfer->to_department_id) == $dept->id ? 'selected' : '' }}>
+                                        {{ $dept->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
                     </div>
                     <div class="col-md-6">
                         <label class="form-label" style="font-weight: 700;">จุดติดตั้งใหม่ / ห้อง / เลขโต๊ะ <span class="text-danger">*</span></label>

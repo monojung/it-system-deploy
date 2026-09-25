@@ -113,15 +113,35 @@ class AssetTransferController extends Controller
      */
     public function create(Request $request)
     {
-        $selectedAsset = null;
-        if ($request->filled('asset_id')) {
-            $selectedAsset = Asset::with(['department', 'deviceType'])->find($request->asset_id);
+        $user = Auth::user();
+        if ($user && $user->isUser() && !$user->department_id) {
+            return redirect()->route('asset-transfers.index')
+                ->with('error', 'กรุณาระบุกลุ่มงาน/แผนกสังกัดของท่านก่อนทำรายการย้ายครุภัณฑ์');
         }
 
-        $assets = Asset::with(['department', 'deviceType'])
+        $selectedAsset = null;
+        if ($request->filled('asset_id')) {
+            $selectedAssetQuery = Asset::with(['department', 'deviceType']);
+            if ($user && $user->isUser()) {
+                $selectedAssetQuery->where('department_id', $user->department_id);
+            }
+            $selectedAsset = $selectedAssetQuery->find($request->asset_id);
+            if (!$selectedAsset && $user && $user->isUser()) {
+                return redirect()->route('asset-transfers.create')
+                    ->with('error', 'ผู้ใช้งานทั่วไปสามารถย้ายได้เฉพาะครุภัณฑ์ภายในกลุ่มงาน/แผนกเดิมเท่านั้น');
+            }
+        }
+
+        $assetsQuery = Asset::with(['department', 'deviceType'])
             ->whereNotIn('status', ['disposed'])
-            ->orderBy('asset_code')
-            ->get(['id', 'asset_code', 'name', 'brand', 'model', 'serial_number', 'department_id', 'location_detail', 'custodian_name', 'ip_address', 'device_type_id', 'status']);
+            ->orderBy('asset_code');
+
+        // Regular users can only select assets from their own department
+        if ($user && $user->isUser()) {
+            $assetsQuery->where('department_id', $user->department_id);
+        }
+
+        $assets = $assetsQuery->get(['id', 'asset_code', 'name', 'brand', 'model', 'serial_number', 'department_id', 'location_detail', 'custodian_name', 'ip_address', 'device_type_id', 'status']);
 
         $departments = Department::orderBy('name')->get();
         $technicians = User::whereIn('role', ['admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
@@ -134,6 +154,9 @@ class AssetTransferController extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::user();
+        $isStaff = $user && ($user->isAdmin() || $user->isTechnician());
+
         $request->validate([
             'asset_id' => 'required|exists:it_assets,id',
             'transfer_type' => 'required|in:relocation,department_transfer,temporary_move',
@@ -150,10 +173,34 @@ class AssetTransferController extends Controller
         ]);
 
         $asset = Asset::with('department')->findOrFail($request->asset_id);
-        $user = Auth::user();
-        $isStaff = $user && ($user->isAdmin() || $user->isTechnician());
 
-        $toDept = $request->to_department_id ? Department::find($request->to_department_id) : null;
+        // Security / Policy Restriction: Regular users can ONLY transfer within their own department/group
+        if ($user && $user->isUser()) {
+            if (!$user->department_id) {
+                return back()->withInput()->with('error', 'กรุณาระบุกลุ่มงาน/แผนกสังกัดของท่านก่อนทำรายการย้ายครุภัณฑ์');
+            }
+
+            // Asset must belong to user's department
+            if ($asset->department_id != $user->department_id) {
+                return back()->withInput()->with('error', 'ผู้ใช้งานทั่วไปสามารถย้ายได้เฉพาะครุภัณฑ์ภายในกลุ่มงานเดิมของท่านเท่านั้น');
+            }
+
+            // Regular user cannot perform department_transfer across departments
+            if ($request->transfer_type === 'department_transfer') {
+                return back()->withInput()->with('error', 'ผู้ใช้งานทั่วไปสามารถย้ายครุภัณฑ์ได้เฉพาะภายในกลุ่มงานเดิมเท่านั้น (ไม่สามารถโอนย้ายข้ามหน่วยงานได้)');
+            }
+
+            // If to_department_id was sent, it must match user's department
+            if ($request->filled('to_department_id') && $request->to_department_id != $user->department_id) {
+                return back()->withInput()->with('error', 'ผู้ใช้งานทั่วไปสามารถย้ายครุภัณฑ์ได้เฉพาะภายในกลุ่มงานเดิมเท่านั้น');
+            }
+
+            $toDepartmentId = $user->department_id;
+        } else {
+            $toDepartmentId = $request->to_department_id ?: $asset->department_id;
+        }
+
+        $toDept = $toDepartmentId ? Department::find($toDepartmentId) : null;
         $completeImmediately = $isStaff && $request->boolean('complete_immediately');
 
         DB::beginTransaction();
@@ -171,8 +218,8 @@ class AssetTransferController extends Controller
             $transfer->from_custodian_name = $asset->custodian_name;
             $transfer->from_ip_address = $asset->ip_address;
 
-            // Destination fields
-            $transfer->to_department_id = $request->to_department_id ?: $asset->department_id;
+            // Destination fields (Restricted to same department for regular users)
+            $transfer->to_department_id = $toDepartmentId;
             $transfer->to_department_name = $toDept ? $toDept->name : ($asset->department?->name);
             $transfer->to_location_detail = $request->to_location_detail;
             $transfer->to_custodian_name = $request->to_custodian_name ?: $asset->custodian_name;
@@ -251,6 +298,17 @@ class AssetTransferController extends Controller
                 ->with('error', 'รายการที่ย้ายเสร็จสิ้นแล้วไม่สามารถแก้ไขได้');
         }
 
+        if ($user && $user->isUser()) {
+            if ($assetTransfer->user_id !== $user->id) {
+                return redirect()->route('asset-transfers.show', $assetTransfer)
+                    ->with('error', 'ท่านไม่มีสิทธิ์แก้ไขคำขอย้ายของผู้อื่น');
+            }
+            if ($assetTransfer->from_department_id != $user->department_id) {
+                return redirect()->route('asset-transfers.show', $assetTransfer)
+                    ->with('error', 'ท่านสามารถแก้ไขได้เฉพาะรายการย้ายภายในกลุ่มงานเดิมของท่านเท่านั้น');
+            }
+        }
+
         $departments = Department::orderBy('name')->get();
         $technicians = User::whereIn('role', ['admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
 
@@ -262,6 +320,25 @@ class AssetTransferController extends Controller
      */
     public function update(Request $request, AssetTransfer $assetTransfer)
     {
+        $user = Auth::user();
+        if ($assetTransfer->status === 'completed' && (!$user || !$user->isAdmin())) {
+            return redirect()->route('asset-transfers.show', $assetTransfer)
+                ->with('error', 'รายการที่ย้ายเสร็จสิ้นแล้วไม่สามารถแก้ไขได้');
+        }
+
+        if ($user && $user->isUser()) {
+            if ($assetTransfer->user_id !== $user->id) {
+                return redirect()->route('asset-transfers.show', $assetTransfer)
+                    ->with('error', 'ท่านไม่มีสิทธิ์แก้ไขคำขอย้ายของผู้อื่น');
+            }
+            if ($request->transfer_type === 'department_transfer') {
+                return back()->withInput()->with('error', 'ผู้ใช้งานทั่วไปสามารถย้ายครุภัณฑ์ได้เฉพาะภายในกลุ่มงานเดิมเท่านั้น (ไม่สามารถโอนย้ายข้ามหน่วยงานได้)');
+            }
+            if ($request->filled('to_department_id') && $request->to_department_id != $user->department_id) {
+                return back()->withInput()->with('error', 'ผู้ใช้งานทั่วไปสามารถย้ายครุภัณฑ์ได้เฉพาะภายในกลุ่มงานเดิมเท่านั้น');
+            }
+        }
+
         $request->validate([
             'transfer_type' => 'required|in:relocation,department_transfer,temporary_move',
             'to_department_id' => 'nullable|exists:it_departments,id',
@@ -273,10 +350,14 @@ class AssetTransferController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $toDept = $request->to_department_id ? Department::find($request->to_department_id) : null;
+        $toDepartmentId = ($user && $user->isUser())
+            ? $user->department_id
+            : ($request->to_department_id ?: $assetTransfer->to_department_id);
+
+        $toDept = $toDepartmentId ? Department::find($toDepartmentId) : null;
 
         $assetTransfer->transfer_type = $request->transfer_type;
-        $assetTransfer->to_department_id = $request->to_department_id;
+        $assetTransfer->to_department_id = $toDepartmentId;
         $assetTransfer->to_department_name = $toDept ? $toDept->name : $assetTransfer->to_department_name;
         $assetTransfer->to_location_detail = $request->to_location_detail;
         $assetTransfer->to_custodian_name = $request->to_custodian_name;
@@ -285,7 +366,7 @@ class AssetTransferController extends Controller
         $assetTransfer->reason = $request->reason;
         $assetTransfer->notes = $request->notes;
 
-        if ($request->filled('technician_id')) {
+        if ($request->filled('technician_id') && ($user && ($user->isAdmin() || $user->isTechnician()))) {
             $assetTransfer->technician_id = $request->technician_id;
         }
 

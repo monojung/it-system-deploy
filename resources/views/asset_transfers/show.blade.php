@@ -23,6 +23,13 @@
             <span>พิมพ์ใบย้าย/ส่งมอบ</span>
         </a>
 
+        @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician() || ($assetTransfer->status === 'pending' && $assetTransfer->user_id === auth()->id())))
+        <a href="{{ route('asset-transfers.edit', $assetTransfer) }}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 5px;">
+            <i class="bi bi-pencil"></i>
+            <span>แก้ไขข้อมูล</span>
+        </a>
+        @endif
+
         @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isTechnician()))
             @if($assetTransfer->status === 'pending')
             <form action="{{ route('asset-transfers.status', $assetTransfer) }}" method="POST" style="display: inline;" onsubmit="return confirm('ยืนยันรับเรื่องและเริ่มดำเนินการย้ายอุปกรณ์?');">
