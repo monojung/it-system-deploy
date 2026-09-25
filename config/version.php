@@ -11,7 +11,7 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.6.0'),
+    'version' => env('APP_VERSION', '2.5.2'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-25',
     'build' => '20260925.2',
@@ -39,7 +39,7 @@ return [
     |
     */
     'changelog' => [
-        '2.6.0' => [
+        '2.5.2' => [
             'date' => '2026-09-25',
             'badge' => 'Major Architecture: 3-Tier Hierarchical RBAC (User / Admin / Super Admin)',
             'badge_color' => '#dc2626',

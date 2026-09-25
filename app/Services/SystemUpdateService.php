@@ -311,6 +311,53 @@ class SystemUpdateService
                 }
             }
 
+            // Extract remote version, build, and release details from remote config/version.php
+            $remoteVersion = null;
+            $remoteBuild = null;
+            $remoteReleaseDate = null;
+            $remoteReleaseName = null;
+
+            if (!empty($remoteCommit)) {
+                try {
+                    $remoteVersionPhp = $this->runProcess(['git', 'show', "{$remoteRef}:config/version.php"], 5);
+                    if (!empty($remoteVersionPhp)) {
+                        if (preg_match("/'version'\s*=>\s*env\(['\"]APP_VERSION['\"],\s*['\"]([^'\"]+)['\"]\)/", $remoteVersionPhp, $vm) ||
+                            preg_match("/'version'\s*=>\s*['\"]([^'\"]+)['\"]/", $remoteVersionPhp, $vm)) {
+                            $remoteVersion = $vm[1];
+                        }
+                        if (preg_match("/'build'\s*=>\s*['\"]([^'\"]+)['\"]/", $remoteVersionPhp, $bm)) {
+                            $remoteBuild = $bm[1];
+                        }
+                        if (preg_match("/'release_date'\s*=>\s*['\"]([^'\"]+)['\"]/", $remoteVersionPhp, $dm)) {
+                            $remoteReleaseDate = $dm[1];
+                        }
+                        if (preg_match("/'release_name'\s*=>\s*['\"]([^'\"]+)['\"]/", $remoteVersionPhp, $nm)) {
+                            $remoteReleaseName = $nm[1];
+                        }
+                    }
+                } catch (Exception $e) {
+                    // non-critical fallback
+                }
+
+                // Check for git tag on remote
+                try {
+                    $tagOut = trim($this->runProcess(['git', 'describe', '--tags', '--exact-match', $remoteRef], 5));
+                    if (!empty($tagOut)) {
+                        if (!$remoteVersion) {
+                            $remoteVersion = ltrim($tagOut, 'v');
+                        }
+                    }
+                } catch (Exception $e) {
+                    // non-critical
+                }
+            }
+
+            $currentVersion = function_exists('app_version') ? app_version() : config('version.version', '2.5.2');
+            $hasNewerVersion = false;
+            if ($remoteVersion) {
+                $hasNewerVersion = version_compare($remoteVersion, $currentVersion, '>');
+            }
+
             return [
                 'success' => true,
                 'is_git_repo' => true,
@@ -323,9 +370,15 @@ class SystemUpdateService
                 'remote_commit' => $remoteCommit,
                 'short_remote_commit' => $shortRemoteCommit,
                 'commits_behind' => $commitsBehind,
-                'has_update' => $hasUpdate,
+                'has_update' => $hasUpdate || $hasNewerVersion,
                 'commits' => $commits,
-                'current_version' => function_exists('app_version') ? app_version() : config('version.version', '2.2.2'),
+                'current_version' => $currentVersion,
+                'current_build' => config('version.build', '20260925.2'),
+                'remote_version' => $remoteVersion,
+                'remote_build' => $remoteBuild,
+                'remote_release_date' => $remoteReleaseDate,
+                'remote_release_name' => $remoteReleaseName,
+                'has_newer_version' => $hasNewerVersion,
                 'last_checked_at' => now()->toDateTimeString(),
             ];
 
@@ -409,7 +462,7 @@ class SystemUpdateService
             $previousCommit = 'unknown';
         }
 
-        $currentVersion = function_exists('app_version') ? app_version() : config('version.version', '2.2.2');
+        $currentVersion = function_exists('app_version') ? app_version() : config('version.version', '2.5.2');
 
         $updateRecord = SystemUpdate::create([
             'version' => $currentVersion,
@@ -624,7 +677,7 @@ class SystemUpdateService
             $versionConfig = @include config_path('version.php');
             $newVersion = is_array($versionConfig) && !empty($versionConfig['version'])
                 ? (string) $versionConfig['version']
-                : (function_exists('app_version') ? app_version() : config('version.version', '2.4.0'));
+                : (function_exists('app_version') ? app_version() : config('version.version', '2.5.2'));
 
             // Keep system setting synchronized
             try {

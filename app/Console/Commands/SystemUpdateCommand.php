@@ -48,6 +48,7 @@ class SystemUpdateCommand extends Command
             ['รายการ', 'รายละเอียด'],
             [
                 ['เวอร์ชันปัจจุบัน', $check['current_version'] ?? '-'],
+                ['เวอร์ชันบน Remote (Deploy)', !empty($check['remote_version']) ? 'v' . $check['remote_version'] . (!empty($check['remote_build']) ? " (Build {$check['remote_build']})" : '') : '-'],
                 ['Remote Repository ปลายทาง', $check['target_repo'] ?? config('version.update_repo_url', 'https://github.com/monojung/it-system-deploy.git')],
                 ['Branch ปลายทาง / Remote', ($check['target_branch'] ?? 'main') . ' (' . ($check['remote_name'] ?? 'deploy') . ')'],
                 ['Branch ปัจจุบันในเครื่อง', $check['branch'] ?? '-'],

@@ -113,7 +113,7 @@ if (!function_exists('app_version')) {
      */
     function app_version(): string
     {
-        return (string) setting('app_version', config('version.version', '2.2.2'));
+        return (string) setting('app_version', config('version.version', '2.5.2'));
     }
 }
 
@@ -126,8 +126,8 @@ if (!function_exists('app_version_info')) {
         return [
             'version' => app_version(),
             'release_name' => config('version.release_name', 'Thung Hua Chang IT Service Platform'),
-            'release_date' => config('version.release_date', '2026-09-10'),
-            'build' => config('version.build', '20260910.1'),
+            'release_date' => config('version.release_date', '2026-09-25'),
+            'build' => config('version.build', '20260925.2'),
             'environment' => config('app.env', 'production'),
             'laravel_version' => app()->version(),
             'php_version' => PHP_VERSION,

@@ -656,8 +656,11 @@
                 <i class="bi bi-cloud-check-fill"></i>
             </div>
             <div class="stat-meta">
-                <div class="label">Commit ล่าสุด (Deploy Remote)</div>
+                <div class="label">เวอร์ชัน & Commit บน Remote (Deploy)</div>
                 <div class="value">
+                    <span id="statRemoteVersion" style="font-size: 15px; font-weight: 700; color: #0284c7;">
+                        {{ !empty($gitStatus['remote_version']) ? 'v'.$gitStatus['remote_version'] : 'v'.$envInfo['app_version'] }}
+                    </span>
                     <span class="commit-badge" style="background: #0284c7; color: #ffffff;" id="statRemoteCommit">{{ $gitStatus['short_remote_commit'] ?? 'unknown' }}</span>
                     @if($gitStatus['has_update'] ?? false)
                         <span style="font-size: 11px; background: #fef08a; color: #854d0e; padding: 2px 6px; border-radius: 4px; font-weight: 700;">+{{ $gitStatus['commits_behind'] }}</span>
@@ -752,11 +755,16 @@
                         <div class="status-banner-icon"><i class="bi bi-stars" style="color: #ca8a04;"></i></div>
                         <div style="flex: 1;">
                             <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                                มีเวอร์ชันใหม่พร้อมให้ติดตั้ง! (พบ {{ $gitStatus['commits_behind'] }} รายการอัปเดตจาก Deploy Repository)
-                                <span style="background: #eab308; color: #713f12; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 700;">NEW UPDATE</span>
+                                @if(!empty($gitStatus['has_newer_version']) && !empty($gitStatus['remote_version']))
+                                    🎉 พบเวอร์ชันใหม่ v{{ $gitStatus['remote_version'] }} (Build {{ $gitStatus['remote_build'] ?? 'Latest' }}) พร้อมให้อัปเดต!
+                                    <span style="background: #0d9488; color: #ffffff; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 700;">NEW v{{ $gitStatus['remote_version'] }}</span>
+                                @else
+                                    มีเวอร์ชันใหม่พร้อมให้ติดตั้ง! (พบ {{ $gitStatus['commits_behind'] }} รายการอัปเดตจาก Deploy Repository)
+                                    <span style="background: #eab308; color: #713f12; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 700;">NEW UPDATE</span>
+                                @endif
                             </div>
                             <div style="font-size: 13px; margin-bottom: 12px; color: #713f12;">
-                                โค้ดในเครื่อง (<span style="font-family: monospace; font-weight: 700;">{{ $gitStatus['short_local_commit'] }}</span>) ตามหลัง Remote (<span style="font-family: monospace; font-weight: 700; color: #0284c7;">{{ $gitStatus['short_remote_commit'] }}</span>) คุณสามารถกดปุ่มเริ่มอัปเดตระบบได้ทันที
+                                โค้ดในเครื่อง (v{{ $gitStatus['current_version'] ?? $envInfo['app_version'] }} &bull; <span style="font-family: monospace; font-weight: 700;">{{ $gitStatus['short_local_commit'] }}</span>) ตามหลัง Remote (@if(!empty($gitStatus['remote_version']))<span style="font-weight: 700; color: #0369a1;">v{{ $gitStatus['remote_version'] }}</span> &bull; @endif<span style="font-family: monospace; font-weight: 700; color: #0284c7;">{{ $gitStatus['short_remote_commit'] }}</span>) คุณสามารถกดปุ่มเริ่มอัปเดตระบบได้ทันที
                             </div>
                             <!-- Commits preview -->
                             @if(!empty($gitStatus['commits']))
@@ -1135,10 +1143,24 @@
                 if (remoteElem) remoteElem.innerText = data.short_remote_commit;
             }
 
+            if (data.remote_version) {
+                const remoteVerElem = document.getElementById('statRemoteVersion');
+                if (remoteVerElem) remoteVerElem.innerText = 'v' + data.remote_version;
+            }
+
             if (data.has_update) {
+                const isNewer = data.has_newer_version && data.remote_version;
+                const swalTitle = isNewer ? `🎉 พบเวอร์ชันใหม่ v${data.remote_version}!` : 'พบการอัปเดตใหม่!';
+                const versionBanner = isNewer
+                    ? `<div style="background: #f0fdfa; border: 1px solid #99f6e4; padding: 10px; border-radius: 6px; margin-bottom: 12px; text-align: left; font-size: 13px;">` +
+                      `🚀 <b>เวอร์ชันบน Remote:</b> <span style="color:#0d9488; font-weight:bold;">v${data.remote_version}</span> (Build ${data.remote_build || 'Latest'})<br>` +
+                      `📌 <b>เวอร์ชันปัจจุบันของคุณ:</b> <span>v${data.current_version || '{{ $envInfo['app_version'] }}'}</span>` +
+                      `</div>`
+                    : '';
+
                 Swal.fire({
-                    title: 'พบการอัปเดตใหม่!',
-                    html: `พบการอัปเดตใหม่ <b>${data.commits_behind}</b> รายการจาก Remote Repository:<br>` +
+                    title: swalTitle,
+                    html: `${versionBanner}พบรายการอัปเดต <b>${data.commits_behind}</b> รายการจาก Remote Repository:<br>` +
                           `<code style="font-size:12px; color:#0284c7;">${data.target_repo || 'https://github.com/monojung/it-system-deploy.git'}</code><br><br>` +
                           `คุณต้องการรีเฟรชหน้าจอเพื่อเริ่มอัปเดตหรือไม่?`,
                     icon: 'info',
