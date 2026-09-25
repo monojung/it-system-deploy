@@ -483,7 +483,7 @@
                         <i class="bi bi-search"></i>
                         <span>ค้นหาครุภัณฑ์ในระบบ</span>
                     </a>
-                    @if(auth()->user()->isAdmin())
+                    @if(auth()->user()->isSuperAdmin())
                     <a href="{{ route('backups.index') }}" class="btn btn-secondary" style="justify-content: flex-start;">
                         <i class="bi bi-database-down"></i>
                         <span>สำรองฐานข้อมูลทันที</span>

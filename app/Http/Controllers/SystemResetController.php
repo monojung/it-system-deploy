@@ -29,8 +29,8 @@ class SystemResetController extends Controller
         $user = Auth::user();
 
         // 1. Authorization check
-        if (!$user || !$user->isAdmin()) {
-            abort(403, 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถดำเนินการล้างข้อมูลได้');
+        if (!$user || !$user->isSuperAdmin()) {
+            abort(403, 'เฉพาะแอดมินระบบ (Super Admin) เท่านั้นที่สามารถดำเนินการล้างข้อมูลได้');
         }
 
         // 2. Validate input

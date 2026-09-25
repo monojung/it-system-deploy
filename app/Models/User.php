@@ -87,14 +87,19 @@ class User extends Authenticatable
         return $this->hasMany(Repair::class, 'technician_id');
     }
 
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return in_array($this->role, ['super_admin', 'admin']);
     }
 
     public function isTechnician(): bool
     {
-        return in_array($this->role, ['admin', 'technician']);
+        return in_array($this->role, ['super_admin', 'admin', 'technician']);
     }
 
     public function isUser(): bool
@@ -105,9 +110,10 @@ class User extends Authenticatable
     public function getRoleNameAttribute(): string
     {
         return match ($this->role) {
-            'admin' => 'ผู้ดูแลระบบ (Admin)',
-            'technician' => 'เจ้าหน้าที่ IT / ช่างซ่อม',
-            'user' => 'ผู้ใช้ทั่วไป (บุคลากร รพ.)',
+            'super_admin' => 'แอดมินระบบ (Super Admin)',
+            'admin' => 'แอดมิน (Admin)',
+            'technician' => 'แอดมิน (Admin)',
+            'user' => 'ผู้ใช้งาน (User)',
             default => 'ผู้ใช้งาน',
         };
     }
@@ -115,7 +121,8 @@ class User extends Authenticatable
     public function getRoleBadgeAttribute(): string
     {
         return match ($this->role) {
-            'admin' => 'badge-danger',
+            'super_admin' => 'badge-danger',
+            'admin' => 'badge-primary',
             'technician' => 'badge-primary',
             'user' => 'badge-secondary',
             default => 'badge-light',

@@ -71,7 +71,7 @@ class RepairController extends Controller
         $repairs = $query->latest()->paginate($perPage)->withQueryString();
 
         $departments = Department::where('is_active', true)->orderBy('name')->get();
-        $technicians = User::whereIn('role', ['admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
+        $technicians = User::whereIn('role', ['super_admin', 'admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
 
         return view('repairs.index', compact('repairs', 'departments', 'technicians'));
     }
@@ -205,7 +205,7 @@ class RepairController extends Controller
     {
         $repair->load(['department', 'asset.deviceType', 'technician', 'requester', 'logs.user', 'parts.sparePart', 'activeBorrow.asset.deviceType']);
 
-        $technicians = User::whereIn('role', ['admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
+        $technicians = User::whereIn('role', ['super_admin', 'admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
         $spareParts = SparePart::where('stock_quantity', '>', 0)->orderBy('name')->get();
 
         return view('repairs.show', compact('repair', 'technicians', 'spareParts'));

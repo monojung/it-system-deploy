@@ -135,7 +135,7 @@ class UserController extends Controller
             'email' => $passwordMode === 'email_link' ? 'required|email|max:255|unique:it_users,email' : 'nullable|email|max:255|unique:it_users,email',
             'password_mode' => 'required|in:email_link,manual',
             'password' => $passwordMode === 'manual' ? 'required|min:6' : 'nullable',
-            'role' => 'required|in:admin,technician,user',
+            'role' => 'required|in:super_admin,admin,technician,user',
             'department_id' => 'nullable|exists:it_departments,id',
             'position' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
@@ -298,7 +298,7 @@ class UserController extends Controller
             'google_email' => 'nullable|email|max:255',
             'email' => 'nullable|email|max:255|unique:it_users,email,' . $user->id,
             'password' => 'nullable|min:6',
-            'role' => 'required|in:admin,technician,user',
+            'role' => 'required|in:super_admin,admin,technician,user',
             'department_id' => 'nullable|exists:it_departments,id',
             'position' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
@@ -310,6 +310,12 @@ class UserController extends Controller
             'cid.unique' => 'เลขประจำตัวประชาชนนี้มีอยู่ในระบบแล้ว',
             'google_id.unique' => 'Google ID นี้ถูกเชื่อมโยงกับบัญชีอื่นแล้ว',
         ]);
+
+        if ($user->role === 'super_admin' && $request->role !== 'super_admin') {
+            if (User::where('role', 'super_admin')->count() <= 1) {
+                return back()->withInput()->with('error', 'ไม่สามารถลดระดับสิทธิ์ของบัญชีนี้ได้ เนื่องจากเป็นบัญชีแอดมินระบบ (Super Admin) บัญชีเดียวที่เหลืออยู่ในระบบ');
+            }
+        }
 
         if ($cid && !validate_thai_id($cid)) {
             return back()->withInput()->withErrors(['cid' => 'เลขประจำตัวประชาชน 13 หลักไม่ถูกต้องตามสูตรคำนวณ (Invalid Checksum)']);
@@ -498,6 +504,10 @@ class UserController extends Controller
             return back()->with('error', 'ไม่สามารถลบบัญชีผู้ใช้งานของตนเองได้');
         }
 
+        if ($user->role === 'super_admin' && User::where('role', 'super_admin')->count() <= 1) {
+            return back()->with('error', 'ไม่สามารถลบบัญชีแอดมินระบบ (Super Admin) บัญชีสุดท้ายของระบบได้');
+        }
+
         if ($user->repairsRequested()->count() > 0 || $user->repairsAssigned()->count() > 0) {
             return back()->with('error', 'ไม่สามารถลบผู้ใช้งานนี้ได้ เนื่องจากมีประวัติการแจ้งซ่อมหรือการปฏิบัติงานช่างในระบบ');
         }
@@ -517,7 +527,7 @@ class UserController extends Controller
     {
         $request->validate([
             'department_id' => 'nullable|exists:it_departments,id',
-            'role' => 'nullable|in:admin,technician,user',
+            'role' => 'nullable|in:super_admin,admin,technician,user',
             'position' => 'nullable|string|max:255',
         ]);
 

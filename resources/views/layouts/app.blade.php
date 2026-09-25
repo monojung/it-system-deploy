@@ -1618,8 +1618,8 @@
                     <span>รายงานสถานะครุภัณฑ์</span>
                 </a>
 
-                @if(auth()->check() && auth()->user()->isAdmin())
-                <div class="nav-section-title">ผู้ดูแลระบบ (Admin)</div>
+                @if(auth()->check() && auth()->user()->isSuperAdmin())
+                <div class="nav-section-title">แอดมินระบบ (Super Admin)</div>
                 <a href="{{ route('settings.index') }}" class="nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                     <i class="bi bi-sliders"></i>
                     <span>การตั้งค่าระบบ</span>
@@ -1895,7 +1895,7 @@
 
             <!-- Modal Footer -->
             <div style="padding: 14px 24px; background: #f8fafc; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
-                @if(auth()->check() && auth()->user()->isAdmin())
+                @if(auth()->check() && auth()->user()->isSuperAdmin())
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <a href="{{ route('system-updates.index') }}" style="font-size: 12px; font-weight: 600; text-decoration: none; padding: 5px 12px; background: #0d9488; color: #fff; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
                         <i class="bi bi-cloud-arrow-down"></i> ตรวจสอบการอัปเดต

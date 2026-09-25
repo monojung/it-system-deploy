@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.5.1'),
+    'version' => env('APP_VERSION', '2.6.0'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-25',
-    'build' => '20260925.1',
+    'build' => '20260925.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,19 @@ return [
     |
     */
     'changelog' => [
+        '2.6.0' => [
+            'date' => '2026-09-25',
+            'badge' => 'Major Architecture: 3-Tier Hierarchical RBAC (User / Admin / Super Admin)',
+            'badge_color' => '#dc2626',
+            'title' => 'ปรับปรุงโครงสร้างระดับสิทธิ์ผู้ใช้งานใหม่ 3 ระดับ: ผู้ใช้งาน (User), แอดมิน (Admin), และ แอดมินระบบ (Super Admin)',
+            'highlights' => [
+                'สิทธิ์ระดับผู้ใช้งาน (User): ใช้งานบริการตนเอง (Self-Service) แจ้งซ่อม แจ้งยืม-คืนอุปกรณ์ ขอย้ายเครื่องภายในแผนกตนเอง ตรวจสอบประวัติ และรับการแจ้งเตือนผ่าน LINE Notify',
+                'สิทธิ์ระดับแอดมิน (Admin / Technician): รับผิดชอบงานไอทีปฏิบัติการ (IT Operations) ทั้งรับงานซ่อม, อัปเดตสถานะการซ่อม, เบิก-ตัดสต็อกอะไหล่, อนุมัติยืม-คืน, จัดการและแก้ไขทะเบียนครุภัณฑ์, นำเข้าข้อมูล CSV และตรวจนับสเปคคอมพิวเตอร์ประจำปี',
+                'สิทธิ์ระดับแอดมินระบบ (Super Admin): ดูแลโครงสร้างระบบส่วนกลาง (Central & Governance) จัดการผู้ใช้และอนุมัติบัญชีใหม่, สำรองฐานข้อมูล (Backup), ล้างข้อมูลระบบ (System Wipe), อัปเดตเวอร์ชันผ่าน GitHub, ตั้งค่าระบบและ LINE Token, ดู Audit Logs และจัดการ Master Data (หน่วยงาน, ประเภทอุปกรณ์)',
+                'การอัปเกรดฐานข้อมูลอัตโนมัติ: บัญชีผู้ดูแลระบบเดิม (Admin) ได้รับการยกระดับขึ้นเป็น Super Admin พร้อมป้องกันการลบบัญชี Super Admin บัญชีสุดท้ายออกจากระบบ',
+                'ปรับปรุง UI สอดคล้องตามบทบาท: Sidebar เมนูตั้งค่าระบบส่วนกลางจะแสดงเฉพาะ Super Admin และฟอร์มจัดการผู้ใช้ระบุสิทธิ์ภาษาไทยชัดเจน (ผู้ใช้งาน / แอดมิน / แอดมินระบบ)',
+            ],
+        ],
         '2.5.1' => [
             'date' => '2026-09-25',
             'badge' => 'Policy & Security: Intra-Department Asset Relocation Policy',

@@ -30,8 +30,8 @@ class CheckRole
             return redirect()->route('login')->with('error', 'บัญชีผู้ใช้งานของคุณถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ IT');
         }
 
-        // Admin always has full access
-        if ($user->role === 'admin') {
+        // Super Admin always has full access to all modules and system actions
+        if ($user->role === 'super_admin') {
             return $next($request);
         }
 
@@ -39,10 +39,19 @@ class CheckRole
             return $next($request);
         }
 
+        $roleLabels = [
+            'super_admin' => 'แอดมินระบบ (Super Admin)',
+            'admin' => 'แอดมิน (Admin)',
+            'technician' => 'เจ้าหน้าที่ IT',
+            'user' => 'ผู้ใช้งาน (User)',
+        ];
+        $formattedRoles = array_map(fn($r) => $roleLabels[$r] ?? $r, $roles);
+        $roleStr = implode(' หรือ ', $formattedRoles);
+
         if ($request->expectsJson() || $request->is('api/*')) {
-            abort(403, 'คุณไม่มีสิทธิ์ในการเข้าถึง (เฉพาะ ' . implode(', ', $roles) . ' เท่านั้น)');
+            abort(403, 'คุณไม่มีสิทธิ์ในการเข้าถึง (เฉพาะ ' . $roleStr . ' เท่านั้น)');
         }
 
-        return redirect()->route('dashboard')->with('error', 'คุณไม่มีสิทธิ์ในการเข้าถึงเมนูนี้ (เฉพาะ ' . implode(', ', $roles) . ' เท่านั้น)');
+        return redirect()->route('dashboard')->with('error', 'คุณไม่มีสิทธิ์ในการเข้าถึงเมนูนี้ (เฉพาะ ' . $roleStr . ' เท่านั้น)');
     }
 }

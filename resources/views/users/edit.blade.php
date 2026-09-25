@@ -79,9 +79,9 @@
                     <div class="form-group">
                         <label class="form-label required" for="role">ระดับสิทธิ์การใช้งาน (Role)</label>
                         <select name="role" id="role" class="form-select" required>
-                            <option value="user" {{ old('role', $user->role) == 'user' ? 'selected' : '' }}>🏥 บุคลากร รพ. / ผู้ใช้งานทั่วไป (User)</option>
-                            <option value="technician" {{ old('role', $user->role) == 'technician' ? 'selected' : '' }}>🛠️ เจ้าหน้าที่ IT / ช่างซ่อม (Technician)</option>
-                            <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>👑 ผู้ดูแลระบบสารสนเทศ (Admin)</option>
+                            <option value="user" {{ old('role', $user->role) == 'user' ? 'selected' : '' }}>🏥 ผู้ใช้งาน (User - บุคลากรทั่วไปของ รพ.)</option>
+                            <option value="admin" {{ in_array(old('role', $user->role), ['admin', 'technician']) ? 'selected' : '' }}>🛠️ แอดมิน (Admin - เจ้าหน้าที่ IT / ช่างซ่อม / บริหารงานพัสดุ IT)</option>
+                            <option value="super_admin" {{ old('role', $user->role) == 'super_admin' ? 'selected' : '' }}>🛡️ แอดมินระบบ (Super Admin - ผู้ดูแลระบบ IT สูงสุด)</option>
                         </select>
                     </div>
 

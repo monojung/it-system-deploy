@@ -190,6 +190,12 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::delete('/spare-parts/{sparePart}', [SparePartController::class, 'destroy'])->name('spare-parts.destroy');
     });
 
+    // Admin & Super Admin only for CSV Import
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/assets/import/template', [AssetController::class, 'downloadTemplate'])->name('assets.import.template');
+        Route::post('/assets/import', [AssetController::class, 'importCsv'])->name('assets.import');
+    });
+
     Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
     Route::get('/assets/{asset}/label', [AssetController::class, 'label'])->name('assets.label');
 
@@ -252,8 +258,8 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::get('/hardware-audits/export-csv', [HardwareAuditController::class, 'exportCsv'])->name('hardware-audits.export-csv');
     });
 
-    // Admin Only: Backup & Restore, User Management, Department Management
-    Route::middleware(['role:admin'])->group(function () {
+    // Super Admin Only: System Settings, Backup & Restore, User Management, Master Data, Audit Logs, System Updates
+    Route::middleware(['role:super_admin'])->group(function () {
         // Backup & Restore
         Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
         Route::post('/backups', [BackupController::class, 'create'])->name('backups.create');
@@ -262,10 +268,6 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
         Route::post('/backups/restore', [BackupController::class, 'restore'])->name('backups.restore');
         Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
-
-        // Assets CSV Import (Admin Only)
-        Route::get('/assets/import/template', [AssetController::class, 'downloadTemplate'])->name('assets.import.template');
-        Route::post('/assets/import', [AssetController::class, 'importCsv'])->name('assets.import');
 
         // Users
         Route::resource('users', UserController::class)->except(['show']);

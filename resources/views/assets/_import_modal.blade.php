@@ -10,7 +10,7 @@
                 </div>
                 <div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <h3 style="font-size: 17px; font-weight: 700; margin: 0; color: #ffffff;">นำเข้าข้อมูลครุภัณฑ์จากไฟล์ CSV (Import Assets)</h3>
+                        <h3 style="font-size: 17px; font-weight: 700; margin: 0; color: #ffffff;">นำเข้าข้อมูลครุภัณฑ์จากไฟล์ CSV (Import CSV)</h3>
                         <span style="background: rgba(255, 255, 255, 0.25); color: #ffffff; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600;">Admin Only</span>
                     </div>
                     <p style="font-size: 12.5px; margin: 3px 0 0 0; color: rgba(255,255,255,0.92);">

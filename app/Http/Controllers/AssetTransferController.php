@@ -144,7 +144,7 @@ class AssetTransferController extends Controller
         $assets = $assetsQuery->get(['id', 'asset_code', 'name', 'brand', 'model', 'serial_number', 'department_id', 'location_detail', 'custodian_name', 'ip_address', 'device_type_id', 'status']);
 
         $departments = Department::orderBy('name')->get();
-        $technicians = User::whereIn('role', ['admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
+        $technicians = User::whereIn('role', ['super_admin', 'admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
 
         return view('asset_transfers.create', compact('selectedAsset', 'assets', 'departments', 'technicians'));
     }
@@ -282,7 +282,7 @@ class AssetTransferController extends Controller
     public function show(AssetTransfer $assetTransfer)
     {
         $assetTransfer->load(['asset.deviceType', 'fromDepartment', 'toDepartment', 'user', 'technician']);
-        $technicians = User::whereIn('role', ['admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
+        $technicians = User::whereIn('role', ['super_admin', 'admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
 
         return view('asset_transfers.show', compact('assetTransfer', 'technicians'));
     }
@@ -310,7 +310,7 @@ class AssetTransferController extends Controller
         }
 
         $departments = Department::orderBy('name')->get();
-        $technicians = User::whereIn('role', ['admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
+        $technicians = User::whereIn('role', ['super_admin', 'admin', 'technician'])->where('is_active', true)->orderBy('name')->get();
 
         return view('asset_transfers.edit', compact('assetTransfer', 'departments', 'technicians'));
     }

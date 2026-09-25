@@ -161,9 +161,9 @@
                         <label class="form-label" style="font-size: 12px; margin-bottom: 4px;">ระดับสิทธิ์ (Role)</label>
                         <select name="role" class="form-select">
                             <option value="">-- ทุกสิทธิ์ --</option>
-                            <option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>👑 ผู้ดูแลระบบ (Admin)</option>
-                            <option value="technician" {{ request('role') == 'technician' ? 'selected' : '' }}>🛠️ เจ้าหน้าที่ IT / ช่าง (Technician)</option>
-                            <option value="user" {{ request('role') == 'user' ? 'selected' : '' }}>🏥 บุคลากร รพ. (User)</option>
+                            <option value="super_admin" {{ request('role') == 'super_admin' ? 'selected' : '' }}>🛡️ แอดมินระบบ (Super Admin)</option>
+                            <option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>🛠️ แอดมิน (Admin / IT)</option>
+                            <option value="user" {{ request('role') == 'user' ? 'selected' : '' }}>🏥 ผู้ใช้งาน (User)</option>
                         </select>
                     </div>
 
