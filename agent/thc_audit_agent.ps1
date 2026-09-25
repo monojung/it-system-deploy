@@ -2,8 +2,34 @@
 # thc_audit_agent.ps1
 # Thung Hua Chang Hospital - Client Hardware Audit Agent
 # Embedded PowerShell Agent to collect physical hardware specs & transmit to IT Server
-# Version: 2.2.0 (With Remote Scan Command & Background Polling Engine)
+# Version: 2.3.0 (Robust Multi-Tier Polling Engine & Auto-Healing Client Daemon)
 # ==============================================================================
+
+[CmdletBinding()]
+param (
+    [string]$ServerUrl = "https://thchospital.moph.go.th/it-system/api/hardware-audit/submit",
+    [int]$FiscalYear = 0,
+    [string]$AssetCode = "",
+    [int]$CommandId = 0,
+    [switch]$Silent,
+    [switch]$Background,
+    [switch]$PollOnce,
+    [switch]$ForceScan
+)
+
+# Parse positional or raw arguments if run directly via powershell.exe -File
+if ($args) {
+    for ($i = 0; $i -lt $args.Count; $i++) {
+        if ($args[$i] -eq '-ServerUrl' -and ($i + 1) -lt $args.Count) { $ServerUrl = $args[$i + 1] }
+        if ($args[$i] -eq '-FiscalYear' -and ($i + 1) -lt $args.Count) { $FiscalYear = [int]$args[$i + 1] }
+        if ($args[$i] -eq '-AssetCode' -and ($i + 1) -lt $args.Count) { $AssetCode = [string]$args[$i + 1] }
+        if ($args[$i] -eq '-CommandId' -and ($i + 1) -lt $args.Count) { $CommandId = [int]$args[$i + 1] }
+        if ($args[$i] -eq '-Silent') { $Silent = $true }
+        if ($args[$i] -eq '-Background') { $Background = $true; $Silent = $true }
+        if ($args[$i] -eq '-PollOnce') { $PollOnce = $true; $Silent = $true }
+        if ($args[$i] -eq '-ForceScan') { $ForceScan = $true }
+    }
+}
 
 # Set console & pipeline encoding to UTF-8 for Thai character fidelity
 try {
@@ -12,45 +38,115 @@ try {
     chcp 65001 | Out-Null
 } catch {}
 
-# Enable TLS 1.2 & TLS 1.1 protocol on Windows PowerShell 5.1 & modern platforms
+# Enable TLS 1.2, TLS 1.3, and TLS 1.1 on Windows PowerShell 5.1 & modern platforms
 try {
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12 -bor [System.Net.SecurityProtocolType]::Tls11 -bor [System.Net.SecurityProtocolType]::Tls
     [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
 } catch {}
 
-# Parameters & Fallback Options
-$ServerUrl = "https://thchospital.moph.go.th/it-system/api/hardware-audit/submit"
-$FiscalYear = 0
-$Silent = $false
-$AssetCode = ""
-$Background = $false
-$PollOnce = $false
-$ForceScan = $false
-$ActiveCommandId = 0
-
-# Parse CLI arguments if run directly via powershell.exe -File
-if ($args) {
-    for ($i = 0; $i -lt $args.Count; $i++) {
-        if ($args[$i] -eq '-ServerUrl' -and ($i + 1) -lt $args.Count) { $ServerUrl = $args[$i + 1] }
-        if ($args[$i] -eq '-FiscalYear' -and ($i + 1) -lt $args.Count) { $FiscalYear = [int]$args[$i + 1] }
-        if ($args[$i] -eq '-AssetCode' -and ($i + 1) -lt $args.Count) { $AssetCode = [string]$args[$i + 1] }
-        if ($args[$i] -eq '-CommandId' -and ($i + 1) -lt $args.Count) { $ActiveCommandId = [int]$args[$i + 1] }
-        if ($args[$i] -eq '-Silent') { $Silent = $true }
-        if ($args[$i] -eq '-Background') { $Background = $true; $Silent = $true }
-        if ($args[$i] -eq '-PollOnce') { $PollOnce = $true; $Silent = $true }
-        if ($args[$i] -eq '-ForceScan') { $ForceScan = $true }
-    }
-}
-
 $ErrorActionPreference = 'SilentlyContinue'
 
-# List of Server Endpoints to attempt
+# List of Server Endpoints to attempt (Custom URL, Production, Hospital LAN, Local)
 $candidateUrls = @(
     $ServerUrl,
     "https://thchospital.moph.go.th/it-system/api/hardware-audit/submit",
+    "http://192.168.2.89:8000/api/hardware-audit/submit",
     "http://192.168.2.89/it-system/api/hardware-audit/submit",
-    "http://localhost:8000/api/hardware-audit/submit"
+    "http://localhost:8000/api/hardware-audit/submit",
+    "http://127.0.0.1:8000/api/hardware-audit/submit"
 ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique
+
+# ------------------------------------------------------------------------------
+# Robust HTTP Request Engine (Multi-Tier Fallback: HttpWebRequest -> WebClient -> curl.exe -> Invoke-RestMethod)
+# ------------------------------------------------------------------------------
+function Invoke-SafeApiRequest {
+    param (
+        [string]$Uri,
+        [string]$Method = 'GET',
+        [string]$Body = '',
+        [int]$TimeoutSec = 8
+    )
+
+    # Method 1: .NET HttpWebRequest with KeepAlive = $false and custom User-Agent
+    try {
+        $req = [System.Net.HttpWebRequest]::Create($Uri)
+        $req.Method = $Method.ToUpper()
+        $req.Accept = "application/json"
+        $req.UserAgent = "THC-Audit-Agent/2.3.0 (Windows NT; PowerShell)"
+        $req.Timeout = $TimeoutSec * 1000
+        $req.KeepAlive = $false
+        $req.ServicePoint.Expect100Continue = $false
+        
+        if ($Method.ToUpper() -eq 'POST' -and -not [string]::IsNullOrEmpty($Body)) {
+            $req.ContentType = "application/json; charset=utf-8"
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes($Body)
+            $req.ContentLength = $bytes.Length
+            $stream = $req.GetRequestStream()
+            $stream.Write($bytes, 0, $bytes.Length)
+            $stream.Close()
+        }
+
+        $resp = $req.GetResponse()
+        $respStream = $resp.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($respStream, [System.Text.Encoding]::UTF8)
+        $result = $reader.ReadToEnd()
+        $reader.Close()
+        $resp.Close()
+
+        if (-not [string]::IsNullOrWhiteSpace($result)) {
+            return $result
+        }
+    } catch {}
+
+    # Method 2: System.Net.WebClient
+    try {
+        $wc = New-Object System.Net.WebClient
+        $wc.Headers.Add("Accept", "application/json")
+        $wc.Headers.Add("User-Agent", "THC-Audit-Agent/2.3.0")
+        $wc.Encoding = [System.Text.Encoding]::UTF8
+        if ($Method.ToUpper() -eq 'POST' -and -not [string]::IsNullOrEmpty($Body)) {
+            $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
+            $result = $wc.UploadString($Uri, 'POST', $Body)
+        } else {
+            $result = $wc.DownloadString($Uri)
+        }
+        if (-not [string]::IsNullOrWhiteSpace($result)) {
+            return $result
+        }
+    } catch {}
+
+    # Method 3: curl.exe (Built-in on Windows 10/11)
+    try {
+        if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
+            if ($Method.ToUpper() -eq 'POST' -and -not [string]::IsNullOrEmpty($Body)) {
+                $tempBody = [System.IO.Path]::GetTempFileName()
+                [System.IO.File]::WriteAllText($tempBody, $Body, [System.Text.Encoding]::UTF8)
+                $result = & curl.exe -s -k --max-time $TimeoutSec -H "Content-Type: application/json; charset=utf-8" -H "Accept: application/json" -X POST --data-binary "@$tempBody" $Uri
+                Remove-Item -Force $tempBody -ErrorAction SilentlyContinue
+            } else {
+                $result = & curl.exe -s -k --max-time $TimeoutSec -H "Accept: application/json" $Uri
+            }
+            if (-not [string]::IsNullOrWhiteSpace($result)) {
+                return $result
+            }
+        }
+    } catch {}
+
+    # Method 4: Invoke-RestMethod fallback
+    try {
+        $headers = @{ "Accept" = "application/json"; "User-Agent" = "THC-Audit-Agent/2.3.0" }
+        if ($Method.ToUpper() -eq 'POST' -and -not [string]::IsNullOrEmpty($Body)) {
+            $headers["Content-Type"] = "application/json; charset=utf-8"
+            $respObj = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -Headers $headers -ContentType 'application/json; charset=utf-8' -TimeoutSec $TimeoutSec
+            return ($respObj | ConvertTo-Json -Compress)
+        } else {
+            $respObj = Invoke-RestMethod -Uri $Uri -Method Get -TimeoutSec $TimeoutSec -Headers $headers
+            return ($respObj | ConvertTo-Json -Compress)
+        }
+    } catch {}
+
+    return $null
+}
 
 # ------------------------------------------------------------------------------
 # Helper Function: Quick Computer Hardware Identifiers
@@ -88,7 +184,7 @@ function Get-MachineIdentifiers {
 # ------------------------------------------------------------------------------
 function Invoke-HardwareAudit {
     param (
-        [int]$CommandId = 0,
+        [int]$TargetCommandId = 0,
         [bool]$IsSilent = $false
     )
 
@@ -96,7 +192,7 @@ function Invoke-HardwareAudit {
         Write-Host ''
         Write-Host '==========================================================================' -ForegroundColor Cyan
         Write-Host '   โรงพยาบาลทุ่งหัวช้าง - ระบบตรวจนับและติดตามสเปคคอมพิวเตอร์ประจำปี' -ForegroundColor Yellow
-        Write-Host '   THUNG HUA CHANG HOSPITAL - CLIENT HARDWARE AUDIT AGENT v2.2.0' -ForegroundColor Gray
+        Write-Host '   THUNG HUA CHANG HOSPITAL - CLIENT HARDWARE AUDIT AGENT v2.3.0' -ForegroundColor Gray
         Write-Host '==========================================================================' -ForegroundColor Cyan
         Write-Host 'กำลังตรวจสอบข้อมูลฮาร์ดแวร์จริงของเครื่อง กรุณารอสักครู่...' -ForegroundColor White
     }
@@ -295,7 +391,7 @@ function Invoke-HardwareAudit {
         os_license            = $osLicense
         gpu_model             = $gpuModel
         monitor_size          = $monitorStr
-        client_agent_version  = '2.2.0'
+        client_agent_version  = '2.3.0'
     }
 
     if ($FiscalYear -gt 0) {
@@ -304,8 +400,8 @@ function Invoke-HardwareAudit {
     if (-not [string]::IsNullOrWhiteSpace($AssetCode)) {
         $payload['asset_code'] = $AssetCode
     }
-    if ($CommandId -gt 0) {
-        $payload['command_id'] = $CommandId
+    if ($TargetCommandId -gt 0) {
+        $payload['command_id'] = $TargetCommandId
     }
 
     $jsonBody = $payload | ConvertTo-Json -Compress
@@ -334,59 +430,28 @@ function Invoke-HardwareAudit {
         Write-Host "  ระบบปฏิบัติการ (OS):  $osName" -ForegroundColor Cyan
         Write-Host "  สถานะลิขสิทธิ์:       $osLicense" -ForegroundColor Yellow
         Write-Host "  การเชื่อมต่อระบบ:     IP: $ipAddress | MAC: $macAddress" -ForegroundColor White
-        if ($CommandId -gt 0) {
-            Write-Host "  ตอบรับคำสั่งสแกน ID:  #$CommandId" -ForegroundColor Green
+        if ($TargetCommandId -gt 0) {
+            Write-Host "  ตอบรับคำสั่งสแกน ID:  #$TargetCommandId" -ForegroundColor Green
         }
         Write-Host '-----------------------------------------------------------------------------' -ForegroundColor Green
         Write-Host ''
         Write-Host "กำลังส่งข้อมูลเข้าสู่ระบบ IT โรงพยาบาลทุ่งหัวช้าง..." -ForegroundColor Yellow
     }
 
-    # 10. ส่งข้อมูลเข้าสู่ระบบ IT ผ่าน Web API (HTTP POST)
+    # 10. ส่งข้อมูลเข้าสู่ระบบ IT ผ่าน Web API (HTTP POST) ด้วย Safe Request Engine
     $transmitted = $false
     foreach ($targetUrl in $candidateUrls) {
         if (-not $IsSilent) {
             Write-Host "  เชื่อมต่อไปยังเซิร์ฟเวอร์: $targetUrl" -ForegroundColor Gray
         }
-        try {
-            $bytes = [System.Text.Encoding]::UTF8.GetBytes($jsonBody)
-            $req = [System.Net.HttpWebRequest]::Create($targetUrl)
-            $req.Method = "POST"
-            $req.ContentType = "application/json; charset=utf-8"
-            $req.Accept = "application/json"
-            $req.Timeout = 10000
-            $req.UserAgent = "THC-Audit-Agent/2.2.0"
-            
-            $reqStream = $req.GetRequestStream()
-            $reqStream.Write($bytes, 0, $bytes.Length)
-            $reqStream.Close()
-
-            $resp = $req.GetResponse()
-            $respStream = $resp.GetResponseStream()
-            $reader = New-Object System.IO.StreamReader($respStream, [System.Text.Encoding]::UTF8)
-            $responseString = $reader.ReadToEnd()
-            $reader.Close()
-            $resp.Close()
-
+        $respStr = Invoke-SafeApiRequest -Uri $targetUrl -Method 'POST' -Body $jsonBody -TimeoutSec 10
+        if (-not [string]::IsNullOrWhiteSpace($respStr)) {
             if (-not $IsSilent) {
                 Write-Host '  [สำเร็จ] ส่งข้อมูลเข้าสู่ระบบ IT เรียบร้อยแล้ว!' -ForegroundColor Green
                 Write-Host '  => สถานะ: บันทึกข้อมูลเข้าสู่ระบบรอเจ้าหน้าที่ไอทีตรวจสอบและอนุมัติ' -ForegroundColor Yellow
             }
             $transmitted = $true
             break
-        } catch {
-            try {
-                $headers = @{
-                    "Content-Type" = "application/json; charset=utf-8"
-                    "Accept"       = "application/json"
-                }
-                $respObj = Invoke-RestMethod -Uri $targetUrl -Method Post -Body $jsonBody -Headers $headers -ContentType 'application/json; charset=utf-8' -TimeoutSec 10
-                if (-not $IsSilent) {
-                    Write-Host '  [สำเร็จ] ส่งข้อมูลเข้าสู่ระบบ IT เรียบร้อยแล้ว (ผ่าน Fallback)!' -ForegroundColor Green
-                }
-                $transmitted = $true
-                break
-            } catch {}
         }
     }
 
@@ -413,20 +478,59 @@ function Check-ServerCommand {
 
     foreach ($submitUrl in $candidateUrls) {
         $cmdUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', '/api/hardware-audit/agent-command'
-        $pollUrl = "$cmdUrl`?hardware_id=$hwId&hostname=$hostName&mac_address=$mac&client_version=2.2.0"
+        $pollUrl = "$cmdUrl`?hardware_id=$hwId&hostname=$hostName&mac_address=$mac&client_version=2.3.0"
         
-        try {
-            $resp = Invoke-RestMethod -Uri $pollUrl -Method Get -TimeoutSec 6 -Headers @{ "Accept" = "application/json" }
-            if ($resp -and $resp.has_command -eq $true) {
-                return $resp
-            }
-            # If server responded with valid JSON saying no command, stop trying fallbacks
-            if ($resp -and $resp.has_command -eq $false) {
-                return $null
-            }
-        } catch {}
+        $respStr = Invoke-SafeApiRequest -Uri $pollUrl -Method 'GET' -TimeoutSec 8
+        if (-not [string]::IsNullOrWhiteSpace($respStr)) {
+            try {
+                $resp = $respStr | ConvertFrom-Json
+                if ($resp -and $resp.has_command -eq $true) {
+                    return $resp
+                }
+                if ($resp -and $resp.has_command -eq $false) {
+                    return $null
+                }
+            } catch {}
+        }
     }
     return $null
+}
+
+# ------------------------------------------------------------------------------
+# Function: Self-Install Background Daemon & Scheduled Tasks
+# ------------------------------------------------------------------------------
+function Install-AgentScheduledTask {
+    param ([bool]$IsSilent = $true)
+    
+    try {
+        $installDir = "C:\ProgramData\THC-IT-Agent"
+        if (-not (Test-Path $installDir)) {
+            New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+        }
+        $targetScript = "$installDir\thc_audit_agent.ps1"
+
+        # Copy this script to target if not already there or if different
+        if ($PSCommandPath -and (Test-Path $PSCommandPath)) {
+            if ($PSCommandPath -ne $targetScript) {
+                Copy-Item -Path $PSCommandPath -Destination $targetScript -Force
+            }
+        }
+
+        # Check / Create Scheduled Tasks
+        $task1 = schtasks /query /tn "THC_Hardware_Audit" 2>$null
+        if (-not $task1) {
+            schtasks /create /tn "THC_Hardware_Audit" /tr "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$targetScript`" -Background" /sc onlogon /rl HIGHEST /f 2>$null | Out-Null
+        }
+
+        $task2 = schtasks /query /tn "THC_Hardware_Audit_Poll" 2>$null
+        if (-not $task2) {
+            schtasks /create /tn "THC_Hardware_Audit_Poll" /tr "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$targetScript`" -PollOnce" /sc minute /mo 5 /rl HIGHEST /f 2>$null | Out-Null
+        }
+
+        if (-not $IsSilent) {
+            Write-Host '  [ระบบ] ลงทะเบียน Scheduled Task ประจำเครื่องสำเร็จ' -ForegroundColor Green
+        }
+    } catch {}
 }
 
 # ==============================================================================
@@ -450,13 +554,21 @@ if ($Background) {
         Invoke-HardwareAudit -IsSilent $true | Out-Null
     }
 
-    # Polling Loop
+    # Continuous Polling Loop
     while ($true) {
         try {
             $cmd = Check-ServerCommand
             if ($cmd -and $cmd.has_command -and $cmd.command -eq 'scan') {
                 $cmdId = if ($cmd.command_id) { [int]$cmd.command_id } else { 0 }
-                Invoke-HardwareAudit -CommandId $cmdId -IsSilent $true | Out-Null
+                $transmitted = Invoke-HardwareAudit -TargetCommandId $cmdId -IsSilent $true
+                
+                # Direct Acknowledgement
+                if ($cmdId -gt 0 -and $transmitted) {
+                    foreach ($submitUrl in $candidateUrls) {
+                        $ackUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', "/api/hardware-audit/agent-command/$cmdId/complete"
+                        Invoke-SafeApiRequest -Uri $ackUrl -Method 'POST' -Body '{"summary":"Agent auto-scan completed"}' -TimeoutSec 5 | Out-Null
+                    }
+                }
             }
         } catch {}
         Start-Sleep -Seconds 30
@@ -470,15 +582,27 @@ if ($Background) {
         $cmd = Check-ServerCommand
         if ($cmd -and $cmd.has_command -and $cmd.command -eq 'scan') {
             $cmdId = if ($cmd.command_id) { [int]$cmd.command_id } else { 0 }
-            Invoke-HardwareAudit -CommandId $cmdId -IsSilent $true | Out-Null
+            $transmitted = Invoke-HardwareAudit -TargetCommandId $cmdId -IsSilent $true
+            
+            # Direct Acknowledgement
+            if ($cmdId -gt 0 -and $transmitted) {
+                foreach ($submitUrl in $candidateUrls) {
+                    $ackUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', "/api/hardware-audit/agent-command/$cmdId/complete"
+                    Invoke-SafeApiRequest -Uri $ackUrl -Method 'POST' -Body '{"summary":"Agent auto-scan completed"}' -TimeoutSec 5 | Out-Null
+                }
+            }
         }
     } catch {}
 
 } else {
     # --------------------------------------------------------------------------
-    # MODE 3: Immediate Scan & Transmit (Default on manual click or Desktop shortcut)
+    # MODE 3: Immediate Scan & Transmit (Manual click, Desktop shortcut, or One-liner)
     # --------------------------------------------------------------------------
-    $ok = Invoke-HardwareAudit -CommandId $ActiveCommandId -IsSilent $Silent
+    $ok = Invoke-HardwareAudit -TargetCommandId $CommandId -IsSilent $Silent
+    
+    # Auto-register Background Daemon if running in interactive mode
+    Install-AgentScheduledTask -IsSilent $Silent
+
     if (-not $Silent) {
         Write-Host ''
     }

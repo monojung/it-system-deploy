@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 >nul
-title ติดตั้ง THC Hardware Audit Agent v2.2.0 - โรงพยาบาลทุ่งหัวช้าง
+title ติดตั้ง THC Hardware Audit Agent v2.3.0 - โรงพยาบาลทุ่งหัวช้าง
 color 0b
 
 echo ==========================================================================
-echo   ติดตั้งโปรแกรม THC Client Hardware Audit Agent ประจำเครื่อง v2.2.0
+echo   ติดตั้งโปรแกรม THC Client Hardware Audit Agent ประจำเครื่อง v2.3.0
 echo   รองรับการสั่งสแกนระยะไกลจากระบบ IT (Remote Scan Engine)
 echo   โรงพยาบาลทุ่งหัวช้าง (Thung Hua Chang Hospital IT Platform)
 echo ==========================================================================
@@ -16,11 +16,14 @@ if not exist "%INSTALL_DIR%" (
 )
 
 echo [1/3] กำลังเตรียมไฟล์ Agent (%INSTALL_DIR%)...
+:: ปิดโพรเซส Agent เดิมที่อาจค้างอยู่เพื่อป้องกัน File Lock
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*thc_audit_agent.ps1*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" 2>nul
+
 if exist "%~dp0thc_audit_agent.ps1" (
     copy /y "%~dp0thc_audit_agent.ps1" "%INSTALL_DIR%\thc_audit_agent.ps1" >nul
 ) else (
     echo       กำลังดาวน์โหลดไฟล์ Agent ล่าสุดจากเซิร์ฟเวอร์...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072; $urls = @('https://thchospital.moph.go.th/it-system/agent/thc_audit_agent.ps1', 'http://192.168.2.89/it-system/agent/thc_audit_agent.ps1', 'http://127.0.0.1:8000/agent/thc_audit_agent.ps1', 'http://localhost:8000/agent/thc_audit_agent.ps1'); foreach ($u in $urls) { try { (New-Object Net.WebClient).DownloadFile($u, '%INSTALL_DIR%\thc_audit_agent.ps1'); break } catch {} }" 2>nul
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072; $urls = @('https://thchospital.moph.go.th/it-system/agent/thc_audit_agent.ps1', 'http://192.168.2.89:8000/agent/thc_audit_agent.ps1', 'http://192.168.2.89/it-system/agent/thc_audit_agent.ps1', 'http://127.0.0.1:8000/agent/thc_audit_agent.ps1', 'http://localhost:8000/agent/thc_audit_agent.ps1'); foreach ($u in $urls) { try { (New-Object Net.WebClient).DownloadFile($u, '%INSTALL_DIR%\thc_audit_agent.ps1'); break } catch {} }" 2>nul
 )
 
 if not exist "%INSTALL_DIR%\thc_audit_agent.ps1" (
@@ -33,8 +36,8 @@ if not exist "%INSTALL_DIR%\thc_audit_agent.ps1" (
 )
 
 echo [2/3] กำลังลงทะเบียน Windows Scheduled Task & ระบบรับคำสั่งระยะไกล...
-schtasks /create /tn "THC_Hardware_Audit" /tr "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"%INSTALL_DIR%\thc_audit_agent.ps1\" -Background" /sc onlogon /f >nul 2>nul
-schtasks /create /tn "THC_Hardware_Audit_Poll" /tr "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"%INSTALL_DIR%\thc_audit_agent.ps1\" -PollOnce" /sc minute /mo 5 /f >nul 2>nul
+schtasks /create /tn "THC_Hardware_Audit" /tr "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"%INSTALL_DIR%\thc_audit_agent.ps1\" -Background" /sc onlogon /rl HIGHEST /f >nul 2>nul
+schtasks /create /tn "THC_Hardware_Audit_Poll" /tr "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"%INSTALL_DIR%\thc_audit_agent.ps1\" -PollOnce" /sc minute /mo 5 /rl HIGHEST /f >nul 2>nul
 
 :: สตาร์ท Daemon พื้นหลังสำหรับรับคำสั่งสแกนทันที
 start "" powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%INSTALL_DIR%\thc_audit_agent.ps1" -Background

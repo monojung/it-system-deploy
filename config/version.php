@@ -11,7 +11,7 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.5.2'),
+    'version' => env('APP_VERSION', '2.5.3'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-09-25',
     'build' => '20260925.2',

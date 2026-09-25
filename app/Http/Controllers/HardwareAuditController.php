@@ -304,14 +304,47 @@ class HardwareAuditController extends Controller
 
         // Acknowledge and complete any pending AgentCommand for this machine
         $commandId = $request->input('command_id');
+        $activeBatchId = null;
         if (!empty($commandId)) {
             $cmd = AgentCommand::find($commandId);
             if ($cmd) {
-                $cmd->markAsCompleted("สแกนสำเร็จจาก {$hostname} (Audit #{$audit->id})", $ip);
+                $activeBatchId = $cmd->batch_id;
+                if ($cmd->target_type === 'single') {
+                    $cmd->markAsCompleted("สแกนสำเร็จจาก {$hostname} (Audit #{$audit->id})", $ip);
+                }
             }
-        } else {
-            // Auto-complete any active pending commands for this machine
-            $pendingCmds = AgentCommand::whereIn('status', ['pending', 'processing'])
+        }
+
+        // Auto-complete any active pending/processing commands for this machine across all recent batches
+        $pendingCmds = AgentCommand::whereIn('status', ['pending', 'processing'])
+            ->where('target_type', 'single')
+            ->where(function ($q) use ($hardwareId, $hostname) {
+                if (!empty($hardwareId)) {
+                    $q->where('target_hardware_id', $hardwareId);
+                }
+                if (!empty($hostname)) {
+                    if (!empty($hardwareId)) {
+                        $q->orWhere('target_hostname', $hostname);
+                    } else {
+                        $q->where('target_hostname', $hostname);
+                    }
+                }
+            })
+            ->get();
+
+        foreach ($pendingCmds as $pCmd) {
+            $pCmd->markAsCompleted("สแกนสำเร็จจาก {$hostname} (Audit #{$audit->id})", $ip);
+        }
+
+        // Check if there is an active broadcast batch from the last 2 hours without a single record for this machine
+        $recentBroadcast = AgentCommand::where('target_type', 'all')
+            ->where('created_at', '>=', now()->subHours(2))
+            ->latest()
+            ->first();
+
+        if ($recentBroadcast) {
+            $existingInBatch = AgentCommand::where('batch_id', $recentBroadcast->batch_id)
+                ->where('target_type', 'single')
                 ->where(function ($q) use ($hardwareId, $hostname) {
                     if (!empty($hardwareId)) {
                         $q->where('target_hardware_id', $hardwareId);
@@ -320,10 +353,25 @@ class HardwareAuditController extends Controller
                         $q->orWhere('target_hostname', $hostname);
                     }
                 })
-                ->get();
+                ->first();
 
-            foreach ($pendingCmds as $pCmd) {
-                $pCmd->markAsCompleted("สแกนสำเร็จอัตโนมัติจาก {$hostname} (Audit #{$audit->id})", $ip);
+            if (!$existingInBatch) {
+                AgentCommand::create([
+                    'command' => 'scan',
+                    'batch_id' => $recentBroadcast->batch_id,
+                    'target_type' => 'single',
+                    'target_hardware_id' => $hardwareId ?: null,
+                    'target_hostname' => $hostname ?: null,
+                    'target_audit_id' => $audit->id,
+                    'target_asset_id' => $audit->asset_id,
+                    'status' => 'completed',
+                    'requested_by' => $recentBroadcast->requested_by,
+                    'dispatched_at' => now(),
+                    'executed_at' => now(),
+                    'ip_address' => $ip,
+                    'result_summary' => "สแกนสำเร็จจาก {$hostname} (Audit #{$audit->id})",
+                    'parameters' => $recentBroadcast->parameters,
+                ]);
             }
         }
 
@@ -368,7 +416,8 @@ class HardwareAuditController extends Controller
         // 1. Check for direct command targeted to this machine
         $cmd = null;
         if (!empty($hardwareId) || !empty($hostname)) {
-            $query = AgentCommand::whereIn('status', ['pending', 'processing']);
+            // Priority 1A: Look for newest 'pending' command
+            $query = AgentCommand::where('status', 'pending');
             $query->where(function ($q) use ($hardwareId, $hostname) {
                 if (!empty($hardwareId)) {
                     $q->where('target_hardware_id', $hardwareId);
@@ -382,19 +431,69 @@ class HardwareAuditController extends Controller
                 }
             });
             $cmd = $query->orderBy('id', 'desc')->first();
+
+            // Priority 1B: Look for recent 'processing' command (within last 3 minutes)
+            if (!$cmd) {
+                $cmd = AgentCommand::where('status', 'processing')
+                    ->where('dispatched_at', '>=', now()->subMinutes(3))
+                    ->where(function ($q) use ($hardwareId, $hostname) {
+                        if (!empty($hardwareId)) {
+                            $q->where('target_hardware_id', $hardwareId);
+                        }
+                        if (!empty($hostname)) {
+                            if (!empty($hardwareId)) {
+                                $q->orWhere('target_hostname', $hostname);
+                            } else {
+                                $q->where('target_hostname', $hostname);
+                            }
+                        }
+                    })
+                    ->orderBy('id', 'desc')
+                    ->first();
+            }
         }
 
         // 2. Fallback: Broadcast command (target_type = 'all')
         if (!$cmd) {
-            $cmd = AgentCommand::where('status', 'pending')
-                ->where('target_type', 'all')
+            $broadcast = AgentCommand::where('target_type', 'all')
+                ->whereIn('status', ['pending', 'processing'])
                 ->where('created_at', '>=', now()->subHours(2))
                 ->orderBy('id', 'desc')
                 ->first();
+
+            if ($broadcast) {
+                // Find or create an individual tracking record for this machine in this batch
+                $cmd = AgentCommand::where('batch_id', $broadcast->batch_id)
+                    ->where('target_type', 'single')
+                    ->where(function ($q) use ($hardwareId, $hostname) {
+                        if (!empty($hardwareId)) {
+                            $q->where('target_hardware_id', $hardwareId);
+                        }
+                        if (!empty($hostname)) {
+                            $q->orWhere('target_hostname', $hostname);
+                        }
+                    })
+                    ->first();
+
+                if (!$cmd) {
+                    $cmd = AgentCommand::create([
+                        'command' => 'scan',
+                        'batch_id' => $broadcast->batch_id,
+                        'target_type' => 'single',
+                        'target_hardware_id' => $hardwareId ?: null,
+                        'target_hostname' => $hostname ?: null,
+                        'status' => 'pending',
+                        'requested_by' => $broadcast->requested_by,
+                        'parameters' => $broadcast->parameters,
+                    ]);
+                }
+            }
         }
 
         if ($cmd) {
-            $cmd->markAsDispatched($ip);
+            if ($cmd->target_type === 'single') {
+                $cmd->markAsDispatched($ip);
+            }
 
             return response()->json([
                 'has_command' => true,
@@ -1409,6 +1508,9 @@ class HardwareAuditController extends Controller
 
         // 2. Individual target records for tracking in UI
         $targets = [];
+        $existingHwIds = [];
+        $existingHosts = [];
+
         foreach ($agentAudits as $aud) {
             if (empty($aud->hostname) && empty($aud->hardware_id)) continue;
 
@@ -1428,12 +1530,59 @@ class HardwareAuditController extends Controller
                 ],
             ]);
 
+            if ($aud->hardware_id) $existingHwIds[] = $aud->hardware_id;
+            if ($aud->hostname) $existingHosts[] = $aud->hostname;
+
             $targets[] = [
                 'id' => $cmd->id,
                 'hostname' => $aud->hostname ?: 'เครื่อง ID #' . $aud->id,
                 'hardware_id' => $aud->hardware_id,
                 'ip' => $aud->ip_address,
                 'brand_model' => trim(($aud->brand ?: '') . ' ' . ($aud->model ?: '')),
+                'status' => 'pending',
+            ];
+        }
+
+        // Also query active computers in it_assets not yet in targets
+        $computerAssets = Asset::whereHas('deviceType', function ($q) {
+                $q->whereIn('code', ['PC', 'NB', 'AIO', 'SERVER'])
+                  ->orWhere('name', 'like', '%คอมพิวเตอร์%');
+            })
+            ->where('status', 'active')
+            ->get();
+
+        foreach ($computerAssets as $cas) {
+            $hId = $cas->hardware_id;
+            $hName = $cas->name ?: $cas->asset_code;
+            if (($hId && in_array($hId, $existingHwIds)) || ($hName && in_array($hName, $existingHosts))) {
+                continue;
+            }
+            if (empty($hId) && empty($hName)) continue;
+
+            $cmd = AgentCommand::create([
+                'command' => 'scan',
+                'batch_id' => $batchId,
+                'target_type' => 'single',
+                'target_hardware_id' => $hId,
+                'target_hostname' => $hName,
+                'target_asset_id' => $cas->id,
+                'status' => 'pending',
+                'requested_by' => Auth::id(),
+                'parameters' => [
+                    'fiscal_year' => $fiscalYear,
+                    'trigger_source' => 'batch_scan_all_asset',
+                ],
+            ]);
+
+            if ($hId) $existingHwIds[] = $hId;
+            if ($hName) $existingHosts[] = $hName;
+
+            $targets[] = [
+                'id' => $cmd->id,
+                'hostname' => $hName,
+                'hardware_id' => $hId,
+                'ip' => $cas->ip_address,
+                'brand_model' => trim(($cas->brand ?: '') . ' ' . ($cas->model ?: '')),
                 'status' => 'pending',
             ];
         }
@@ -1476,6 +1625,7 @@ class HardwareAuditController extends Controller
             $batchId = $request->input('batch_id');
             $commands = AgentCommand::where('batch_id', $batchId)
                 ->where('target_type', 'single')
+                ->with(['targetAudit', 'targetAsset'])
                 ->get();
 
             $total = $commands->count();
@@ -1494,10 +1644,17 @@ class HardwareAuditController extends Controller
                 'failed' => $failed,
                 'percentage' => $total > 0 ? round(($completed / $total) * 100) : 0,
                 'items' => $commands->map(function ($c) {
+                    $audit = $c->targetAudit;
+                    $asset = $c->targetAsset;
+                    $brandModel = $audit ? trim(($audit->brand ?: '') . ' ' . ($audit->model ?: '')) : ($asset ? trim(($asset->brand ?: '') . ' ' . ($asset->model ?: '')) : null);
+                    $ip = $c->ip_address ?: ($audit ? $audit->ip_address : ($asset ? $asset->ip_address : null));
+
                     return [
                         'id' => $c->id,
                         'hostname' => $c->target_hostname,
                         'hardware_id' => $c->target_hardware_id,
+                        'ip' => $ip,
+                        'brand_model' => $brandModel,
                         'status' => $c->status,
                         'executed_at' => $c->executed_at ? $c->executed_at->format('H:i:s น.') : null,
                         'result_summary' => $c->result_summary,

@@ -78,9 +78,39 @@ Route::get('/agent/{filename}', function ($filename) {
     ];
     foreach ($candidates as $path) {
         if (file_exists($path)) {
-            $mime = str_ends_with($filename, '.ps1') ? 'text/plain; charset=utf-8' : (str_ends_with($filename, '.bat') ? 'application/x-bat' : 'text/plain; charset=utf-8');
-            return response(file_get_contents($path), 200, [
-                'Content-Type' => $mime,
+            $content = file_get_contents($path);
+
+            $currentSubmitUrl = url('/api/hardware-audit/submit');
+            $currentAgentUrl = url('/agent/thc_audit_agent.ps1');
+
+            if (str_ends_with($filename, '.ps1')) {
+                // Dynamically inject the active server's submit URL as top priority
+                $content = preg_replace(
+                    '/\$ServerUrl\s*=\s*["\'][^"\']+["\']/',
+                    "\$ServerUrl = \"{$currentSubmitUrl}\"",
+                    $content
+                );
+                return response($content, 200, [
+                    'Content-Type' => 'text/plain; charset=utf-8',
+                    'Cache-Control' => 'no-cache, must-revalidate',
+                ]);
+            }
+
+            if (str_ends_with($filename, '.bat')) {
+                // Dynamically inject active agent download URL into installer
+                $content = str_replace(
+                    "'https://thchospital.moph.go.th/it-system/agent/thc_audit_agent.ps1'",
+                    "'{$currentAgentUrl}', 'https://thchospital.moph.go.th/it-system/agent/thc_audit_agent.ps1'",
+                    $content
+                );
+                return response($content, 200, [
+                    'Content-Type' => 'application/x-bat',
+                    'Cache-Control' => 'no-cache, must-revalidate',
+                ]);
+            }
+
+            return response($content, 200, [
+                'Content-Type' => 'text/plain; charset=utf-8',
                 'Cache-Control' => 'no-cache, must-revalidate',
             ]);
         }
