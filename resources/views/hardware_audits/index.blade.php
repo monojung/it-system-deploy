@@ -55,41 +55,42 @@
                 </div>
 
                 <!-- Right Action Bar: Scan All Agent Button, Download Standalone Agent & Fiscal Year Form Selector -->
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     
                     <!-- Download Standalone Agent .exe Hero Button -->
                     <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-sm"
-                       style="background: #ffffff; color: #0284c7; font-weight: 700; padding: 8px 16px; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); text-decoration: none; transition: all 0.2s;"
-                       onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.18)'"
-                       onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)'"
+                       style="background: #ffffff; color: #0284c7; font-weight: 700; padding: 7px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); text-decoration: none; transition: all 0.2s; font-size: 12.5px;"
+                       onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 14px rgba(0,0,0,0.16)'"
+                       onmouseout="this.style.transform='none'; this.style.boxShadow='0 3px 10px rgba(0,0,0,0.1)'"
                        title="ดาวน์โหลดโปรแกรม THC IT Agent (Standalone .exe 34 KB รันได้ทันที มี System Tray Icon บอกสถานะ Online/Offline)">
-                        <i class="bi bi-download text-primary" style="font-size: 16px;"></i>
+                        <i class="bi bi-download text-primary" style="font-size: 14px;"></i>
                         <span>โหลด Agent (.exe)</span>
-                        <span class="badge" style="background: #0284c7; color: #ffffff; font-size: 10px; padding: 2px 6px; border-radius: 6px;">
-                            v2.5.5
+                        <span class="badge" style="background: #0284c7; color: #ffffff; font-size: 10px; padding: 2px 5px; border-radius: 5px;">
+                            v2.5.7
                         </span>
                     </a>
 
                     <!-- Pull All Agent Telemetry Hero Button (On-Demand) -->
                     <button type="button" class="btn btn-sm" onclick="triggerScanAllConfirm()" 
-                            style="background: rgba(255,255,255,0.18); backdrop-filter: blur(8px); border: 1.5px solid rgba(255,255,255,0.35); color: #ffffff; font-weight: 700; padding: 8px 16px; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s; cursor: pointer;"
+                            style="background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); border: 1.5px solid rgba(255,255,255,0.4); color: #ffffff; font-weight: 700; padding: 7px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); transition: all 0.2s; cursor: pointer; font-size: 12.5px;"
                             onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='translateY(-1px)'" 
-                            onmouseout="this.style.background='rgba(255,255,255,0.18)'; this.style.transform='none'">
-                        <i class="bi bi-cloud-arrow-down-fill text-warning" style="font-size: 17px;"></i>
-                        <span>ดึงข้อมูลจากทุกเครื่องที่ติดตั้ง Agent</span>
-                        <span style="background: #ffffff; color: #0f766e; font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 800;">
+                            onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='none'"
+                            title="ส่งสัญญาณ Remote Scan ไปยัง Agent ทุกเครื่องเพื่อดึงสเปกฮาร์ดแวร์ล่าสุด">
+                        <i class="bi bi-cloud-arrow-down-fill text-warning" style="font-size: 15px;"></i>
+                        <span>ดึงข้อมูลทุกเครื่อง (Agent)</span>
+                        <span style="background: #ffffff; color: #0f766e; font-size: 11px; padding: 2px 7px; border-radius: 99px; font-weight: 800;">
                             {{ $agentInstalledCount ?? 0 }} เครื่อง
                         </span>
                     </button>
 
                     <!-- Fiscal Year Form Selector -->
-                    <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 12px; padding: 8px 14px; display: flex; align-items: center; gap: 10px;">
-                        <form method="GET" action="{{ route('hardware-audits.index') }}" id="fiscalYearForm" style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                    <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 10px; padding: 6px 12px; display: flex; align-items: center; gap: 6px;">
+                        <form method="GET" action="{{ route('hardware-audits.index') }}" id="fiscalYearForm" style="display: flex; align-items: center; gap: 6px; margin: 0;">
                             <input type="hidden" name="tab" value="{{ $tab }}">
-                            <i class="bi bi-calendar-check" style="font-size: 16px; opacity: 0.9;"></i>
-                            <label for="fiscal_year" style="font-size: 13px; font-weight: 600; white-space: nowrap; margin: 0;">ปีงบประมาณ:</label>
+                            <i class="bi bi-calendar-check" style="font-size: 14px; opacity: 0.9;"></i>
+                            <label for="fiscal_year" style="font-size: 12.5px; font-weight: 600; white-space: nowrap; margin: 0;">ปีงบ:</label>
                             <select name="fiscal_year" id="fiscal_year" class="form-select form-select-sm" onchange="document.getElementById('fiscalYearForm').submit()" 
-                                    style="font-weight: 700; width: 120px; border-radius: 8px; border: none; background: #ffffff; color: #0f766e; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+                                    style="font-weight: 700; width: 105px; border-radius: 6px; border: none; background: #ffffff; color: #0f766e; font-size: 12.5px; padding: 3px 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
                                 @foreach($availableFiscalYears as $fy)
                                     <option value="{{ $fy }}" {{ $fiscalYear == $fy ? 'selected' : '' }}>พ.ศ. {{ $fy }}</option>
                                 @endforeach
@@ -259,50 +260,52 @@
         <div style="padding: 22px;">
             
             <!-- Filter & Batch Action Toolbar -->
-            <form method="GET" action="{{ route('hardware-audits.index') }}" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-                <input type="hidden" name="fiscal_year" value="{{ $fiscalYear }}">
-                <input type="hidden" name="tab" value="pending">
-                
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                    <div style="position: relative; width: 280px;">
-                        <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
-                        <input type="text" name="search" class="form-control form-control-sm" placeholder="ค้นหา Hostname, S/N, IP หรือ CPU..." 
-                               value="{{ request('search') }}" style="padding-left: 32px; border-radius: 8px; height: 38px; font-size: 13px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;">
+                <form method="GET" action="{{ route('hardware-audits.index') }}" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin: 0;">
+                    <input type="hidden" name="fiscal_year" value="{{ $fiscalYear }}">
+                    <input type="hidden" name="tab" value="pending">
+                    
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex: 1 1 auto;">
+                        <div style="position: relative; min-width: 220px; max-width: 300px; flex: 1;">
+                            <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+                            <input type="text" name="search" class="form-control form-control-sm" placeholder="ค้นหา Hostname, S/N, IP, CPU..." 
+                                   value="{{ request('search') }}" style="padding-left: 32px; border-radius: 8px; height: 36px; font-size: 13px;">
+                        </div>
+
+                        <select name="status" class="form-select form-select-sm" style="width: auto; min-width: 175px; border-radius: 8px; height: 36px; font-size: 13px;">
+                            <option value="pending" {{ request('status', 'pending') === 'pending' ? 'selected' : '' }}>⏳ รอตรวจสอบ ({{ $pendingCount }})</option>
+                            <option value="unlinked" {{ request('status') === 'unlinked' ? 'selected' : '' }}>🆕 เครื่องใหม่ยังไม่ผูก ({{ $unlinkedCount }})</option>
+                            <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>✓ อนุมัติแล้ว ({{ $approvedCount }})</option>
+                            <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>✕ ปฏิเสธแล้ว ({{ $rejectedCount }})</option>
+                            <option value="" {{ request('status') === '' ? 'selected' : '' }}>📋 ทุกสถานะ</option>
+                        </select>
+
+                        <button type="submit" class="btn btn-primary btn-sm" style="height: 36px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                            <i class="bi bi-funnel"></i> คัดกรอง
+                        </button>
+
+                        @if(request('search') || (request('status') && request('status') !== 'pending'))
+                            <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'pending']) }}" class="btn btn-outline-secondary btn-sm" style="height: 36px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="bi bi-x-circle"></i> ล้าง
+                            </a>
+                        @endif
                     </div>
 
-                    <select name="status" class="form-select form-select-sm" style="width: 185px; border-radius: 8px; height: 38px; font-size: 13px;">
-                        <option value="pending" {{ request('status', 'pending') === 'pending' ? 'selected' : '' }}>⏳ รอตรวจสอบ ({{ $pendingCount }})</option>
-                        <option value="unlinked" {{ request('status') === 'unlinked' ? 'selected' : '' }}>🆕 เครื่องใหม่ยังไม่ผูก ({{ $unlinkedCount }})</option>
-                        <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>✓ อนุมัติแล้ว ({{ $approvedCount }})</option>
-                        <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>✕ ปฏิเสธแล้ว ({{ $rejectedCount }})</option>
-                        <option value="" {{ request('status') === '' ? 'selected' : '' }}>📋 ทุกสถานะ</option>
-                    </select>
-
-                    <button type="submit" class="btn btn-primary btn-sm" style="height: 38px; padding: 0 16px; border-radius: 8px;">
-                        <i class="bi bi-funnel"></i> คัดกรอง
-                    </button>
-
-                    @if(request('search') || (request('status') && request('status') !== 'pending'))
-                        <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'pending']) }}" class="btn btn-outline-secondary btn-sm" style="height: 38px; border-radius: 8px; display: inline-flex; align-items: center;">
-                            <i class="bi bi-x-circle me-1"></i> ล้างตัวกรอง
-                        </a>
+                    {{-- Batch Actions Trigger --}}
+                    @if(request('status', 'pending') === 'pending' && $audits->count() > 0)
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-success btn-sm" onclick="submitBatchApproval()" style="height: 36px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
+                            <i class="bi bi-check2-all" style="font-size: 15px;"></i> 
+                            <span>อนุมัติที่เลือก (Batch)</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="submitBatchDelete()" style="height: 36px; padding: 0 12px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
+                            <i class="bi bi-trash" style="font-size: 14px;"></i> 
+                            <span>ลบที่เลือก</span>
+                        </button>
+                    </div>
                     @endif
-                </div>
-
-                {{-- Batch Actions Trigger --}}
-                @if(request('status', 'pending') === 'pending' && $audits->count() > 0)
-                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-success btn-sm" onclick="submitBatchApproval()" style="height: 36px; padding: 0 16px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
-                        <i class="bi bi-check2-all" style="font-size: 16px;"></i> 
-                        <span>อนุมัติที่เลือกเป็นกลุ่ม (Batch)</span>
-                    </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="submitBatchDelete()" style="height: 36px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
-                        <i class="bi bi-trash" style="font-size: 15px;"></i> 
-                        <span>ลบรายการที่เลือก</span>
-                    </button>
-                </div>
-                @endif
-            </form>
+                </form>
+            </div>
 
             <!-- Table of Submissions -->
             <form id="batchApproveForm" method="POST" action="{{ route('hardware-audits.batch-approve') }}">
@@ -314,15 +317,15 @@
                                 <th style="width: 38px; text-align: center;">
                                     <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)" style="cursor: pointer;">
                                 </th>
-                                <th style="min-width: 145px;">สถานะ Agent / รับข้อมูล</th>
+                                <th style="min-width: 135px;">สถานะ Agent / รับข้อมูล</th>
                                 <th style="min-width: 140px;">ชื่อเครื่อง (Hostname / IP)</th>
-                                <th style="width: 150px;">ยี่ห้อ / รุ่น</th>
-                                <th style="width: 145px;">HardwareID / S/N</th>
-                                <th style="width: 175px;">ครุภัณฑ์ที่จับคู่</th>
-                                <th style="min-width: 190px;">สเปคจาก Agent</th>
-                                <th style="text-align: center; width: 100px;">การเปลี่ยนแปลง</th>
+                                <th style="width: 140px;">ยี่ห้อ / รุ่น</th>
+                                <th style="width: 140px;">HardwareID / S/N</th>
+                                <th style="width: 165px;">ครุภัณฑ์ที่จับคู่</th>
+                                <th style="min-width: 180px;">สเปคจาก Agent</th>
+                                <th style="text-align: center; width: 95px;">เปลี่ยนแปลง</th>
                                 <th style="text-align: center; width: 85px;">สถานะ</th>
-                                <th style="text-align: right; width: 280px; min-width: 280px;">ดึงข้อมูล / จัดการ</th>
+                                <th style="text-align: right; width: 310px; min-width: 310px;">ดึงข้อมูล / จัดการ</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -477,66 +480,69 @@
                                     {!! $audit->status_badge !!}
                                 </td>
 
-                                <td style="text-align: right; white-space: nowrap;">
-                                    <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end;">
+                                <td style="text-align: right; white-space: nowrap; width: 310px; min-width: 310px;">
+                                    <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end; flex-wrap: nowrap;">
                                         
-                                        <!-- BUTTON 0: Pull Telemetry from this machine (On-Demand) -->
-                                        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-scan-{{ $audit->id }}"
-                                                onclick="triggerSingleScan({{ $audit->id }}, '{{ addslashes($audit->hostname ?: '-') }}')"
-                                                title="ส่งคำสั่งดึงข้อมูลสเปคล่าสุดจาก Agent บนเครื่องนี้ (On-Demand Telemetry Pull)"
-                                                style="font-size: 11.5px; padding: 4.5px 8px; border-radius: 7px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; border-color: #0284c7; color: #0284c7; background: #f0f9ff; transition: all 0.15s;">
-                                            <i class="bi bi-cloud-arrow-down-fill"></i>
-                                            <span>ดึงข้อมูล</span>
-                                        </button>
-
-                                        <!-- BUTTON 1: Open Agent Inspector Modal -->
-                                        <button type="button" class="btn btn-sm" onclick="openAgentInspectionModal({{ $audit->id }})" 
-                                                title="เปิดดูผลการตรวจเช็คสเปคฮาร์ดแวร์เชิงลึก และผลตรวจเกณฑ์มาตรฐาน ICT" 
-                                                style="background: #0284c7; color: #ffffff; font-size: 11.5px; padding: 4.5px 8px; border-radius: 7px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 3px rgba(2,132,199,0.25); border: none;">
-                                            <i class="bi bi-cpu-fill"></i>
-                                            <span>สเปค</span>
-                                        </button>
-
-                                        <!-- BUTTON 2: Side-by-Side Diff Comparison Modal -->
-                                        @if($audit->asset_id)
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openAuditDiffModal({{ json_encode($audit) }}, {{ json_encode($audit->asset) }})" 
-                                                title="เปรียบเทียบสเปคเดิม vs สเปคใหม่ (Diff)" style="font-size: 11.5px; padding: 4.5px 7px; border-radius: 7px;">
-                                            <i class="bi bi-arrow-left-right"></i>
-                                        </button>
-                                        @endif
-
                                         <!-- ACTION BUTTONS: Approve / Reject / Link (Only for pending) -->
                                         @if($audit->status === 'pending')
                                             @if(!$audit->asset_id)
                                                 <button type="button" class="btn btn-sm" onclick="openLinkAssetModal({{ json_encode($audit) }})" 
                                                         title="ค้นหาและเชื่อมโยงผลตรวจสเปคเข้ากับครุภัณฑ์เดิมที่มีในระบบ" 
-                                                        style="background: #0d9488; color: #ffffff; font-size: 11.5px; padding: 4.5px 8px; border-radius: 7px; font-weight: 600; border: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 3px rgba(13,148,136,0.25);">
+                                                        style="background: #0d9488; color: #ffffff; font-size: 11.5px; padding: 4px 8px; border-radius: 7px; font-weight: 600; border: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 3px rgba(13,148,136,0.25); flex-shrink: 0;">
                                                     <i class="bi bi-link-45deg"></i>
                                                     <span>เชื่อมโยง</span>
                                                 </button>
                                                 <button type="button" class="btn btn-sm" onclick="openCreateAssetModal({{ json_encode($audit) }})" 
                                                         title="ลงทะเบียนและเพิ่มเป็นครุภัณฑ์ใหม่ลงระบบคลังทันที" 
-                                                        style="background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: #ffffff; font-size: 11.5px; padding: 4.5px 8px; border-radius: 7px; font-weight: 700; border: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 3px rgba(5,150,105,0.25);">
+                                                        style="background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: #ffffff; font-size: 11.5px; padding: 4px 8px; border-radius: 7px; font-weight: 700; border: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 3px rgba(5,150,105,0.25); flex-shrink: 0;">
                                                     <i class="bi bi-plus-circle-fill"></i>
                                                     <span>+ ครุภัณฑ์</span>
                                                 </button>
                                             @else
                                                 <button type="button" class="btn btn-sm btn-success" onclick="approveSingleAudit({{ $audit->id }}, '{{ addslashes($audit->hostname ?: '-') }}')" 
-                                                        title="อนุมัติและอัปเดตสเปคลงครุภัณฑ์ทันที" style="font-size: 11.5px; padding: 4.5px 8px; border-radius: 7px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;">
+                                                        title="อนุมัติและอัปเดตสเปคลงครุภัณฑ์ทันที" style="font-size: 11.5px; padding: 4px 9px; border-radius: 7px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; box-shadow: 0 1px 3px rgba(16,185,129,0.3);">
                                                     <i class="bi bi-check-lg"></i>
                                                     <span>อนุมัติ</span>
                                                 </button>
                                             @endif
-                                            <button type="button" class="btn btn-sm btn-outline-warning" onclick="rejectSingleAudit({{ $audit->id }}, '{{ addslashes($audit->hostname ?: '-') }}')" 
-                                                    title="ปฏิเสธรายการนี้" style="font-size: 11.5px; padding: 4.5px 7px; border-radius: 7px; border-color: #f59e0b; color: #b45309;">
-                                                <i class="bi bi-x-lg"></i>
-                                            </button>
                                         @endif
 
-                                        <!-- ACTION BUTTON: Delete (With Confirmation) -->
+                                        <!-- BUTTON 1: Open Agent Inspector Modal -->
+                                        <button type="button" class="btn btn-sm" onclick="openAgentInspectionModal({{ $audit->id }})" 
+                                                title="เปิดดูผลการตรวจเช็คสเปคฮาร์ดแวร์เชิงลึก และผลตรวจเกณฑ์มาตรฐาน ICT" 
+                                                style="background: #0284c7; color: #ffffff; font-size: 11.5px; padding: 4px 8px; border-radius: 7px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 3px rgba(2,132,199,0.25); border: none; flex-shrink: 0;">
+                                            <i class="bi bi-cpu-fill"></i>
+                                            <span>สเปค</span>
+                                        </button>
+
+                                        <!-- BUTTON 0: Pull Telemetry from this machine (On-Demand Icon) -->
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-scan-{{ $audit->id }}"
+                                                onclick="triggerSingleScan({{ $audit->id }}, '{{ addslashes($audit->hostname ?: '-') }}')"
+                                                title="ดึงข้อมูลสเปคล่าสุดจาก Agent บนเครื่องนี้เดี๋ยวนี้"
+                                                style="width: 29px; height: 29px; padding: 0; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; background: #f0f9ff; border-color: #7dd3fc; color: #0284c7;">
+                                            <i class="bi bi-cloud-arrow-down-fill" style="font-size: 13px;"></i>
+                                        </button>
+
+                                        <!-- BUTTON 2: Side-by-Side Diff Comparison Modal (Icon) -->
+                                        @if($audit->asset_id)
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openAuditDiffModal({{ json_encode($audit) }}, {{ json_encode($audit->asset) }})" 
+                                                title="เปรียบเทียบสเปคเดิม vs สเปคใหม่ (Diff)" style="width: 29px; height: 29px; padding: 0; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="bi bi-arrow-left-right" style="font-size: 12px;"></i>
+                                        </button>
+                                        @endif
+
+                                        <!-- ACTION BUTTON: Reject (Icon) -->
+                                        @if($audit->status === 'pending')
+                                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="rejectSingleAudit({{ $audit->id }}, '{{ addslashes($audit->hostname ?: '-') }}')" 
+                                                title="ปฏิเสธรายการนี้" style="width: 29px; height: 29px; padding: 0; border-radius: 7px; border-color: #fcd34d; color: #b45309; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="bi bi-x-lg" style="font-size: 12px;"></i>
+                                        </button>
+                                        @endif
+
+                                        <!-- ACTION BUTTON: Delete (Icon with Confirmation) -->
                                         <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSingleAudit({{ $audit->id }}, '{{ addslashes($audit->hostname ?: ($audit->asset ? $audit->asset->name : 'เครื่อง ID #' . $audit->id)) }}')" 
-                                                title="ลบข้อมูลการตรวจนับนี้ออกจากระบบ" style="font-size: 11.5px; padding: 4.5px 7px; border-radius: 7px;">
-                                            <i class="bi bi-trash"></i>
+                                                title="ลบเฉพาะข้อมูลสเปกที่ได้รับนี้ (ไม่กระทบครุภัณฑ์ในคลัง)" style="width: 29px; height: 29px; padding: 0; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; border-color: #fca5a5;">
+                                            <i class="bi bi-trash" style="font-size: 13px;"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -768,10 +774,11 @@
                                         <span>ดึงสเปก</span>
                                     </button>
                                     @if(!empty($agent['audit_id']))
-                                        <a href="{{ route('hardware-audits.show', $agent['audit_id']) }}" class="btn btn-light btn-sm text-secondary border" 
-                                           title="ดูประวัติการตรวจนับ" style="border-radius: 8px; padding: 4px 8px; font-size: 11.5px;">
+                                        <button type="button" class="btn btn-light btn-sm text-secondary border" 
+                                                onclick="openAgentInspectionModal({{ $agent['audit_id'] }})"
+                                                title="ดูข้อมูลสเปก / ผลการตรวจนับ" style="border-radius: 8px; padding: 4px 8px; font-size: 11.5px;">
                                             <i class="bi bi-eye"></i>
-                                        </a>
+                                        </button>
                                     @endif
                                 </div>
                             </td>

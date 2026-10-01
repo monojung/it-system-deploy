@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.5.7'),
+    'version' => env('APP_VERSION', '2.5.8'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-10-01',
-    'build' => '20261001.1',
+    'build' => '20261001.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,18 @@ return [
     |
     */
     'changelog' => [
+        '2.5.8' => [
+            'date' => '2026-10-01',
+            'badge' => 'Hotfix: Flare Route Fix, Git Remote Safe Flags & Pending Tab UI Fit',
+            'badge_color' => '#dc2626',
+            'title' => 'แก้ไข Flare RouteNotFoundException, เสริมความทนทาน Git Remote เครือข่าย รพ. (Bypass SSL / Safe Directory) และปรับแต่ง UI ตารางรอตรวจสอบไม่ให้ปุ่มตกกรอบ',
+            'highlights' => [
+                'แก้ไข RouteNotFoundException (FlareApp): เพิ่ม Route Alias hardware-audits.show และปรับปุ่มเปิดดูข้อมูลสเปกในแท็บ Agent Fleet ให้เปิด Inspector Modal ได้ทันทีโดยไม่ติดข้อผิดพลาด Route',
+                'Git Remote Connectivity & SSL Bypass: แก้ไขปัญหาไม่สามารถเชื่อมต่อกับ Git Remote โดยเพิ่มค่า safe.directory=*, http.sslVerify=false และส่ง Environment Variables (HOME, PATH, Proxy) ครบถ้วนแม้รันผ่าน PHP-FPM บน Linux',
+                'HTTPS cURL Fallback: เพิ่มระบบตรวจสอบเวอร์ชันล่าสุดผ่าน HTTPS Raw Fallback อัตโนมัติเมื่อคำสั่ง Git CLI บนเซิร์ฟเวอร์ถูกจำกัดโดย Firewall เครือข่าย รพ.',
+                'ปรับปรุง UI หน้าตรวจสอบสเปก (Pending Tab): ปรับขนาดคอลัมน์การจัดการ (Actions) และปรับปุ่มคำสั่งเสริมให้เป็น Compact Icon Button (29x29px) จัดระเบียบการแสดงผลไม่ให้ปุ่มตกกรอบหรือล้นขอบจอ',
+            ],
+        ],
         '2.5.7' => [
             'date' => '2026-10-01',
             'badge' => 'Unified 1-Click Update, Agent Fleet Multi-Select & Audit Deletion Clarification',

@@ -394,19 +394,46 @@ class SystemUpdateService
                 // ignore
             }
 
+            // Attempt fallback via direct HTTP(S) query to GitHub raw content
+            // to still retrieve the latest remote version information if Git CLI network is blocked
+            $currentVersion = function_exists('app_version') ? app_version() : config('version.version', '2.5.7');
+            $fallbackVersionInfo = $this->fetchRemoteVersionViaHttp($targetRepoUrl, $targetBranch);
+            $hasNewerVersion = false;
+            $remoteVersion = null;
+            $remoteBuild = null;
+            $remoteReleaseDate = null;
+            $remoteReleaseName = null;
+
+            if ($fallbackVersionInfo && !empty($fallbackVersionInfo['remote_version'])) {
+                $remoteVersion = $fallbackVersionInfo['remote_version'];
+                $remoteBuild = $fallbackVersionInfo['remote_build'] ?? null;
+                $remoteReleaseDate = $fallbackVersionInfo['remote_release_date'] ?? null;
+                $remoteReleaseName = $fallbackVersionInfo['remote_release_name'] ?? null;
+                $hasNewerVersion = version_compare($remoteVersion, $currentVersion, '>');
+            }
+
             $rawError = $e->getMessage();
             $errorType = 'เครือข่ายหรือสิทธิ์การเข้าถึง';
-            $hint = 'กรุณาตรวจสอบการเชื่อมต่อเครือข่ายของเซิร์ฟเวอร์';
+            $hint = 'กรุณาตรวจสอบการเชื่อมต่อเครือข่ายของเซิร์ฟเวอร์ หรือใช้วิธีอัปเดตผ่านไฟล์แพตช์ ZIP ด้านล่าง';
 
             if (str_contains($rawError, 'not recognized as an internal or external command') || str_contains($rawError, 'git: command not found') || str_contains($rawError, 'No such file or directory')) {
                 $errorType = 'ไม่พบโปรแกรม Git บนสภาพแวดล้อมของเซิร์ฟเวอร์ (Git Not Found in PATH)';
-                $hint = 'เซิร์ฟเวอร์เว็บ (Apache/XAMPP) ไม่พบคำสั่ง git ใน System PATH กรุณาระบุ GIT_PATH ในไฟล์ .env เช่น GIT_PATH="C:\\Program Files\\Git\\cmd\\git.exe" หรือเพิ่ม Git ลงใน PATH ของระบบ';
+                $hint = 'เซิร์ฟเวอร์เว็บไม่พบคำสั่ง git ใน System PATH สามารถอัปเดตผ่านไฟล์แพตช์ ZIP ได้ทันทีโดยไม่ต้องติดตั้ง Git';
+            } elseif (str_contains($rawError, 'detected dubious ownership')) {
+                $errorType = 'สิทธิ์การครอบครองโฟลเดอร์ Git (Dubious Ownership)';
+                $hint = 'ระบบได้เปิดการข้าม safe.directory=* เรียบร้อยแล้ว กรุณากดปุ่มตรวจสอบเวอร์ชันใหม่อีกครั้ง';
+            } elseif (str_contains($rawError, 'certificate') || str_contains($rawError, 'SSL')) {
+                $errorType = 'การตรวจสอบใบรับรองความปลอดภัย SSL (Firewall SSL Inspection)';
+                $hint = 'ระบบได้ตั้งค่าข้ามการตรวจ SSL (http.sslVerify=false) เรียบร้อยแล้ว กรุณากดตรวจสอบอีกครั้ง';
             } elseif (str_contains($rawError, 'Could not resolve host')) {
                 $errorType = 'ปัญหา DNS หรือเซิร์ฟเวอร์ไม่สามารถออกอินเทอร์เน็ตได้';
-                $hint = 'เซิร์ฟเวอร์ไม่สามารถแปลงชื่อ github.com ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต, DNS หรือการตั้งค่า Proxy ของโรงพยาบาล';
+                $hint = 'เซิร์ฟเวอร์ไม่สามารถแปลงชื่อ github.com ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรืออัปเดตผ่านไฟล์แพตช์ ZIP';
             } elseif (str_contains($rawError, 'Connection timed out') || str_contains($rawError, 'timed out')) {
                 $errorType = 'หมดเวลาการเชื่อมต่อ (Connection Timeout)';
-                $hint = 'การเชื่อมต่อไปยัง GitHub ใช้เวลานานเกินกำหนด อาจเกิดจาก Firewall หรือเน็ตช้า';
+                $hint = 'การเชื่อมต่อไปยัง GitHub ใช้เวลานานเกินกำหนด อาจเกิดจาก Firewall โรงพยาบาล แนะนำให้อัปเดตผ่านไฟล์แพตช์ ZIP';
+            } elseif (str_contains($rawError, 'Failed to connect') || str_contains($rawError, 'Network is unreachable') || str_contains($rawError, 'Connection refused')) {
+                $errorType = 'เครือข่ายเซิร์ฟเวอร์ถูกจำกัดการเข้าถึงอินเทอร์เน็ตภายนอก';
+                $hint = 'ไฟร์วอลล์ของ รพ. ไม่อนุญาตให้เซิร์ฟเวอร์เข้าถึง GitHub แนะนำให้อัปเดตผ่านไฟล์แพตช์ ZIP (Manual Offline Patch) ด้านล่าง';
             } elseif (str_contains($rawError, 'Permission denied') || str_contains($rawError, 'Authentication failed')) {
                 $errorType = 'สิทธิ์การเข้าถึง Git Repository ไม่ถูกต้อง';
                 $hint = 'กรุณาตรวจสอบสิทธิ์ของ SSH Key หรือ Personal Access Token (PAT) สำหรับเข้าถึง Repository';
@@ -418,11 +445,19 @@ class SystemUpdateService
                 'target_repo' => $targetRepoUrl,
                 'target_branch' => $targetBranch,
                 'remote_name' => $remoteName ?? 'deploy',
-                'has_update' => false,
+                'has_update' => $hasNewerVersion,
                 'local_commit' => $localCommit,
                 'short_local_commit' => substr($localCommit, 0, 7),
                 'remote_commit' => '',
                 'short_remote_commit' => 'unknown',
+                'current_version' => $currentVersion,
+                'current_build' => config('version.build', '20261001.1'),
+                'remote_version' => $remoteVersion,
+                'remote_build' => $remoteBuild,
+                'remote_release_date' => $remoteReleaseDate,
+                'remote_release_name' => $remoteReleaseName,
+                'has_newer_version' => $hasNewerVersion,
+                'http_fallback' => !empty($remoteVersion),
                 'error' => $rawError,
                 'error_type' => $errorType,
                 'hint' => $hint,
@@ -431,6 +466,64 @@ class SystemUpdateService
                 'last_checked_at' => now()->toDateTimeString(),
             ];
         }
+    }
+
+    /**
+     * Fallback to query latest remote version metadata over raw HTTP/cURL
+     */
+    protected function fetchRemoteVersionViaHttp(string $targetRepoUrl, string $targetBranch = 'main'): ?array
+    {
+        try {
+            $cleanUrl = preg_replace('/\.git$/', '', trim($targetRepoUrl));
+            if (preg_match('#github\.com/([^/]+)/([^/]+)#', $cleanUrl, $m)) {
+                $owner = $m[1];
+                $repo = $m[2];
+                $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$targetBranch}/config/version.php";
+
+                $content = null;
+                if (function_exists('curl_init')) {
+                    $ch = curl_init($rawUrl);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+                    curl_setopt($ch, CURLOPT_USERAGENT, 'THC-Hospital-IT-Platform/SystemUpdate');
+                    $content = curl_exec($ch);
+                    curl_close($ch);
+                }
+
+                if (empty($content) && ini_get('allow_url_fopen')) {
+                    $ctx = stream_context_create([
+                        'ssl' => ['verify_peer' => false, 'verify_peer_name' => false],
+                        'http' => ['timeout' => 8, 'user_agent' => 'THC-Hospital-IT-Platform/SystemUpdate'],
+                    ]);
+                    $content = @file_get_contents($rawUrl, false, $ctx);
+                }
+
+                if (!empty($content)) {
+                    $res = [];
+                    if (preg_match("/'version'\s*=>\s*env\(['\"]APP_VERSION['\"],\s*['\"]([^'\"]+)['\"]\)/", $content, $vm) ||
+                        preg_match("/'version'\s*=>\s*['\"]([^'\"]+)['\"]/", $content, $vm)) {
+                        $res['remote_version'] = $vm[1];
+                    }
+                    if (preg_match("/'build'\s*=>\s*['\"]([^'\"]+)['\"]/", $content, $bm)) {
+                        $res['remote_build'] = $bm[1];
+                    }
+                    if (preg_match("/'release_date'\s*=>\s*['\"]([^'\"]+)['\"]/", $content, $dm)) {
+                        $res['remote_release_date'] = $dm[1];
+                    }
+                    if (preg_match("/'release_name'\s*=>\s*['\"]([^'\"]+)['\"]/", $content, $nm)) {
+                        $res['remote_release_name'] = $nm[1];
+                    }
+                    return $res;
+                }
+            }
+        } catch (\Throwable $t) {
+            // Ignore fallback errors
+        }
+
+        return null;
     }
 
     /**
@@ -931,12 +1024,20 @@ class SystemUpdateService
     }
 
     /**
-     * Prepare environment variables for running processes (ensuring Git paths are in PATH)
+     * Prepare environment variables for running processes (ensuring Git paths, HOME and safe flags)
      */
     protected function getProcessEnv(): array
     {
-        $env = $_ENV;
-        $currentPath = getenv('PATH') ?: '';
+        $systemEnv = [];
+        if (function_exists('getenv')) {
+            $allEnv = getenv();
+            if (is_array($allEnv)) {
+                $systemEnv = $allEnv;
+            }
+        }
+        $env = array_merge($systemEnv, $_SERVER, $_ENV);
+
+        $currentPath = $env['PATH'] ?? (getenv('PATH') ?: '');
 
         if (PHP_OS_FAMILY === 'Windows') {
             $gitDirs = [
@@ -959,9 +1060,33 @@ class SystemUpdateService
             if (!empty($extraPaths)) {
                 $currentPath = implode(';', $extraPaths) . ';' . $currentPath;
             }
+        } else {
+            // Linux / Unix: ensure standard binary paths exist
+            $unixPaths = ['/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin'];
+            $existingPaths = explode(':', $currentPath);
+            foreach ($unixPaths as $up) {
+                if (is_dir($up) && !in_array($up, $existingPaths, true)) {
+                    $existingPaths[] = $up;
+                }
+            }
+            $currentPath = implode(':', $existingPaths);
         }
 
         $env['PATH'] = $currentPath;
+
+        // Ensure HOME is defined (critical on Linux PHP-FPM / Apache)
+        if (empty($env['HOME'])) {
+            $docRoot = !empty($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : base_path();
+            $homeCandidate = dirname($docRoot);
+            $env['HOME'] = is_dir($homeCandidate) && is_writable($homeCandidate) ? $homeCandidate : sys_get_temp_dir();
+        }
+
+        // Prevent Git from hanging on interactive prompts and bypass SSL verification issues
+        $env['GIT_TERMINAL_PROMPT'] = '0';
+        $env['GIT_ASKPASS'] = 'echo';
+        $env['SSH_ASKPASS'] = 'echo';
+        $env['GIT_SSL_NO_VERIFY'] = '1';
+
         return $env;
     }
 
@@ -1055,16 +1180,24 @@ class SystemUpdateService
      */
     protected function runProcess(array $command, int $timeout = 30, bool $autoRetryOnLock = true): string
     {
-        if (!empty($command) && $command[0] === 'git') {
+        if (!empty($command) && ($command[0] === 'git' || $command[0] === $this->resolveGitBinary())) {
             $gitBinary = $this->resolveGitBinary();
-            if ($gitBinary !== 'git') {
-                $command[0] = $gitBinary;
-            }
+            $subArgs = array_slice($command, 1);
 
             // Proactively clear stale locks on write commands
-            $subCmd = $command[1] ?? '';
+            $subCmd = $subArgs[0] ?? '';
             if (in_array($subCmd, ['reset', 'checkout', 'pull', 'fetch', 'merge', 'branch', 'init'], true)) {
                 $this->clearGitLocks();
+            }
+
+            // Always inject safe.directory=* and http.sslVerify=false to eliminate ownership and proxy SSL inspection errors
+            if (!in_array('safe.directory=*', $subArgs, true)) {
+                $command = array_merge(
+                    [$gitBinary, '-c', 'safe.directory=*', '-c', 'http.sslVerify=false'],
+                    $subArgs
+                );
+            } else {
+                $command[0] = $gitBinary;
             }
         }
 

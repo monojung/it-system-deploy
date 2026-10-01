@@ -291,6 +291,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::get('/hardware-audits', [HardwareAuditController::class, 'index'])->name('hardware-audits.index');
         Route::get('/hardware-audits/search-assets', [HardwareAuditController::class, 'searchAssetsForLinking'])->name('hardware-audits.search-assets');
         Route::get('/hardware-audits/{id}/inspect', [HardwareAuditController::class, 'inspect'])->name('hardware-audits.inspect');
+        Route::get('/hardware-audits/{id}', [HardwareAuditController::class, 'inspect'])->name('hardware-audits.show');
         Route::post('/hardware-audits/{id}/approve', [HardwareAuditController::class, 'approve'])->name('hardware-audits.approve');
         Route::post('/hardware-audits/{id}/link-asset', [HardwareAuditController::class, 'linkAsset'])->name('hardware-audits.link-asset');
         Route::post('/hardware-audits/{id}/create-asset', [HardwareAuditController::class, 'createAssetFromAudit'])->name('hardware-audits.create-asset');
