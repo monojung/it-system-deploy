@@ -814,16 +814,12 @@ class HardwareAuditController extends Controller
 
         $deviceTypes = DeviceType::orderBy('name')->get();
 
-        // Total devices with installed agent
-        $agentInstalledCount = HardwareAudit::where(function($q) {
-                $q->whereNotNull('client_agent_version')
-                  ->orWhereNotNull('hardware_id');
-            })
-            ->distinct('hostname')
-            ->count('hostname');
-        if ($agentInstalledCount === 0) {
-            $agentInstalledCount = HardwareAudit::distinct('hostname')->count('hostname');
-        }
+        // Compiled Agent Fleet (Installed Machines)
+        $agentFleet = $this->getAgentFleet();
+        $agentTotalCount = count($agentFleet);
+        $agentOnlineCount = count(array_filter($agentFleet, fn($a) => !empty($a['is_online'])));
+        $agentOfflineCount = max(0, $agentTotalCount - $agentOnlineCount);
+        $agentInstalledCount = $agentTotalCount;
 
         return view('hardware_audits.index', compact(
             'fiscalYear',
@@ -846,7 +842,11 @@ class HardwareAuditController extends Controller
             'osDistribution',
             'storageDistribution',
             'agedOver5YearsCount',
-            'agentInstalledCount'
+            'agentInstalledCount',
+            'agentFleet',
+            'agentTotalCount',
+            'agentOnlineCount',
+            'agentOfflineCount'
         ));
     }
 
@@ -1323,7 +1323,7 @@ class HardwareAuditController extends Controller
         AuditLog::record(
             'delete',
             'hardware_audits',
-            "ลบรายการตรวจนับสเปคเครื่อง {$hostname} ประจำปีงบประมาณ {$fiscalYear} (HardwareID: " . ($audit->hardware_id ?: '-') . ")",
+            "ลบข้อมูลผลตรวจสเปกที่ได้รับของเครื่อง {$hostname} ประจำปีงบประมาณ {$fiscalYear} (ลบเฉพาะข้อมูลสเปกที่ได้รับ ไม่กระทบครุภัณฑ์ในคลัง)",
             $audit,
             null,
             null,
@@ -1333,14 +1333,16 @@ class HardwareAuditController extends Controller
 
         $audit->delete();
 
+        $successMsg = "ลบข้อมูลผลตรวจสเปกที่ได้รับของ '{$hostname}' เรียบร้อยแล้ว (ข้อมูลครุภัณฑ์ในทะเบียนคลังยังคงอยู่ตามปกติ)";
+
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "ลบรายการตรวจนับสเปคของ '{$hostname}' เรียบร้อยแล้ว",
+                'message' => $successMsg,
             ]);
         }
 
-        return back()->with('success', "ลบรายการตรวจนับสเปคของ '{$hostname}' เรียบร้อยแล้ว");
+        return back()->with('success', $successMsg);
     }
 
     /**
@@ -1365,7 +1367,7 @@ class HardwareAuditController extends Controller
                 AuditLog::record(
                     'delete',
                     'hardware_audits',
-                    "ลบรายการตรวจนับสเปคเครื่อง {$audit->hostname} ประจำปีงบประมาณ {$audit->fiscal_year}",
+                    "ลบข้อมูลผลตรวจสเปกที่ได้รับของเครื่อง {$audit->hostname} ประจำปีงบประมาณ {$audit->fiscal_year} (ลบเฉพาะผลตรวจสเปก)",
                     $audit,
                     null,
                     null,
@@ -1377,7 +1379,7 @@ class HardwareAuditController extends Controller
             }
         }
 
-        return back()->with('success', "ลบรายการตรวจนับที่เลือกสำเร็จจำนวน {$count} รายการ");
+        return back()->with('success', "ลบข้อมูลผลตรวจสเปกที่ได้รับที่เลือกสำเร็จจำนวน {$count} รายการ (ข้อมูลครุภัณฑ์ในทะเบียนคลังยังคงอยู่ตามปกติ)");
     }
 
     /**
@@ -1768,6 +1770,188 @@ class HardwareAuditController extends Controller
             'total_targets' => count($targets),
             'targets' => $targets,
         ]);
+    }
+
+    /**
+     * Admin Action: Trigger remote scan for Selected Agent Machines (Batch Telemetry Pull)
+     */
+    public function triggerScanBatch(Request $request)
+    {
+        $user = Auth::user();
+        if ($user && $user->isUser()) {
+            abort(403, 'เฉพาะเจ้าหน้าที่ไอทีหรือแอดมินเท่านั้นที่มีสิทธิ์สั่งสแกนเครื่อง');
+        }
+
+        $targets = $request->input('targets', []);
+        if (empty($targets) || !is_array($targets)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'กรุณาเลือกเครื่องที่ต้องการดึงข้อมูลอย่างน้อย 1 เครื่อง',
+            ], 422);
+        }
+
+        $fiscalYear = (int)$request->input('fiscal_year', $this->getCurrentFiscalYear());
+        $batchId = 'batch_sel_' . Str::random(10);
+        $dispatched = 0;
+        $targetNames = [];
+
+        foreach ($targets as $target) {
+            $hostname = trim((string)($target['hostname'] ?? ''));
+            $hwid = strtoupper(trim((string)($target['hardware_id'] ?? '')));
+            $auditId = !empty($target['audit_id']) ? (int)$target['audit_id'] : null;
+            $assetId = !empty($target['asset_id']) ? (int)$target['asset_id'] : null;
+
+            if (empty($hostname) && empty($hwid)) {
+                continue;
+            }
+
+            // Deduplicate: avoid queuing duplicate scan commands within 45 seconds
+            $existing = AgentCommand::where(function ($q) use ($hwid, $hostname, $auditId) {
+                if ($auditId) $q->where('target_audit_id', $auditId);
+                if ($hwid) $q->orWhere('target_hardware_id', $hwid);
+                if ($hostname) $q->orWhere('target_hostname', $hostname);
+            })
+            ->whereIn('status', ['pending', 'processing'])
+            ->where('created_at', '>=', now()->subSeconds(45))
+            ->first();
+
+            if (!$existing) {
+                AgentCommand::create([
+                    'command' => 'scan',
+                    'batch_id' => $batchId,
+                    'target_type' => 'single',
+                    'target_hardware_id' => $hwid ?: null,
+                    'target_hostname' => $hostname ?: null,
+                    'target_audit_id' => $auditId ?: null,
+                    'target_asset_id' => $assetId ?: null,
+                    'status' => 'pending',
+                    'requested_by' => Auth::id(),
+                    'parameters' => [
+                        'fiscal_year' => $fiscalYear,
+                        'trigger_source' => 'web_fleet_selection_action',
+                    ],
+                ]);
+            }
+            $dispatched++;
+            $targetNames[] = $hostname ?: $hwid;
+        }
+
+        $preview = implode(', ', array_slice($targetNames, 0, 3)) . (count($targetNames) > 3 ? ' และอื่นๆ รวม ' . count($targetNames) . ' เครื่อง' : '');
+        AuditLog::record(
+            'scan_trigger_batch',
+            'hardware_audits',
+            "สั่งดึงข้อมูลสเปคเครื่องลูกข่ายที่เลือกจำนวน {$dispatched} เครื่อง ({$preview})",
+            null
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "ส่งคำสั่งดึงข้อมูลไปยัง {$dispatched} เครื่องที่เลือกเรียบร้อยแล้ว (รอเครื่องลูกข่ายตอบกลับภายใน 3-5 วินาที)",
+            'batch_id' => $batchId,
+            'count' => $dispatched,
+        ]);
+    }
+
+    /**
+     * Compile complete list of all machines with agent installed (Agent Fleet)
+     */
+    public function getAgentFleet(): array
+    {
+        $fleet = [];
+        $registry = Cache::get('agent_online_registry', []);
+        if (!is_array($registry)) $registry = [];
+
+        // 1. Collect all audits ordered by newest first
+        $audits = HardwareAudit::with('asset.department')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $seenKeys = [];
+
+        foreach ($audits as $audit) {
+            $rawKey = $audit->hardware_id ?: $audit->hostname ?: '';
+            $key = strtoupper(trim($rawKey));
+            if (empty($key) || isset($seenKeys[$key])) {
+                continue;
+            }
+            $seenKeys[$key] = true;
+
+            $isOnline = $audit->is_online;
+            $regInfo = $registry[$key] ?? null;
+            if (!$regInfo && $audit->hostname) {
+                $regInfo = $registry[strtoupper(trim($audit->hostname))] ?? null;
+            }
+            if ($regInfo) {
+                $isOnline = true;
+            }
+
+            $fleet[$key] = [
+                'key' => $key,
+                'audit_id' => $audit->id,
+                'asset_id' => $audit->asset_id,
+                'hostname' => $audit->hostname ?: ($regInfo['hostname'] ?? 'Unknown Host'),
+                'hardware_id' => $audit->hardware_id ?: ($regInfo['hwid'] ?? ''),
+                'ip_address' => $audit->ip_address ?: ($regInfo['ip'] ?? ''),
+                'mac_address' => $audit->mac_address ?: ($regInfo['mac'] ?? ''),
+                'client_version' => $audit->client_agent_version ?: ($regInfo['version'] ?? '2.5.6'),
+                'is_online' => $isOnline,
+                'last_seen' => $isOnline ? 'กำลังออนไลน์ (เมื่อสักครู่)' : ($audit->created_at ? $audit->created_at->diffForHumans() : '-'),
+                'last_seen_raw' => $audit->created_at ? $audit->created_at->toIso8601String() : null,
+                'asset_code' => $audit->asset ? $audit->asset->asset_code : null,
+                'asset_name' => $audit->asset ? $audit->asset->name : null,
+                'department_name' => $audit->asset && $audit->asset->department ? $audit->asset->department->name : 'ยังไม่ผูกครุภัณฑ์',
+                'custodian_name' => $audit->asset ? $audit->asset->custodian_name : null,
+                'cpu_model' => $audit->cpu_model ?: '-',
+                'ram_capacity' => $audit->ram_capacity,
+                'storage_type' => $audit->storage_type ?: 'Storage',
+                'storage_capacity' => $audit->storage_capacity ?: '-',
+                'os_name' => $audit->os_name ?: '-',
+                'device_type_code' => $audit->device_type_code ?: ($audit->asset && $audit->asset->deviceType ? $audit->asset->deviceType->code : 'PC'),
+            ];
+        }
+
+        // 2. Add online agents currently active in Cache that might not have an audit record yet
+        foreach ($registry as $rKey => $reg) {
+            $uKey = strtoupper(trim($rKey));
+            if (!isset($fleet[$uKey])) {
+                $fleet[$uKey] = [
+                    'key' => $uKey,
+                    'audit_id' => null,
+                    'asset_id' => null,
+                    'hostname' => $reg['hostname'] ?? $uKey,
+                    'hardware_id' => $reg['hwid'] ?? '',
+                    'ip_address' => $reg['ip'] ?? '',
+                    'mac_address' => $reg['mac'] ?? '',
+                    'client_version' => $reg['version'] ?? '2.5.6',
+                    'is_online' => true,
+                    'last_seen' => 'กำลังออนไลน์ (เมื่อสักครู่)',
+                    'last_seen_raw' => $reg['last_seen'] ?? now()->toIso8601String(),
+                    'asset_code' => null,
+                    'asset_name' => null,
+                    'department_name' => 'เครื่องตรวจพบใหม่ (รอผูกครุภัณฑ์)',
+                    'custodian_name' => null,
+                    'cpu_model' => 'กำลังออนไลน์',
+                    'ram_capacity' => null,
+                    'storage_type' => null,
+                    'storage_capacity' => null,
+                    'os_name' => 'Agent Active',
+                    'device_type_code' => 'PC',
+                ];
+            } else {
+                $fleet[$uKey]['is_online'] = true;
+                $fleet[$uKey]['last_seen'] = 'กำลังออนไลน์ (เมื่อสักครู่)';
+            }
+        }
+
+        // Sort: Online machines first, then alphabetically by hostname
+        uasort($fleet, function ($a, $b) {
+            if ($a['is_online'] !== $b['is_online']) {
+                return $a['is_online'] ? -1 : 1;
+            }
+            return strcasecmp($a['hostname'], $b['hostname']);
+        });
+
+        return array_values($fleet);
     }
 
     /**

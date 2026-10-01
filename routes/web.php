@@ -299,6 +299,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::post('/hardware-audits/{id}/reject', [HardwareAuditController::class, 'reject'])->name('hardware-audits.reject');
         Route::delete('/hardware-audits/{id}', [HardwareAuditController::class, 'destroy'])->name('hardware-audits.destroy');
         Route::post('/hardware-audits/trigger-scan-all', [HardwareAuditController::class, 'triggerScanAll'])->name('hardware-audits.trigger-scan-all');
+        Route::post('/hardware-audits/trigger-scan-batch', [HardwareAuditController::class, 'triggerScanBatch'])->name('hardware-audits.trigger-scan-batch');
         Route::post('/hardware-audits/{id}/trigger-scan', [HardwareAuditController::class, 'triggerScanSingle'])->name('hardware-audits.trigger-scan-single');
         Route::get('/hardware-audits/command-status', [HardwareAuditController::class, 'getCommandStatus'])->name('hardware-audits.command-status');
         Route::get('/hardware-audits/online-status', [HardwareAuditController::class, 'getOnlineStatus'])->name('hardware-audits.online-status');

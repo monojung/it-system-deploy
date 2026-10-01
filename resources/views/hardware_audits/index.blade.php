@@ -217,7 +217,18 @@
                 @endif
             </a>
 
-            {{-- TAB 2: DEPARTMENT TRACKER --}}
+            {{-- TAB 2: AGENT FLEET --}}
+            <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'agents']) }}" 
+               class="tab-nav-btn {{ $tab === 'agents' ? 'active' : '' }}"
+               style="padding: 12px 18px; font-size: 13.5px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; border-radius: 10px 10px 0 0; border: 1px solid {{ $tab === 'agents' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'agents' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'agents' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'agents' ? '#0f766e' : '#64748b' }}; transition: all 0.15s;">
+                <i class="bi bi-display-fill" style="color: {{ $tab === 'agents' ? '#0f766e' : '#94a3b8' }};"></i>
+                <span>เครื่องที่ติดตั้ง Agent</span>
+                <span class="badge" style="background: {{ $agentOnlineCount > 0 ? '#10b981' : '#64748b' }}; color: #ffffff; font-size: 11px; padding: 2px 7px; border-radius: 99px; font-weight: 700;">
+                    <span id="tabAgentOnlineCount">{{ $agentOnlineCount }}</span>/{{ $agentTotalCount }}
+                </span>
+            </a>
+
+            {{-- TAB 3: DEPARTMENT TRACKER --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'departments']) }}" 
                class="tab-nav-btn {{ $tab === 'departments' ? 'active' : '' }}"
                style="padding: 12px 18px; font-size: 13.5px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; border-radius: 10px 10px 0 0; border: 1px solid {{ $tab === 'departments' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'departments' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'departments' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'departments' ? '#0f766e' : '#64748b' }}; transition: all 0.15s;">
@@ -559,7 +570,235 @@
         </div>
         @endif
 
-        <!-- TAB CONTENT 2: DEPARTMENT TRACKER -->
+        <!-- TAB CONTENT: AGENT FLEET (รายการเครื่องที่ติดตั้ง Agent ทั้งหมด & สั่งดึงสเปก) -->
+        @if($tab === 'agents')
+        <div style="padding: 22px;">
+            <!-- Header Summary & Quick Controls -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+                <div>
+                    <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-display-fill text-primary"></i> 
+                        <span>รายการเครื่องที่ติดตั้ง Agent ทั้งหมด (Agent Fleet)</span>
+                        <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 8px;">
+                            {{ $agentTotalCount }} เครื่อง
+                        </span>
+                    </h3>
+                    <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0;">
+                        มอนิเตอร์สถานะการออนไลน์ และสามารถเลือกเครื่องที่ต้องการเพื่อสั่งดึงข้อมูลสเปกปัจจุบันเข้าสู่ระบบได้ทันที
+                    </p>
+                </div>
+
+                <!-- Live Status Indicators -->
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 6px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: #065f46;">
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2px rgba(16,185,129,0.3);"></span>
+                        <span>ออนไลน์:</span>
+                        <strong id="fleetOnlineCountDisplay">{{ $agentOnlineCount }}</strong> เครื่อง
+                    </div>
+                    <div style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: #475569;">
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span>
+                        <span>ออฟไลน์:</span>
+                        <strong>{{ $agentOfflineCount }}</strong> เครื่อง
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbar: Search, Filter, Multi-select Action -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 12px;">
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <!-- Live Search Input -->
+                    <div style="position: relative; width: 280px;">
+                        <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+                        <input type="text" id="fleetSearchInput" onkeyup="filterFleetRows()" placeholder="ค้นหา Hostname, IP, MAC, ครุภัณฑ์..." 
+                               class="form-control form-control-sm" style="padding-left: 32px; border-radius: 8px; height: 38px; font-size: 13px;">
+                    </div>
+
+                    <!-- Filter Buttons -->
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-secondary active" id="fleetFilterAll" onclick="setFleetFilter('all')" style="height: 38px; font-weight: 600;">
+                            ทั้งหมด ({{ $agentTotalCount }})
+                        </button>
+                        <button type="button" class="btn btn-outline-success" id="fleetFilterOnline" onclick="setFleetFilter('online')" style="height: 38px; font-weight: 600;">
+                            🟢 ออนไลน์ ({{ $agentOnlineCount }})
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="fleetFilterOffline" onclick="setFleetFilter('offline')" style="height: 38px; font-weight: 600;">
+                            ⚪ ออฟไลน์ ({{ $agentOfflineCount }})
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Batch Actions for Fleet -->
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button type="button" id="btnSelectedFleetScan" onclick="triggerSelectedFleetScan()" class="btn btn-primary btn-sm" disabled
+                            style="height: 38px; padding: 0 16px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(15, 118, 110, 0.25);">
+                        <i class="bi bi-cloud-arrow-down-fill" style="font-size: 15px;"></i>
+                        <span>ดึงข้อมูลสเปกเครื่องที่เลือก</span>
+                        <span id="selectedFleetBadge" class="badge bg-white text-primary" style="font-size: 11px; padding: 2px 7px; border-radius: 99px;">0</span>
+                    </button>
+
+                    @if($agentOnlineCount > 0)
+                    <button type="button" onclick="triggerAllOnlineFleetScan()" class="btn btn-outline-success btn-sm"
+                            style="height: 38px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
+                        <i class="bi bi-broadcast" style="font-size: 15px;"></i>
+                        <span>ดึงข้อมูลทุกเครื่องที่ออนไลน์ ({{ $agentOnlineCount }})</span>
+                    </button>
+                    @endif
+
+                    <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'agents']) }}" class="btn btn-outline-secondary btn-sm" title="รีเฟรชสถานะ" style="height: 38px; padding: 0 12px; border-radius: 8px; display: inline-flex; align-items: center;">
+                        <i class="bi bi-arrow-clockwise" style="font-size: 15px;"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Fleet Table -->
+            @if(count($agentFleet) > 0)
+            <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+                <table class="table table-hover align-middle mb-0" id="fleetTable" style="font-size: 13px;">
+                    <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 700;">
+                        <tr>
+                            <th style="width: 38px; text-align: center;">
+                                <input type="checkbox" id="fleetSelectAll" onchange="toggleFleetSelectAll(this)" style="cursor: pointer;" title="เลือกทั้งหมด">
+                            </th>
+                            <th style="width: 140px;">สถานะการเชื่อมต่อ</th>
+                            <th style="min-width: 190px;">ชื่อเครื่อง & เครือข่าย</th>
+                            <th style="min-width: 180px;">ครุภัณฑ์ & แผนก</th>
+                            <th style="min-width: 230px;">สเปกปัจจุบันที่ตรวจพบ</th>
+                            <th style="width: 130px; text-align: right;">ดึงข้อมูลสเปก</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($agentFleet as $agent)
+                        <tr class="fleet-row" data-online="{{ $agent['is_online'] ? 'true' : 'false' }}" data-search="{{ strtolower($agent['hostname'] . ' ' . $agent['ip_address'] . ' ' . $agent['mac_address'] . ' ' . $agent['hardware_id'] . ' ' . ($agent['asset_code'] ?? '') . ' ' . ($agent['asset_name'] ?? '') . ' ' . ($agent['department_name'] ?? '') . ' ' . ($agent['cpu_model'] ?? '')) }}">
+                            <!-- Checkbox -->
+                            <td style="text-align: center;">
+                                <input type="checkbox" class="fleet-item-chk" 
+                                       value="{{ $agent['key'] }}"
+                                       data-hostname="{{ $agent['hostname'] }}"
+                                       data-hwid="{{ $agent['hardware_id'] }}"
+                                       data-audit-id="{{ $agent['audit_id'] ?? '' }}"
+                                       data-asset-id="{{ $agent['asset_id'] ?? '' }}"
+                                       data-online="{{ $agent['is_online'] ? 'true' : 'false' }}"
+                                       onchange="updateFleetSelectionCount()"
+                                       style="cursor: pointer;">
+                            </td>
+
+                            <!-- Connection Status -->
+                            <td>
+                                @if($agent['is_online'])
+                                    <span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-size: 11.5px; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+                                        <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 2px rgba(22,163,74,0.3);"></span>
+                                        <span>ออนไลน์</span>
+                                    </span>
+                                @else
+                                    <span class="badge" style="background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; font-size: 11.5px; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+                                        <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #94a3b8;"></span>
+                                        <span>ออฟไลน์</span>
+                                    </span>
+                                @endif
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                    {{ $agent['last_seen'] }}
+                                </div>
+                            </td>
+
+                            <!-- Hostname & Network -->
+                            <td>
+                                <div style="font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                                    <i class="bi bi-display text-primary" style="font-size: 14px;"></i>
+                                    <span>{{ $agent['hostname'] }}</span>
+                                </div>
+                                <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+                                    IP: <code>{{ $agent['ip_address'] ?: '-' }}</code>
+                                    @if(!empty($agent['mac_address']))
+                                        &bull; MAC: <code>{{ $agent['mac_address'] }}</code>
+                                    @endif
+                                </div>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 1px;">
+                                    Agent v{{ $agent['client_version'] }}
+                                    @if(!empty($agent['hardware_id']))
+                                        &bull; HWID: <code>{{ Str::limit($agent['hardware_id'], 14) }}</code>
+                                    @endif
+                                </div>
+                            </td>
+
+                            <!-- Matched Asset & Dept -->
+                            <td>
+                                @if(!empty($agent['asset_code']))
+                                    <div style="font-weight: 600; color: #0369a1; display: flex; align-items: center; gap: 5px;">
+                                        <i class="bi bi-upc-scan"></i>
+                                        <span>{{ $agent['asset_code'] }}</span>
+                                    </div>
+                                    <div style="font-size: 12px; color: #334155; margin-top: 1px;">
+                                        {{ $agent['asset_name'] ?: 'คอมพิวเตอร์' }}
+                                    </div>
+                                    <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+                                        <i class="bi bi-geo-alt me-1"></i> {{ $agent['department_name'] }}
+                                    </div>
+                                @else
+                                    <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 11px; padding: 3px 8px; border-radius: 6px;">
+                                        <i class="bi bi-exclamation-circle me-1"></i> ยังไม่ผูกครุภัณฑ์
+                                    </span>
+                                    <div style="font-size: 11.5px; color: #64748b; margin-top: 3px;">
+                                        {{ $agent['department_name'] }}
+                                    </div>
+                                @endif
+                            </td>
+
+                            <!-- Specs -->
+                            <td>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 12.5px;">
+                                    <i class="bi bi-cpu text-info me-1"></i> {{ Str::limit($agent['cpu_model'], 38) }}
+                                </div>
+                                <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">
+                                    <span>RAM: <b>{{ $agent['ram_capacity'] ? $agent['ram_capacity'] . ' GB' : '-' }}</b></span> &bull; 
+                                    <span>Disk: <b>{{ $agent['storage_capacity'] ?: '-' }} ({{ $agent['storage_type'] ?: 'Storage' }})</b></span>
+                                </div>
+                                <div style="font-size: 11px; color: #64748b; margin-top: 1px;">
+                                    <i class="bi bi-windows text-primary me-1"></i> {{ $agent['os_name'] }}
+                                </div>
+                            </td>
+
+                            <!-- Actions -->
+                            <td style="text-align: right;">
+                                <div style="display: flex; justify-content: flex-end; gap: 5px; align-items: center;">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" 
+                                            onclick="triggerSingleFleetScan('{{ addslashes($agent['hostname']) }}', '{{ addslashes($agent['hardware_id']) }}', '{{ $agent['audit_id'] ?? '' }}', '{{ $agent['asset_id'] ?? '' }}')"
+                                            title="ส่งคำสั่งดึงข้อมูลสเปกของเครื่องนี้เดี๋ยวนี้"
+                                            style="border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class="bi bi-cloud-arrow-down-fill"></i>
+                                        <span>ดึงสเปก</span>
+                                    </button>
+                                    @if(!empty($agent['audit_id']))
+                                        <a href="{{ route('hardware-audits.show', $agent['audit_id']) }}" class="btn btn-light btn-sm text-secondary border" 
+                                           title="ดูประวัติการตรวจนับ" style="border-radius: 8px; padding: 4px 8px; font-size: 11.5px;">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @else
+            <!-- Empty State -->
+            <div style="background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 16px; padding: 40px 20px; text-align: center;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: #e0f2fe; color: #0284c7; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 16px;">
+                    <i class="bi bi-hdd-network"></i>
+                </div>
+                <h4 style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">ยังไม่มีเครื่องที่ติดตั้ง Agent ส่งข้อมูลเข้ามา</h4>
+                <p style="font-size: 13px; color: #64748b; max-width: 480px; margin: 0 auto 18px auto;">
+                    ท่านสามารถดาวน์โหลดโปรแกรม THC IT Agent หรือสคริปต์สำรวจอัตโนมัติ เพื่อนำไปติดตั้งบนเครื่องคอมพิวเตอร์ลูกข่ายในโรงพยาบาลได้ทันที
+                </p>
+                <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'deploy']) }}" class="btn btn-primary btn-sm" style="border-radius: 10px; padding: 8px 18px; font-weight: 600;">
+                    <i class="bi bi-download me-1"></i> ไปที่หน้าตัวติดตั้ง Agent & การกระจายสคริปต์
+                </a>
+            </div>
+            @endif
+        </div>
+        @endif
+
+        <!-- TAB CONTENT 3: DEPARTMENT TRACKER -->
         @if($tab === 'departments')
         <div style="padding: 22px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
@@ -1766,11 +2005,11 @@
     function deleteSingleAudit(id, hostname) {
         if (window.Swal) {
             Swal.fire({
-                title: 'ยืนยันลบข้อมูลการตรวจนับ?',
-                html: `คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลผลตรวจสเปคของเครื่อง <b>"${hostname}"</b> ออกจากระบบ?<br><small style="color: #ef4444;">* ข้อมูลนี้จะถูกลบออกจากฐานข้อมูลและไม่สามารถกู้คืนได้</small>`,
+                title: 'ยืนยันลบข้อมูลผลตรวจสเปคนี้?',
+                html: `คุณแน่ใจหรือไม่ว่าต้องการลบ<b>ข้อมูลผลการตรวจนับสเปกที่ได้รับ</b>ของเครื่อง <b>"${hostname}"</b>?<br><br><div style="text-align: left; background: #fef2f2; border: 1px solid #fee2e2; padding: 10px 14px; border-radius: 8px; font-size: 12px; color: #991b1b;"><i class="bi bi-info-circle-fill me-1"></i> <b>ผลของการลบ:</b> จะลบเฉพาะบันทึกผลสแกนสเปกในคิวรอบนี้เท่านั้น <u>จะไม่มีการลบหรือแตะต้องข้อมูลครุภัณฑ์ในคลัง</u> แต่อย่างใด</div>`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: '<i class="bi bi-trash me-1"></i> ยืนยันลบข้อมูล',
+                confirmButtonText: '<i class="bi bi-trash me-1"></i> ยืนยันลบเฉพาะข้อมูลสเปกนี้',
                 cancelButtonText: 'ยกเลิก',
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#64748b',
@@ -1782,7 +2021,7 @@
                 }
             });
         } else {
-            if (confirm(`ยืนยันลบข้อมูลผลตรวจสเปคของเครื่อง "${hostname}" ออกจากระบบ? (ไม่สามารถกู้คืนได้)`)) {
+            if (confirm(`ยืนยันลบข้อมูลผลตรวจสเปคของเครื่อง "${hostname}"? (ลบเฉพาะข้อมูลสเปกที่ได้รับ ไม่กระทบครุภัณฑ์ในคลัง)`)) {
                 executeDeleteForm(id);
             }
         }
@@ -1831,8 +2070,8 @@
 
         if (window.Swal) {
             Swal.fire({
-                title: `ยืนยันลบ ${checked.length} รายการ?`,
-                html: `คุณแน่ใจหรือไม่ว่าต้องการลบรายการผลตรวจสเปคที่เลือกทั้งหมด <b>${checked.length} รายการ</b> ออกจากระบบ?<br><small style="color: #ef4444;">* ข้อมูลที่ลบจะไม่สามารถกู้คืนได้</small>`,
+                title: `ยืนยันลบข้อมูลตรวจนับ ${checked.length} รายการ?`,
+                html: `คุณแน่ใจหรือไม่ว่าต้องการลบ<b>เฉพาะข้อมูลผลการตรวจสเปก</b>ที่เลือกทั้งหมด <b>${checked.length} รายการ</b> ออกจากระบบ?<br><br><div style="text-align: left; background: #fef2f2; border: 1px solid #fee2e2; padding: 10px 14px; border-radius: 8px; font-size: 12px; color: #991b1b;"><i class="bi bi-info-circle-fill me-1"></i> <b>ผลของการลบ:</b> จะลบเฉพาะบันทึกผลสแกนสเปกในคิวรอบนี้เท่านั้น <u>ไม่กระทบต่อทะเบียนครุภัณฑ์และประวัติทรัพย์สินในระบบ</u></div>`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: `<i class="bi bi-trash me-1"></i> ยืนยันลบ (${checked.length} รายการ)`,
@@ -2777,6 +3016,220 @@
     });
     @endif
 
+    // -------------------------------------------------------------
+    // Agent Fleet Selection & Batch Telemetry Pull
+    // -------------------------------------------------------------
+    function toggleFleetSelectAll(master) {
+        const visibleRows = Array.from(document.querySelectorAll('.fleet-row')).filter(r => r.style.display !== 'none');
+        visibleRows.forEach(row => {
+            const chk = row.querySelector('.fleet-item-chk');
+            if (chk) chk.checked = master.checked;
+        });
+        updateFleetSelectionCount();
+    }
+
+    function updateFleetSelectionCount() {
+        const checked = document.querySelectorAll('.fleet-item-chk:checked');
+        const badge = document.getElementById('selectedFleetBadge');
+        const btn = document.getElementById('btnSelectedFleetScan');
+        if (badge) badge.textContent = checked.length;
+        if (btn) btn.disabled = checked.length === 0;
+    }
+
+    let currentFleetFilter = 'all';
+
+    function setFleetFilter(status) {
+        currentFleetFilter = status;
+        ['fleetFilterAll', 'fleetFilterOnline', 'fleetFilterOffline'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        });
+        if (status === 'all') document.getElementById('fleetFilterAll')?.classList.add('active');
+        if (status === 'online') document.getElementById('fleetFilterOnline')?.classList.add('active');
+        if (status === 'offline') document.getElementById('fleetFilterOffline')?.classList.add('active');
+        filterFleetRows();
+    }
+
+    function filterFleetRows() {
+        const query = (document.getElementById('fleetSearchInput')?.value || '').toLowerCase().trim();
+        const rows = document.querySelectorAll('.fleet-row');
+
+        rows.forEach(row => {
+            const isOnline = row.getAttribute('data-online') === 'true';
+            const searchData = row.getAttribute('data-search') || '';
+
+            let matchesFilter = true;
+            if (currentFleetFilter === 'online' && !isOnline) matchesFilter = false;
+            if (currentFleetFilter === 'offline' && isOnline) matchesFilter = false;
+
+            let matchesSearch = true;
+            if (query && !searchData.includes(query)) matchesSearch = false;
+
+            if (matchesFilter && matchesSearch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // uncheck select all if filtered
+        const master = document.getElementById('fleetSelectAll');
+        if (master) master.checked = false;
+        updateFleetSelectionCount();
+    }
+
+    function triggerSelectedFleetScan() {
+        const checked = document.querySelectorAll('.fleet-item-chk:checked');
+        if (checked.length === 0) return;
+
+        const targets = [];
+        checked.forEach(chk => {
+            targets.push({
+                hostname: chk.dataset.hostname || '',
+                hardware_id: chk.dataset.hwid || '',
+                audit_id: chk.dataset.auditId || null,
+                asset_id: chk.dataset.assetId || null
+            });
+        });
+
+        const onlineCount = Array.from(checked).filter(c => c.dataset.online === 'true').length;
+        const offlineCount = checked.length - onlineCount;
+
+        let note = `จะส่งสัญญาณคำสั่งสแกนไปยังเครื่องที่เลือก <b>${checked.length} เครื่อง</b>`;
+        if (offlineCount > 0) {
+            note += `<br><small style="color: #64748b;">(ออนไลน์: ${onlineCount} เครื่อง, ออฟไลน์: ${offlineCount} เครื่อง - เครื่องออฟไลน์จะรับคำสั่งทันทีที่เปิดเครื่องหรือเชื่อมต่อเครือข่าย)</small>`;
+        }
+
+        if (window.Swal) {
+            Swal.fire({
+                title: `ดึงข้อมูลสเปก ${checked.length} เครื่อง?`,
+                html: `${note}<br><br>เครื่องลูกข่ายจะเริ่มส่งสเปกฮาร์ดแวร์ล่าสุดเข้ามาในระบบโดยอัตโนมัติ`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-cloud-arrow-down-fill me-1"></i> ยืนยันสั่งดึงข้อมูล',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#0f766e',
+                cancelButtonColor: '#64748b',
+                reverseButtons: true
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    executeFleetScanBatch(targets);
+                }
+            });
+        } else {
+            if (confirm(`ยืนยันสั่งดึงข้อมูลสเปก ${checked.length} เครื่อง?`)) {
+                executeFleetScanBatch(targets);
+            }
+        }
+    }
+
+    function triggerAllOnlineFleetScan() {
+        const onlineChks = document.querySelectorAll('.fleet-item-chk[data-online="true"]');
+        if (onlineChks.length === 0) {
+            alert('ขณะนี้ไม่มีเครื่องที่ออนไลน์อยู่ในระบบ');
+            return;
+        }
+
+        const targets = [];
+        onlineChks.forEach(chk => {
+            targets.push({
+                hostname: chk.dataset.hostname || '',
+                hardware_id: chk.dataset.hwid || '',
+                audit_id: chk.dataset.auditId || null,
+                asset_id: chk.dataset.assetId || null
+            });
+        });
+
+        if (window.Swal) {
+            Swal.fire({
+                title: `ดึงข้อมูลสเปกทุกเครื่องที่ออนไลน์ (${targets.length} เครื่อง)?`,
+                html: `ระบบจะส่งคำสั่งไปยัง Agent ทั้งหมดที่กำลังเชื่อมต่ออยู่ในขณะนี้ เพื่อดึงข้อมูลสเปกสดเข้ามาสู่ระบบทันที`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-broadcast me-1"></i> สั่งดึงสเปกเดี๋ยวนี้',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#64748b',
+                reverseButtons: true
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    executeFleetScanBatch(targets);
+                }
+            });
+        } else {
+            if (confirm(`สั่งดึงสเปกทุกเครื่องที่ออนไลน์ (${targets.length} เครื่อง)?`)) {
+                executeFleetScanBatch(targets);
+            }
+        }
+    }
+
+    function triggerSingleFleetScan(hostname, hwid, auditId, assetId) {
+        executeFleetScanBatch([{
+            hostname: hostname,
+            hardware_id: hwid,
+            audit_id: auditId || null,
+            asset_id: assetId || null
+        }]);
+    }
+
+    function executeFleetScanBatch(targets) {
+        if (!targets || targets.length === 0) return;
+
+        if (window.Swal) {
+            Swal.fire({
+                title: 'กำลังส่งคำสั่งดึงข้อมูล...',
+                text: 'กรุณารอสักครู่ ระบบกำลังสื่อสารกับ Agent ประจำเครื่อง',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+        }
+
+        fetch("{{ route('hardware-audits.trigger-scan-batch') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                fiscal_year: '{{ $fiscalYear }}',
+                targets: targets
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'ส่งคำสั่งสำเร็จ!',
+                        html: `${data.message}<br><small style="color: #64748b;">(ข้อมูลที่ส่งเข้ามาจะปรากฏในแท็บ 'คิวรอตรวจสอบและอนุมัติ')</small>`,
+                        confirmButtonText: 'ตกลง',
+                        confirmButtonColor: '#0f766e'
+                    }).then(() => {
+                        // Success confirmation
+                    });
+                } else {
+                    alert(data.message);
+                }
+            } else {
+                throw new Error(data.message || 'เกิดข้อผิดพลาดในการส่งคำสั่ง');
+            }
+        })
+        .catch(err => {
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่สามารถส่งคำสั่งได้',
+                    text: err.message || 'การเชื่อมต่อขัดข้อง กรุณาลองใหม่อีกครั้ง',
+                    confirmButtonColor: '#ef4444'
+                });
+            } else {
+                alert(err.message || 'การเชื่อมต่อขัดข้อง');
+            }
+        });
+    }
+
     // Live Agent Online Status Background Poller (every 8 seconds)
     function pollLiveAgentOnlineStatus() {
         fetch("{{ route('hardware-audits.online-status') }}", {
@@ -2788,6 +3241,14 @@
                 const countBadge = document.getElementById('liveOnlineAgentsCount');
                 if (countBadge) {
                     countBadge.textContent = data.online_count;
+                }
+                const tabBadge = document.getElementById('tabAgentOnlineCount');
+                if (tabBadge) {
+                    tabBadge.textContent = data.online_count;
+                }
+                const fleetBadge = document.getElementById('fleetOnlineCountDisplay');
+                if (fleetBadge) {
+                    fleetBadge.textContent = data.online_count;
                 }
             }
         })

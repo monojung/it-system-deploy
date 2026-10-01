@@ -612,13 +612,9 @@
             </div>
         </div>
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <button type="button" id="btnClearLocks" onclick="confirmAndClearLocks()" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; padding: 10px 18px; border-radius: var(--radius-sm); background: #334155; border-color: #475569; color: #f8fafc; box-shadow: 0 4px 12px rgba(0,0,0,0.25);" title="ปลดล็อก Git ในกรณีเกิดข้อผิดพลาด HEAD.lock หรือ File exists">
-                <i class="bi bi-unlock-fill" id="unlockIcon"></i>
-                <span>ปลดล็อก Git</span>
-            </button>
-            <button type="button" id="btnCheckUpdates" onclick="checkRemoteUpdates()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; padding: 10px 20px; border-radius: var(--radius-sm); background: #0d9488; border-color: #0d9488; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.4);">
+            <button type="button" id="btnCheckUpdates" onclick="checkRemoteUpdates()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; padding: 10px 22px; border-radius: var(--radius-sm); background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.4); color: #ffffff;" title="ปลดล็อก Git อัตโนมัติและดึงข้อมูลอัปเดตล่าสุดจาก Deploy Repository">
                 <i class="bi bi-arrow-clockwise" id="checkIcon"></i>
-                <span>ตรวจสอบเวอร์ชันใหม่</span>
+                <span>ตรวจสอบเวอร์ชันใหม่ & ซิงค์โค้ด</span>
             </button>
         </div>
     </div>
@@ -843,28 +839,21 @@
                     <i class="bi bi-shield-lock-fill" style="color: #10b981;"></i>
                     <span>ระบบจะสำรองฐานข้อมูลอัตโนมัติก่อนเริ่ม และเปิดระบบกลับคืนเสมอแม้เกิดข้อผิดพลาด</span>
                 </div>
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                     @if(!($gitStatus['is_git_repo'] ?? false))
-                        <a href="#patchUploadForm" class="btn btn-primary" style="padding: 9px 18px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-sm); background: #0284c7; border-color: #0284c7;">
+                        <a href="#patchUploadForm" class="btn btn-primary" style="padding: 10px 20px; font-size: 13.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; border-radius: var(--radius-sm); background: #0284c7; border: none; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35); color: #ffffff;">
                             <i class="bi bi-file-earmark-zip-fill"></i>
                             <span>อัปเดตด้วยไฟล์ ZIP ด้านล่าง</span>
                         </a>
                     @elseif($gitStatus['has_update'] ?? false)
-                        <button type="button" onclick="confirmAndExecuteUpdate(false)" class="btn btn-primary" style="padding: 10px 24px; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; border-radius: var(--radius-sm); background: #0d9488; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);">
+                        <button type="button" onclick="confirmAndExecuteUpdate(false)" class="btn btn-primary" style="padding: 11px 26px; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; border-radius: var(--radius-sm); background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%); border: none; box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4); color: #ffffff;" title="ปลดล็อก Git, ดึงโค้ดล่าสุด, บังคับซิงค์, ไมเกรต และล้างแคชในปุ่มเดียว">
                             <i class="bi bi-rocket-takeoff-fill"></i>
-                            <span>เริ่มการอัปเดตระบบทันที (Update Now)</span>
+                            <span>อัปเดตระบบอัตโนมัติ (Update to {{ !empty($gitStatus['remote_version']) ? 'v'.$gitStatus['remote_version'] : 'Latest' }})</span>
                         </button>
                     @else
-                        <button type="button" onclick="confirmAndExecuteUpdate(true)" class="btn btn-secondary" style="padding: 9px 18px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-sm);">
-                            <i class="bi bi-arrow-repeat"></i>
-                            <span>บังคับอัปเดตซ้ำ (Force Re-deploy)</span>
-                        </button>
-                    @endif
-
-                    @if($gitStatus['is_git_repo'] ?? false)
-                        <button type="button" onclick="confirmAndInitGit()" class="btn btn-secondary" title="ล้างข้อขัดแย้งของไฟล์และซิงค์โค้ดให้ตรงกับ Deploy Repository ล่าสุด" style="padding: 9px 14px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-sm); background: #f8fafc; border: 1px solid #cbd5e1; color: #475569;">
-                            <i class="bi bi-arrow-clockwise"></i>
-                            <span>แก้ปัญหา Git / บังคับซิงค์โค้ด</span>
+                        <button type="button" onclick="confirmAndExecuteUpdate(true)" class="btn btn-secondary" style="padding: 10px 22px; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; border-radius: var(--radius-sm); background: #f8fafc; border: 1.5px solid #cbd5e1; color: #334155;" title="ปลดล็อก Git และบังคับซิงค์โค้ดให้ตรงกับ Remote ล่าสุด 100% พร้อมไมเกรตและล้างแคช">
+                            <i class="bi bi-arrow-repeat text-primary"></i>
+                            <span>อัปเดตและบังคับซิงค์โค้ดระบบ (Sync & Force Re-deploy)</span>
                         </button>
                     @endif
                 </div>
@@ -1174,10 +1163,13 @@
                     }
                 });
             } else if (data.success) {
+                const lockNotice = data.cleared_locks_count > 0 
+                    ? `<div style="font-size: 12px; color: #059669; margin-top: 6px;">✓ ปลดล็อกไฟล์ Git ตกค้าง ${data.cleared_locks_count} ไฟล์เรียบร้อยแล้ว</div>`
+                    : '';
                 Swal.fire({
                     title: 'ระบบเป็นเวอร์ชันล่าสุดแล้ว',
                     html: `โค้ดในเครื่องตรงกับ Commit ล่าสุดบน Remote Repository แล้ว<br>` +
-                          `Commit: <code style="color:#0d9488; font-weight:bold;">${data.short_local_commit}</code>`,
+                          `Commit: <code style="color:#0d9488; font-weight:bold;">${data.short_local_commit}</code>` + lockNotice,
                     icon: 'success',
                     confirmButtonColor: '#0d9488',
                     confirmButtonText: 'ตกลง'
