@@ -602,7 +602,7 @@
                     <span class="repo-badge branch"><i class="bi bi-git"></i> Branch: <strong>{{ $targetBranch }}</strong></span>
                     <span class="repo-badge remote"><i class="bi bi-hdd-network"></i> Remote: <strong>{{ $remoteName }}</strong></span>
                     @if($gitStatus['has_update'] ?? false)
-                        <span class="repo-badge sync-warning"><i class="bi bi-arrow-down-circle-fill"></i> มีการอัปเดตใหม่ ({{ $gitStatus['commits_behind'] }} commits)</span>
+                        <span class="repo-badge sync-warning"><i class="bi bi-arrow-down-circle-fill"></i> มีการอัปเดตใหม่ ({{ !empty($gitStatus['commits_behind']) ? $gitStatus['commits_behind'] . ' commits' : (!empty($gitStatus['remote_version']) ? 'v' . $gitStatus['remote_version'] : 'มีเวอร์ชันใหม่') }})</span>
                     @elseif($gitStatus['success'] ?? false)
                         <span class="repo-badge sync-ok"><i class="bi bi-check-circle-fill"></i> อัปเดตล่าสุดแล้ว (Up-to-date)</span>
                     @else
@@ -659,7 +659,7 @@
                     </span>
                     <span class="commit-badge" style="background: #0284c7; color: #ffffff;" id="statRemoteCommit">{{ $gitStatus['short_remote_commit'] ?? 'unknown' }}</span>
                     @if($gitStatus['has_update'] ?? false)
-                        <span style="font-size: 11px; background: #fef08a; color: #854d0e; padding: 2px 6px; border-radius: 4px; font-weight: 700;">+{{ $gitStatus['commits_behind'] }}</span>
+                        <span style="font-size: 11px; background: #fef08a; color: #854d0e; padding: 2px 6px; border-radius: 4px; font-weight: 700;">{{ !empty($gitStatus['commits_behind']) ? '+' . $gitStatus['commits_behind'] : 'NEW' }}</span>
                     @endif
                 </div>
             </div>
@@ -744,6 +744,14 @@
                                     <li><strong>การตั้งค่า Proxy:</strong> หาก รพ. ต้องผ่าน Proxy ให้รัน: <code>git config --global http.proxy http://proxy-ip:port</code></li>
                                 </ul>
                             </div>
+                            @if(!empty($gitStatus['http_fallback']) && !empty($gitStatus['remote_version']))
+                            <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: #166534;">
+                                <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                    <i class="bi bi-cloud-check-fill" style="color: #16a34a; font-size: 16px;"></i> ระบบสำรอง HTTPS ตรวจพบเวอร์ชันใหม่ล่าสุด: <strong>v{{ $gitStatus['remote_version'] }}</strong>
+                                </div>
+                                <div>แม้คำสั่ง Git CLI บนเซิร์ฟเวอร์จะติดขัดจากไฟร์วอลล์ ท่านสามารถกดปุ่ม <strong>"อัปเดตระบบและซิงค์โค้ด Git (1-Click)"</strong> ด้านล่างเพื่อบังคับซิงค์โค้ด หรือดาวน์โหลดไฟล์แพตช์ ZIP สำเร็จรูปมาอัปเดตได้ทันที</div>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 @elseif($gitStatus['has_update'] ?? false)
@@ -755,12 +763,12 @@
                                     🎉 พบเวอร์ชันใหม่ v{{ $gitStatus['remote_version'] }} (Build {{ $gitStatus['remote_build'] ?? 'Latest' }}) พร้อมให้อัปเดต!
                                     <span style="background: #0d9488; color: #ffffff; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 700;">NEW v{{ $gitStatus['remote_version'] }}</span>
                                 @else
-                                    มีเวอร์ชันใหม่พร้อมให้ติดตั้ง! (พบ {{ $gitStatus['commits_behind'] }} รายการอัปเดตจาก Deploy Repository)
+                                    มีเวอร์ชันใหม่พร้อมให้ติดตั้ง! (พบ {{ $gitStatus['commits_behind'] ?? 1 }} รายการอัปเดตจาก Deploy Repository)
                                     <span style="background: #eab308; color: #713f12; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 700;">NEW UPDATE</span>
                                 @endif
                             </div>
                             <div style="font-size: 13px; margin-bottom: 12px; color: #713f12;">
-                                โค้ดในเครื่อง (v{{ $gitStatus['current_version'] ?? $envInfo['app_version'] }} &bull; <span style="font-family: monospace; font-weight: 700;">{{ $gitStatus['short_local_commit'] }}</span>) ตามหลัง Remote (@if(!empty($gitStatus['remote_version']))<span style="font-weight: 700; color: #0369a1;">v{{ $gitStatus['remote_version'] }}</span> &bull; @endif<span style="font-family: monospace; font-weight: 700; color: #0284c7;">{{ $gitStatus['short_remote_commit'] }}</span>) คุณสามารถกดปุ่มเริ่มอัปเดตระบบได้ทันที
+                                โค้ดในเครื่อง (v{{ $gitStatus['current_version'] ?? $envInfo['app_version'] }} &bull; <span style="font-family: monospace; font-weight: 700;">{{ $gitStatus['short_local_commit'] ?? 'unknown' }}</span>) ตามหลัง Remote (@if(!empty($gitStatus['remote_version']))<span style="font-weight: 700; color: #0369a1;">v{{ $gitStatus['remote_version'] }}</span> &bull; @endif<span style="font-family: monospace; font-weight: 700; color: #0284c7;">{{ $gitStatus['short_remote_commit'] ?? 'latest' }}</span>) คุณสามารถกดปุ่มเริ่มอัปเดตระบบได้ทันที
                             </div>
                             <!-- Commits preview -->
                             @if(!empty($gitStatus['commits']))
@@ -1147,9 +1155,10 @@
                       `</div>`
                     : '';
 
+                const commitText = data.commits_behind ? `พบรายการอัปเดต <b>${data.commits_behind}</b> รายการ` : `พบเวอร์ชันใหม่พร้อมอัปเดต`;
                 Swal.fire({
                     title: swalTitle,
-                    html: `${versionBanner}พบรายการอัปเดต <b>${data.commits_behind}</b> รายการจาก Remote Repository:<br>` +
+                    html: `${versionBanner}${commitText} จาก Remote Repository:<br>` +
                           `<code style="font-size:12px; color:#0284c7;">${data.target_repo || 'https://github.com/monojung/it-system-deploy.git'}</code><br><br>` +
                           `คุณต้องการรีเฟรชหน้าจอเพื่อเริ่มอัปเดตหรือไม่?`,
                     icon: 'info',

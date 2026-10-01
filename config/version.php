@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.5.8'),
+    'version' => env('APP_VERSION', '2.5.9'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-10-01',
-    'build' => '20261001.2',
+    'build' => '20261001.3',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,17 @@ return [
     |
     */
     'changelog' => [
+        '2.5.9' => [
+            'date' => '2026-10-01',
+            'badge' => 'Emergency Hotfix: Flare Undefined Array Key commits_behind',
+            'badge_color' => '#dc2626',
+            'title' => 'แก้ไขด่วน Flare Error Exception: Undefined array key "commits_behind" ในหน้า System Update Center',
+            'highlights' => [
+                'แก้ไข Undefined array key "commits_behind" (FlareApp #J7olDj45): กำหนดค่า Default keys ครบถ้วนใน checkRemoteUpdates() ทุกกรณี (commits_behind => 0, commits => []) แม้ Git CLI บนเซิร์ฟเวอร์จะเชื่อมต่อขัดข้อง',
+                'Blade Template Safeguards: ปรับปรุงการเข้าถึงข้อมูลตัวแปร $gitStatus ใน resources/views/system_updates/index.blade.php ทุกจุดให้ปลอดภัยด้วย !empty() และ null-coalescing ป้องกัน ErrorException 100%',
+                'HTTPS Fallback Badge: เพิ่มกล่องแจ้งเตือนสีเขียวเมื่อระบบตรวจพบเวอร์ชันใหม่ผ่าน HTTPS สำรอง ทำให้ผู้ดูแลระบบสามารถกดอัปเดตแบบ 1-Click ได้ทันที',
+            ],
+        ],
         '2.5.8' => [
             'date' => '2026-10-01',
             'badge' => 'Hotfix: Flare Route Fix, Git Remote Safe Flags & Pending Tab UI Fit',
