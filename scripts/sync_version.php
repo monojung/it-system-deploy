@@ -106,16 +106,30 @@ try {
     $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
     $kernel->bootstrap();
 
-    if (Illuminate\Support\Facades\Schema::hasTable('it_settings')) {
-        \App\Models\SystemSetting::set('app_version', $targetVersion, 'system', 'text', 'Application Version');
-        \App\Models\SystemSetting::set('app_build', $targetBuild, 'system', 'text', 'Application Build');
-        echo "[OK] Updated it_settings table app_version = {$targetVersion}, app_build = {$targetBuild}\n";
+    $dbHost = config('database.connections.mysql.host', '127.0.0.1');
+    $dbPort = (int) config('database.connections.mysql.port', 3306);
+    $socket = @fsockopen($dbHost, $dbPort, $errno, $errstr, 2);
+    $isDbAvailable = false;
+    if ($socket) {
+        fclose($socket);
+        $isDbAvailable = true;
     }
 
-    // Clear caches
+    if ($isDbAvailable) {
+        if (Illuminate\Support\Facades\Schema::hasTable('it_settings')) {
+            \App\Models\SystemSetting::set('app_version', $targetVersion, 'system', 'text', 'Application Version');
+            \App\Models\SystemSetting::set('app_build', $targetBuild, 'system', 'text', 'Application Build');
+            echo "[OK] Updated it_settings table app_version = {$targetVersion}, app_build = {$targetBuild}\n";
+        }
+        Illuminate\Support\Facades\Artisan::call('cache:clear');
+        echo "[OK] Cleared application cache\n";
+    } else {
+        echo "[SKIP] Database host ({$dbHost}:{$dbPort}) not reachable within 2s, skipping DB update & DB cache clear.\n";
+    }
+
+    // Always clear file-based config cache
     Illuminate\Support\Facades\Artisan::call('config:clear');
-    Illuminate\Support\Facades\Artisan::call('cache:clear');
-    echo "[OK] Cleared Laravel config and application cache\n";
+    echo "[OK] Cleared Laravel config cache\n";
 } catch (Throwable $e) {
     echo "[NOTE] Database/Artisan bootstrap skipped: " . $e->getMessage() . "\n";
 }

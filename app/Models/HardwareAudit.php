@@ -124,10 +124,20 @@ class HardwareAudit extends Model
         if ($this->hardware_id && \Illuminate\Support\Facades\Cache::has('agent_online:hwid:' . strtoupper(trim($this->hardware_id)))) {
             return true;
         }
-        if ($this->hostname && \Illuminate\Support\Facades\Cache::has('agent_online:host:' . strtoupper(trim($this->hostname)))) {
-            return true;
+        if ($this->hostname) {
+            $hostUpper = strtoupper(trim($this->hostname));
+            if (\Illuminate\Support\Facades\Cache::has('agent_online:host:' . $hostUpper)) {
+                return true;
+            }
+            $shortHost = explode('.', $this->hostname)[0];
+            if ($shortHost !== $this->hostname && \Illuminate\Support\Facades\Cache::has('agent_online:host:' . strtoupper(trim($shortHost)))) {
+                return true;
+            }
         }
         if ($this->ip_address && \Illuminate\Support\Facades\Cache::has('agent_online:ip:' . trim($this->ip_address))) {
+            return true;
+        }
+        if ($this->mac_address && \Illuminate\Support\Facades\Cache::has('agent_online:mac:' . strtoupper(trim($this->mac_address)))) {
             return true;
         }
         return false;

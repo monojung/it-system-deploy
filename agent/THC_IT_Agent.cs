@@ -38,10 +38,10 @@ namespace ThcItAgent
                 return;
             }
 
-            // Enable TLS 1.2 and ignore self-signed certificates in hospital LAN
+            // Enable TLS 1.2, TLS 1.1, TLS 1.0 and ignore self-signed certificates in hospital LAN
             try
             {
-                ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | SecurityProtocolType.Tls;
+                ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | (SecurityProtocolType)768 | SecurityProtocolType.Tls;
                 ServicePointManager.ServerCertificateValidationCallback =
                     delegate(object s, X509Certificate cert, X509Chain chain, SslPolicyErrors sslErr) { return true; };
             }
@@ -70,12 +70,34 @@ namespace ThcItAgent
             AutoStart = true;
         }
 
+        public static string[] CandidateUrls = new string[]
+        {
+            "https://thchospital.moph.go.th/it-system",
+            "http://thchospital.moph.go.th/it-system",
+            "http://192.168.2.89/it-system",
+            "http://192.168.2.89:8000",
+            "http://192.168.2.10/it-system",
+            "http://192.168.2.10:8000",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000"
+        };
+
         private static string GetConfigPath()
         {
+            // 1. Check in ProgramData (standard installation directory)
+            string progDataDir = @"C:\ProgramData\THC-IT-Agent";
+            if (Directory.Exists(progDataDir))
+            {
+                string pdConfig = Path.Combine(progDataDir, "config.json");
+                if (File.Exists(pdConfig)) return pdConfig;
+            }
+
+            // 2. Check next to executable
             string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string localConfig = Path.Combine(appDir, "config.json");
             if (File.Exists(localConfig)) return localConfig;
 
+            // 3. Fallback to LocalAppData
             string appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "THC-IT-Agent");
             if (!Directory.Exists(appData)) Directory.CreateDirectory(appData);
             return Path.Combine(appData, "config.json");
@@ -91,7 +113,11 @@ namespace ThcItAgent
                     string json = File.ReadAllText(path, Encoding.UTF8);
                     var js = new JavaScriptSerializer();
                     var cfg = js.Deserialize<AppConfig>(json);
-                    if (cfg != null) return cfg;
+                    if (cfg != null && !string.IsNullOrEmpty(cfg.ServerUrl))
+                    {
+                        cfg.ServerUrl = cfg.ServerUrl.TrimEnd('/');
+                        return cfg;
+                    }
                 }
             }
             catch { }
@@ -106,6 +132,13 @@ namespace ThcItAgent
                 var js = new JavaScriptSerializer();
                 string json = js.Serialize(this);
                 File.WriteAllText(path, json, Encoding.UTF8);
+
+                // Also mirror to ProgramData if directory exists
+                string pdDir = @"C:\ProgramData\THC-IT-Agent";
+                if (Directory.Exists(pdDir))
+                {
+                    try { File.WriteAllText(Path.Combine(pdDir, "config.json"), json, Encoding.UTF8); } catch { }
+                }
             }
             catch { }
         }
@@ -207,18 +240,24 @@ namespace ThcItAgent
         public string SerialNumber { get; set; }
         public string Brand { get; set; }
         public string Model { get; set; }
+        public string DeviceTypeCode { get; set; }
         public string CpuModel { get; set; }
+        public string CpuSpeed { get; set; }
         public int CpuCores { get; set; }
-        public double RamCapacity { get; set; }
+        public int CpuThreads { get; set; }
+        public int RamCapacity { get; set; }
         public string RamType { get; set; }
+        public string RamBus { get; set; }
+        public string RamSlots { get; set; }
         public string StorageType { get; set; }
-        public double StorageCapacity { get; set; }
+        public string StorageCapacity { get; set; }
         public string StorageSecond { get; set; }
         public string OsName { get; set; }
+        public string OsLicense { get; set; }
         public string GpuModel { get; set; }
         public string IpAddress { get; set; }
         public string MacAddress { get; set; }
-        public string MonitorInfo { get; set; }
+        public string MonitorSize { get; set; }
         public DateTime CollectedAt { get; set; }
 
         public static HardwareSpecs Collect()
@@ -230,19 +269,45 @@ namespace ThcItAgent
                 HardwareId = "",
                 Brand = "",
                 Model = "",
-                SerialNumber = "",
+                DeviceTypeCode = "PC",
                 CpuModel = "",
+                CpuSpeed = "",
+                CpuCores = 4,
+                CpuThreads = 4,
+                RamCapacity = 8,
                 RamType = "DDR4",
+                RamBus = "",
+                RamSlots = "1 Slot(s)",
                 StorageType = "SSD",
+                StorageCapacity = "256 GB",
                 StorageSecond = "",
-                OsName = "",
-                GpuModel = "",
+                OsName = "Windows 10 Pro",
+                OsLicense = "Digital License / OEM",
+                GpuModel = "Integrated Graphics",
                 IpAddress = "",
                 MacAddress = "",
-                MonitorInfo = ""
+                MonitorSize = "Display"
             };
 
-            // 1. Motherboard & UUID
+            // 1. Motherboard, UUID & Chassis
+            string bbSerial = "";
+            string bbMaker = "";
+            string bbModel = "";
+            try
+            {
+                using (var s = new ManagementObjectSearcher("SELECT SerialNumber, Manufacturer, Product FROM Win32_BaseBoard"))
+                {
+                    foreach (ManagementObject mo in s.Get())
+                    {
+                        if (mo["SerialNumber"] != null) bbSerial = mo["SerialNumber"].ToString().Trim();
+                        if (mo["Manufacturer"] != null) bbMaker = mo["Manufacturer"].ToString().Trim();
+                        if (mo["Product"] != null) bbModel = mo["Product"].ToString().Trim();
+                        break;
+                    }
+                }
+            }
+            catch { }
+
             try
             {
                 using (var s = new ManagementObjectSearcher("SELECT UUID, Vendor, Name, IdentifyingNumber FROM Win32_ComputerSystemProduct"))
@@ -259,8 +324,19 @@ namespace ThcItAgent
             }
             catch { }
 
+            // Clean HardwareId / UUID fallback if invalid or OEM default
+            if (string.IsNullOrEmpty(specs.HardwareId) ||
+                specs.HardwareId.IndexOf("Default", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                specs.HardwareId.IndexOf("None", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                specs.HardwareId.StartsWith("00000000-0000", StringComparison.OrdinalIgnoreCase) ||
+                specs.HardwareId.StartsWith("FFFFFFFF-FFFF", StringComparison.OrdinalIgnoreCase))
+            {
+                string basePart = !string.IsNullOrEmpty(bbSerial) && bbSerial.IndexOf("Default", StringComparison.OrdinalIgnoreCase) < 0 ? bbSerial : specs.Hostname;
+                specs.HardwareId = "THC-" + basePart;
+            }
+
             // Fallback for Serial Number via Win32_BIOS
-            if (string.IsNullOrEmpty(specs.SerialNumber) || specs.SerialNumber.IndexOf("Default", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (string.IsNullOrEmpty(specs.SerialNumber) || specs.SerialNumber.IndexOf("Default", StringComparison.OrdinalIgnoreCase) >= 0 || specs.SerialNumber.IndexOf("To be filled", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 try
                 {
@@ -276,6 +352,11 @@ namespace ThcItAgent
                     }
                 }
                 catch { }
+
+                if (string.IsNullOrEmpty(specs.SerialNumber) || specs.SerialNumber.IndexOf("Default", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    specs.SerialNumber = bbSerial;
+                }
             }
 
             // Fallback for Brand / Model via Win32_ComputerSystem
@@ -295,18 +376,77 @@ namespace ThcItAgent
             }
             catch { }
 
-            // 2. CPU
+            // Normalize Brand and Model for Custom / DIY PCs
+            if (string.IsNullOrEmpty(specs.Brand) ||
+                specs.Brand.IndexOf("To be filled", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                specs.Brand.IndexOf("System manufacturer", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                specs.Brand.IndexOf("Default string", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                specs.Brand = !string.IsNullOrEmpty(bbMaker) && bbMaker.IndexOf("To be filled", StringComparison.OrdinalIgnoreCase) < 0 ? "เครื่องประกอบ (" + bbMaker + ")" : "เครื่องประกอบ (Custom PC)";
+            }
+            if (string.IsNullOrEmpty(specs.Model) ||
+                specs.Model.IndexOf("To be filled", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                specs.Model.IndexOf("System Product", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                specs.Model.IndexOf("Default string", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                specs.Model = !string.IsNullOrEmpty(bbModel) ? bbModel : "Custom Assembled PC";
+            }
+
+            // Detect Device Type Code (PC, NB, AIO, SERVER)
+            bool isLaptop = false;
             try
             {
-                using (var s = new ManagementObjectSearcher("SELECT Name, NumberOfCores FROM Win32_Processor"))
+                using (var s = new ManagementObjectSearcher("SELECT BatteryStatus FROM Win32_Battery"))
                 {
                     foreach (ManagementObject mo in s.Get())
                     {
-                        if (mo["Name"] != null) specs.CpuModel = mo["Name"].ToString().Trim();
+                        isLaptop = true;
+                        break;
+                    }
+                }
+            }
+            catch { }
+
+            bool isAIO = specs.Model.IndexOf("All-in-One", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                         specs.Model.IndexOf("AIO", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                         specs.Model.IndexOf("ProOne", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            if (isLaptop) specs.DeviceTypeCode = "NB";
+            else if (isAIO) specs.DeviceTypeCode = "AIO";
+            else specs.DeviceTypeCode = "PC";
+
+            // 2. CPU
+            try
+            {
+                using (var s = new ManagementObjectSearcher("SELECT Name, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed, ProcessorId FROM Win32_Processor"))
+                {
+                    foreach (ManagementObject mo in s.Get())
+                    {
+                        if (mo["Name"] != null)
+                        {
+                            string cName = mo["Name"].ToString().Trim();
+                            // Clean CPU name
+                            cName = System.Text.RegularExpressions.Regex.Replace(cName, @"\(R\)|\(TM\)|\(tm\)|CPU\s*@.*|@\s*[\d\.]+\s*GHz", "");
+                            specs.CpuModel = System.Text.RegularExpressions.Regex.Replace(cName, @"\s+", " ").Trim();
+                        }
                         if (mo["NumberOfCores"] != null)
                         {
                             int cores;
                             if (int.TryParse(mo["NumberOfCores"].ToString(), out cores)) specs.CpuCores = cores;
+                        }
+                        if (mo["NumberOfLogicalProcessors"] != null)
+                        {
+                            int threads;
+                            if (int.TryParse(mo["NumberOfLogicalProcessors"].ToString(), out threads)) specs.CpuThreads = threads;
+                        }
+                        if (mo["MaxClockSpeed"] != null)
+                        {
+                            int speed;
+                            if (int.TryParse(mo["MaxClockSpeed"].ToString(), out speed))
+                            {
+                                double ghz = Math.Round((double)speed / 1000.0, 2);
+                                specs.CpuSpeed = ghz + " GHz (" + specs.CpuCores + " Cores / " + specs.CpuThreads + " Threads)";
+                            }
                         }
                         break;
                     }
@@ -322,31 +462,39 @@ namespace ThcItAgent
                     long totalBytes = 0;
                     int speed = 0;
                     int smbios = 0;
+                    int moduleCount = 0;
                     foreach (ManagementObject mo in s.Get())
                     {
+                        moduleCount++;
                         if (mo["Capacity"] != null) totalBytes += Convert.ToInt64(mo["Capacity"]);
                         if (mo["Speed"] != null && speed == 0) int.TryParse(mo["Speed"].ToString(), out speed);
                         if (mo["SMBIOSMemoryType"] != null && smbios == 0) int.TryParse(mo["SMBIOSMemoryType"].ToString(), out smbios);
                     }
-                    specs.RamCapacity = Math.Round((double)totalBytes / (1024 * 1024 * 1024), 1);
+
+                    int ramGb = (int)Math.Round((double)totalBytes / (1024 * 1024 * 1024));
+                    if (ramGb <= 0) ramGb = 8;
+                    specs.RamCapacity = ramGb;
+
                     if (smbios == 26) specs.RamType = "DDR4";
                     else if (smbios == 34) specs.RamType = "DDR5";
                     else if (smbios == 24) specs.RamType = "DDR3";
                     else if (smbios == 21) specs.RamType = "DDR2";
-                    if (speed > 0) specs.RamType += " (" + speed + " MHz)";
+                    else if (speed > 4000) specs.RamType = "DDR5";
+                    else if (speed > 2000) specs.RamType = "DDR4";
+                    else if (speed > 1000) specs.RamType = "DDR3";
+
+                    if (speed > 0) specs.RamBus = speed + " MHz";
+                    specs.RamSlots = moduleCount + " Slot(s)";
                 }
             }
             catch { }
 
-            // 4. Storage & Disks (Accurately find Windows C: system drive)
+            // 4. Storage & Disks (Detect OS disk C:)
             try
             {
                 string sysDiskModel = "";
                 long sysDiskSize = 0;
-                string sysDiskInterface = "";
-                string sysDiskMediaType = "";
 
-                // Try finding disk partition containing C:
                 try
                 {
                     string qPart = "ASSOCIATORS OF {Win32_LogicalDisk.DeviceID='C:'} WHERE AssocClass = Win32_LogicalDiskToPartition";
@@ -362,8 +510,6 @@ namespace ThcItAgent
                                 {
                                     if (disk["Model"] != null) sysDiskModel = disk["Model"].ToString().Trim();
                                     if (disk["Size"] != null) sysDiskSize = Convert.ToInt64(disk["Size"]);
-                                    if (disk["InterfaceType"] != null) sysDiskInterface = disk["InterfaceType"].ToString();
-                                    if (disk["MediaType"] != null) sysDiskMediaType = disk["MediaType"].ToString();
                                     break;
                                 }
                             }
@@ -373,7 +519,6 @@ namespace ThcItAgent
                 }
                 catch { }
 
-                // Iterate all physical disks
                 var secList = new List<string>();
                 using (var s = new ManagementObjectSearcher("SELECT Model, Size, MediaType, InterfaceType FROM Win32_DiskDrive"))
                 {
@@ -382,7 +527,10 @@ namespace ThcItAgent
                     {
                         string dModel = mo["Model"] != null ? mo["Model"].ToString().Trim() : "";
                         long dSize = mo["Size"] != null ? Convert.ToInt64(mo["Size"]) : 0;
+                        if (dSize < 5L * 1024 * 1024 * 1024) continue; // Skip USB thumb drives < 5GB
+
                         double dGb = Math.Round((double)dSize / (1024 * 1024 * 1024), 0);
+                        string capStr = dGb >= 900 ? (Math.Round(dGb / 1000.0, 1) + " TB") : (dGb + " GB");
                         string iface = mo["InterfaceType"] != null ? mo["InterfaceType"].ToString() : "";
                         string mType = mo["MediaType"] != null ? mo["MediaType"].ToString() : "";
 
@@ -392,20 +540,19 @@ namespace ThcItAgent
                         else if (mType.IndexOf("Fixed", StringComparison.OrdinalIgnoreCase) >= 0 && dModel.IndexOf("SSD", StringComparison.OrdinalIgnoreCase) < 0)
                             dType = "HDD";
 
-                        // If this is the OS disk
                         if (!string.IsNullOrEmpty(sysDiskModel) && dModel.Equals(sysDiskModel, StringComparison.OrdinalIgnoreCase))
                         {
-                            specs.StorageCapacity = dGb;
+                            specs.StorageCapacity = capStr;
                             specs.StorageType = dType;
                         }
                         else if (string.IsNullOrEmpty(sysDiskModel) && index == 0)
                         {
-                            specs.StorageCapacity = dGb;
+                            specs.StorageCapacity = capStr;
                             specs.StorageType = dType;
                         }
                         else
                         {
-                            secList.Add(dModel + " (" + dGb + " GB " + dType + ")");
+                            secList.Add(dType + " " + capStr + " (" + dModel + ")");
                         }
                         index++;
                     }
@@ -421,8 +568,15 @@ namespace ThcItAgent
                 {
                     foreach (ManagementObject mo in s.Get())
                     {
-                        if (mo["Caption"] != null) specs.OsName = mo["Caption"].ToString().Trim();
-                        if (mo["OSArchitecture"] != null) specs.OsName += " (" + mo["OSArchitecture"].ToString().Trim() + ")";
+                        if (mo["Caption"] != null)
+                        {
+                            string cap = mo["Caption"].ToString().Replace("Microsoft", "").Trim();
+                            specs.OsName = cap;
+                        }
+                        if (mo["OSArchitecture"] != null && !specs.OsName.Contains("bit"))
+                        {
+                            specs.OsName += " (" + mo["OSArchitecture"].ToString().Trim() + ")";
+                        }
                         break;
                     }
                 }
@@ -439,7 +593,8 @@ namespace ThcItAgent
                         if (mo["Name"] != null)
                         {
                             string g = mo["Name"].ToString().Trim();
-                            if (string.IsNullOrEmpty(specs.GpuModel)) specs.GpuModel = g;
+                            if (g.IndexOf("Virtual", StringComparison.OrdinalIgnoreCase) >= 0 || g.IndexOf("Remote", StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                            if (string.IsNullOrEmpty(specs.GpuModel) || specs.GpuModel == "Integrated Graphics") specs.GpuModel = g;
                             else if (!specs.GpuModel.Contains(g)) specs.GpuModel += ", " + g;
                         }
                     }
@@ -461,7 +616,7 @@ namespace ThcItAgent
                         }
                         if (mo["MACAddress"] != null && string.IsNullOrEmpty(specs.MacAddress))
                         {
-                            specs.MacAddress = mo["MACAddress"].ToString().Trim();
+                            specs.MacAddress = mo["MACAddress"].ToString().Trim().ToUpper();
                         }
                         if (mo["DefaultIPGateway"] != null) break;
                     }
@@ -473,7 +628,11 @@ namespace ThcItAgent
             try
             {
                 var screens = Screen.AllScreens;
-                specs.MonitorInfo = screens.Length + " จอ (" + Screen.PrimaryScreen.Bounds.Width + "x" + Screen.PrimaryScreen.Bounds.Height + ")";
+                if (screens.Length > 0)
+                {
+                    var p = Screen.PrimaryScreen.Bounds;
+                    specs.MonitorSize = screens.Length > 1 ? (screens.Length + " จอ (" + p.Width + "x" + p.Height + ")") : (p.Width + "x" + p.Height);
+                }
             }
             catch { }
 
@@ -489,19 +648,25 @@ namespace ThcItAgent
                 { "serial_number", SerialNumber },
                 { "brand", Brand },
                 { "model", Model },
+                { "device_type_code", DeviceTypeCode },
                 { "cpu_model", CpuModel },
-                { "cpu_cores", CpuCores },
-                { "ram_capacity", RamCapacity },
+                { "cpu_speed", CpuSpeed },
+                { "ram_capacity", RamCapacity }, // int
                 { "ram_type", RamType },
+                { "ram_bus", RamBus },
+                { "ram_slots", RamSlots },
                 { "storage_type", StorageType },
-                { "storage_capacity", StorageCapacity },
+                { "storage_capacity", StorageCapacity }, // string e.g. "256 GB"
                 { "storage_second", StorageSecond },
                 { "os_name", OsName },
+                { "os_license", OsLicense },
                 { "gpu_model", GpuModel },
                 { "ip_address", IpAddress },
                 { "mac_address", MacAddress },
-                { "monitor_info", MonitorInfo },
-                { "agent_version", "2.5.5-TrayExe" }
+                { "monitor_size", MonitorSize },
+                { "monitor_info", MonitorSize },
+                { "client_agent_version", "2.5.6-TrayExe" },
+                { "agent_version", "2.5.6-TrayExe" }
             };
 
             if (commandId.HasValue && commandId.Value > 0)
@@ -531,6 +696,8 @@ namespace ThcItAgent
         private bool _isBusy = false;
 
         private HardwareSpecs _cachedSpecs;
+        private int _lastExecutedCommandId = 0;
+        private DateTime _lastExecutedTime = DateTime.MinValue;
 
         public TrayContext()
         {
@@ -546,7 +713,7 @@ namespace ThcItAgent
             _contextMenu.Font = new Font("Segoe UI", 9F);
 
             // Title Item
-            var titleItem = new ToolStripMenuItem("🖥️ THC IT Agent v2.5.5 (รพ.ทุ่งหัวช้าง)")
+            var titleItem = new ToolStripMenuItem("🖥️ THC IT Agent v2.5.6 (รพ.ทุ่งหัวช้าง)")
             {
                 Enabled = false,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold)
@@ -554,7 +721,7 @@ namespace ThcItAgent
             _contextMenu.Items.Add(titleItem);
 
             // Status Item
-            _statusMenuItem = new ToolStripMenuItem("⏳ กำลังเชื่อมต่อเซิร์ฟเวอร์...")
+            _statusMenuItem = new ToolStripMenuItem("⏳ กำลังเริ่มระบบและตรวจสอบการเชื่อมต่อ...")
             {
                 Enabled = false
             };
@@ -623,9 +790,27 @@ namespace ThcItAgent
                 _autoStartMenuItem.Checked = true;
             }
 
+            // Immediately collect machine identifiers & full specs on startup
+            try
+            {
+                _cachedSpecs = HardwareSpecs.Collect();
+            }
+            catch { }
+
             // Start background worker thread
             _workerThread = new Thread(WorkerLoop) { IsBackground = true };
             _workerThread.Start();
+
+            // Run initial hardware scan & report in background on startup
+            new Thread(() =>
+            {
+                Thread.Sleep(2500); // Give worker loop a moment to verify server connection
+                try
+                {
+                    ExecuteScanAndSubmit(0, isInitial: true);
+                }
+                catch { }
+            }) { IsBackground = true }.Start();
         }
 
         private void SetStatus(bool online, bool busy, string message)
@@ -649,44 +834,45 @@ namespace ThcItAgent
                 iconState = "ออนไลน์ (พร้อมรับคำสั่ง)";
             }
 
-            _notifyIcon.Icon = targetIcon;
-            _notifyIcon.Text = ("THC IT Agent: " + iconState).Length > 63
-                ? ("THC IT Agent: " + iconState).Substring(0, 63)
-                : ("THC IT Agent: " + iconState);
-
-            _statusMenuItem.Text = (online ? (busy ? "🟡 " : "🟢 ") : "🔴 ") + "สถานะ: " + iconState;
+            try
+            {
+                _notifyIcon.Icon = targetIcon;
+                string notifyText = "THC IT Agent: " + iconState;
+                _notifyIcon.Text = notifyText.Length > 63 ? notifyText.Substring(0, 63) : notifyText;
+                _statusMenuItem.Text = (online ? (busy ? "🟡 " : "🟢 ") : "🔴 ") + "สถานะ: " + iconState;
+            }
+            catch { }
         }
 
         private void WorkerLoop()
         {
-            // Initial brief sleep to let network settle
-            Thread.Sleep(1500);
-
+            Thread.Sleep(1000);
             var js = new JavaScriptSerializer();
 
             while (_isRunning)
             {
                 try
                 {
-                    string serverUrl = _config.ServerUrl.TrimEnd('/');
-                    string pollUrl = serverUrl + "/api/hardware-audit/agent-command";
+                    // Ensure cached specs exist
+                    if (_cachedSpecs == null)
+                    {
+                        _cachedSpecs = HardwareSpecs.Collect();
+                    }
 
-                    // Lightweight Heartbeat Payload
+                    // Heartbeat Payload with full hardware identifiers
                     var pingData = new Dictionary<string, object>
                     {
-                        { "hostname", Environment.MachineName },
-                        { "agent_version", "2.5.5-TrayExe" },
+                        { "hostname", _cachedSpecs.Hostname },
+                        { "hardware_id", _cachedSpecs.HardwareId },
+                        { "mac_address", _cachedSpecs.MacAddress },
+                        { "ip_address", _cachedSpecs.IpAddress },
+                        { "agent_version", "2.5.6-TrayExe" },
+                        { "client_version", "2.5.6-TrayExe" },
                         { "mode", "tray_agent" }
                     };
 
-                    if (_cachedSpecs != null && !string.IsNullOrEmpty(_cachedSpecs.HardwareId))
-                    {
-                        pingData["hardware_id"] = _cachedSpecs.HardwareId;
-                        pingData["hwid"] = _cachedSpecs.HardwareId;
-                    }
-
                     string jsonReq = js.Serialize(pingData);
-                    string respJson = HttpPostJson(pollUrl, jsonReq, 5000);
+                    string respJson = HttpPostWithFallback("/api/hardware-audit/agent-command", jsonReq, 6000);
 
                     if (!string.IsNullOrEmpty(respJson))
                     {
@@ -702,11 +888,24 @@ namespace ThcItAgent
 
                         if (hasCommand && command.Equals("scan", StringComparison.OrdinalIgnoreCase))
                         {
-                            // On-Demand Pull Triggered by Admin!
-                            SetStatus(true, true, "กำลังดึงและส่งสเปกเครื่องตามคำสั่งไอที...");
-                            _notifyIcon.ShowBalloonTip(3000, "ฝ่ายไอทีกำลังดึงข้อมูลสเปก", "ระบบส่วนกลางส่งคำสั่งดึงสเปกเครื่อง (คำสั่ง #" + commandId + ")", ToolTipIcon.Info);
+                            // Check if this command was already executed recently (prevent infinite loops)
+                            if (commandId > 0 && commandId == _lastExecutedCommandId && (DateTime.Now - _lastExecutedTime).TotalSeconds < 40)
+                            {
+                                // Already executed, send direct ACK without re-running full scan
+                                SetStatus(true, false, "ออนไลน์ (ส่งยืนยันผลคำสั่งแล้ว)");
+                                AcknowledgeCommandComplete(commandId, "คำสั่งเสร็จสมบูรณ์แล้ว (Cached Ack)");
+                            }
+                            else
+                            {
+                                // On-Demand Pull Triggered by Admin!
+                                _lastExecutedCommandId = commandId;
+                                _lastExecutedTime = DateTime.Now;
 
-                            ExecuteScanAndSubmit(commandId);
+                                SetStatus(true, true, "กำลังดึงและส่งสเปกเครื่องตามคำสั่งไอที...");
+                                _notifyIcon.ShowBalloonTip(3000, "ฝ่ายไอทีกำลังดึงข้อมูลสเปก", "ระบบส่วนกลางสั่งดึงสเปกเครื่อง (คำสั่ง #" + commandId + ")", ToolTipIcon.Info);
+
+                                ExecuteScanAndSubmit(commandId);
+                            }
                         }
                         else
                         {
@@ -725,7 +924,7 @@ namespace ThcItAgent
                 }
 
                 // Sleep interval
-                int interval = Math.Max(2, _config.HeartbeatIntervalSec);
+                int interval = Math.Max(3, _config.HeartbeatIntervalSec);
                 for (int i = 0; i < interval && _isRunning; i++)
                 {
                     Thread.Sleep(1000);
@@ -733,31 +932,55 @@ namespace ThcItAgent
             }
         }
 
-        private void ExecuteScanAndSubmit(int commandId)
+        private void ExecuteScanAndSubmit(int commandId, bool isInitial = false)
         {
             try
             {
-                SetStatus(true, true, "กำลังอ่านข้อมูลสเปกเครื่อง...");
+                SetStatus(true, true, isInitial ? "กำลังลงทะเบียนส่งสเปกแรกเริ่ม..." : "กำลังอ่านข้อมูลสเปกเครื่อง...");
                 _cachedSpecs = HardwareSpecs.Collect();
 
                 SetStatus(true, true, "กำลังส่งข้อมูลเข้าสู่ระบบไอที...");
-                string serverUrl = _config.ServerUrl.TrimEnd('/');
-                string submitUrl = serverUrl + "/api/hardware-audit/submit";
-
                 var payload = _cachedSpecs.ToPayload(commandId > 0 ? (int?)commandId : null);
                 var js = new JavaScriptSerializer();
                 string jsonReq = js.Serialize(payload);
 
-                string resp = HttpPostJson(submitUrl, jsonReq, 10000);
+                string resp = HttpPostWithFallback("/api/hardware-audit/submit", jsonReq, 12000);
                 SetStatus(true, false, "ส่งข้อมูลสเปกสำเร็จ");
 
-                _notifyIcon.ShowBalloonTip(3000, "ส่งข้อมูลสเปกสำเร็จ", "บันทึกข้อมูลเครื่อง " + _cachedSpecs.Hostname + " เรียบร้อยแล้ว", ToolTipIcon.Info);
+                // Explicit Command Completion ACK
+                if (commandId > 0)
+                {
+                    AcknowledgeCommandComplete(commandId, "สแกนสำเร็จจาก " + _cachedSpecs.Hostname);
+                }
+
+                if (!isInitial)
+                {
+                    _notifyIcon.ShowBalloonTip(3000, "ส่งข้อมูลสเปกสำเร็จ", "บันทึกข้อมูลเครื่อง " + _cachedSpecs.Hostname + " เรียบร้อยแล้ว", ToolTipIcon.Info);
+                }
+                else
+                {
+                    _notifyIcon.ShowBalloonTip(3000, "THC IT Agent ออนไลน์แล้ว", "ส่งรายงานสเปกเครื่อง " + _cachedSpecs.Hostname + " เข้าสู่ระบบสำเร็จ", ToolTipIcon.Info);
+                }
             }
             catch (Exception ex)
             {
                 SetStatus(true, false, "ส่งข้อมูลไม่สำเร็จ: " + ex.Message);
-                _notifyIcon.ShowBalloonTip(4000, "เกิดข้อผิดพลาดในการส่งข้อมูล", ex.Message, ToolTipIcon.Warning);
+                if (!isInitial)
+                {
+                    _notifyIcon.ShowBalloonTip(4000, "เกิดข้อผิดพลาดในการส่งข้อมูล", ex.Message, ToolTipIcon.Warning);
+                }
             }
+        }
+
+        private void AcknowledgeCommandComplete(int commandId, string summary)
+        {
+            try
+            {
+                string path = "/api/hardware-audit/agent-command/" + commandId + "/complete";
+                string json = "{\"summary\":\"" + summary.Replace("\"", "'") + "\"}";
+                HttpPostWithFallback(path, json, 5000);
+            }
+            catch { }
         }
 
         public void TriggerManualScan()
@@ -769,14 +992,85 @@ namespace ThcItAgent
             }) { IsBackground = true }.Start();
         }
 
-        private string HttpPostJson(string url, string jsonBody, int timeoutMs)
+        /// <summary>
+        /// Intelligent HTTP Request Engine with Multi-Server Automatic Failover
+        /// </summary>
+        private string HttpPostWithFallback(string relativePath, string jsonBody, int timeoutMs)
+        {
+            var urlsToTry = new List<string>();
+
+            // 1. Primary: currently configured ServerUrl
+            string primary = _config.ServerUrl.TrimEnd('/');
+            urlsToTry.Add(primary);
+
+            // 2. Candidate fallbacks
+            foreach (string cand in AppConfig.CandidateUrls)
+            {
+                string c = cand.TrimEnd('/');
+                if (!urlsToTry.Contains(c))
+                {
+                    urlsToTry.Add(c);
+                }
+            }
+
+            Exception lastEx = null;
+
+            foreach (string baseUrl in urlsToTry)
+            {
+                string fullUrl = baseUrl + relativePath;
+                try
+                {
+                    string result = HttpPostRaw(fullUrl, jsonBody, timeoutMs);
+                    if (!string.IsNullOrEmpty(result))
+                    {
+                        // If this successful URL was different from current config, auto-switch and save
+                        if (!baseUrl.Equals(primary, StringComparison.OrdinalIgnoreCase))
+                        {
+                            _config.ServerUrl = baseUrl;
+                            _config.Save();
+                        }
+                        return result;
+                    }
+                }
+                catch (WebException wex)
+                {
+                    lastEx = wex;
+                    // If server responded with an error (e.g. 422, 500), try to read error body for diagnostics
+                    if (wex.Response != null)
+                    {
+                        try
+                        {
+                            using (var reader = new StreamReader(wex.Response.GetResponseStream(), Encoding.UTF8))
+                            {
+                                string errBody = reader.ReadToEnd();
+                                if (!string.IsNullOrEmpty(errBody) && errBody.Contains("\"success\""))
+                                {
+                                    return errBody; // Handled JSON response
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    lastEx = ex;
+                }
+            }
+
+            if (lastEx != null) throw lastEx;
+            return null;
+        }
+
+        private string HttpPostRaw(string url, string jsonBody, int timeoutMs)
         {
             var req = (HttpWebRequest)WebRequest.Create(url);
             req.Method = "POST";
             req.ContentType = "application/json; charset=utf-8";
             req.Accept = "application/json";
             req.Timeout = timeoutMs;
-            req.UserAgent = "THC-IT-Agent/2.5.5";
+            req.UserAgent = "THC-IT-Agent/2.5.6";
+            req.KeepAlive = false;
 
             byte[] bytes = Encoding.UTF8.GetBytes(jsonBody);
             req.ContentLength = bytes.Length;
@@ -828,7 +1122,7 @@ namespace ThcItAgent
             };
             var lblSub = new Label
             {
-                Text = "THC Client Hardware Audit Agent v2.5.5 (Standalone)",
+                Text = "THC Client Hardware Audit Agent v2.5.6 (Standalone System Tray)",
                 ForeColor = Color.FromArgb(220, 240, 255),
                 Font = new Font("Segoe UI", 9F),
                 Location = new Point(17, 36),
@@ -855,17 +1149,18 @@ namespace ThcItAgent
                 list.Items.Clear();
                 list.Items.Add(new ListViewItem(new[] { "ชื่อเครื่อง (Hostname)", _cachedSpecs.Hostname }));
                 list.Items.Add(new ListViewItem(new[] { "ยี่ห้อ / รุ่น (Model)", _cachedSpecs.Brand + " " + _cachedSpecs.Model }));
+                list.Items.Add(new ListViewItem(new[] { "ประเภทอุปกรณ์", _cachedSpecs.DeviceTypeCode }));
                 list.Items.Add(new ListViewItem(new[] { "ซีเรียลนัมเบอร์ (Serial)", _cachedSpecs.SerialNumber }));
                 list.Items.Add(new ListViewItem(new[] { "รหัสฮาร์ดแวร์ (HWID)", _cachedSpecs.HardwareId }));
-                list.Items.Add(new ListViewItem(new[] { "หน่วยประมวลผล (CPU)", _cachedSpecs.CpuModel + " (" + _cachedSpecs.CpuCores + " Cores)" }));
-                list.Items.Add(new ListViewItem(new[] { "หน่วยความจำ (RAM)", _cachedSpecs.RamCapacity + " GB (" + _cachedSpecs.RamType + ")" }));
-                list.Items.Add(new ListViewItem(new[] { "พื้นที่จัดเก็บหลัก (Storage)", _cachedSpecs.StorageCapacity + " GB (" + _cachedSpecs.StorageType + ")" }));
+                list.Items.Add(new ListViewItem(new[] { "หน่วยประมวลผล (CPU)", _cachedSpecs.CpuModel + " (" + _cachedSpecs.CpuSpeed + ")" }));
+                list.Items.Add(new ListViewItem(new[] { "หน่วยความจำ (RAM)", _cachedSpecs.RamCapacity + " GB " + _cachedSpecs.RamType + " (" + _cachedSpecs.RamBus + " [" + _cachedSpecs.RamSlots + "])" }));
+                list.Items.Add(new ListViewItem(new[] { "พื้นที่จัดเก็บหลัก (Storage)", _cachedSpecs.StorageType + " " + _cachedSpecs.StorageCapacity }));
                 if (!string.IsNullOrEmpty(_cachedSpecs.StorageSecond))
                     list.Items.Add(new ListViewItem(new[] { "พื้นที่จัดเก็บเสริม (Secondary)", _cachedSpecs.StorageSecond }));
-                list.Items.Add(new ListViewItem(new[] { "ระบบปฏิบัติการ (OS)", _cachedSpecs.OsName }));
+                list.Items.Add(new ListViewItem(new[] { "ระบบปฏิบัติการ (OS)", _cachedSpecs.OsName + " (" + _cachedSpecs.OsLicense + ")" }));
                 list.Items.Add(new ListViewItem(new[] { "การ์ดแสดงผล (GPU)", _cachedSpecs.GpuModel }));
                 list.Items.Add(new ListViewItem(new[] { "IP Address / MAC", _cachedSpecs.IpAddress + " (" + _cachedSpecs.MacAddress + ")" }));
-                list.Items.Add(new ListViewItem(new[] { "หน้าจอแสดงผล (Monitor)", _cachedSpecs.MonitorInfo }));
+                list.Items.Add(new ListViewItem(new[] { "หน้าจอแสดงผล (Monitor)", _cachedSpecs.MonitorSize }));
                 list.Items.Add(new ListViewItem(new[] { "เซิร์ฟเวอร์เชื่อมต่อ", _config.ServerUrl }));
             };
             addRow();
@@ -924,7 +1219,7 @@ namespace ThcItAgent
             var form = new Form
             {
                 Text = "⚙️ ตั้งค่าเซิร์ฟเวอร์ - THC IT Agent",
-                Size = new Size(480, 280),
+                Size = new Size(500, 320),
                 StartPosition = FormStartPosition.CenterScreen,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
@@ -936,7 +1231,7 @@ namespace ThcItAgent
             var lbl = new Label
             {
                 Text = "ที่อยู่เซิร์ฟเวอร์ระบบไอที (Server API URL):",
-                Location = new Point(20, 20),
+                Location = new Point(20, 18),
                 AutoSize = true,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold)
             };
@@ -945,27 +1240,47 @@ namespace ThcItAgent
             var txtUrl = new TextBox
             {
                 Text = _config.ServerUrl,
-                Location = new Point(20, 48),
-                Size = new Size(420, 26),
+                Location = new Point(20, 44),
+                Size = new Size(440, 26),
                 Font = new Font("Segoe UI", 10F)
             };
             form.Controls.Add(txtUrl);
 
-            var btnMoph = new Button
+            var lblPresets = new Label
             {
-                Text = "🌐 MOPH Cloud (ค่าเริ่มต้น)",
-                Location = new Point(20, 85),
-                Size = new Size(170, 28),
+                Text = "เลือกเซิร์ฟเวอร์ด่วน:",
+                Location = new Point(20, 80),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Regular),
+                ForeColor = Color.Gray
+            };
+            form.Controls.Add(lblPresets);
+
+            var btnMophHttps = new Button
+            {
+                Text = "🌐 MOPH Cloud (HTTPS)",
+                Location = new Point(20, 104),
+                Size = new Size(140, 28),
                 Font = new Font("Segoe UI", 8F)
             };
-            btnMoph.Click += (s, e) => txtUrl.Text = "https://thchospital.moph.go.th/it-system";
-            form.Controls.Add(btnMoph);
+            btnMophHttps.Click += (s, e) => txtUrl.Text = "https://thchospital.moph.go.th/it-system";
+            form.Controls.Add(btnMophHttps);
+
+            var btnMophHttp = new Button
+            {
+                Text = "🌐 MOPH Cloud (HTTP)",
+                Location = new Point(168, 104),
+                Size = new Size(140, 28),
+                Font = new Font("Segoe UI", 8F)
+            };
+            btnMophHttp.Click += (s, e) => txtUrl.Text = "http://thchospital.moph.go.th/it-system";
+            form.Controls.Add(btnMophHttp);
 
             var btnLan = new Button
             {
-                Text = "🏢 รพ. LAN (192.168.2.89)",
-                Location = new Point(200, 85),
-                Size = new Size(160, 28),
+                Text = "🏢 รพ. LAN (:8000)",
+                Location = new Point(316, 104),
+                Size = new Size(144, 28),
                 Font = new Font("Segoe UI", 8F)
             };
             btnLan.Click += (s, e) => txtUrl.Text = "http://192.168.2.89:8000";
@@ -973,9 +1288,9 @@ namespace ThcItAgent
 
             var btnTest = new Button
             {
-                Text = "🔍 ทดสอบการเชื่อมต่อ",
-                Location = new Point(20, 135),
-                Size = new Size(150, 32),
+                Text = "🔍 ทดสอบการเชื่อมต่อเซิร์ฟเวอร์",
+                Location = new Point(20, 150),
+                Size = new Size(200, 32),
                 BackColor = Color.FromArgb(52, 152, 219),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -983,13 +1298,16 @@ namespace ThcItAgent
             };
             btnTest.Click += (s, e) =>
             {
+                var sw = Stopwatch.StartNew();
                 try
                 {
-                    string testUrl = txtUrl.Text.TrimEnd('/') + "/api/hardware-audit/agent-command";
-                    string testResp = HttpPostJson(testUrl, "{\"hostname\":\"TEST\",\"mode\":\"ping\"}", 4000);
+                    string target = txtUrl.Text.Trim().TrimEnd('/');
+                    string testUrl = target + "/api/hardware-audit/agent-command";
+                    string testResp = HttpPostRaw(testUrl, "{\"hostname\":\"TEST-PING\",\"mode\":\"ping\"}", 5000);
+                    sw.Stop();
                     if (!string.IsNullOrEmpty(testResp))
                     {
-                        MessageBox.Show("เชื่อมต่อเซิร์ฟเวอร์สำเร็จ! 🟢\nURL: " + txtUrl.Text, "ผลการทดสอบ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("เชื่อมต่อเซิร์ฟเวอร์สำเร็จ! 🟢\nเวลาตอบสนอง: " + sw.ElapsedMilliseconds + " ms\nURL: " + target, "ผลการทดสอบ", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     else
                     {
@@ -998,6 +1316,7 @@ namespace ThcItAgent
                 }
                 catch (Exception ex)
                 {
+                    sw.Stop();
                     MessageBox.Show("เชื่อมต่อไม่สำเร็จ 🔴\nข้อผิดพลาด: " + ex.Message, "ผลการทดสอบ", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             };
@@ -1006,7 +1325,7 @@ namespace ThcItAgent
             var btnSave = new Button
             {
                 Text = "บันทึกการตั้งค่า",
-                Location = new Point(230, 185),
+                Location = new Point(240, 215),
                 Size = new Size(110, 34),
                 BackColor = Color.FromArgb(46, 204, 113),
                 ForeColor = Color.White,
@@ -1015,7 +1334,7 @@ namespace ThcItAgent
             };
             btnSave.Click += (s, e) =>
             {
-                _config.ServerUrl = txtUrl.Text.Trim();
+                _config.ServerUrl = txtUrl.Text.Trim().TrimEnd('/');
                 _config.Save();
                 form.Close();
                 _notifyIcon.ShowBalloonTip(2000, "บันทึกการตั้งค่าแล้ว", "กำลังเชื่อมต่อกับเซิร์ฟเวอร์: " + _config.ServerUrl, ToolTipIcon.Info);
@@ -1025,8 +1344,8 @@ namespace ThcItAgent
             var btnCancel = new Button
             {
                 Text = "ยกเลิก",
-                Location = new Point(350, 185),
-                Size = new Size(90, 34),
+                Location = new Point(360, 215),
+                Size = new Size(100, 34),
                 BackColor = Color.FromArgb(240, 240, 240),
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 9F)

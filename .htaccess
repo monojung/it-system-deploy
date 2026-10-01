@@ -32,6 +32,9 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
+    # 5.5 Ensure PowerShell & Batch Agent scripts route through Laravel front controller for dynamic server URL injection
+    RewriteRule ^agent/.*\.(ps1|bat)$ index.php [L]
+
     # 6. เธชเนเธเธเธณเธเธญเธ—เธฑเนเธเธซเธกเธ”เน€เธเนเธฒเธชเธนเน index.php เธซเธฒเธเนเธกเนเนเธเนเนเธเธฅเนเธเธฃเธดเธ
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f

@@ -11,9 +11,9 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.5.5'),
+    'version' => env('APP_VERSION', '2.5.6'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
-    'release_date' => '2026-09-25',
+    'release_date' => '2026-10-01',
     'build' => '20260925.5',
     'environment' => env('APP_ENV', 'production'),
 
@@ -39,6 +39,20 @@ return [
     |
     */
     'changelog' => [
+        '2.5.6' => [
+            'date' => '2026-10-01',
+            'badge' => 'Agent v2.5.6: Multi-Server Failover & Resilient Telemetry Fix',
+            'badge_color' => '#2563eb',
+            'title' => 'ปรับปรุงระบบ IT Agent เชื่อมต่อ API อัตโนมัติ (Auto-Failover), ลงทะเบียนเมื่อเปิดเครื่อง, และแก้ไขการส่งสเปกเครื่องขัดข้อง',
+            'highlights' => [
+                'Multi-Server Auto-Discovery & Failover: เพิ่มระบบตรวจจับ Server อัตโนมัติ (MOPH HTTPS, MOPH HTTP, LAN IP 192.168.2.89/it-system, 192.168.2.89:8000, 192.168.2.10, localhost) สลับเซิร์ฟเวอร์ที่ใช้งานได้จริงอัตโนมัติหาก URL ใดล่มหรือติดไฟร์วอลล์',
+                'Auto-Registration On Startup: เมื่อติดตั้งหรือเปิด Agent ขึ้นมา จะเก็บข้อมูลสเปกและส่ง Telemetry ลงทะเบียนกับระบบทันที ทำให้เครื่องเป้าหมายแสดงสถานะ Online ในระบบทันทีโดยไม่ต้องรอสั่งการ',
+                'แก้ไขปัญหา Validation 422 Rejection: ปรับปรุง API HardwareAuditController ให้ยอมรับค่า RAM Capacity แบบทศนิยม (เช่น 7.9 GB / 15.8 GB) และปัดเศษอัตโนมัติ พร้อมรองรับชื่อฟิลด์ alias จาก Agent ทุกเวอร์ชัน',
+                'แก้ไข Zombie Command Infinite Loop: แก้ไขระบบกระจายคำสั่งสแกน (Poll Command) ป้องกันการสั่งสแกนซ้ำซ้อนไม่รู้จบสำหรับคำสั่งประเภท Scan All / Broadcast โดยตรวจสอบสถานะ Completed ของแต่ละเครื่องอย่างถูกต้อง',
+                'รองรับการสั่งสแกนผ่าน Asset ID โดยตรง: ระบบสามารถสั่งสแกนเครื่องเป้าหมายได้จากทั้งหน้า Hardware Audit และ Asset Inventory โดยค้นหาผ่าน Hostname, Hardware ID หรือ Asset ID อัตโนมัติ',
+                'Dynamic Script Installer: ปรับปรุงระบบดาวน์โหลดไฟล์ติดตั้ง (.bat/.ps1) ให้ระบุ Base URL ของเซิร์ฟเวอร์ที่เรียกใช้อยู่ปัจจุบันแบบไดนามิก ป้องกันปัญหาการตั้งค่า URL ผิดพลาด',
+            ],
+        ],
         '2.5.5' => [
             'date' => '2026-09-25',
             'badge' => 'Major Architecture: Standalone Native C# System Tray Agent & Real-Time Live Status',

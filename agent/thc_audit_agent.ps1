@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # thc_audit_agent.ps1
 # Thung Hua Chang Hospital - Client Hardware Audit Agent
 # Embedded PowerShell Agent to collect physical hardware specs & transmit to IT Server
@@ -50,8 +50,11 @@ $ErrorActionPreference = 'SilentlyContinue'
 $candidateUrls = @(
     $ServerUrl,
     "https://thchospital.moph.go.th/it-system/api/hardware-audit/submit",
+    "http://thchospital.moph.go.th/it-system/api/hardware-audit/submit",
     "http://192.168.2.89:8000/api/hardware-audit/submit",
     "http://192.168.2.89/it-system/api/hardware-audit/submit",
+    "http://192.168.2.10/it-system/api/hardware-audit/submit",
+    "http://192.168.2.10:8000/api/hardware-audit/submit",
     "http://localhost:8000/api/hardware-audit/submit",
     "http://127.0.0.1:8000/api/hardware-audit/submit"
 ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique
@@ -391,7 +394,7 @@ function Invoke-HardwareAudit {
         os_license            = $osLicense
         gpu_model             = $gpuModel
         monitor_size          = $monitorStr
-        client_agent_version  = '2.3.0'
+        client_agent_version  = '2.5.6'
     }
 
     if ($FiscalYear -gt 0) {
@@ -478,7 +481,7 @@ function Check-ServerCommand {
 
     foreach ($submitUrl in $candidateUrls) {
         $cmdUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', '/api/hardware-audit/agent-command'
-        $pollUrl = "$cmdUrl`?hardware_id=$hwId&hostname=$hostName&mac_address=$mac&client_version=2.3.0"
+        $pollUrl = "$cmdUrl`?hardware_id=$hwId&hostname=$hostName&mac_address=$mac&client_version=2.5.6"
         
         $respStr = Invoke-SafeApiRequest -Uri $pollUrl -Method 'GET' -TimeoutSec 8
         if (-not [string]::IsNullOrWhiteSpace($respStr)) {

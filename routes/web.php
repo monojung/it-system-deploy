@@ -84,6 +84,8 @@ Route::get('/agent/{filename}', function ($filename) {
 
             $currentSubmitUrl = url('/api/hardware-audit/submit');
             $currentAgentUrl = url('/agent/thc_audit_agent.ps1');
+            $currentAgentExeUrl = url('/agent/THC_IT_Agent.exe');
+            $currentBaseUrl = url('/');
 
             if (str_ends_with($filename, '.ps1')) {
                 // Dynamically inject the active server's submit URL as top priority
@@ -99,10 +101,15 @@ Route::get('/agent/{filename}', function ($filename) {
             }
 
             if (str_ends_with($filename, '.bat')) {
-                // Dynamically inject active agent download URL into installer
+                // Dynamically inject active server URL and active agent download URL into installer
+                $content = preg_replace(
+                    '/set\s+"SERVER_URL=[^"]*"/',
+                    "set \"SERVER_URL={$currentBaseUrl}\"",
+                    $content
+                );
                 $content = str_replace(
-                    "'https://thchospital.moph.go.th/it-system/agent/thc_audit_agent.ps1'",
-                    "'{$currentAgentUrl}', 'https://thchospital.moph.go.th/it-system/agent/thc_audit_agent.ps1'",
+                    "'https://thchospital.moph.go.th/it-system/agent/THC_IT_Agent.exe'",
+                    "'{$currentAgentExeUrl}', 'https://thchospital.moph.go.th/it-system/agent/THC_IT_Agent.exe'",
                     $content
                 );
                 return response($content, 200, [
