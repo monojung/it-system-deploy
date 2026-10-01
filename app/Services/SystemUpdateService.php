@@ -526,7 +526,7 @@ class SystemUpdateService
             if (preg_match('#github\.com/([^/]+)/([^/]+)#', $cleanUrl, $m)) {
                 $owner = $m[1];
                 $repo = $m[2];
-                $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$targetBranch}/config/version.php";
+                $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$targetBranch}/config/version.php?t=" . time();
 
                 $content = null;
                 if (function_exists('curl_init')) {
@@ -604,7 +604,7 @@ class SystemUpdateService
         // 1. update-patch.zip on GitHub raw (lightweight curated patch ~1.4MB)
         // 2. GitHub native repository zipball archive for branch (full source archive)
         $candidates = [
-            "https://raw.githubusercontent.com/{$owner}/{$repo}/{$targetBranch}/update-patch.zip",
+            "https://raw.githubusercontent.com/{$owner}/{$repo}/{$targetBranch}/update-patch.zip?t=" . time(),
             "https://github.com/{$owner}/{$repo}/archive/refs/heads/{targetBranch}.zip",
         ];
 
