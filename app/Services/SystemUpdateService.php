@@ -1080,11 +1080,11 @@ class SystemUpdateService
                 $currentPath = implode(';', $extraPaths) . ';' . $currentPath;
             }
         } else {
-            // Linux / Unix: ensure standard binary paths exist
+            // Linux / Unix: ensure standard binary paths exist without triggering open_basedir check
             $unixPaths = ['/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin'];
-            $existingPaths = explode(':', $currentPath);
+            $existingPaths = array_filter(explode(':', $currentPath));
             foreach ($unixPaths as $up) {
-                if (is_dir($up) && !in_array($up, $existingPaths, true)) {
+                if (!in_array($up, $existingPaths, true)) {
                     $existingPaths[] = $up;
                 }
             }
@@ -1095,9 +1095,8 @@ class SystemUpdateService
 
         // Ensure HOME is defined (critical on Linux PHP-FPM / Apache)
         if (empty($env['HOME'])) {
-            $docRoot = !empty($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : base_path();
-            $homeCandidate = dirname($docRoot);
-            $env['HOME'] = is_dir($homeCandidate) && is_writable($homeCandidate) ? $homeCandidate : sys_get_temp_dir();
+            $storageHome = storage_path('app');
+            $env['HOME'] = @is_dir($storageHome) && @is_writable($storageHome) ? $storageHome : base_path();
         }
 
         // Prevent Git from hanging on interactive prompts and bypass SSL verification issues
