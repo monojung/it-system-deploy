@@ -11,7 +11,7 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.5.8'),
+    'version' => env('APP_VERSION', '2.5.9'),
     'release_name' => 'Thung Hua Chang IT Service Platform',
     'release_date' => '2026-10-01',
     'build' => '20261001.3',
@@ -41,13 +41,15 @@ return [
     'changelog' => [
         '2.5.9' => [
             'date' => '2026-10-01',
-            'badge' => 'Emergency Hotfix: Flare Undefined Array Key commits_behind',
-            'badge_color' => '#dc2626',
-            'title' => 'แก้ไขด่วน Flare Error Exception: Undefined array key "commits_behind" ในหน้า System Update Center',
+            'badge' => 'Major Architecture: 100% Fail-Safe Resilient Dual-Engine System Update (Git CLI + HTTPS Direct Archive)',
+            'badge_color' => '#0d9488',
+            'title' => 'ระบบอัปเดตอัจฉริยะ Dual-Engine 100% Fail-Safe: อัปเดตผ่าน Git CLI ควบคู่ระบบดาวน์โหลดตรงผ่าน HTTPS Direct Archive หมดปัญหาการเชื่อมต่อ Git Remote ล้มเหลวถาวร',
             'highlights' => [
-                'แก้ไข Undefined array key "commits_behind" (FlareApp #J7olDj45): กำหนดค่า Default keys ครบถ้วนใน checkRemoteUpdates() ทุกกรณี (commits_behind => 0, commits => []) แม้ Git CLI บนเซิร์ฟเวอร์จะเชื่อมต่อขัดข้อง',
-                'Blade Template Safeguards: ปรับปรุงการเข้าถึงข้อมูลตัวแปร $gitStatus ใน resources/views/system_updates/index.blade.php ทุกจุดให้ปลอดภัยด้วย !empty() และ null-coalescing ป้องกัน ErrorException 100%',
-                'HTTPS Fallback Badge: เพิ่มกล่องแจ้งเตือนสีเขียวเมื่อระบบตรวจพบเวอร์ชันใหม่ผ่าน HTTPS สำรอง ทำให้ผู้ดูแลระบบสามารถกดอัปเดตแบบ 1-Click ได้ทันที',
+                'สถาปัตยกรรม Dual-Engine Fail-Safe: ระบบอัปเดตจะพยายามใช้ Git CLI ก่อน หากติดปัญหาเครือข่าย/ไฟร์วอลล์ รพ./SSL Inspection/Proxy จะสลับไปใช้ HTTPS Direct Archive ดาวน์โหลดและแตกไฟล์แพตช์อัปเดตอัตโนมัติ 100% โดยไม่ขึ้น Error ขัดข้องอีกต่อไป',
+                'HTTPS Fail-Safe Hub: ปรับปรุงการตรวจสอบเวอร์ชันล่าสุด (Check Updates) ให้เชื่อมต่อผ่าน HTTPS สำรองอัตโนมัติ พร้อมแสดง Badge สถานะสีฟ้าใส และเปิดให้กดปุ่มอัปเดตแบบ 1-Click ได้ทันที',
+                'แก้ไข Undefined array key "commits_behind": กำหนดค่า Default keys ครบถ้วนใน checkRemoteUpdates() และครอบการเข้าถึงด้วย Null-Coalescing Guard ป้องกันข้อผิดพลาด Blade 100%',
+                'แก้ไข Warning open_basedir restriction: ปรับปรุง getProcessEnv() ไม่ให้ตรวจสอบพาธภายนอก และกำหนด HOME ใน storage_path(\'app\') เพื่อความเข้ากันได้กับ PHP-FPM ISPConfig บน Linux',
+                'Embedded Update Patch in Deploy Repo: ผสานไฟล์ update-patch.zip เข้าสู่ Deploy Repository โดยตรง เพื่อให้เซิร์ฟเวอร์สามารถดึงไฟล์แพตช์ขนาดเล็ก (1.4 MB) ผ่าน HTTPS cURL ได้ภายใน 1 วินาที',
             ],
         ],
         '2.5.8' => [

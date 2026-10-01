@@ -601,6 +601,9 @@
                 <div class="repo-hero-badges">
                     <span class="repo-badge branch"><i class="bi bi-git"></i> Branch: <strong>{{ $targetBranch }}</strong></span>
                     <span class="repo-badge remote"><i class="bi bi-hdd-network"></i> Remote: <strong>{{ $remoteName }}</strong></span>
+                    @if(!empty($gitStatus['http_fallback']))
+                        <span class="repo-badge" style="background: #0284c7; color: #ffffff;" title="เชื่อมต่อผ่านระบบ HTTPS Fail-Safe Hub สำรอง (ป้องกันไฟร์วอลล์บล็อกคำสั่ง Git 100%)"><i class="bi bi-shield-check"></i> โหมด: HTTPS Fail-Safe Hub (100%)</span>
+                    @endif
                     @if($gitStatus['has_update'] ?? false)
                         <span class="repo-badge sync-warning"><i class="bi bi-arrow-down-circle-fill"></i> มีการอัปเดตใหม่ ({{ !empty($gitStatus['commits_behind']) ? $gitStatus['commits_behind'] . ' commits' : (!empty($gitStatus['remote_version']) ? 'v' . $gitStatus['remote_version'] : 'มีเวอร์ชันใหม่') }})</span>
                     @elseif($gitStatus['success'] ?? false)

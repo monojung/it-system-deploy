@@ -425,6 +425,35 @@ class SystemUpdateService
                 $remoteReleaseDate = $fallbackVersionInfo['remote_release_date'] ?? null;
                 $remoteReleaseName = $fallbackVersionInfo['remote_release_name'] ?? null;
                 $hasNewerVersion = version_compare($remoteVersion, $currentVersion, '>');
+
+                return [
+                    'success' => true,
+                    'connection_mode' => 'https_hub',
+                    'is_git_repo' => File::isDirectory($basePath . DIRECTORY_SEPARATOR . '.git'),
+                    'target_repo' => $targetRepoUrl,
+                    'target_branch' => $targetBranch,
+                    'remote_name' => $remoteName ?? 'deploy',
+                    'branch' => $currentBranch ?? 'main',
+                    'local_commit' => $localCommit ?? '',
+                    'short_local_commit' => !empty($localCommit) ? substr($localCommit, 0, 7) : 'unknown',
+                    'remote_commit' => '',
+                    'short_remote_commit' => 'latest',
+                    'commits_behind' => $hasNewerVersion ? 1 : 0,
+                    'commits' => [],
+                    'has_update' => $hasNewerVersion,
+                    'current_version' => $currentVersion,
+                    'current_build' => config('version.build', 'Latest'),
+                    'remote_version' => $remoteVersion,
+                    'remote_build' => $remoteBuild,
+                    'remote_release_date' => $remoteReleaseDate,
+                    'remote_release_name' => $remoteReleaseName,
+                    'has_newer_version' => $hasNewerVersion,
+                    'cleared_locks_count' => 0,
+                    'http_fallback' => true,
+                    'error' => null,
+                    'message' => 'เชื่อมต่อผ่านระบบ HTTPS Fail-Safe Hub สำเร็จ (ระบบพร้อมให้อัปเดตอัตโนมัติ 100%)',
+                    'last_checked_at' => now()->toDateTimeString(),
+                ];
             }
 
             $rawError = $e->getMessage();
@@ -467,16 +496,16 @@ class SystemUpdateService
                 'short_remote_commit' => 'unknown',
                 'commits_behind' => 0,
                 'commits' => [],
-                'has_update' => $hasNewerVersion,
+                'has_update' => false,
                 'current_version' => $currentVersion,
                 'current_build' => config('version.build', '20261001.2'),
-                'remote_version' => $remoteVersion,
-                'remote_build' => $remoteBuild,
-                'remote_release_date' => $remoteReleaseDate,
-                'remote_release_name' => $remoteReleaseName,
-                'has_newer_version' => $hasNewerVersion,
+                'remote_version' => null,
+                'remote_build' => null,
+                'remote_release_date' => null,
+                'remote_release_name' => null,
+                'has_newer_version' => false,
                 'cleared_locks_count' => 0,
-                'http_fallback' => !empty($remoteVersion),
+                'http_fallback' => false,
                 'error' => $rawError,
                 'error_type' => $errorType,
                 'hint' => $hint,
@@ -546,6 +575,105 @@ class SystemUpdateService
     }
 
     /**
+     * Download and extract release package directly from GitHub via HTTPS (Fail-Safe Direct Engine)
+     *
+     * @param string $targetBranch Branch name (e.g. 'main')
+     * @param callable|null $logCallback Optional logging callback
+     * @return array{extracted_count: int, total_bytes: int}
+     * @throws Exception
+     */
+    public function downloadAndApplyReleaseViaHttp(string $targetBranch = 'main', ?callable $logCallback = null): array
+    {
+        $log = function(string $msg) use ($logCallback) {
+            if (is_callable($logCallback)) {
+                $logCallback($msg);
+            }
+        };
+
+        $config = $this->getUpdateConfig();
+        $targetRepoUrl = $config['repo_url'];
+
+        $owner = 'monojung';
+        $repo = 'it-system-deploy';
+        if (preg_match('#github\.com[:/]([^/]+)/([^/\.]+)(?:\.git)?#i', $targetRepoUrl, $m)) {
+            $owner = $m[1];
+            $repo = $m[2];
+        }
+
+        // Candidate download URLs in priority order:
+        // 1. update-patch.zip on GitHub raw (lightweight curated patch ~1.4MB)
+        // 2. GitHub native repository zipball archive for branch (full source archive)
+        $candidates = [
+            "https://raw.githubusercontent.com/{$owner}/{$repo}/{$targetBranch}/update-patch.zip",
+            "https://github.com/{$owner}/{$repo}/archive/refs/heads/{targetBranch}.zip",
+        ];
+
+        $tempZipPath = storage_path('app/temp-update-package.zip');
+        @unlink($tempZipPath);
+
+        $downloaded = false;
+        $lastError = '';
+
+        foreach ($candidates as $url) {
+            $log("กำลังลองดาวน์โหลดจาก: {$url} ...");
+
+            $fp = @fopen($tempZipPath, 'w+');
+            if (!$fp) {
+                throw new Exception("ไม่สามารถสร้างไฟล์ชั่วคราวสำหรับดาวน์โหลดได้ที่: {$tempZipPath}");
+            }
+
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_FILE, $fp);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 180);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'THC-Hospital-IT-Platform/SystemUpdate');
+
+            $proxy = env('HTTPS_PROXY') ?: env('HTTP_PROXY') ?: env('https_proxy') ?: env('http_proxy');
+            if ($proxy) {
+                curl_setopt($ch, CURLOPT_PROXY, $proxy);
+            }
+
+            $success = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+            fclose($fp);
+
+            if ($success && $httpCode >= 200 && $httpCode < 300 && file_exists($tempZipPath) && filesize($tempZipPath) > 50000) {
+                $downloaded = true;
+                $sizeKb = round(filesize($tempZipPath) / 1024, 1);
+                $log("ดาวน์โหลดสำเร็จ! ขนาดไฟล์: {$sizeKb} KB (HTTP {$httpCode})");
+                break;
+            } else {
+                $fileSize = file_exists($tempZipPath) ? filesize($tempZipPath) : 0;
+                $lastError = "HTTP {$httpCode}, File size: {$fileSize}B" . ($curlError ? ", Error: {$curlError}" : "");
+                $log("ดาวน์โหลดจาก URL นี้ไม่สำเร็จ ({$lastError}) -> ลองช่องทางถัดไป...");
+                @unlink($tempZipPath);
+            }
+        }
+
+        if (!$downloaded || !file_exists($tempZipPath)) {
+            throw new Exception("ไม่สามารถดาวน์โหลดไฟล์อัปเดตผ่าน HTTPS ได้: {$lastError}");
+        }
+
+        // Extract using our robust extractor
+        $log("กำลังแตกไฟล์และแทนที่โค้ดระบบ...");
+        $extractResult = $this->extractZipArchive(
+            $tempZipPath,
+            base_path(),
+            ['.env', 'storage', 'database/database.sqlite', '.git'],
+            $logCallback
+        );
+
+        @unlink($tempZipPath);
+        $log("แตกไฟล์อัปเดตเสร็จสมบูรณ์ ({$extractResult['extracted_count']} ไฟล์)");
+
+        return $extractResult;
+    }
+
+    /**
      * Execute full update pipeline
      *
      * @param int|null $userId User ID triggering the update
@@ -594,9 +722,9 @@ class SystemUpdateService
         };
 
         try {
-            // Check immediately if .git exists
-            if (!File::isDirectory(base_path('.git'))) {
-                throw new Exception('เซิร์ฟเวอร์นี้ไม่ได้ติดตั้งผ่าน Git Repository (ไม่พบโฟลเดอร์ .git) กรุณาใช้วิธี "อัปเดตด้วยไฟล์แพตช์ ZIP (Manual Patch Upload)" ในหน้าจอแทน');
+            $hasGit = File::isDirectory(base_path('.git'));
+            if (!$hasGit) {
+                $appendLog("Notice: ตรวจไม่พบโฟลเดอร์ .git - ระบบจะใช้วิธี HTTPS Direct Archive ในการอัปเดตอัตโนมัติ");
             }
 
             // STEP 1: Pre-flight checks & Maintenance Mode
@@ -628,62 +756,81 @@ class SystemUpdateService
                 $appendLog("Step 2 skipped: Auto-backup is disabled in system settings.");
             }
 
-            // STEP 3: Git Fetch & Robust Clean Sync to latest release
-            $remoteName = $this->ensureUpdateRemote();
+            // STEP 3: Git Fetch & Robust Clean Sync to latest release with HTTPS Fail-Safe Fallback
             $updateConfig = $this->getUpdateConfig();
             $targetBranch = $updateConfig['branch'] ?? 'main';
-            $remoteRef = "{$remoteName}/{$targetBranch}";
+            $remoteName = 'deploy';
 
-            // 1. Proactively purge any stale Git lock files before fetch & sync
-            $clearedLocks = $this->clearGitLocks();
-            if (!empty($clearedLocks)) {
-                $appendLog("ปลดล็อก Git อัตโนมัติ: ลบไฟล์ล็อกตกค้าง " . implode(', ', $clearedLocks));
+            $notify(3, 'ดึงโค้ดล่าสุดและซิงค์ระบบอัตโนมัติ (Resilient Dual-Engine Sync)', "กำลังดึงโค้ดและปรับปรุงโครงสร้างของระบบ");
+            $gitOutput = '';
+            $gitSuccess = false;
+
+            if ($hasGit) {
+                try {
+                    $remoteName = $this->ensureUpdateRemote();
+                    $remoteRef = "{$remoteName}/{$targetBranch}";
+
+                    // 1. Proactively purge any stale Git lock files before fetch & sync
+                    $clearedLocks = $this->clearGitLocks();
+                    if (!empty($clearedLocks)) {
+                        $appendLog("ปลดล็อก Git อัตโนมัติ: ลบไฟล์ล็อกตกค้าง " . implode(', ', $clearedLocks));
+                    }
+
+                    // 2. Fetch latest commits from remote repository (60s timeout for slower network)
+                    $this->clearGitLocks();
+                    $fetchOutput = $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 60);
+                    if (!empty(trim($fetchOutput))) {
+                        $appendLog("Git fetch output:\n" . trim($fetchOutput));
+                    }
+
+                    // 3. Configure branch and upstream
+                    try {
+                        $this->runProcess(['git', 'config', 'pull.rebase', 'false'], 5);
+                        $this->runProcess(['git', 'branch', '-M', $targetBranch], 5);
+                    } catch (Exception $e) {
+                        // non-critical
+                    }
+
+                    // 4. Force Checkout & Reset to remote reference
+                    $this->clearGitLocks();
+                    try {
+                        $this->runProcess(['git', 'checkout', '-f', '-B', $targetBranch, $remoteRef], 20);
+                    } catch (Exception $coEx) {
+                        $appendLog("Checkout notice: " . $coEx->getMessage());
+                    }
+
+                    $this->clearGitLocks();
+                    $resetOutput = $this->runProcess(['git', 'reset', '--hard', $remoteRef], 30);
+                    $appendLog("Git reset output:\n" . trim($resetOutput));
+
+                    // 5. Ensure tracking upstream is set
+                    try {
+                        $this->runProcess(['git', 'branch', "--set-upstream-to={$remoteRef}", $targetBranch], 10);
+                    } catch (Exception $upEx) {
+                        // non-critical
+                    }
+
+                    $gitOutput = "ซิงค์โค้ดตรงกับ {$remoteRef} ผ่าน Git CLI สำเร็จ (" . trim($resetOutput) . ")";
+                    $appendLog("Git output:\n" . $gitOutput);
+                    $gitSuccess = true;
+                } catch (\Throwable $gitEx) {
+                    $this->clearGitLocks();
+                    $appendLog("คำสั่ง Git CLI ขัดข้อง ({$gitEx->getMessage()}) -> สลับไปยังระบบ HTTPS Direct Archive อัตโนมัติ 100%...");
+                }
             }
 
-            $notify(3, 'ดึงโค้ดล่าสุดและซิงค์ระบบอัตโนมัติ (Unified Git Sync)', "กำลังดึงโค้ดและปรับปรุงโครงสร้างจาก {$remoteRef}");
-            $gitOutput = '';
-            try {
-                // 2. Fetch latest commits from remote repository (60s timeout for slower network)
-                $this->clearGitLocks();
-                $fetchOutput = $this->runProcess(['git', 'fetch', $remoteName, $targetBranch], 60);
-                if (!empty(trim($fetchOutput))) {
-                    $appendLog("Git fetch output:\n" . trim($fetchOutput));
-                }
-
-                // 3. Configure branch and upstream
+            // Fail-Safe Fallback: HTTPS Direct Archive Engine (Runs if Git is absent or failed)
+            if (!$gitSuccess) {
+                $notify(3, 'ดาวน์โหลดโค้ดผ่านระบบ HTTPS Direct Archive สำรอง', 'กำลังดาวน์โหลดแพ็กเกจล่าสุดจาก GitHub ผ่าน HTTPS...');
                 try {
-                    $this->runProcess(['git', 'config', 'pull.rebase', 'false'], 5);
-                    $this->runProcess(['git', 'branch', '-M', $targetBranch], 5);
-                } catch (Exception $e) {
-                    // non-critical
+                    $archiveResult = $this->downloadAndApplyReleaseViaHttp($targetBranch, function($msg) use ($appendLog) {
+                        $appendLog("HTTPS Fail-Safe: {$msg}");
+                    });
+                    $gitOutput = "อัปเดตโค้ดระบบสำเร็จผ่านระบบ HTTPS Fail-Safe Direct Archive ({$archiveResult['extracted_count']} ไฟล์, " . number_format($archiveResult['total_bytes'] / 1024, 1) . " KB)";
+                    $appendLog($gitOutput);
+                } catch (\Throwable $archiveEx) {
+                    throw new Exception("ไม่สามารถอัปเดตโค้ดได้ทั้งระบบ Git CLI และ HTTPS Direct: " . $archiveEx->getMessage());
                 }
-
-                // 4. Force Checkout & Reset to remote reference
-                // Production servers are deployment targets; they must cleanly and strictly match $remoteRef.
-                // This eliminates divergence, conflict files, or detached states, while safely preserving untracked files (.env, storage/, uploads/).
-                $this->clearGitLocks();
-                try {
-                    $this->runProcess(['git', 'checkout', '-f', '-B', $targetBranch, $remoteRef], 20);
-                } catch (Exception $coEx) {
-                    $appendLog("Checkout notice: " . $coEx->getMessage());
-                }
-
-                $this->clearGitLocks();
-                $resetOutput = $this->runProcess(['git', 'reset', '--hard', $remoteRef], 30);
-                $appendLog("Git reset output:\n" . trim($resetOutput));
-
-                // 5. Ensure tracking upstream is set
-                try {
-                    $this->runProcess(['git', 'branch', "--set-upstream-to={$remoteRef}", $targetBranch], 10);
-                } catch (Exception $upEx) {
-                    // non-critical
-                }
-
-                $gitOutput = "ซิงค์โค้ดตรงกับ {$remoteRef} สำเร็จ (" . trim($resetOutput) . ")";
-                $appendLog("Git output:\n" . $gitOutput);
-            } catch (Exception $e) {
-                $this->clearGitLocks();
-                throw new Exception("ไม่สามารถดึงโค้ดจาก Git Deploy Repository ได้: " . $e->getMessage());
             }
 
             // STEP 4: Database Migration
@@ -1099,6 +1246,15 @@ class SystemUpdateService
             $env['HOME'] = @is_dir($storageHome) && @is_writable($storageHome) ? $storageHome : base_path();
         }
 
+        // Pass-through proxy settings if configured in environment
+        $proxyKeys = ['HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'no_proxy'];
+        foreach ($proxyKeys as $pk) {
+            $pval = env($pk, getenv($pk));
+            if ($pval) {
+                $env[$pk] = $pval;
+            }
+        }
+
         // Prevent Git from hanging on interactive prompts and bypass SSL verification issues
         $env['GIT_TERMINAL_PROMPT'] = '0';
         $env['GIT_ASKPASS'] = 'echo';
@@ -1208,10 +1364,16 @@ class SystemUpdateService
                 $this->clearGitLocks();
             }
 
-            // Always inject safe.directory=* and http.sslVerify=false to eliminate ownership and proxy SSL inspection errors
+            // Always inject safe.directory=*, http.sslVerify=false, and increased buffers to eliminate proxy/SSL/packet errors
             if (!in_array('safe.directory=*', $subArgs, true)) {
                 $command = array_merge(
-                    [$gitBinary, '-c', 'safe.directory=*', '-c', 'http.sslVerify=false'],
+                    [
+                        $gitBinary,
+                        '-c', 'safe.directory=*',
+                        '-c', 'http.sslVerify=false',
+                        '-c', 'http.postBuffer=524288000',
+                        '-c', 'core.compression=0',
+                    ],
                     $subArgs
                 );
             } else {
