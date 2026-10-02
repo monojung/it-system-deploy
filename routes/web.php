@@ -292,49 +292,30 @@ Route::middleware(['auth', 'approved'])->group(function () {
         // Hardware Audit & Monitor Dashboard (สำรวจสเปคคอมพิวเตอร์ประจำปีงบประมาณ)
         Route::get('/hardware-audits', [HardwareAuditController::class, 'index'])->name('hardware-audits.index');
         Route::get('/hardware-audits/search-assets', [HardwareAuditController::class, 'searchAssetsForLinking'])->name('hardware-audits.search-assets');
-        Route::get('/hardware-audits/{id}/inspect', [HardwareAuditController::class, 'inspect'])->name('hardware-audits.inspect');
-        Route::get('/hardware-audits/{id}', [HardwareAuditController::class, 'inspect'])->name('hardware-audits.show');
-        Route::post('/hardware-audits/{id}/approve', [HardwareAuditController::class, 'approve'])->name('hardware-audits.approve');
-        Route::post('/hardware-audits/{id}/link-asset', [HardwareAuditController::class, 'linkAsset'])->name('hardware-audits.link-asset');
-        Route::post('/hardware-audits/{id}/create-asset', [HardwareAuditController::class, 'createAssetFromAudit'])->name('hardware-audits.create-asset');
-        Route::post('/hardware-audits/batch-approve', [HardwareAuditController::class, 'batchApprove'])->name('hardware-audits.batch-approve');
-        Route::post('/hardware-audits/batch-delete', [HardwareAuditController::class, 'batchDestroy'])->name('hardware-audits.batch-delete');
-        Route::post('/hardware-audits/{id}/reject', [HardwareAuditController::class, 'reject'])->name('hardware-audits.reject');
-        Route::delete('/hardware-audits/{id}', [HardwareAuditController::class, 'destroy'])->name('hardware-audits.destroy');
-        Route::post('/hardware-audits/trigger-scan-all', [HardwareAuditController::class, 'triggerScanAll'])->name('hardware-audits.trigger-scan-all');
-        Route::post('/hardware-audits/trigger-scan-batch', [HardwareAuditController::class, 'triggerScanBatch'])->name('hardware-audits.trigger-scan-batch');
-        Route::post('/hardware-audits/{id}/trigger-scan', [HardwareAuditController::class, 'triggerScanSingle'])->name('hardware-audits.trigger-scan-single');
         Route::get('/hardware-audits/command-status', [HardwareAuditController::class, 'getCommandStatus'])->name('hardware-audits.command-status');
         Route::get('/hardware-audits/online-status', [HardwareAuditController::class, 'getOnlineStatus'])->name('hardware-audits.online-status');
         Route::get('/hardware-audits/print-report', [HardwareAuditController::class, 'printAnnualReport'])->name('hardware-audits.print-report');
         Route::get('/hardware-audits/export-csv', [HardwareAuditController::class, 'exportCsv'])->name('hardware-audits.export-csv');
+        Route::post('/hardware-audits/trigger-scan-all', [HardwareAuditController::class, 'triggerScanAll'])->name('hardware-audits.trigger-scan-all');
+        Route::post('/hardware-audits/trigger-scan-batch', [HardwareAuditController::class, 'triggerScanBatch'])->name('hardware-audits.trigger-scan-batch');
+        Route::post('/hardware-audits/batch-approve', [HardwareAuditController::class, 'batchApprove'])->name('hardware-audits.batch-approve');
+        Route::post('/hardware-audits/batch-delete', [HardwareAuditController::class, 'batchDestroy'])->name('hardware-audits.batch-delete');
+        Route::post('/hardware-audits/delete-machine', [HardwareAuditController::class, 'deleteMachine'])->name('hardware-audits.delete-machine');
+        Route::post('/hardware-audits/batch-delete-machines', [HardwareAuditController::class, 'batchDeleteMachines'])->name('hardware-audits.batch-delete-machines');
+        Route::post('/hardware-audits/trigger-update', [HardwareAuditController::class, 'triggerAgentUpdate'])->name('hardware-audits.trigger-update');
+        Route::post('/hardware-audits/create-asset', [HardwareAuditController::class, 'createAssetFromAudit'])->name('hardware-audits.create-asset.alias');
+        Route::post('/hardware-audits/{id}/trigger-scan', [HardwareAuditController::class, 'triggerScanSingle'])->name('hardware-audits.trigger-scan-single')->where('id', '[0-9]+');
+        Route::get('/hardware-audits/{id}/inspect', [HardwareAuditController::class, 'inspect'])->name('hardware-audits.inspect')->where('id', '[0-9]+');
+        Route::post('/hardware-audits/{id}/approve', [HardwareAuditController::class, 'approve'])->name('hardware-audits.approve')->where('id', '[0-9]+');
+        Route::post('/hardware-audits/{id}/link-asset', [HardwareAuditController::class, 'linkAsset'])->name('hardware-audits.link-asset')->where('id', '[0-9]+');
+        Route::post('/hardware-audits/{id}/create-asset', [HardwareAuditController::class, 'createAssetFromAudit'])->name('hardware-audits.create-asset')->where('id', '[0-9]+');
+        Route::post('/hardware-audits/{id}/reject', [HardwareAuditController::class, 'reject'])->name('hardware-audits.reject')->where('id', '[0-9]+');
+        Route::delete('/hardware-audits/{id}', [HardwareAuditController::class, 'destroy'])->name('hardware-audits.destroy')->where('id', '[0-9]+');
+        Route::get('/hardware-audits/{id}', [HardwareAuditController::class, 'inspect'])->name('hardware-audits.show')->where('id', '[0-9]+');
     });
 
-    // Super Admin & Admin: System Settings, Backup & Restore, User Management, Master Data, Audit Logs, System Updates
+    // Admin & Super Admin: Departments, Device Types, Budget Sources, Acquisition Methods, Settings, Audit Logs
     Route::middleware(['role:super_admin,admin'])->group(function () {
-        // Backup & Restore
-        Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
-        Route::post('/backups', [BackupController::class, 'create'])->name('backups.create');
-        Route::post('/backups/toggle-auto', [BackupController::class, 'toggleAutoBackup'])->name('backups.toggle-auto');
-        Route::post('/backups/clean-orphans', [BackupController::class, 'cleanOrphans'])->name('backups.clean-orphans');
-        Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
-        Route::post('/backups/restore', [BackupController::class, 'restore'])->name('backups.restore');
-        Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
-
-        // Users
-        Route::resource('users', UserController::class)->except(['show']);
-        Route::post('/users/{user}/send-setup-link', [UserController::class, 'sendSetupLink'])->name('users.send-setup-link');
-        Route::post('/users/{user}/toggle', [UserController::class, 'toggleActive'])->name('users.toggle');
-        Route::post('/users/{user}/toggle-mfa', [UserController::class, 'toggleMfa'])->name('users.toggle-mfa');
-        Route::post('/users/{user}/toggle-enforce-mfa', [UserController::class, 'toggleEnforceMfa'])->name('users.toggle-enforce-mfa');
-        Route::post('/users/{user}/reset-mfa', [UserController::class, 'resetMfa'])->name('users.reset-mfa');
-        Route::post('/users/{user}/unlink-google', [UserController::class, 'unlinkGoogle'])->name('users.unlink-google');
-        Route::post('/users/{user}/unlink-thaid', [UserController::class, 'unlinkThaid'])->name('users.unlink-thaid');
-        Route::get('/users/{user}/identity-details', [UserController::class, 'getIdentityDetails'])->name('users.identity-details');
-        Route::post('/users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
-        Route::post('/users/{user}/reject', [UserController::class, 'reject'])->name('users.reject');
-        Route::post('/users/batch-approve', [UserController::class, 'batchApprove'])->name('users.batch-approve');
-
         // Departments
         Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
         Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
@@ -359,14 +340,44 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::put('/acquisition-methods/{acquisitionMethod}', [AcquisitionMethodController::class, 'update'])->name('acquisition-methods.update');
         Route::delete('/acquisition-methods/{acquisitionMethod}', [AcquisitionMethodController::class, 'destroy'])->name('acquisition-methods.destroy');
 
-        // System Settings & Data Management
+        // System Settings & Notifications Configuration
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
         Route::post('/settings/test-moph', [SettingController::class, 'testMophNotify'])->name('settings.test-moph');
         Route::post('/settings/test-line', [SettingController::class, 'testLineNotify'])->name('settings.test-line');
         Route::post('/settings/test-mail', [SettingController::class, 'testMail'])->name('settings.test-mail');
         Route::post('/settings/test-user-notify', [SettingController::class, 'testUserNotify'])->name('settings.test-user-notify');
-        Route::post('/settings/clear-data', [SystemResetController::class, 'clearData'])->name('settings.clear-data');
+
+        // Audit Logs (บันทึกกิจกรรมและความปลอดภัยระบบ - ดูและส่งออก)
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::get('/audit-logs/export', [AuditLogController::class, 'export'])->name('audit-logs.export');
+        Route::get('/audit-logs/{id}', [AuditLogController::class, 'show'])->name('audit-logs.show')->where('id', '[0-9]+');
+    });
+
+    // Super Admin Only: System Wipe & Reset, User Management, Database Backup & Restore, System Updates, Purge Audit Logs
+    Route::middleware(['role:super_admin'])->group(function () {
+        // Backup & Restore
+        Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
+        Route::post('/backups', [BackupController::class, 'create'])->name('backups.create');
+        Route::post('/backups/toggle-auto', [BackupController::class, 'toggleAutoBackup'])->name('backups.toggle-auto');
+        Route::post('/backups/clean-orphans', [BackupController::class, 'cleanOrphans'])->name('backups.clean-orphans');
+        Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
+        Route::post('/backups/restore', [BackupController::class, 'restore'])->name('backups.restore');
+        Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
+
+        // Users Management & Staff Approvals
+        Route::resource('users', UserController::class)->except(['show']);
+        Route::post('/users/{user}/send-setup-link', [UserController::class, 'sendSetupLink'])->name('users.send-setup-link');
+        Route::post('/users/{user}/toggle', [UserController::class, 'toggleActive'])->name('users.toggle');
+        Route::post('/users/{user}/toggle-mfa', [UserController::class, 'toggleMfa'])->name('users.toggle-mfa');
+        Route::post('/users/{user}/toggle-enforce-mfa', [UserController::class, 'toggleEnforceMfa'])->name('users.toggle-enforce-mfa');
+        Route::post('/users/{user}/reset-mfa', [UserController::class, 'resetMfa'])->name('users.reset-mfa');
+        Route::post('/users/{user}/unlink-google', [UserController::class, 'unlinkGoogle'])->name('users.unlink-google');
+        Route::post('/users/{user}/unlink-thaid', [UserController::class, 'unlinkThaid'])->name('users.unlink-thaid');
+        Route::get('/users/{user}/identity-details', [UserController::class, 'getIdentityDetails'])->name('users.identity-details');
+        Route::post('/users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
+        Route::post('/users/{user}/reject', [UserController::class, 'reject'])->name('users.reject');
+        Route::post('/users/batch-approve', [UserController::class, 'batchApprove'])->name('users.batch-approve');
 
         // Comprehensive Data Management & System Reset Center (ศูนย์จัดการข้อมูลและล้างระบบ)
         Route::get('/system-reset', [SystemResetController::class, 'index'])->name('system-reset.index');
@@ -375,11 +386,9 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::post('/system-reset/module', [SystemResetController::class, 'clearModule'])->name('system-reset.module');
         Route::post('/system-reset/check-integrity', [SystemResetController::class, 'checkIntegrity'])->name('system-reset.check-integrity');
         Route::post('/system-reset/repair-integrity', [SystemResetController::class, 'repairIntegrity'])->name('system-reset.repair-integrity');
+        Route::post('/settings/clear-data', [SystemResetController::class, 'clearData'])->name('settings.clear-data');
 
-        // Audit Logs (บันทึกกิจกรรมและความปลอดภัยระบบ)
-        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
-        Route::get('/audit-logs/export', [AuditLogController::class, 'export'])->name('audit-logs.export');
-        Route::get('/audit-logs/{id}', [AuditLogController::class, 'show'])->name('audit-logs.show');
+        // Audit Logs (ล้างบันทึกเก่า)
         Route::post('/audit-logs/clear-old', [AuditLogController::class, 'clearOld'])->name('audit-logs.clear-old');
 
         // System Updates (ระบบอัปเดตระบบอัตโนมัติแบบ One-Click และผ่านไฟล์ ZIP)

@@ -642,6 +642,20 @@
                         <span id="selectedFleetBadge" class="badge bg-white text-primary" style="font-size: 11px; padding: 2px 7px; border-radius: 99px;">0</span>
                     </button>
 
+                    <button type="button" id="btnSelectedFleetUpdate" onclick="triggerSelectedFleetUpdate()" class="btn btn-outline-info btn-sm" disabled
+                            style="height: 38px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
+                        <i class="bi bi-arrow-repeat" style="font-size: 15px;"></i>
+                        <span>อัปเดต Agent</span>
+                        <span id="selectedFleetUpdateBadge" class="badge bg-info text-white" style="font-size: 11px; padding: 2px 7px; border-radius: 99px;">0</span>
+                    </button>
+
+                    <button type="button" id="btnSelectedFleetDelete" onclick="deleteSelectedFleetMachines()" class="btn btn-outline-danger btn-sm" disabled
+                            style="height: 38px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
+                        <i class="bi bi-trash3-fill" style="font-size: 15px;"></i>
+                        <span>ลบเครื่องที่เลือก</span>
+                        <span id="selectedFleetDeleteBadge" class="badge bg-danger text-white" style="font-size: 11px; padding: 2px 7px; border-radius: 99px;">0</span>
+                    </button>
+
                     @if($agentOnlineCount > 0)
                     <button type="button" onclick="triggerAllOnlineFleetScan()" class="btn btn-outline-success btn-sm"
                             style="height: 38px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
@@ -773,6 +787,12 @@
                                         <i class="bi bi-cloud-arrow-down-fill"></i>
                                         <span>ดึงสเปก</span>
                                     </button>
+                                    <button type="button" class="btn btn-outline-info btn-sm"
+                                            onclick="triggerSingleFleetUpdate('{{ addslashes($agent['hostname']) }}', '{{ addslashes($agent['hardware_id']) }}')"
+                                            title="ส่งคำสั่งอัปเดต Agent เครื่องนี้เป็นเวอร์ชันล่าสุด"
+                                            style="border-radius: 8px; padding: 4px 8px; font-size: 11.5px;">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
                                     @if(!empty($agent['audit_id']))
                                         <button type="button" class="btn btn-light btn-sm text-secondary border" 
                                                 onclick="openAgentInspectionModal({{ $agent['audit_id'] }})"
@@ -780,6 +800,12 @@
                                             <i class="bi bi-eye"></i>
                                         </button>
                                     @endif
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            onclick="openDeleteMachineModal('{{ addslashes($agent['hostname']) }}', '{{ addslashes($agent['hardware_id']) }}', '{{ addslashes($agent['ip_address'] ?? '') }}', {{ $agent['is_online'] ? 'true' : 'false' }}, '{{ $agent['audit_id'] ?? '' }}')"
+                                            title="ลบเครื่องที่ติดตั้ง Agent นี้ออกจากระบบ"
+                                            style="border-radius: 8px; padding: 4px 8px; font-size: 11.5px;">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -1084,6 +1110,66 @@
                         </button>
                     </div>
 
+                    {{-- Agent Lifecycle Management Tools: Updater & Uninstaller --}}
+                    <div style="grid-column: 1 / -1; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-top: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef2f2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                    <i class="bi bi-tools"></i>
+                                </div>
+                                <div>
+                                    <h4 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 0;">
+                                        เครื่องมือจัดการและดูแลรักษา Agent ประจำเครื่อง (Agent Lifecycle Tools)
+                                    </h4>
+                                    <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">
+                                        สคริปต์สำหรับอัปเดตเวอร์ชัน Agent อัตโนมัติ และสคริปต์ถอนการติดตั้ง Agent ออกจากเครื่องลูกข่ายอย่างหมดจด
+                                    </p>
+                                </div>
+                            </div>
+                            <span class="badge" style="background: #eff6ff; color: #2563eb; font-weight: 700; font-size: 11.5px; padding: 5px 12px; border-radius: 8px; border: 1px solid #bfdbfe;">
+                                <i class="bi bi-shield-check me-1"></i> Agent v2.8.0 Production
+                            </span>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+                            {{-- Tool 1: Updater --}}
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                        <i class="bi bi-arrow-repeat text-info" style="font-size: 18px;"></i>
+                                        <strong style="font-size: 13.5px; color: #0f172a;">ตัวอัปเดต Agent อัตโนมัติ (Auto-Updater)</strong>
+                                    </div>
+                                    <p style="font-size: 12px; color: #475569; line-height: 1.5; margin: 6px 0 12px 0;">
+                                        ดาวน์โหลดไฟล์ <code>update_thc_agent.bat</code> นำไปรันบนเครื่องลูกข่ายเพื่ออัปเดตเป็นเวอร์ชันล่าสุดโดยคงการตั้งค่าเดิมไว้
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <a href="{{ asset('agent/update_thc_agent.bat') }}" download class="btn btn-outline-info btn-sm" style="font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 5px;">
+                                        <i class="bi bi-download"></i> ดาวน์โหลด update_thc_agent.bat
+                                    </a>
+                                </div>
+                            </div>
+
+                            {{-- Tool 2: Uninstaller --}}
+                            <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                        <i class="bi bi-trash3 text-danger" style="font-size: 18px;"></i>
+                                        <strong style="font-size: 13.5px; color: #9f1239;">ตัวถอนการติดตั้ง Agent (Uninstaller)</strong>
+                                    </div>
+                                    <p style="font-size: 12px; color: #881337; line-height: 1.5; margin: 6px 0 12px 0;">
+                                        สคริปต์ <code>uninstall_thc_agent.bat</code> สำหรับปิดโพรเซส ลบ Startup ลบ Scheduled Tasks และลบไฟล์ติดตั้งในเครื่องออกทั้งหมด
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <a href="{{ asset('agent/uninstall_thc_agent.bat') }}" download class="btn btn-danger btn-sm" style="font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 5px;">
+                                        <i class="bi bi-download"></i> ดาวน์โหลด uninstall_thc_agent.bat
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -1284,6 +1370,70 @@
 </div>
 
 <!-- ========================================================================= -->
+<!-- MODAL: DELETE AGENT MACHINE FROM SYSTEM                                   -->
+<!-- ========================================================================= -->
+<div id="deleteMachineModal" class="custom-modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); z-index: 1080; align-items: center; justify-content: center; padding: 16px;">
+    <div class="custom-modal-dialog" style="background: #ffffff; border-radius: 18px; width: 100%; max-width: 580px; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); overflow: hidden; animation: modalScaleIn 0.2s ease-out;">
+        <div style="background: linear-gradient(135deg, #e11d48 0%, #b91c1c 100%); padding: 16px 22px; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-trash3-fill"></i>
+                <span>ลบเครื่องที่ติดตั้ง Agent ออกจากระบบ</span>
+            </div>
+            <button type="button" onclick="closeDeleteMachineModal()" style="background: rgba(255,255,255,0.15); border: none; color: #ffffff; width: 32px; height: 32px; border-radius: 8px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+        </div>
+
+        <div style="padding: 22px; overflow-y: auto;">
+            <div style="background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 12px; padding: 14px 16px; margin-bottom: 18px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <div style="font-weight: 800; font-size: 15px; color: #9f1239; display: flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-display"></i>
+                        <span id="delMachineHostname">-</span>
+                    </div>
+                    <span id="delMachineOnlineBadge" class="badge" style="font-size: 11px;">-</span>
+                </div>
+                <div style="font-size: 12px; color: #475569; display: flex; flex-direction: column; gap: 3px;">
+                    <div>IP Address: <code id="delMachineIp">-</code></div>
+                    <div>Hardware ID: <code id="delMachineHwid" style="word-break: break-all;">-</code></div>
+                </div>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 18px;">
+                <div style="font-weight: 700; font-size: 13px; color: #0f172a; margin-bottom: 8px;">
+                    <i class="bi bi-shield-exclamation text-warning me-1"></i> สิ่งที่ระบบจะดำเนินการ:
+                </div>
+                <ul style="font-size: 12.5px; color: #475569; margin: 0; padding-left: 20px; line-height: 1.6;">
+                    <li>ลบประวัติสแกนฮาร์ดแวร์ล่าสุดของเครื่องนี้ออกจากระบบ</li>
+                    <li>ยกเลิกคำสั่งค้างท่อทั้งหมดของเครื่องนี้</li>
+                    <li>ล้างสถานะออนไลน์ออกจาก Cache และ Registry ทันที</li>
+                    <li><strong class="text-success">ไม่มีผลกระทบต่อข้อมูลครุภัณฑ์ในระบบคลังพัสดุ (ปลอดภัย)</strong></li>
+                </ul>
+            </div>
+
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px 16px;">
+                <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin: 0;">
+                    <input type="checkbox" id="chkRemoteUninstall" class="form-check-input" checked style="cursor: pointer; margin-top: 3px;">
+                    <div>
+                        <strong style="font-size: 13px; color: #991b1b; display: block;">
+                            ส่งคำสั่งถอนการติดตั้งไปยัง Agent ทันที (Remote Uninstall)
+                        </strong>
+                        <span style="font-size: 11.5px; color: #7f1d1d;">
+                            หากเครื่องยังออนไลน์อยู่ โปรแกรม Agent บนเครื่องลูกข่ายจะหยุดทำงาน ลบการตั้งค่า Startup และถอนตัวเองออกอัตโนมัติ
+                        </span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 22px; display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeDeleteMachineModal()">ยกเลิก</button>
+            <button type="button" class="btn btn-danger btn-sm" id="btnConfirmDeleteMachine" onclick="confirmDeleteMachineSubmit()" style="font-weight: 700; padding: 6px 18px; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);">
+                <i class="bi bi-trash3-fill me-1"></i> ยืนยันลบเครื่องนี้
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
 <!-- MODAL 3: REGISTER NEW ASSET DIRECTLY FROM HARDWARE AUDIT                  -->
 <!-- ========================================================================= -->
 <div id="createAssetModal" class="custom-modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); z-index: 1080; align-items: center; justify-content: center; padding: 16px;">
@@ -1375,6 +1525,34 @@
                     <div class="col-md-3">
                         <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">ราคาจัดซื้อ (บาท)</label>
                         <input type="number" step="0.01" id="newAssetPrice" name="price" class="form-control" placeholder="24500.00">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">แหล่งเงินที่ใช้ซื้อ (Budget Source)</label>
+                        <select id="newAssetBudgetSourceId" name="budget_source_id" class="form-select">
+                            <option value="">-- ไม่ระบุแหล่งเงิน --</option>
+                            @foreach($budgetSources ?? [] as $bs)
+                                <option value="{{ $bs->id }}">{{ $bs->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">วิธีการได้มา (Acquisition Method)</label>
+                        <select id="newAssetAcquisitionMethodId" name="acquisition_method_id" class="form-select">
+                            <option value="">-- ไม่ระบุวิธีการได้มา --</option>
+                            @foreach($acquisitionMethods ?? [] as $am)
+                                <option value="{{ $am->id }}">{{ $am->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #334155;">สิทธิ์การครอบครอง / กรรมสิทธิ์</label>
+                        <select id="newAssetOwnershipType" name="ownership_type" class="form-select">
+                            <option value="owned" selected>เป็นของโรงพยาบาล (Owned)</option>
+                            <option value="rented">เครื่องเช่า / เช่าใช้ (Rented / Leased)</option>
+                            <option value="borrowed">ยืมใช้งาน (Borrowed)</option>
+                            <option value="donated">รับบริจาค (Donated)</option>
+                        </select>
                     </div>
 
                     <div class="col-12">
@@ -3041,6 +3219,16 @@
         const btn = document.getElementById('btnSelectedFleetScan');
         if (badge) badge.textContent = checked.length;
         if (btn) btn.disabled = checked.length === 0;
+
+        const updateBadge = document.getElementById('selectedFleetUpdateBadge');
+        const updateBtn = document.getElementById('btnSelectedFleetUpdate');
+        if (updateBadge) updateBadge.textContent = checked.length;
+        if (updateBtn) updateBtn.disabled = checked.length === 0;
+
+        const deleteBadge = document.getElementById('selectedFleetDeleteBadge');
+        const deleteBtn = document.getElementById('btnSelectedFleetDelete');
+        if (deleteBadge) deleteBadge.textContent = checked.length;
+        if (deleteBtn) deleteBtn.disabled = checked.length === 0;
     }
 
     let currentFleetFilter = 'all';
@@ -3177,6 +3365,308 @@
             audit_id: auditId || null,
             asset_id: assetId || null
         }]);
+    }
+
+    // Single Machine Deletion State
+    let pendingDeleteMachine = null;
+
+    function openDeleteMachineModal(hostname, hwid, ip, isOnline, auditId) {
+        pendingDeleteMachine = {
+            hostname: hostname,
+            hardware_id: hwid,
+            ip_address: ip,
+            is_online: !!isOnline,
+            audit_id: auditId || null
+        };
+
+        document.getElementById('delMachineHostname').textContent = hostname || 'Unknown PC';
+        document.getElementById('delMachineIp').textContent = ip || '-';
+        document.getElementById('delMachineHwid').textContent = hwid || '-';
+
+        const badge = document.getElementById('delMachineOnlineBadge');
+        if (isOnline) {
+            badge.style.background = '#dcfce7';
+            badge.style.color = '#15803d';
+            badge.textContent = '🟢 ออนไลน์';
+            document.getElementById('chkRemoteUninstall').checked = true;
+        } else {
+            badge.style.background = '#f1f5f9';
+            badge.style.color = '#64748b';
+            badge.textContent = '⚪ ออฟไลน์';
+            document.getElementById('chkRemoteUninstall').checked = false;
+        }
+
+        document.getElementById('deleteMachineModal').style.display = 'flex';
+    }
+
+    function closeDeleteMachineModal() {
+        document.getElementById('deleteMachineModal').style.display = 'none';
+        pendingDeleteMachine = null;
+    }
+
+    function confirmDeleteMachineSubmit() {
+        if (!pendingDeleteMachine) return;
+        const btn = document.getElementById('btnConfirmDeleteMachine');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> กำลังลบ...';
+
+        const remoteUninstall = document.getElementById('chkRemoteUninstall').checked;
+
+        fetch("{{ route('hardware-audits.delete-machine') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                hostname: pendingDeleteMachine.hostname,
+                hardware_id: pendingDeleteMachine.hardware_id,
+                ip_address: pendingDeleteMachine.ip_address,
+                remote_uninstall: remoteUninstall ? 1 : 0,
+                audit_id: pendingDeleteMachine.audit_id
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            closeDeleteMachineModal();
+            if (data.success) {
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'ลบเครื่องออกจากระบบสำเร็จ',
+                        text: data.message,
+                        confirmButtonText: 'ตกลง',
+                        confirmButtonColor: '#0f766e'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    alert(data.message);
+                    window.location.reload();
+                }
+            } else {
+                throw new Error(data.message || 'เกิดข้อผิดพลาดในการลบเครื่อง');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-trash3-fill me-1"></i> ยืนยันลบเครื่องนี้';
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่สามารถลบเครื่องได้',
+                    text: err.message,
+                    confirmButtonColor: '#ef4444'
+                });
+            } else {
+                alert(err.message);
+            }
+        });
+    }
+
+    // Batch Delete Selected Machines
+    function deleteSelectedFleetMachines() {
+        const checked = document.querySelectorAll('.fleet-item-chk:checked');
+        if (checked.length === 0) return;
+
+        const targets = Array.from(checked).map(chk => ({
+            hostname: chk.getAttribute('data-hostname'),
+            hardware_id: chk.getAttribute('data-hwid'),
+            audit_id: chk.getAttribute('data-audit-id') || null,
+            is_online: chk.getAttribute('data-online') === 'true'
+        }));
+
+        const count = targets.length;
+
+        if (window.Swal) {
+            Swal.fire({
+                title: `ลบเครื่องที่เลือก (${count} เครื่อง) ออกจากระบบ?`,
+                html: `
+                    <div style="text-align: left; font-size: 13px; color: #475569;">
+                        <p>ระบบจะล้างประวัติการสแกนฮาร์ดแวร์ล่าสุด และนำออกจากระบบ Agent Fleet</p>
+                        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px; margin-top: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                                <input type="checkbox" id="swalBatchRemoteUninstall" checked class="form-check-input">
+                                <span style="color: #991b1b; font-weight: 600;">ส่งคำสั่งถอนการติดตั้งไปยัง Agent ทุกเครื่อง (Remote Uninstall)</span>
+                            </label>
+                        </div>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: `<i class="bi bi-trash3-fill me-1"></i> ยืนยันลบ ${count} เครื่อง`,
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#e11d48',
+                cancelButtonColor: '#64748b',
+                reverseButtons: true
+            }).then(res => {
+                if (res.isConfirmed) {
+                    const chk = document.getElementById('swalBatchRemoteUninstall');
+                    const remoteUninstall = chk ? chk.checked : true;
+                    executeBatchDeleteFleet(targets, remoteUninstall);
+                }
+            });
+        } else {
+            if (confirm(`คุณต้องการลบเครื่องที่เลือก (${count} เครื่อง) ออกจากระบบหรือไม่?`)) {
+                executeBatchDeleteFleet(targets, true);
+            }
+        }
+    }
+
+    function executeBatchDeleteFleet(targets, remoteUninstall) {
+        if (window.Swal) {
+            Swal.fire({
+                title: 'กำลังลบเครื่องที่เลือก...',
+                text: 'กรุณารอสักครู่ ระบบกำลังประมวลผล',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+        }
+
+        fetch("{{ route('hardware-audits.batch-delete-machines') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                targets: targets,
+                remote_uninstall: remoteUninstall ? 1 : 0
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'ลบเครื่องสำเร็จ',
+                        text: data.message,
+                        confirmButtonText: 'ตกลง',
+                        confirmButtonColor: '#0f766e'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    alert(data.message);
+                    window.location.reload();
+                }
+            } else {
+                throw new Error(data.message || 'เกิดข้อผิดพลาดในการลบเครื่อง');
+            }
+        })
+        .catch(err => {
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่สามารถลบเครื่องได้',
+                    text: err.message,
+                    confirmButtonColor: '#ef4444'
+                });
+            } else {
+                alert(err.message);
+            }
+        });
+    }
+
+    // Trigger Agent Update
+    function triggerSingleFleetUpdate(hostname, hwid) {
+        triggerFleetUpdateExecution([{
+            hostname: hostname,
+            hardware_id: hwid
+        }]);
+    }
+
+    function triggerSelectedFleetUpdate() {
+        const checked = document.querySelectorAll('.fleet-item-chk:checked');
+        if (checked.length === 0) return;
+
+        const targets = Array.from(checked).map(chk => ({
+            hostname: chk.getAttribute('data-hostname'),
+            hardware_id: chk.getAttribute('data-hwid')
+        }));
+
+        triggerFleetUpdateExecution(targets);
+    }
+
+    function triggerFleetUpdateExecution(targets) {
+        if (!targets || targets.length === 0) return;
+
+        if (window.Swal) {
+            Swal.fire({
+                title: `ส่งคำสั่งอัปเดต Agent (${targets.length} เครื่อง)?`,
+                text: 'เครื่องเป้าหมายจะได้รับคำสั่งให้อัปเดตเป็นเวอร์ชันล่าสุดและรีสตาร์ท Agent ใหม่อัตโนมัติ',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-arrow-repeat me-1"></i> ยืนยันสั่งอัปเดต',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#0284c7',
+                cancelButtonColor: '#64748b'
+            }).then(res => {
+                if (res.isConfirmed) {
+                    dispatchAgentUpdateApi(targets);
+                }
+            });
+        } else {
+            if (confirm(`ส่งคำสั่งอัปเดต Agent (${targets.length} เครื่อง)?`)) {
+                dispatchAgentUpdateApi(targets);
+            }
+        }
+    }
+
+    function dispatchAgentUpdateApi(targets) {
+        if (window.Swal) {
+            Swal.fire({
+                title: 'กำลังส่งคำสั่งอัปเดต...',
+                text: 'กรุณารอสักครู่',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+        }
+
+        fetch("{{ route('hardware-audits.trigger-update') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                targets: targets
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'ส่งคำสั่งอัปเดตสำเร็จ',
+                        text: data.message,
+                        confirmButtonText: 'ตกลง',
+                        confirmButtonColor: '#0f766e'
+                    });
+                } else {
+                    alert(data.message);
+                }
+            } else {
+                throw new Error(data.message || 'เกิดข้อผิดพลาดในการส่งคำสั่งอัปเดต');
+            }
+        })
+        .catch(err => {
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ส่งคำสั่งอัปเดตไม่สำเร็จ',
+                    text: err.message,
+                    confirmButtonColor: '#ef4444'
+                });
+            } else {
+                alert(err.message);
+            }
+        });
     }
 
     function executeFleetScanBatch(targets) {

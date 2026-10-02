@@ -4,8 +4,8 @@ title ติดตั้ง THC Hardware Audit Agent Standalone - โรงพ�
 color 0b
 
 echo ==========================================================================
-echo   ติดตั้งโปรแกรม THC Hardware Audit Agent v2.5.6 (Standalone System Tray)
-echo   รูปแบบใหม่: System Tray Icon เชื่อมต่อเซิร์ฟเวอร์แบบ Real-time
+echo   ติดตั้งโปรแกรม THC Hardware Audit Agent v2.8.0 (Production Release)
+echo   รูปแบบ System Tray Icon เชื่อมต่อเซิร์ฟเวอร์แบบ Real-time พร้อม Auto-Updater
 echo   โรงพยาบาลทุ่งหัวช้าง (Thung Hua Chang Hospital IT Platform)
 echo ==========================================================================
 echo.
@@ -21,7 +21,7 @@ if not exist "%INSTALL_DIR%" (
 echo [1/4] กำลังบันทึกการตั้งค่าเซิร์ฟเวอร์ (%SERVER_URL%)...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$cfg = @{ ServerUrl = '%SERVER_URL%'; HeartbeatIntervalSec = 4; AutoStart = $true } | ConvertTo-Json; [IO.File]::WriteAllText('%INSTALL_DIR%\config.json', $cfg, [Text.Encoding]::UTF8)" 2>nul
 
-echo [2/4] กำลังเตรียมไฟล์ Agent (%INSTALL_DIR%)...
+echo [2/4] กำลังเตรียมไฟล์ Agent และสคริปต์บริหารจัดการ (%INSTALL_DIR%)...
 :: ปิดโพรเซส Agent เดิมที่อาจค้างอยู่เพื่อป้องกัน File Lock
 taskkill /f /im THC_IT_Agent.exe 2>nul
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*thc_audit_agent.ps1*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" 2>nul
@@ -42,6 +42,23 @@ if not exist "%INSTALL_DIR%\THC_IT_Agent.exe" (
     exit /b 1
 )
 
+:: เตรียมสคริปต์ ถอนการติดตั้ง (uninstall.bat) และ อัปเดต (update.bat) ประจำเครื่อง
+if exist "%~dp0uninstall_thc_agent.bat" (
+    copy /y "%~dp0uninstall_thc_agent.bat" "%INSTALL_DIR%\uninstall.bat" >nul
+) else (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor [Net.SecurityProtocolType]::Tls; [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; (New-Object Net.WebClient).DownloadFile('%SERVER_URL%/agent/uninstall_thc_agent.bat', '%INSTALL_DIR%\uninstall.bat')" 2>nul
+)
+
+if exist "%~dp0update_thc_agent.bat" (
+    copy /y "%~dp0update_thc_agent.bat" "%INSTALL_DIR%\update.bat" >nul
+) else (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor [Net.SecurityProtocolType]::Tls; [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; (New-Object Net.WebClient).DownloadFile('%SERVER_URL%/agent/update_thc_agent.bat', '%INSTALL_DIR%\update.bat')" 2>nul
+)
+
+if exist "%~dp0thc_audit_agent.ps1" (
+    copy /y "%~dp0thc_audit_agent.ps1" "%INSTALL_DIR%\thc_audit_agent.ps1" >nul
+)
+
 echo [3/4] กำลังตั้งค่าให้เริ่มทำงานอัตโนมัติเมื่อเปิดเครื่อง (Windows Startup)...
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "THC_IT_Agent" /t REG_SZ /d "\"%INSTALL_DIR%\THC_IT_Agent.exe\"" /f >nul 2>nul
 
@@ -53,11 +70,12 @@ start "" "%INSTALL_DIR%\THC_IT_Agent.exe"
 
 echo.
 echo ==========================================================================
-echo   ติดตั้ง THC IT Agent เรียบร้อยแล้ว!
+echo   ติดตั้ง THC IT Agent v2.8.0 เรียบร้อยแล้ว!
 echo   - โปรแกรมจะทำงานที่ System Tray (มุมขวาล่างข้างนาฬิกา)
 echo   - ไอคอน 🟢 เขียว = ออนไลน์พร้อมรับคำสั่ง (สแตนด์บาย)
 echo   - ไอคอน 🟡 เหลือง = กำลังดึง/ส่งสเปกเครื่องตามคำสั่งไอที
-echo   - ดับเบิ้ลคลิกที่ไอคอนเพื่อดูสเปก หรือคลิกขวาเพื่อสั่งส่งข้อมูลด้วยตนเอง
+echo   - รองรับคำสั่งอัปเดตเวอร์ชันและถอนการติดตั้งอัตโนมัติจากส่วนกลาง
+echo   - สคริปต์ถอนการติดตั้งฉุกเฉินประจำเครื่อง: %INSTALL_DIR%\uninstall.bat
 echo   - เซิร์ฟเวอร์เป้าหมาย: %SERVER_URL%
 echo ==========================================================================
 echo.

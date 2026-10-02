@@ -665,8 +665,8 @@ namespace ThcItAgent
                 { "mac_address", MacAddress },
                 { "monitor_size", MonitorSize },
                 { "monitor_info", MonitorSize },
-                { "client_agent_version", "2.5.6-TrayExe" },
-                { "agent_version", "2.5.6-TrayExe" }
+                { "client_agent_version", "2.8.0-TrayExe" },
+                { "agent_version", "2.8.0-TrayExe" }
             };
 
             if (commandId.HasValue && commandId.Value > 0)
@@ -713,7 +713,7 @@ namespace ThcItAgent
             _contextMenu.Font = new Font("Segoe UI", 9F);
 
             // Title Item
-            var titleItem = new ToolStripMenuItem("🖥️ THC IT Agent v2.5.6 (รพ.ทุ่งหัวช้าง)")
+            var titleItem = new ToolStripMenuItem("🖥️ THC IT Agent v2.8.0 (รพ.ทุ่งหัวช้าง)")
             {
                 Enabled = false,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold)
@@ -762,6 +762,22 @@ namespace ThcItAgent
             });
             _autoStartMenuItem.Checked = AppConfig.IsAutoStartEnabled();
             _contextMenu.Items.Add(_autoStartMenuItem);
+
+            _contextMenu.Items.Add(new ToolStripSeparator());
+
+            // Check & Update Version
+            var updateItem = new ToolStripMenuItem("🔄 ตรวจสอบและอัปเดต Agent ล่าสุด (Update Agent)", null, (s, e) =>
+            {
+                ExecuteSelfUpdate(false);
+            });
+            _contextMenu.Items.Add(updateItem);
+
+            // Uninstall Agent
+            var uninstallItem = new ToolStripMenuItem("🗑️ ถอนการติดตั้ง Agent ออกจากเครื่อง (Uninstall)", null, (s, e) =>
+            {
+                ExecuteSelfUninstall(false);
+            });
+            _contextMenu.Items.Add(uninstallItem);
 
             _contextMenu.Items.Add(new ToolStripSeparator());
 
@@ -866,8 +882,8 @@ namespace ThcItAgent
                         { "hardware_id", _cachedSpecs.HardwareId },
                         { "mac_address", _cachedSpecs.MacAddress },
                         { "ip_address", _cachedSpecs.IpAddress },
-                        { "agent_version", "2.5.6-TrayExe" },
-                        { "client_version", "2.5.6-TrayExe" },
+                        { "agent_version", "2.8.0-TrayExe" },
+                        { "client_version", "2.8.0-TrayExe" },
                         { "mode", "tray_agent" }
                     };
 
@@ -906,6 +922,39 @@ namespace ThcItAgent
 
                                 ExecuteScanAndSubmit(commandId);
                             }
+                        }
+                        else if (hasCommand && command.Equals("update", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (commandId > 0 && commandId == _lastExecutedCommandId && (DateTime.Now - _lastExecutedTime).TotalSeconds < 40)
+                            {
+                                SetStatus(true, false, "ออนไลน์ (ส่งยืนยันผลคำสั่งแล้ว)");
+                                AcknowledgeCommandComplete(commandId, "คำสั่งอัปเดตดำเนินการแล้ว (Cached Ack)");
+                            }
+                            else
+                            {
+                                _lastExecutedCommandId = commandId;
+                                _lastExecutedTime = DateTime.Now;
+
+                                SetStatus(true, true, "ได้รับคำสั่งอัปเดตเวอร์ชัน Agent ล่าสุด...");
+                                AcknowledgeCommandComplete(commandId, "รับคำสั่งอัปเดตสำเร็จ กำลังดำเนินการอัปเดตบน " + _cachedSpecs.Hostname);
+                                _notifyIcon.ShowBalloonTip(3000, "อัปเดต THC IT Agent", "ระบบส่วนกลางสั่งอัปเดตเวอร์ชัน Agent ล่าสุด...", ToolTipIcon.Info);
+
+                                ExecuteSelfUpdate(true);
+                            }
+                        }
+                        else if (hasCommand && command.Equals("uninstall", StringComparison.OrdinalIgnoreCase))
+                        {
+                            _lastExecutedCommandId = commandId;
+                            _lastExecutedTime = DateTime.Now;
+
+                            SetStatus(false, false, "ได้รับคำสั่งถอนการติดตั้ง Agent...");
+                            if (commandId > 0)
+                            {
+                                AcknowledgeCommandComplete(commandId, "รับคำสั่งถอนการติดตั้งสำเร็จ กำลังถอนการติดตั้งออกจาก " + _cachedSpecs.Hostname);
+                            }
+                            _notifyIcon.ShowBalloonTip(3000, "ถอนการติดตั้ง THC IT Agent", "กำลังดำเนินการถอนการติดตั้ง Agent ตามคำสั่งจากระบบส่วนกลาง...", ToolTipIcon.Warning);
+
+                            ExecuteSelfUninstall(true);
                         }
                         else
                         {
@@ -1069,7 +1118,7 @@ namespace ThcItAgent
             req.ContentType = "application/json; charset=utf-8";
             req.Accept = "application/json";
             req.Timeout = timeoutMs;
-            req.UserAgent = "THC-IT-Agent/2.5.6";
+            req.UserAgent = "THC-IT-Agent/2.8.0";
             req.KeepAlive = false;
 
             byte[] bytes = Encoding.UTF8.GetBytes(jsonBody);
@@ -1122,7 +1171,7 @@ namespace ThcItAgent
             };
             var lblSub = new Label
             {
-                Text = "THC Client Hardware Audit Agent v2.5.6 (Standalone System Tray)",
+                Text = "THC Client Hardware Audit Agent v2.8.0 (Standalone System Tray)",
                 ForeColor = Color.FromArgb(220, 240, 255),
                 Font = new Font("Segoe UI", 9F),
                 Location = new Point(17, 36),
@@ -1354,6 +1403,134 @@ namespace ThcItAgent
             form.Controls.Add(btnCancel);
 
             form.ShowDialog();
+        }
+
+        private void ExecuteSelfUpdate(bool isRemote)
+        {
+            try
+            {
+                if (!isRemote)
+                {
+                    DialogResult confirm = MessageBox.Show(
+                        "ต้องการตรวจสอบและอัปเดตโปรแกรม THC IT Agent เป็นเวอร์ชันล่าสุดหรือไม่?",
+                        "อัปเดต THC IT Agent",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+                    if (confirm != DialogResult.Yes) return;
+                }
+
+                string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string updateBat = Path.Combine(appDir, "update.bat");
+                string progDataUpdate = @"C:\ProgramData\THC-IT-Agent\update.bat";
+
+                string scriptToRun = null;
+                if (File.Exists(updateBat)) scriptToRun = updateBat;
+                else if (File.Exists(progDataUpdate)) scriptToRun = progDataUpdate;
+
+                if (scriptToRun != null)
+                {
+                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi.FileName = "cmd.exe";
+                    psi.Arguments = string.Format("/c \"{0}\" \"{1}\" {2}", scriptToRun, _config.ServerUrl, isRemote ? "/silent" : "");
+                    psi.WindowStyle = isRemote ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal;
+                    psi.CreateNoWindow = isRemote;
+                    Process.Start(psi);
+                }
+                else
+                {
+                    string tempBat = Path.Combine(Path.GetTempPath(), "thc_agent_quick_update.bat");
+                    string psScript = string.Format(
+                        "[Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor [Net.SecurityProtocolType]::Tls; " +
+                        "[Net.ServicePointManager]::ServerCertificateValidationCallback = {{$true}}; " +
+                        "(New-Object Net.WebClient).DownloadFile('{0}/agent/update_thc_agent.bat', '{1}'); " +
+                        "Start-Process -FilePath '{1}' -ArgumentList '\"{0}\" {2}'",
+                        _config.ServerUrl, tempBat, isRemote ? "/silent" : "");
+
+                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi.FileName = "powershell.exe";
+                    psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"" + psScript + "\"";
+                    psi.WindowStyle = ProcessWindowStyle.Hidden;
+                    psi.CreateNoWindow = true;
+                    Process.Start(psi);
+                }
+
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    Thread.Sleep(1500);
+                    ExitApp();
+                });
+            }
+            catch (Exception ex)
+            {
+                if (!isRemote)
+                {
+                    MessageBox.Show("ไม่สามารถเริ่มการอัปเดตได้: " + ex.Message, "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void ExecuteSelfUninstall(bool isRemote)
+        {
+            try
+            {
+                if (!isRemote)
+                {
+                    DialogResult confirm = MessageBox.Show(
+                        "คุณแน่ใจหรือไม่ว่าต้องการถอนการติดตั้ง THC IT Agent ออกจากเครื่องนี้?\n\nระบบจะลบโปรแกรม ทางลัด และการตั้งค่าทั้งหมด",
+                        "ยืนยันการถอนการติดตั้ง",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+                    if (confirm != DialogResult.Yes) return;
+                }
+
+                string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string uninstallBat = Path.Combine(appDir, "uninstall.bat");
+                string progDataUninstall = @"C:\ProgramData\THC-IT-Agent\uninstall.bat";
+
+                string scriptToRun = null;
+                if (File.Exists(uninstallBat)) scriptToRun = uninstallBat;
+                else if (File.Exists(progDataUninstall)) scriptToRun = progDataUninstall;
+
+                if (scriptToRun != null)
+                {
+                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi.FileName = "cmd.exe";
+                    psi.Arguments = string.Format("/c \"{0}\" {1}", scriptToRun, isRemote ? "/silent" : "");
+                    psi.WindowStyle = isRemote ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal;
+                    psi.CreateNoWindow = isRemote;
+                    Process.Start(psi);
+                }
+                else
+                {
+                    string tempBat = Path.Combine(Path.GetTempPath(), "thc_agent_quick_uninstall.bat");
+                    string psScript = string.Format(
+                        "[Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor [Net.SecurityProtocolType]::Tls; " +
+                        "[Net.ServicePointManager]::ServerCertificateValidationCallback = {{$true}}; " +
+                        "(New-Object Net.WebClient).DownloadFile('{0}/agent/uninstall_thc_agent.bat', '{1}'); " +
+                        "Start-Process -FilePath '{1}' -ArgumentList '{2}'",
+                        _config.ServerUrl, tempBat, isRemote ? "/silent" : "");
+
+                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi.FileName = "powershell.exe";
+                    psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"" + psScript + "\"";
+                    psi.WindowStyle = ProcessWindowStyle.Hidden;
+                    psi.CreateNoWindow = true;
+                    Process.Start(psi);
+                }
+
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    Thread.Sleep(1200);
+                    ExitApp();
+                });
+            }
+            catch (Exception ex)
+            {
+                if (!isRemote)
+                {
+                    MessageBox.Show("ไม่สามารถถอนการติดตั้งได้: " + ex.Message, "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
 
         private void ExitApp()

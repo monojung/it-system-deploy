@@ -9,6 +9,8 @@ use App\Models\Department;
 use App\Models\DeviceType;
 use App\Models\AuditLog;
 use App\Models\AgentCommand;
+use App\Models\BudgetSource;
+use App\Models\AcquisitionMethod;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -71,7 +73,7 @@ class HardwareAuditController extends Controller
                 'service' => 'THC Client Hardware Audit Telemetry API',
                 'hospital' => 'โรงพยาบาลทุ่งหัวช้าง (Thung Hua Chang Hospital)',
                 'endpoint' => url('/api/hardware-audit/submit'),
-                'version' => '2.1.0',
+                'version' => '2.8.0',
                 'current_fiscal_year' => $fiscalYear,
                 'supported_methods' => ['POST', 'GET'],
                 'payload_format' => 'application/json',
@@ -450,10 +452,10 @@ class HardwareAuditController extends Controller
      */
     public function pollCommand(Request $request)
     {
-        $hardwareId = strtoupper(trim((string)$request->input('hardware_id', '')));
+        $hardwareId = strtoupper(trim((string)$request->input('hardware_id', $request->input('hwid', ''))));
         $hostname = trim((string)$request->input('hostname', ''));
         $mac = strtoupper(trim((string)$request->input('mac_address', '')));
-        $clientVersion = trim((string)$request->input('client_version', $request->input('agent_version', '2.5.6')));
+        $clientVersion = trim((string)$request->input('client_version', $request->input('agent_version', '2.8.0')));
         $ip = $request->ip() ?: $request->input('ip_address');
 
         if (preg_match('/^[0F-]{36}$/i', $hardwareId) || preg_match('/Default string|To be filled by O\.E\.M\.|None/i', $hardwareId)) {
@@ -813,6 +815,8 @@ class HardwareAuditController extends Controller
             ->values();
 
         $deviceTypes = DeviceType::orderBy('name')->get();
+        $budgetSources = BudgetSource::where('is_active', true)->orderBy('name')->get();
+        $acquisitionMethods = AcquisitionMethod::where('is_active', true)->orderBy('name')->get();
 
         // Compiled Agent Fleet (Installed Machines)
         $agentFleet = $this->getAgentFleet();
@@ -838,6 +842,8 @@ class HardwareAuditController extends Controller
             'audits',
             'departments',
             'deviceTypes',
+            'budgetSources',
+            'acquisitionMethods',
             'ramDistribution',
             'osDistribution',
             'storageDistribution',
@@ -937,23 +943,34 @@ class HardwareAuditController extends Controller
     /**
      * Admin Action: Create New Asset directly from an unmatched/new Hardware Audit submission
      */
-    public function createAssetFromAudit(Request $request, $id)
+    public function createAssetFromAudit(Request $request, $id = null)
     {
         $user = Auth::user();
         if (!$user || (!$user->isAdmin() && !$user->isTechnician())) {
             abort(403, 'เฉพาะเจ้าหน้าที่ไอทีหรือแอดมินเท่านั้นที่มีสิทธิ์เพิ่มครุภัณฑ์ใหม่');
         }
 
-        $audit = HardwareAudit::findOrFail($id);
+        $auditId = $id ?: $request->input('audit_id');
+        $audit = HardwareAudit::findOrFail($auditId);
 
         $validated = $request->validate([
             'asset_code' => 'required|string|max:100|unique:it_assets,asset_code',
             'name' => 'required|string|max:255',
             'device_type_id' => 'required|exists:it_device_types,id',
             'department_id' => 'nullable|exists:it_departments,id',
+            'budget_source_id' => 'nullable|exists:it_budget_sources,id',
+            'acquisition_method_id' => 'nullable|exists:it_acquisition_methods,id',
+            'ownership_type' => 'nullable|in:owned,rented',
+            'rental_contract_no' => 'nullable|string|max:100',
+            'rental_vendor' => 'nullable|string|max:255',
+            'rental_start_date' => 'nullable|date',
+            'rental_end_date' => 'nullable|date',
+            'rental_monthly_fee' => 'nullable|numeric|min:0',
+            'rental_contact_phone' => 'nullable|string|max:50',
+            'rental_conditions' => 'nullable|string',
             'location_detail' => 'nullable|string|max:255',
             'custodian_name' => 'nullable|string|max:255',
-            'budget_year' => 'nullable|string|max:10',
+            'budget_year' => 'nullable|max:10',
             'brand' => 'nullable|string|max:100',
             'model' => 'nullable|string|max:100',
             'serial_number' => 'nullable|string|max:100',
@@ -978,13 +995,25 @@ class HardwareAuditController extends Controller
             'name' => $validated['name'],
             'device_type_id' => $validated['device_type_id'],
             'department_id' => $validated['department_id'] ?? null,
+            'budget_source_id' => $validated['budget_source_id'] ?? null,
+            'acquisition_method_id' => $validated['acquisition_method_id'] ?? null,
+            'ownership_type' => $validated['ownership_type'] ?? 'owned',
+            'rental_contract_no' => $validated['rental_contract_no'] ?? null,
+            'rental_vendor' => $validated['rental_vendor'] ?? null,
+            'rental_start_date' => $validated['rental_start_date'] ?? null,
+            'rental_end_date' => $validated['rental_end_date'] ?? null,
+            'rental_monthly_fee' => $validated['rental_monthly_fee'] ?? null,
+            'rental_contact_phone' => $validated['rental_contact_phone'] ?? null,
+            'rental_conditions' => $validated['rental_conditions'] ?? null,
             'location_detail' => $validated['location_detail'] ?? null,
             'custodian_name' => $validated['custodian_name'] ?? null,
-            'budget_year' => $validated['budget_year'] ?: (string)$audit->fiscal_year,
-            'brand' => $validated['brand'] ?: $audit->brand,
-            'model' => $validated['model'] ?: $audit->model,
-            'serial_number' => $validated['serial_number'] ?: $audit->serial_number,
-            'hardware_id' => $validated['hardware_id'] ?: $audit->hardware_id,
+            'budget_year' => !empty($validated['budget_year']) ? (string)$validated['budget_year'] : (string)$audit->fiscal_year,
+            'brand' => !empty($validated['brand']) ? $validated['brand'] : $audit->brand,
+            'model' => !empty($validated['model']) ? $validated['model'] : $audit->model,
+            'serial_number' => !empty($validated['serial_number']) ? $validated['serial_number'] : $audit->serial_number,
+            'hardware_id' => !empty($validated['hardware_id']) ? $validated['hardware_id'] : $audit->hardware_id,
+            'price' => $validated['price'] ?? null,
+            'notes' => $validated['notes'] ?? null,
             'cpu_model' => $audit->cpu_model,
             'cpu_speed' => $audit->cpu_speed,
             'ram_capacity' => $audit->ram_capacity,
@@ -2080,6 +2109,328 @@ class HardwareAuditController extends Controller
             'online_count' => count($activeAgents),
             'agents' => array_values($activeAgents),
             'timestamp' => now()->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Admin/Technician Action: Delete a machine installed with Agent from the system
+     * Purges audit telemetry, command queue, and online cache.
+     * Optionally dispatches a remote 'uninstall' command to the client PC.
+     */
+    public function deleteMachine(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || (!$user->isAdmin() && !$user->isTechnician())) {
+            abort(403, 'เฉพาะเจ้าหน้าที่ไอทีหรือผู้ดูแลระบบเท่านั้นที่มีสิทธิ์ลบเครื่อง');
+        }
+
+        $hostname = trim((string)$request->input('hostname', ''));
+        $hardwareId = strtoupper(trim((string)$request->input('hardware_id', $request->input('hwid', ''))));
+        $auditId = $request->input('audit_id');
+        $ip = trim((string)$request->input('ip_address', ''));
+        $remoteUninstall = $request->boolean('remote_uninstall', false);
+
+        if (empty($hostname) && empty($hardwareId) && empty($auditId)) {
+            return response()->json(['success' => false, 'message' => 'ไม่พบข้อมูลระบุตัวตนเครื่องที่ต้องการลบ'], 400);
+        }
+
+        // 1. If remote uninstall is requested, dispatch 'uninstall' command to the machine
+        if ($remoteUninstall && (!empty($hardwareId) || !empty($hostname))) {
+            AgentCommand::create([
+                'command' => 'uninstall',
+                'target_type' => 'single',
+                'target_hardware_id' => $hardwareId ?: null,
+                'target_hostname' => $hostname ?: null,
+                'status' => 'pending',
+                'requested_by' => $user->id,
+                'parameters' => [
+                    'trigger' => 'web_delete_machine_action',
+                    'requested_at' => now()->toIso8601String(),
+                ],
+            ]);
+        }
+
+        // 2. Delete HardwareAudit records for this machine
+        $auditsQuery = HardwareAudit::query();
+        if (!empty($auditId)) {
+            $auditsQuery->where('id', $auditId);
+        } else {
+            $auditsQuery->where(function ($q) use ($hardwareId, $hostname) {
+                if (!empty($hardwareId)) $q->where('hardware_id', $hardwareId);
+                if (!empty($hostname)) {
+                    if (!empty($hardwareId)) $q->orWhere('hostname', $hostname);
+                    else $q->where('hostname', $hostname);
+                }
+            });
+        }
+        $auditsQuery->delete();
+
+        // 3. Clear non-uninstall commands for this machine
+        AgentCommand::where(function ($q) use ($hardwareId, $hostname) {
+            if (!empty($hardwareId)) $q->where('target_hardware_id', $hardwareId);
+            if (!empty($hostname)) {
+                if (!empty($hardwareId)) $q->orWhere('target_hostname', $hostname);
+                else $q->where('target_hostname', $hostname);
+            }
+        })->where('command', '!=', 'uninstall')->delete();
+
+        // 4. Purge Heartbeat & Live Online Cache
+        if (!empty($hardwareId)) {
+            Cache::forget('agent_online:hwid:' . strtoupper(trim($hardwareId)));
+            Cache::forget('agent_online:hwid:' . strtolower(trim($hardwareId)));
+            Cache::forget('agent_online:hwid:' . trim($hardwareId));
+        }
+        if (!empty($hostname)) {
+            Cache::forget('agent_online:host:' . strtoupper(trim($hostname)));
+            Cache::forget('agent_online:host:' . strtolower(trim($hostname)));
+            Cache::forget('agent_online:host:' . trim($hostname));
+            $shortHost = explode('.', $hostname)[0];
+            if ($shortHost !== $hostname) {
+                Cache::forget('agent_online:host:' . strtoupper(trim($shortHost)));
+                Cache::forget('agent_online:host:' . strtolower(trim($shortHost)));
+            }
+        }
+        if (!empty($ip)) {
+            Cache::forget('agent_online:ip:' . trim($ip));
+        }
+
+        // Remove from agent_online_registry in Cache
+        try {
+            $registry = Cache::get('agent_online_registry', []);
+            if (is_array($registry)) {
+                $agentKey = strtoupper(trim($hardwareId ?: $hostname ?: $ip));
+                unset($registry[$agentKey]);
+                foreach ($registry as $k => $v) {
+                    if ((!empty($hostname) && strcasecmp($v['hostname'] ?? '', $hostname) === 0) ||
+                        (!empty($hardwareId) && strcasecmp($v['hwid'] ?? '', $hardwareId) === 0)) {
+                        unset($registry[$k]);
+                    }
+                }
+                Cache::put('agent_online_registry', $registry, now()->addMinutes(5));
+            }
+        } catch (\Throwable $e) {}
+
+        // Record Audit Log
+        $display = $hostname ?: ($hardwareId ?: 'ID #' . $auditId);
+        AuditLog::record(
+            'delete',
+            'hardware_audits',
+            "ลบเครื่องที่ติดตั้ง Agent [{$display}] ออกจากระบบมอนิเตอร์" . ($remoteUninstall ? " พร้อมส่งคำสั่งถอนการติดตั้งระยะไกล (Remote Uninstall)" : ""),
+            null,
+            null,
+            null,
+            $request,
+            $user
+        );
+
+        $successMsg = "ลบเครื่อง '{$display}' ออกจากระบบเรียบร้อยแล้ว (ข้อมูลครุภัณฑ์ในคลังยังคงอยู่ตามปกติ)" . ($remoteUninstall ? " และส่งคำสั่งถอนการติดตั้งไปยังเครื่องลูกข่ายแล้ว" : "");
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $successMsg,
+                'hostname' => $hostname,
+                'remote_uninstall' => $remoteUninstall,
+            ]);
+        }
+
+        return back()->with('success', $successMsg);
+    }
+
+    /**
+     * Admin/Technician Action: Batch Delete multiple machines installed with Agent
+     */
+    public function batchDeleteMachines(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || (!$user->isAdmin() && !$user->isTechnician())) {
+            abort(403, 'เฉพาะเจ้าหน้าที่ไอทีหรือผู้ดูแลระบบเท่านั้นที่มีสิทธิ์ลบเครื่อง');
+        }
+
+        $items = $request->input('machines', $request->input('targets', []));
+        $remoteUninstall = $request->boolean('remote_uninstall', false);
+
+        if (empty($items) || !is_array($items)) {
+            return response()->json(['success' => false, 'message' => 'กรุณาเลือกเครื่องที่ต้องการลบอย่างน้อย 1 เครื่อง'], 400);
+        }
+
+        $deletedCount = 0;
+        foreach ($items as $item) {
+            $hostname = trim((string)($item['hostname'] ?? ''));
+            $hardwareId = strtoupper(trim((string)($item['hardware_id'] ?? $item['hwid'] ?? '')));
+            $auditId = $item['audit_id'] ?? null;
+            $ip = trim((string)($item['ip'] ?? $item['ip_address'] ?? ''));
+
+            if (empty($hostname) && empty($hardwareId) && empty($auditId)) {
+                continue;
+            }
+
+            // 1. Remote uninstall if requested
+            if ($remoteUninstall && (!empty($hardwareId) || !empty($hostname))) {
+                AgentCommand::create([
+                    'command' => 'uninstall',
+                    'target_type' => 'single',
+                    'target_hardware_id' => $hardwareId ?: null,
+                    'target_hostname' => $hostname ?: null,
+                    'status' => 'pending',
+                    'requested_by' => $user->id,
+                    'parameters' => [
+                        'trigger' => 'batch_delete_machine_action',
+                        'requested_at' => now()->toIso8601String(),
+                    ],
+                ]);
+            }
+
+            // 2. Delete Audits
+            $auditsQuery = HardwareAudit::query();
+            if (!empty($auditId)) {
+                $auditsQuery->where('id', $auditId);
+            } else {
+                $auditsQuery->where(function ($q) use ($hardwareId, $hostname) {
+                    if (!empty($hardwareId)) $q->where('hardware_id', $hardwareId);
+                    if (!empty($hostname)) {
+                        if (!empty($hardwareId)) $q->orWhere('hostname', $hostname);
+                        else $q->where('hostname', $hostname);
+                    }
+                });
+            }
+            $auditsQuery->delete();
+
+            // 3. Clear non-uninstall commands
+            AgentCommand::where(function ($q) use ($hardwareId, $hostname) {
+                if (!empty($hardwareId)) $q->where('target_hardware_id', $hardwareId);
+                if (!empty($hostname)) {
+                    if (!empty($hardwareId)) $q->orWhere('target_hostname', $hostname);
+                    else $q->where('target_hostname', $hostname);
+                }
+            })->where('command', '!=', 'uninstall')->delete();
+
+            // 4. Cache purge
+            if (!empty($hardwareId)) {
+                Cache::forget('agent_online:hwid:' . strtoupper(trim($hardwareId)));
+                Cache::forget('agent_online:hwid:' . strtolower(trim($hardwareId)));
+                Cache::forget('agent_online:hwid:' . trim($hardwareId));
+            }
+            if (!empty($hostname)) {
+                Cache::forget('agent_online:host:' . strtoupper(trim($hostname)));
+                Cache::forget('agent_online:host:' . strtolower(trim($hostname)));
+                Cache::forget('agent_online:host:' . trim($hostname));
+                $shortHost = explode('.', $hostname)[0];
+                if ($shortHost !== $hostname) {
+                    Cache::forget('agent_online:host:' . strtoupper(trim($shortHost)));
+                    Cache::forget('agent_online:host:' . strtolower(trim($shortHost)));
+                }
+            }
+            if (!empty($ip)) Cache::forget('agent_online:ip:' . trim($ip));
+
+            $deletedCount++;
+        }
+
+        // Clean registry
+        try {
+            $registry = Cache::get('agent_online_registry', []);
+            if (is_array($registry)) {
+                foreach ($items as $item) {
+                    $hn = $item['hostname'] ?? '';
+                    $hw = $item['hwid'] ?? '';
+                    foreach ($registry as $k => $v) {
+                        if ((!empty($hn) && strcasecmp($v['hostname'] ?? '', $hn) === 0) ||
+                            (!empty($hw) && strcasecmp($v['hwid'] ?? '', $hw) === 0)) {
+                            unset($registry[$k]);
+                        }
+                    }
+                }
+                Cache::put('agent_online_registry', $registry, now()->addMinutes(5));
+            }
+        } catch (\Throwable $e) {}
+
+        AuditLog::record(
+            'delete',
+            'hardware_audits',
+            "ลบเครื่องที่ติดตั้ง Agent เป็นกลุ่มจำนวน {$deletedCount} เครื่อง" . ($remoteUninstall ? " พร้อมส่งคำสั่งถอนการติดตั้งระยะไกล" : ""),
+            null,
+            null,
+            null,
+            $request,
+            $user
+        );
+
+        $msg = "ลบเครื่องที่เลือกออกจากระบบสำเร็จจำนวน {$deletedCount} เครื่อง (ข้อมูลครุภัณฑ์ในคลังยังคงอยู่ตามปกติ)" . ($remoteUninstall ? " และส่งคำสั่งถอนการติดตั้งระยะไกลเรียบร้อยแล้ว" : "");
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => $msg, 'deleted_count' => $deletedCount]);
+        }
+
+        return back()->with('success', $msg);
+    }
+
+    /**
+     * Admin Action: Trigger remote update command for an agent machine
+     */
+    public function triggerAgentUpdate(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || (!$user->isAdmin() && !$user->isTechnician())) {
+            abort(403, 'เฉพาะเจ้าหน้าที่ไอทีหรือผู้ดูแลระบบเท่านั้นที่มีสิทธิ์สั่งอัปเดต');
+        }
+
+        $hostname = trim((string)$request->input('hostname', ''));
+        $hardwareId = strtoupper(trim((string)$request->input('hardware_id', $request->input('hwid', ''))));
+        $batchItems = $request->input('machines', $request->input('targets', []));
+
+        if (!empty($batchItems) && is_array($batchItems)) {
+            $count = 0;
+            $batchId = 'UPDATE-' . date('Ymd-His') . '-' . Str::random(4);
+            foreach ($batchItems as $item) {
+                $hn = trim((string)($item['hostname'] ?? ''));
+                $hw = strtoupper(trim((string)($item['hardware_id'] ?? $item['hwid'] ?? '')));
+                if (!empty($hn) || !empty($hw)) {
+                    AgentCommand::create([
+                        'command' => 'update',
+                        'batch_id' => $batchId,
+                        'target_type' => 'single',
+                        'target_hardware_id' => $hw ?: null,
+                        'target_hostname' => $hn ?: null,
+                        'status' => 'pending',
+                        'requested_by' => $user->id,
+                        'parameters' => [
+                            'target_version' => '2.8.0',
+                            'download_url' => url('/agent/THC_IT_Agent.exe'),
+                        ],
+                    ]);
+                    $count++;
+                }
+            }
+            return response()->json([
+                'success' => true,
+                'message' => "ส่งคำสั่งอัปเดต Agent v2.8.0 ไปยัง {$count} เครื่องเรียบร้อยแล้ว (รอเครื่องลูกข่ายดึงคำสั่ง)",
+                'count' => $count,
+                'queued_count' => $count,
+                'batch_id' => $batchId,
+            ]);
+        }
+
+        if (empty($hostname) && empty($hardwareId)) {
+            return response()->json(['success' => false, 'message' => 'ไม่พบข้อมูลระบุตัวตนเครื่อง'], 400);
+        }
+
+        $cmd = AgentCommand::create([
+            'command' => 'update',
+            'target_type' => 'single',
+            'target_hardware_id' => $hardwareId ?: null,
+            'target_hostname' => $hostname ?: null,
+            'status' => 'pending',
+            'requested_by' => $user->id,
+            'parameters' => [
+                'target_version' => '2.8.0',
+                'download_url' => url('/agent/THC_IT_Agent.exe'),
+            ],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "ส่งคำสั่งอัปเดต Agent v2.8.0 ไปยังเครื่อง {$hostname} เรียบร้อยแล้ว",
+            'command_id' => $cmd->id,
         ]);
     }
 }

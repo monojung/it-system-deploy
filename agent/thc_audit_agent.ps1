@@ -2,7 +2,7 @@
 # thc_audit_agent.ps1
 # Thung Hua Chang Hospital - Client Hardware Audit Agent
 # Embedded PowerShell Agent to collect physical hardware specs & transmit to IT Server
-# Version: 2.3.0 (Robust Multi-Tier Polling Engine & Auto-Healing Client Daemon)
+# Version: 2.8.0 (Robust Multi-Tier Polling Engine & Auto-Healing Client Daemon)
 # ==============================================================================
 
 [CmdletBinding()]
@@ -75,7 +75,7 @@ function Invoke-SafeApiRequest {
         $req = [System.Net.HttpWebRequest]::Create($Uri)
         $req.Method = $Method.ToUpper()
         $req.Accept = "application/json"
-        $req.UserAgent = "THC-Audit-Agent/2.3.0 (Windows NT; PowerShell)"
+        $req.UserAgent = "THC-Audit-Agent/2.8.0 (Windows NT; PowerShell)"
         $req.Timeout = $TimeoutSec * 1000
         $req.KeepAlive = $false
         $req.ServicePoint.Expect100Continue = $false
@@ -105,7 +105,7 @@ function Invoke-SafeApiRequest {
     try {
         $wc = New-Object System.Net.WebClient
         $wc.Headers.Add("Accept", "application/json")
-        $wc.Headers.Add("User-Agent", "THC-Audit-Agent/2.3.0")
+        $wc.Headers.Add("User-Agent", "THC-Audit-Agent/2.8.0")
         $wc.Encoding = [System.Text.Encoding]::UTF8
         if ($Method.ToUpper() -eq 'POST' -and -not [string]::IsNullOrEmpty($Body)) {
             $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
@@ -137,7 +137,7 @@ function Invoke-SafeApiRequest {
 
     # Method 4: Invoke-RestMethod fallback
     try {
-        $headers = @{ "Accept" = "application/json"; "User-Agent" = "THC-Audit-Agent/2.3.0" }
+        $headers = @{ "Accept" = "application/json"; "User-Agent" = "THC-Audit-Agent/2.8.0" }
         if ($Method.ToUpper() -eq 'POST' -and -not [string]::IsNullOrEmpty($Body)) {
             $headers["Content-Type"] = "application/json; charset=utf-8"
             $respObj = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -Headers $headers -ContentType 'application/json; charset=utf-8' -TimeoutSec $TimeoutSec
@@ -195,7 +195,7 @@ function Invoke-HardwareAudit {
         Write-Host ''
         Write-Host '==========================================================================' -ForegroundColor Cyan
         Write-Host '   โรงพยาบาลทุ่งหัวช้าง - ระบบตรวจนับและติดตามสเปคคอมพิวเตอร์ประจำปี' -ForegroundColor Yellow
-        Write-Host '   THUNG HUA CHANG HOSPITAL - CLIENT HARDWARE AUDIT AGENT v2.3.0' -ForegroundColor Gray
+        Write-Host '   THUNG HUA CHANG HOSPITAL - CLIENT HARDWARE AUDIT AGENT v2.8.0' -ForegroundColor Gray
         Write-Host '==========================================================================' -ForegroundColor Cyan
         Write-Host 'กำลังตรวจสอบข้อมูลฮาร์ดแวร์จริงของเครื่อง กรุณารอสักครู่...' -ForegroundColor White
     }
@@ -548,15 +548,38 @@ if ($Background) {
     while ($true) {
         try {
             $cmd = Check-ServerCommand
-            if ($cmd -and $cmd.has_command -and $cmd.command -eq 'scan') {
+            if ($cmd -and $cmd.has_command) {
                 $cmdId = if ($cmd.command_id) { [int]$cmd.command_id } else { 0 }
-                $transmitted = Invoke-HardwareAudit -TargetCommandId $cmdId -IsSilent $true
-                
-                # Direct Acknowledgement
-                if ($cmdId -gt 0 -and $transmitted) {
-                    foreach ($submitUrl in $candidateUrls) {
-                        $ackUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', "/api/hardware-audit/agent-command/$cmdId/complete"
-                        Invoke-SafeApiRequest -Uri $ackUrl -Method 'POST' -Body '{"summary":"Agent scan completed via pull request"}' -TimeoutSec 5 | Out-Null
+                if ($cmd.command -eq 'scan') {
+                    $transmitted = Invoke-HardwareAudit -TargetCommandId $cmdId -IsSilent $true
+                    if ($cmdId -gt 0 -and $transmitted) {
+                        foreach ($submitUrl in $candidateUrls) {
+                            $ackUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', "/api/hardware-audit/agent-command/$cmdId/complete"
+                            Invoke-SafeApiRequest -Uri $ackUrl -Method 'POST' -Body '{"summary":"Agent scan completed via pull request"}' -TimeoutSec 5 | Out-Null
+                        }
+                    }
+                } elseif ($cmd.command -eq 'update') {
+                    if ($cmdId -gt 0) {
+                        foreach ($submitUrl in $candidateUrls) {
+                            $ackUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', "/api/hardware-audit/agent-command/$cmdId/complete"
+                            Invoke-SafeApiRequest -Uri $ackUrl -Method 'POST' -Body '{"summary":"Agent updating to latest version..."}' -TimeoutSec 5 | Out-Null
+                        }
+                    }
+                    $updateScript = "C:\ProgramData\THC-IT-Agent\update.bat"
+                    if (Test-Path $updateScript) {
+                        Start-Process -FilePath "cmd.exe" -ArgumentList "/c `"$updateScript`" /silent" -WindowStyle Hidden
+                    }
+                } elseif ($cmd.command -eq 'uninstall') {
+                    if ($cmdId -gt 0) {
+                        foreach ($submitUrl in $candidateUrls) {
+                            $ackUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', "/api/hardware-audit/agent-command/$cmdId/complete"
+                            Invoke-SafeApiRequest -Uri $ackUrl -Method 'POST' -Body '{"summary":"Agent uninstalling from machine..."}' -TimeoutSec 5 | Out-Null
+                        }
+                    }
+                    $uninstallScript = "C:\ProgramData\THC-IT-Agent\uninstall.bat"
+                    if (Test-Path $uninstallScript) {
+                        Start-Process -FilePath "cmd.exe" -ArgumentList "/c `"$uninstallScript`" /silent" -WindowStyle Hidden
+                        exit 0
                     }
                 }
             }
@@ -570,15 +593,38 @@ if ($Background) {
     # --------------------------------------------------------------------------
     try {
         $cmd = Check-ServerCommand
-        if ($cmd -and $cmd.has_command -and $cmd.command -eq 'scan') {
+        if ($cmd -and $cmd.has_command) {
             $cmdId = if ($cmd.command_id) { [int]$cmd.command_id } else { 0 }
-            $transmitted = Invoke-HardwareAudit -TargetCommandId $cmdId -IsSilent $true
-            
-            # Direct Acknowledgement
-            if ($cmdId -gt 0 -and $transmitted) {
-                foreach ($submitUrl in $candidateUrls) {
-                    $ackUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', "/api/hardware-audit/agent-command/$cmdId/complete"
-                    Invoke-SafeApiRequest -Uri $ackUrl -Method 'POST' -Body '{"summary":"Agent auto-scan completed"}' -TimeoutSec 5 | Out-Null
+            if ($cmd.command -eq 'scan') {
+                $transmitted = Invoke-HardwareAudit -TargetCommandId $cmdId -IsSilent $true
+                if ($cmdId -gt 0 -and $transmitted) {
+                    foreach ($submitUrl in $candidateUrls) {
+                        $ackUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', "/api/hardware-audit/agent-command/$cmdId/complete"
+                        Invoke-SafeApiRequest -Uri $ackUrl -Method 'POST' -Body '{"summary":"Agent auto-scan completed"}' -TimeoutSec 5 | Out-Null
+                    }
+                }
+            } elseif ($cmd.command -eq 'update') {
+                if ($cmdId -gt 0) {
+                    foreach ($submitUrl in $candidateUrls) {
+                        $ackUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', "/api/hardware-audit/agent-command/$cmdId/complete"
+                        Invoke-SafeApiRequest -Uri $ackUrl -Method 'POST' -Body '{"summary":"Agent updating to latest version..."}' -TimeoutSec 5 | Out-Null
+                    }
+                }
+                $updateScript = "C:\ProgramData\THC-IT-Agent\update.bat"
+                if (Test-Path $updateScript) {
+                    Start-Process -FilePath "cmd.exe" -ArgumentList "/c `"$updateScript`" /silent" -WindowStyle Hidden
+                }
+            } elseif ($cmd.command -eq 'uninstall') {
+                if ($cmdId -gt 0) {
+                    foreach ($submitUrl in $candidateUrls) {
+                        $ackUrl = $submitUrl -replace '/(api/)?hardware-audit/submit', "/api/hardware-audit/agent-command/$cmdId/complete"
+                        Invoke-SafeApiRequest -Uri $ackUrl -Method 'POST' -Body '{"summary":"Agent uninstalling from machine..."}' -TimeoutSec 5 | Out-Null
+                    }
+                }
+                $uninstallScript = "C:\ProgramData\THC-IT-Agent\uninstall.bat"
+                if (Test-Path $uninstallScript) {
+                    Start-Process -FilePath "cmd.exe" -ArgumentList "/c `"$uninstallScript`" /silent" -WindowStyle Hidden
+                    exit 0
                 }
             }
         }

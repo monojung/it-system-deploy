@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.7.0'),
-    'release_name' => 'Thung Hua Chang IT Service Platform',
+    'version' => env('APP_VERSION', '2.8.0'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Production Gold Release)',
     'release_date' => '2026-10-02',
-    'build' => '20261002.2',
+    'build' => '20261002.3',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,22 @@ return [
     |
     */
     'changelog' => [
+        '2.8.0' => [
+            'date' => '2026-10-02',
+            'badge' => 'Production Gold Release: Agent Lifecycle Suite (Updater & Uninstaller), Machine Purge & Cross-Module Linkages',
+            'badge_color' => '#10b981',
+            'title' => 'เวอร์ชันสมบูรณ์พร้อมใช้งานจริง (Production Gold Release): สคริปต์อัปเดตและถอนการติดตั้ง Agent แบบครบวงจร, ปุ่มลบเครื่องที่ติดตั้ง Agent ออกจากระบบพร้อมตัวเลือก Remote Uninstall, เชื่อมโยงความสัมพันธ์ทุกระบบแบบบูรณาการ และจัดระเบียบเวอร์ชันต่อเนื่อง',
+            'highlights' => [
+                'ระบบอัปเดตเวอร์ชัน Agent อัตโนมัติ (Agent Auto-Updater): สร้างสคริปต์ update_thc_agent.bat พร้อมระบบสั่งอัปเดตระยะไกล (Remote Update) จากหน้าเว็บ สามารถสั่งอัปเดตเป็นรายเครื่องหรือสั่งอัปเดตแบบกลุ่ม (Batch) ได้ทันที โดย Agent จะดาวน์โหลดไบนารีและสคริปต์เวอร์ชันล่าสุด ติดตั้งทับ และรีสตาร์ทตัวมันเองแบบไร้รอยต่อ',
+                'ระบบถอนการติดตั้ง Agent ประจำเครื่อง (Standalone & Remote Uninstaller): สร้างสคริปต์ uninstall_thc_agent.bat ที่มีความสามารถปิดโพรเซสที่ทำงานอยู่, ถอน Registry Startup (HKCU/HKLM), ลบ Scheduled Tasks, ลบทางลัดบน Desktop/Startup และล้างโฟลเดอร์โปรแกรมใน C:\ProgramData\THC-IT-Agent และ LocalAppData อย่างหมดจด 100%',
+                'ปุ่มลบเครื่องที่ติดตั้ง Agent ออกจากระบบ (Delete Agent Machine): ออกแบบและพัฒนาปุ่มลบเครื่องในแท็บ Agent Fleet ทั้งแบบรายเครื่องและแบบเลือกหลายเครื่องพร้อมกัน (Batch Delete) ลบประวัติสแกนฮาร์ดแวร์ล่าสุด, ยกเลิกคิวคำสั่งค้างท่อ, และล้างสถานะออนไลน์ออกจาก Cache/Registry ทันที โดยปลอดภัยและไม่กระทบต่อข้อมูลครุภัณฑ์ในระบบคลัง',
+                'คำสั่งถอนการติดตั้งระยะไกล (Remote Uninstall Command): เสริมตัวเลือกใน Modal ลบเครื่อง ให้ระบบสามารถส่งคำสั่ง \'uninstall\' ผ่าน API ไปยัง Agent บนเครื่องลูกข่าย เพื่อให้ตัวโปรแกรม Agent ปิดตัวเองและถอนการติดตั้งอัตโนมัติ',
+                'อัปเกรด Native C# System Tray Agent เป็น v2.8.0: รองรับคำสั่ง \'update\' และ \'uninstall\' จากระยะไกล พร้อมเพิ่มเมนูคลิกขวาใน System Tray สำหรับผู้ใช้งานหรือช่าง ให้สามารถกดตรวจสอบและอัปเดตเวอร์ชัน หรือสั่งถอนการติดตั้งได้โดยตรง',
+                'เชื่อมโยงความสัมพันธ์ข้ามระบบ (Cross-Module Integration): บูรณาการฟอร์มลงทะเบียนครุภัณฑ์ใหม่จากผลสแกนฮาร์ดแวร์ (createAssetModal) ให้รองรับการเลือกแหล่งเงินที่ใช้ซื้อ (Budget Sources เช่น เงิน UC, เงินบำรุง), วิธีการได้มา (Acquisition Methods เช่น จัดซื้อจัดจ้าง, รับบริจาค), และสิทธิ์การครอบครอง (Ownership Type เช่น เป็นของโรงพยาบาล, เครื่องเช่า/เช่าใช้)',
+                'ปรับปรุงสถาปัตยกรรม Route & สิทธิ์ RBAC 3 ระดับ: จัดลำดับ Static Routes ใน HardwareAudit ให้ทำงานก่อน Wildcard Routes เพื่อป้องกัน Route Collision และจำกัดสิทธิ์โมดูลความปลอดภัยสูงเฉพาะ Super Admin อย่างเคร่งครัด',
+                'จัดระเบียบประวัติเวอร์ชันระบบให้ต่อเนื่องสมบูรณ์: เติมเต็มบันทึกประวัติการเปลี่ยนแปลง (Changelogs) เวอร์ชัน 2.5.4 และ 2.5.3 ที่ขาดหายไป ให้บันทึกประวัติระบบมีความต่อเนื่องและสมบูรณ์สูงสุดสำหรับใช้งานจริงในระดับองค์กร',
+            ],
+        ],
         '2.7.0' => [
             'date' => '2026-10-02',
             'badge' => 'Major Feature: Budget Sources, Acquisition Methods & Leased IT Fleet / Printer Management',
@@ -133,6 +149,28 @@ return [
                 'ตอบสนองคำสั่งดึงข้อมูลทันที (Fast Heartbeat): Agent ส่ง Heartbeat ตรวจสอบคำสั่งทุก 3-4 วินาที เมื่อแอดมินกดดึงข้อมูล เครื่องลูกข่ายจะเริ่มสแกนและส่งผลกลับมาภายใน 3-5 วินาที ทันที',
                 'Interactive GUI & Device Inspector: ดับเบิลคลิกที่ไอคอนเพื่อดูสเปกฮาร์ดแวร์จริงของเครื่อง (CPU, RAM, Disks, OS, IP, MAC, Serial) พร้อมหน้าต่างตั้งค่า Server API URL และปุ่มเปิด/ปิดให้โปรแกรมเริ่มทำงานพร้อม Windows (Auto-start)',
                 'แถบแสดงสถานะ Live Online ในหน้าเว็บ: เพิ่มตัวชี้วัดสถานะเครื่องออนไลน์แบบเรียลไทม์ และปรับปรุงศูนย์ดาวน์โหลด Agent 3 รูปแบบ',
+            ],
+        ],
+        '2.5.4' => [
+            'date' => '2026-09-25',
+            'badge' => 'Telemetry Engine: Automated Hardware Telemetry & HardwareID Discovery',
+            'badge_color' => '#0284c7',
+            'title' => 'ปรับปรุงระบบสำรวจสเปกฮาร์ดแวร์ระยะไกลและการตรวจจับเครื่องคอมพิวเตอร์ลูกข่ายแบบอัตโนมัติ (Automated Hardware Telemetry & Discovery Engine)',
+            'highlights' => [
+                'ยกระดับความแม่นยำในการอ่านสเปกฮาร์ดแวร์จาก WMI และ BIOS: อ่านข้อมูล CPU Clock, Core/Thread, ความเร็วและจำนวนแถว RAM, รุ่นและขนาด Storage ทั้ง NVMe, SSD, และ HDD พร้อมหมายเลข Serial Number ประจำเครื่อง',
+                'ระบบสร้าง HardwareID (UUID) เอกลักษณ์เฉพาะเครื่อง: ผสานค่า Motherboard UUID, BIOS Serial และ MAC Address เพื่อระบุเครื่องคอมพิวเตอร์ลูกข่ายได้อย่างแม่นยำ ป้องกันการบันทึกเครื่องซ้ำซ้อนแม้มีการเปลี่ยน IP Address ในเครือข่ายโรงพยาบาล',
+                'การตรวจสอบและแจ้งเตือนสเปกที่เปลี่ยนแปลง (Spec Drift Detection): ระบบเปรียบเทียบสเปกจริงที่อ่านได้กับข้อมูลที่เคยบันทึกไว้ในทะเบียนครุภัณฑ์ เพื่อแจ้งเตือนกรณีมีการอัปเกรดหรือสับเปลี่ยนชิ้นส่วนฮาร์ดแวร์',
+            ],
+        ],
+        '2.5.3' => [
+            'date' => '2026-09-25',
+            'badge' => 'Agent Infrastructure: Bi-directional Agent Command Queue & Polling Subsystem',
+            'badge_color' => '#6366f1',
+            'title' => 'พัฒนาระบบคิวคำสั่งสองทางระหว่างเซิร์ฟเวอร์และ Agent (Bi-directional Command Dispatcher & High-Speed Polling)',
+            'highlights' => [
+                'ระบบจัดคิวคำสั่งจากส่วนกลาง (Centralized Command Queue): รองรับการสั่งสแกน On-Demand เป็นรายเครื่อง หรือสั่งสแกนพร้อมกันทั้งโรงพยาบาล (Broadcast Scan) โดยมีระบบคิวและกลไกป้องกันคำสั่งค้างท่อ (Zombie Command Prevention)',
+                'การยืนยันผลการประมวลผลคำสั่งโดยตรง (Direct Acknowledgement API): Agent ส่งผลยืนยันการรับทราบและผลการทำงานกลับมายังเซิร์ฟเวอร์แบบ Real-time พร้อมบันทึกสรุปผลลงใน Command Log',
+                'ระบบทะเบียนสถานะออนไลน์แบบกระจายศูนย์ (Online Status Registry & Cache Store): จัดเก็บสถานะออนไลน์ของ Agent ลูกข่ายผ่าน Cache Layer ช่วยให้หน้าเว็บสามารถเรียกดูสถานะเครื่องออนไลน์ได้ทันทีโดยไม่สร้างภาระให้ฐานข้อมูลหลัก',
             ],
         ],
         '2.5.2' => [
