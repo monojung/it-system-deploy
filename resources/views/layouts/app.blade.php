@@ -1644,6 +1644,14 @@
                     <i class="bi bi-hdd-network"></i>
                     <span>ประเภทอุปกรณ์</span>
                 </a>
+                <a href="{{ route('budget-sources.index') }}" class="nav-item {{ request()->routeIs('budget-sources.*') ? 'active' : '' }}">
+                    <i class="bi bi-cash-coin"></i>
+                    <span>แหล่งเงินงบประมาณ</span>
+                </a>
+                <a href="{{ route('acquisition-methods.index') }}" class="nav-item {{ request()->routeIs('acquisition-methods.*') ? 'active' : '' }}">
+                    <i class="bi bi-box-seam"></i>
+                    <span>วิธีการได้มาของครุภัณฑ์</span>
+                </a>
                 <a href="{{ route('audit-logs.index') }}" class="nav-item {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
                     <i class="bi bi-shield-check"></i>
                     <span>บันทึกกิจกรรมระบบ (Audit Log)</span>

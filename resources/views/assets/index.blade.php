@@ -239,7 +239,7 @@
 
     .filter-form-grid {
         display: grid;
-        grid-template-columns: 2fr 1.3fr 1.3fr 1.2fr auto;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) auto;
         gap: 12px;
         align-items: end;
     }
@@ -953,6 +953,14 @@
             <i class="bi bi-hdd-network"></i>
             <span>ประเภทอุปกรณ์</span>
         </a>
+        <a href="{{ route('budget-sources.index') }}" class="btn-hero-ghost" title="จัดการแหล่งเงินงบประมาณ">
+            <i class="bi bi-wallet2"></i>
+            <span>แหล่งเงิน</span>
+        </a>
+        <a href="{{ route('acquisition-methods.index') }}" class="btn-hero-ghost" title="จัดการวิธีการได้มาของครุภัณฑ์">
+            <i class="bi bi-box-arrow-in-down-right"></i>
+            <span>วิธีการได้มา</span>
+        </a>
         <a href="{{ route('hardware-audits.index') }}" class="btn-hero-ghost" title="การตรวจนับสเปคประจำปีงบประมาณ">
             <i class="bi bi-cpu"></i>
             <span>ตรวจนับสเปค</span>
@@ -1065,9 +1073,61 @@
     </a>
 </div>
 
+<!-- Rental & Leased Equipment Control Card (เครื่องเช่า / เครื่องปริ้นเช่า) -->
+<div class="card mb-3" style="border: 1px solid #fed7aa; background: linear-gradient(135deg, #fffaf5 0%, #fff7ed 100%); border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(249, 115, 22, 0.06);">
+    <div style="padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #ffedd5; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 1px solid #fdba74; flex-shrink: 0;">
+                <i class="bi bi-printer-fill"></i>
+            </div>
+            <div>
+                <div style="font-size: 14px; font-weight: 700; color: #9a3412; display: flex; align-items: center; gap: 8px;">
+                    <span>ระบบคุมเครื่องเช่า & เครื่องพิมพ์เช่า (Leased IT Equipment & Printers)</span>
+                    <span class="badge" style="background: #ea580c; color: #ffffff; font-size: 11px; padding: 2px 8px; border-radius: 999px;">{{ $rentedStats['total'] }} เครื่อง</span>
+                </div>
+                <div style="font-size: 12px; color: #c2410c; margin-top: 2px;">
+                    เครื่องพิมพ์เช่า: <strong>{{ $rentedStats['printers'] }} เครื่อง</strong> 
+                    • ค่าเช่ารวมประมาณ: <strong>{{ number_format($rentedStats['monthly_fee_total'], 2) }} บาท/เดือน</strong>
+                    @if($rentedStats['expiring_soon'] > 0)
+                        • <span class="badge bg-warning text-dark" style="font-size: 11px;"><i class="bi bi-exclamation-circle-fill"></i> ใกล้หมดสัญญา {{ $rentedStats['expiring_soon'] }} เครื่อง (ภายใน 30 วัน)</span>
+                    @endif
+                    @if($rentedStats['expired'] > 0)
+                        • <span class="badge bg-danger" style="font-size: 11px;"><i class="bi bi-x-circle-fill"></i> หมดสัญญาเช่าแล้ว {{ $rentedStats['expired'] }} เครื่อง</span>
+                    @endif
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <a href="{{ route('assets.index', ['ownership_type' => 'rented']) }}" 
+               class="btn btn-sm" 
+               style="background: {{ request('ownership_type') == 'rented' && !request('rental_status') ? '#ea580c' : '#ffffff' }}; color: {{ request('ownership_type') == 'rented' && !request('rental_status') ? '#ffffff' : '#9a3412' }}; border: 1px solid #fdba74; font-size: 12px; font-weight: 600; border-radius: 8px; padding: 5px 12px;">
+                <i class="bi bi-printer me-1"></i> ดูเครื่องเช่าทั้งหมด ({{ $rentedStats['total'] }})
+            </a>
+            <a href="{{ route('assets.index', ['ownership_type' => 'rented', 'rental_status' => 'expiring_soon']) }}" 
+               class="btn btn-sm" 
+               style="background: {{ request('rental_status') == 'expiring_soon' ? '#d97706' : '#ffffff' }}; color: {{ request('rental_status') == 'expiring_soon' ? '#ffffff' : '#b45309' }}; border: 1px solid #fcd34d; font-size: 12px; font-weight: 600; border-radius: 8px; padding: 5px 12px;">
+                <i class="bi bi-clock-history me-1"></i> ใกล้หมดสัญญา ({{ $rentedStats['expiring_soon'] }})
+            </a>
+            @if($rentedStats['expired'] > 0)
+            <a href="{{ route('assets.index', ['ownership_type' => 'rented', 'rental_status' => 'expired']) }}" 
+               class="btn btn-sm" 
+               style="background: {{ request('rental_status') == 'expired' ? '#dc2626' : '#ffffff' }}; color: {{ request('rental_status') == 'expired' ? '#ffffff' : '#b91c1c' }}; border: 1px solid #fca5a5; font-size: 12px; font-weight: 600; border-radius: 8px; padding: 5px 12px;">
+                <i class="bi bi-exclamation-triangle me-1"></i> เกินสัญญาเช่า ({{ $rentedStats['expired'] }})
+            </a>
+            @endif
+            <a href="{{ route('reports.assets', ['ownership_type' => 'rented']) }}" 
+               class="btn btn-sm" 
+               style="background: #ffffff; color: #0369a1; border: 1px solid #bae6fd; font-size: 12px; font-weight: 600; border-radius: 8px; padding: 5px 12px;"
+               title="เปิดหน้ารายงานทะเบียนเครื่องเช่า">
+                <i class="bi bi-file-earmark-bar-graph me-1"></i> รายงานเครื่องเช่า
+            </a>
+        </div>
+    </div>
+</div>
+
 {{-- Active Filters Notice Bar --}}
 @php
-    $hasActiveFilters = request()->hasAny(['search', 'device_type_id', 'department_id', 'status', 'cpu', 'ram_type', 'ram_capacity', 'os', 'storage_type', 'storage_capacity', 'audited_fiscal_year', 'audit_status']);
+    $hasActiveFilters = request()->hasAny(['search', 'device_type_id', 'department_id', 'status', 'budget_source_id', 'acquisition_method_id', 'ownership_type', 'rental_status', 'cpu', 'ram_type', 'ram_capacity', 'os', 'storage_type', 'storage_capacity', 'audited_fiscal_year', 'audit_status']);
     $hasHardwareFilters = request()->hasAny(['cpu', 'ram_type', 'ram_capacity', 'os', 'storage_type', 'storage_capacity']);
 @endphp
 
@@ -1101,6 +1161,40 @@
                 <span class="active-filter-pill">
                     <i class="bi bi-building"></i> {{ $deptName }}
                     <a href="{{ route('assets.index', request()->except(['department_id', 'page'])) }}" title="ลบตัวกรองแผนก">✕</a>
+                </span>
+            @endif
+            @if(request('budget_source_id'))
+                @php $bsName = $budgetSources->firstWhere('id', request('budget_source_id'))?->name ?? 'แหล่งเงิน ' . request('budget_source_id'); @endphp
+                <span class="active-filter-pill" style="background: #4338ca;">
+                    <i class="bi bi-wallet2"></i> แหล่งเงิน: {{ Str::limit($bsName, 25) }}
+                    <a href="{{ route('assets.index', request()->except(['budget_source_id', 'page'])) }}" title="ลบตัวกรองแหล่งเงิน">✕</a>
+                </span>
+            @endif
+            @if(request('acquisition_method_id'))
+                @php $amName = $acquisitionMethods->firstWhere('id', request('acquisition_method_id'))?->name ?? 'วิธีการ ' . request('acquisition_method_id'); @endphp
+                <span class="active-filter-pill" style="background: #059669;">
+                    <i class="bi bi-box-arrow-in-down-right"></i> วิธีได้มา: {{ Str::limit($amName, 25) }}
+                    <a href="{{ route('assets.index', request()->except(['acquisition_method_id', 'page'])) }}" title="ลบตัวกรองวิธีการได้มา">✕</a>
+                </span>
+            @endif
+            @if(request('ownership_type'))
+                @php 
+                    $ownLabels = ['owned' => 'ซื้อขาด (ของ รพ.)', 'rented' => 'เช่าใช้ (เครื่องเช่า)', 'donated' => 'บริจาค', 'borrowed' => 'ยืมใช้ภายนอก'];
+                    $ownText = $ownLabels[request('ownership_type')] ?? request('ownership_type');
+                @endphp
+                <span class="active-filter-pill" style="background: #ea580c;">
+                    <i class="bi bi-patch-question"></i> กรรมสิทธิ์: {{ $ownText }}
+                    <a href="{{ route('assets.index', request()->except(['ownership_type', 'rental_status', 'page'])) }}" title="ลบตัวกรองกรรมสิทธิ์">✕</a>
+                </span>
+            @endif
+            @if(request('rental_status'))
+                @php 
+                    $rsLabels = ['expiring_soon' => 'ใกล้หมดสัญญาเช่า', 'expired' => 'เกินกำหนดสัญญาเช่า', 'active' => 'อยู่ในสัญญาเช่า', 'all_rented' => 'เครื่องเช่าทั้งหมด'];
+                    $rsText = $rsLabels[request('rental_status')] ?? request('rental_status');
+                @endphp
+                <span class="active-filter-pill" style="background: #d97706;">
+                    <i class="bi bi-clock-history"></i> {{ $rsText }}
+                    <a href="{{ route('assets.index', request()->except(['rental_status', 'page'])) }}" title="ลบตัวกรองสถานะสัญญาเช่า">✕</a>
                 </span>
             @endif
             @if(request('cpu'))
@@ -1230,6 +1324,53 @@
                         <option value="repairing" {{ request('status') == 'repairing' ? 'selected' : '' }}>🟠 กำลังส่งซ่อม</option>
                         <option value="broken" {{ request('status') == 'broken' ? 'selected' : '' }}>🔴 ชำรุดรอซ่อม</option>
                         <option value="disposed" {{ request('status') == 'disposed' ? 'selected' : '' }}>⚪ รอจำหน่าย</option>
+                    </select>
+                </div>
+
+                {{-- Budget Source (แหล่งเงิน) --}}
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="bi bi-wallet2 text-primary"></i>
+                        <span>แหล่งเงินงบประมาณ</span>
+                    </label>
+                    <select name="budget_source_id" class="form-select filter-select" onchange="this.form.submit()">
+                        <option value="">-- ทุกแหล่งเงิน --</option>
+                        @foreach($budgetSources as $bs)
+                            <option value="{{ $bs->id }}" {{ request('budget_source_id') == $bs->id ? 'selected' : '' }}>
+                                {{ $bs->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Acquisition Method (วิธีการได้มา) --}}
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="bi bi-box-arrow-in-down-right text-primary"></i>
+                        <span>วิธีการได้มา</span>
+                    </label>
+                    <select name="acquisition_method_id" class="form-select filter-select" onchange="this.form.submit()">
+                        <option value="">-- ทุกวิธีการได้มา --</option>
+                        @foreach($acquisitionMethods as $am)
+                            <option value="{{ $am->id }}" {{ request('acquisition_method_id') == $am->id ? 'selected' : '' }}>
+                                {{ $am->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Ownership Type (กรรมสิทธิ์ / เครื่องเช่า) --}}
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="bi bi-patch-question text-primary"></i>
+                        <span>กรรมสิทธิ์ / การครอบครอง</span>
+                    </label>
+                    <select name="ownership_type" class="form-select filter-select" onchange="this.form.submit()">
+                        <option value="">-- ทุกประเภทกรรมสิทธิ์ --</option>
+                        <option value="owned" {{ request('ownership_type') == 'owned' ? 'selected' : '' }}>🏢 เป็นของ รพ. (ซื้อขาด)</option>
+                        <option value="rented" {{ request('ownership_type') == 'rented' ? 'selected' : '' }}>🖨️ เช่าใช้ (เครื่องเช่า)</option>
+                        <option value="donated" {{ request('ownership_type') == 'donated' ? 'selected' : '' }}>🎁 ได้รับบริจาค</option>
+                        <option value="borrowed" {{ request('ownership_type') == 'borrowed' ? 'selected' : '' }}>🔄 ยืมใช้งานภายนอก</option>
                     </select>
                 </div>
 
@@ -1553,14 +1694,47 @@
                     <td>
                         <div class="asset-name-text">
                             <a href="{{ route('assets.show', $asset) }}">{{ $asset->name }}</a>
+                            @if($asset->is_rented)
+                                <span class="badge" style="background: #fff7ed; color: #ea580c; border: 1px solid #fdba74; font-size: 11px; margin-left: 4px; font-weight: 700;" title="เครื่องเช่า">
+                                    <i class="bi bi-printer me-1"></i>เครื่องเช่า
+                                </span>
+                            @elseif($asset->ownership_type === 'donated')
+                                <span class="badge" style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 10.5px; margin-left: 4px;">
+                                    บริจาค
+                                </span>
+                            @elseif($asset->ownership_type === 'borrowed')
+                                <span class="badge" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; font-size: 10.5px; margin-left: 4px;">
+                                    ยืมใช้ภายนอก
+                                </span>
+                            @endif
                         </div>
-                        <div class="asset-sub-text">
+                        <div class="asset-sub-text" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 3px;">
                             @if($asset->brand || $asset->model)
                                 <span style="font-weight: 500;">{{ $asset->brand }} {{ $asset->model }}</span>
                             @endif
+                            @if($asset->budgetSource)
+                                <a href="{{ route('assets.index', ['budget_source_id' => $asset->budget_source_id]) }}" class="badge text-decoration-none" style="background: #e0e7ff; color: #4338ca; font-size: 10px; border: 1px solid #c7d2fe;" title="แหล่งเงินงบประมาณ">
+                                    <i class="bi bi-wallet2"></i> {{ $asset->budgetSource->code ?: $asset->budgetSource->name }}
+                                </a>
+                            @endif
+                            @if($asset->acquisitionMethod)
+                                <a href="{{ route('assets.index', ['acquisition_method_id' => $asset->acquisition_method_id]) }}" class="badge text-decoration-none" style="background: #ecfdf5; color: #059669; font-size: 10px; border: 1px solid #a7f3d0;" title="วิธีการได้มา">
+                                    <i class="bi bi-box-arrow-in-down-right"></i> {{ $asset->acquisitionMethod->code ?: $asset->acquisitionMethod->name }}
+                                </a>
+                            @endif
+                            @if($asset->is_rented)
+                                <span class="badge {{ $asset->rental_status_badge }}" style="font-size: 10px;" title="สัญญาเช่า: {{ $asset->rental_contract_no }} {{ $asset->rental_vendor ? '('.$asset->rental_vendor.')' : '' }}">
+                                    <i class="bi bi-clock-history"></i> {{ $asset->rental_status_label }}
+                                </span>
+                                @if($asset->rental_monthly_fee)
+                                    <span class="badge bg-light text-dark border" style="font-size: 10px;" title="ค่าเช่ารายเดือน">
+                                        <i class="bi bi-cash"></i> {{ number_format($asset->rental_monthly_fee) }} บ./ด.
+                                    </span>
+                                @endif
+                            @endif
                             @if($asset->repairs_count > 0)
-                                <span class="badge bg-warning text-dark" style="font-size: 10.5px; padding: 1px 6px; font-weight: 600;" title="ประวัติการแจ้งซ่อม">
-                                    <i class="bi bi-wrench"></i> เคยซ่อม {{ $asset->repairs_count }} ครั้ง
+                                <span class="badge bg-warning text-dark" style="font-size: 10px; padding: 1px 6px; font-weight: 600;" title="ประวัติการแจ้งซ่อม">
+                                    <i class="bi bi-wrench"></i> ซ่อม {{ $asset->repairs_count }} ครั้ง
                                 </span>
                             @endif
                         </div>

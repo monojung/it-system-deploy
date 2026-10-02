@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Artisan;
 use App\Models\User;
 use App\Models\Department;
 use App\Models\DeviceType;
+use App\Models\BudgetSource;
+use App\Models\AcquisitionMethod;
 use App\Models\Asset;
 use App\Models\AssetBorrow;
 use App\Models\AssetTransfer;
@@ -633,6 +635,26 @@ class SystemResetController extends Controller
                 $repaired['repair_parts_purged'] = DB::table('it_repair_parts')->whereIn('id', $orphanPartIds)->delete();
             }
 
+            // 8. Assets pointing to non-existent budget sources -> set null
+            $invalidBsAssetIds = DB::table('it_assets')
+                ->whereNotNull('budget_source_id')
+                ->whereNotExists(function ($query) {
+                    $query->select(DB::raw(1))->from('it_budget_sources')->whereColumn('it_budget_sources.id', 'it_assets.budget_source_id');
+                })->pluck('id');
+            if ($invalidBsAssetIds->isNotEmpty()) {
+                $repaired['assets_detached_budget_sources'] = DB::table('it_assets')->whereIn('id', $invalidBsAssetIds)->update(['budget_source_id' => null]);
+            }
+
+            // 9. Assets pointing to non-existent acquisition methods -> set null
+            $invalidAmAssetIds = DB::table('it_assets')
+                ->whereNotNull('acquisition_method_id')
+                ->whereNotExists(function ($query) {
+                    $query->select(DB::raw(1))->from('it_acquisition_methods')->whereColumn('it_acquisition_methods.id', 'it_assets.acquisition_method_id');
+                })->pluck('id');
+            if ($invalidAmAssetIds->isNotEmpty()) {
+                $repaired['assets_detached_acquisition_methods'] = DB::table('it_assets')->whereIn('id', $invalidAmAssetIds)->update(['acquisition_method_id' => null]);
+            }
+
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
             $totalFixed = array_sum($repaired);
@@ -805,6 +827,8 @@ class SystemResetController extends Controller
                 'color' => '#8b5cf6',
                 'departments_count' => Department::count(),
                 'device_types_count' => DeviceType::count(),
+                'budget_sources_count' => BudgetSource::count(),
+                'acquisition_methods_count' => AcquisitionMethod::count(),
                 'last_activity' => Department::latest('updated_at')->value('updated_at')?->diffForHumans() ?? '-',
             ],
 
@@ -925,6 +949,40 @@ class SystemResetController extends Controller
                 'description' => 'พบการเบิกอะไหล่ที่ไม่มีใบแจ้งซ่อมรองรับในระบบ',
                 'severity' => 'medium',
                 'fix_action' => 'ลบรายการเบิกอะไหล่กำพร้า',
+            ];
+        }
+
+        // 7. Assets with invalid budget_source_id
+        $brokenBudgetAssets = DB::table('it_assets')
+            ->whereNotNull('budget_source_id')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))->from('it_budget_sources')->whereColumn('it_budget_sources.id', 'it_assets.budget_source_id');
+            })->count();
+        if ($brokenBudgetAssets > 0) {
+            $issues[] = [
+                'type' => 'assets_invalid_budget_source',
+                'title' => 'ครุภัณฑ์ที่ผูกกับแหล่งเงินที่ถูกลบ',
+                'count' => $brokenBudgetAssets,
+                'description' => 'พบครุภัณฑ์ที่ผูกกับรหัสแหล่งเงินงบประมาณที่ไม่มีอยู่ในระบบแล้ว',
+                'severity' => 'low',
+                'fix_action' => 'ปลดล็อกรหัสแหล่งเงินเป็นค่าว่าง (Set NULL)',
+            ];
+        }
+
+        // 8. Assets with invalid acquisition_method_id
+        $brokenAcqAssets = DB::table('it_assets')
+            ->whereNotNull('acquisition_method_id')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))->from('it_acquisition_methods')->whereColumn('it_acquisition_methods.id', 'it_assets.acquisition_method_id');
+            })->count();
+        if ($brokenAcqAssets > 0) {
+            $issues[] = [
+                'type' => 'assets_invalid_acquisition_method',
+                'title' => 'ครุภัณฑ์ที่ผูกกับวิธีการได้มาที่ถูกลบ',
+                'count' => $brokenAcqAssets,
+                'description' => 'พบครุภัณฑ์ที่ผูกกับวิธีการได้มาที่ไม่มีอยู่ในระบบแล้ว',
+                'severity' => 'low',
+                'fix_action' => 'ปลดล็อกวิธีการได้มาเป็นค่าว่าง (Set NULL)',
             ];
         }
 

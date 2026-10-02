@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Asset;
 use App\Models\DeviceType;
 use App\Models\Department;
+use App\Models\BudgetSource;
+use App\Models\AcquisitionMethod;
 use App\Services\IctStandardCatalog;
 use Carbon\Carbon;
 
@@ -15,7 +17,7 @@ class AssetController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = Asset::with(['deviceType', 'department'])->withCount('repairs');
+        $query = Asset::with(['deviceType', 'department', 'budgetSource', 'acquisitionMethod'])->withCount('repairs');
 
         // Regular users can only see assets of their own department
         if ($user && $user->isUser()) {
@@ -38,6 +40,43 @@ class AssetController extends Controller
 
         if ($request->filled('budget_year')) {
             $query->where('budget_year', $request->budget_year);
+        }
+
+        // Budget Source (แหล่งเงินที่ใช้ซื้อ)
+        if ($request->filled('budget_source_id')) {
+            $query->where('budget_source_id', $request->budget_source_id);
+        }
+
+        // Acquisition Method (วิธีการได้มาของครุภัณฑ์)
+        if ($request->filled('acquisition_method_id')) {
+            $query->where('acquisition_method_id', $request->acquisition_method_id);
+        }
+
+        // Ownership Type (กรรมสิทธิ์ / เครื่องเช่า / ซื้อขาด / บริจาค / ยืม)
+        if ($request->filled('ownership_type')) {
+            $query->where('ownership_type', $request->ownership_type);
+        }
+
+        // Rental Status Filtering (สำหรับคุมเครื่องเช่า เช่น เครื่องพิมพ์เช่า)
+        if ($request->filled('rental_status')) {
+            $rStatus = $request->rental_status;
+            if ($rStatus === 'expiring_soon') {
+                $query->where('ownership_type', 'rented')
+                      ->whereNotNull('rental_end_date')
+                      ->whereBetween('rental_end_date', [now()->startOfDay(), now()->addDays(30)->endOfDay()]);
+            } elseif ($rStatus === 'expired') {
+                $query->where('ownership_type', 'rented')
+                      ->whereNotNull('rental_end_date')
+                      ->where('rental_end_date', '<', now()->startOfDay());
+            } elseif ($rStatus === 'active') {
+                $query->where('ownership_type', 'rented')
+                      ->where(function($q) {
+                          $q->whereNull('rental_end_date')
+                            ->orWhere('rental_end_date', '>=', now()->startOfDay());
+                      });
+            } elseif ($rStatus === 'all_rented') {
+                $query->where('ownership_type', 'rented');
+            }
         }
 
         // Hardware Specs Filtering
@@ -104,7 +143,9 @@ class AssetController extends Controller
                   ->orWhere('cpu_model', 'like', "%{$search}%")
                   ->orWhere('ram_type', 'like', "%{$search}%")
                   ->orWhere('os_name', 'like', "%{$search}%")
-                  ->orWhere('storage_type', 'like', "%{$search}%");
+                  ->orWhere('storage_type', 'like', "%{$search}%")
+                  ->orWhere('rental_contract_no', 'like', "%{$search}%")
+                  ->orWhere('rental_vendor', 'like', "%{$search}%");
             });
         }
 
@@ -198,9 +239,40 @@ class AssetController extends Controller
             ->orderBy('last_audited_fiscal_year', 'desc')
             ->pluck('last_audited_fiscal_year');
 
+        // Master data for filters & options
+        $budgetSources = BudgetSource::where('is_active', true)->orderBy('name')->get();
+        $acquisitionMethods = AcquisitionMethod::where('is_active', true)->orderBy('name')->get();
+
+        // Rental Fleet & Leased Printer Statistics (เครื่องเช่า / เครื่องพิมพ์เช่า)
+        $rentedStats = [
+            'total' => (clone $countQuery)->where('ownership_type', 'rented')->count(),
+            'monthly_fee_total' => (float)(clone $countQuery)->where('ownership_type', 'rented')->sum('rental_monthly_fee'),
+            'expiring_soon' => (clone $countQuery)->where('ownership_type', 'rented')
+                ->whereNotNull('rental_end_date')
+                ->whereBetween('rental_end_date', [now()->startOfDay(), now()->addDays(30)->endOfDay()])
+                ->count(),
+            'expired' => (clone $countQuery)->where('ownership_type', 'rented')
+                ->whereNotNull('rental_end_date')
+                ->where('rental_end_date', '<', now()->startOfDay())
+                ->count(),
+            'printers' => (clone $countQuery)->where('ownership_type', 'rented')
+                ->where(function($q) {
+                    $q->where('name', 'like', '%ปริ้น%')
+                      ->orWhere('name', 'like', '%print%')
+                      ->orWhere('name', 'like', '%พิมพ์%')
+                      ->orWhere('model', 'like', '%printer%')
+                      ->orWhereHas('deviceType', function($dt) {
+                          $dt->where('code', 'PRN')
+                            ->orWhere('name', 'like', '%ปริ้น%')
+                            ->orWhere('name', 'like', '%พิมพ์%');
+                      });
+                })->count(),
+        ];
+
         return view('assets.index', compact(
             'assets', 'deviceTypes', 'departments', 'budgetYears', 'statusCounts',
-            'hardwareStats', 'user', 'currentFiscalYear', 'pendingAuditsCount', 'auditedYears'
+            'hardwareStats', 'user', 'currentFiscalYear', 'pendingAuditsCount', 'auditedYears',
+            'budgetSources', 'acquisitionMethods', 'rentedStats'
         ));
     }
 
@@ -208,6 +280,8 @@ class AssetController extends Controller
     {
         $deviceTypes = DeviceType::orderBy('name')->get();
         $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $budgetSources = BudgetSource::where('is_active', true)->orderBy('name')->get();
+        $acquisitionMethods = AcquisitionMethod::where('is_active', true)->orderBy('name')->get();
         $ictStandardsGrouped = IctStandardCatalog::grouped();
         $ictStandardsAll = IctStandardCatalog::all();
 
@@ -216,7 +290,7 @@ class AssetController extends Controller
             $prefillAudit = \App\Models\HardwareAudit::find($request->from_audit);
         }
 
-        return view('assets.create', compact('deviceTypes', 'departments', 'ictStandardsGrouped', 'ictStandardsAll', 'prefillAudit'));
+        return view('assets.create', compact('deviceTypes', 'departments', 'budgetSources', 'acquisitionMethods', 'ictStandardsGrouped', 'ictStandardsAll', 'prefillAudit'));
     }
 
     public function store(Request $request)
@@ -253,11 +327,22 @@ class AssetController extends Controller
             'price' => 'nullable|numeric|min:0',
             'warranty_expire_date' => 'nullable|date',
             'budget_year' => 'nullable|string|max:10',
+            'budget_source_id' => 'nullable|exists:it_budget_sources,id',
+            'acquisition_method_id' => 'nullable|exists:it_acquisition_methods,id',
+            'ownership_type' => 'nullable|in:owned,rented,donated,borrowed',
+            'rental_contract_no' => 'nullable|string|max:100',
+            'rental_vendor' => 'nullable|string|max:150',
+            'rental_start_date' => 'nullable|date',
+            'rental_end_date' => 'nullable|date',
+            'rental_monthly_fee' => 'nullable|numeric|min:0',
+            'rental_contact_phone' => 'nullable|string|max:50',
+            'rental_conditions' => 'nullable|string',
             'image' => 'nullable|image|max:3072',
             'notes' => 'nullable|string',
         ]);
 
         $data = $request->except(['image']);
+        $data['ownership_type'] = $data['ownership_type'] ?? 'owned';
 
         // Auto-format fallback specs string if left empty
         if (empty($data['specs'])) {
@@ -291,6 +376,8 @@ class AssetController extends Controller
         $asset->load([
             'deviceType',
             'department',
+            'budgetSource',
+            'acquisitionMethod',
             'repairs.department',
             'repairs.technician',
             'hardwareAudits.reviewer',
@@ -308,10 +395,12 @@ class AssetController extends Controller
     {
         $deviceTypes = DeviceType::orderBy('name')->get();
         $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $budgetSources = BudgetSource::where('is_active', true)->orderBy('name')->get();
+        $acquisitionMethods = AcquisitionMethod::where('is_active', true)->orderBy('name')->get();
         $ictStandardsGrouped = IctStandardCatalog::grouped();
         $ictStandardsAll = IctStandardCatalog::all();
 
-        return view('assets.edit', compact('asset', 'deviceTypes', 'departments', 'ictStandardsGrouped', 'ictStandardsAll'));
+        return view('assets.edit', compact('asset', 'deviceTypes', 'departments', 'budgetSources', 'acquisitionMethods', 'ictStandardsGrouped', 'ictStandardsAll'));
     }
 
     public function update(Request $request, Asset $asset)
@@ -348,11 +437,24 @@ class AssetController extends Controller
             'price' => 'nullable|numeric|min:0',
             'warranty_expire_date' => 'nullable|date',
             'budget_year' => 'nullable|string|max:10',
+            'budget_source_id' => 'nullable|exists:it_budget_sources,id',
+            'acquisition_method_id' => 'nullable|exists:it_acquisition_methods,id',
+            'ownership_type' => 'nullable|in:owned,rented,donated,borrowed',
+            'rental_contract_no' => 'nullable|string|max:100',
+            'rental_vendor' => 'nullable|string|max:150',
+            'rental_start_date' => 'nullable|date',
+            'rental_end_date' => 'nullable|date',
+            'rental_monthly_fee' => 'nullable|numeric|min:0',
+            'rental_contact_phone' => 'nullable|string|max:50',
+            'rental_conditions' => 'nullable|string',
             'image' => 'nullable|image|max:3072',
             'notes' => 'nullable|string',
         ]);
 
         $data = $request->except(['image']);
+        if (empty($data['ownership_type'])) {
+            $data['ownership_type'] = $asset->ownership_type ?? 'owned';
+        }
 
         // Auto-format fallback specs string if left empty
         if (empty($data['specs'])) {
@@ -448,6 +550,16 @@ class AssetController extends Controller
                 'วันหมดประกัน (YYYY-MM-DD)',
                 'IP Address',
                 'MAC Address',
+                'แหล่งเงินงบประมาณ',
+                'วิธีการได้มา',
+                'กรรมสิทธิ์ (owned/rented/donated/borrowed)',
+                'เลขที่สัญญาเช่า',
+                'ผู้ให้เช่า/บริษัทคู่สัญญา',
+                'วันเริ่มสัญญาเช่า (YYYY-MM-DD)',
+                'วันสิ้นสุดสัญญาเช่า (YYYY-MM-DD)',
+                'ค่าเช่าต่อเดือน (บาท)',
+                'เบอร์ติดต่อผู้ให้เช่า',
+                'เงื่อนไขสัญญาเช่า',
                 'หมายเหตุ',
             ]);
 
@@ -483,6 +595,16 @@ class AssetController extends Controller
                 '2027-04-10',
                 '192.168.2.75',
                 '00:14:22:88:99:AA',
+                'เงิน UC (กองทุนหลักประกันสุขภาพถ้วนหน้า)',
+                'จัดซื้อจัดจ้าง (เงินงบประมาณ/เงินบำรุง)',
+                'owned',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
                 'เครื่องประจำห้องจ่ายยา',
             ]);
 
@@ -518,6 +640,16 @@ class AssetController extends Controller
                 '2027-03-15',
                 '192.168.2.106',
                 '48:2A:E3:44:55:77',
+                'เงินบำรุง / เงินเก็บค่าบริการทางการแพทย์',
+                'จัดซื้อจัดจ้าง (เงินงบประมาณ/เงินบำรุง)',
+                'owned',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
                 'โน้ตบุ๊กประจำกลุ่มงาน',
             ]);
 
@@ -553,6 +685,16 @@ class AssetController extends Controller
                 '2026-11-20',
                 '192.168.2.93',
                 '94:C6:91:22:33:55',
+                'เงินงบประมาณแผ่นดิน (งบลงทุน/จัดสรร)',
+                'จัดซื้อจัดจ้าง (เงินงบประมาณ/เงินบำรุง)',
+                'owned',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
                 '',
             ]);
 
@@ -588,7 +730,62 @@ class AssetController extends Controller
                 '2027-02-15',
                 '192.168.2.152',
                 '00:80:77:AA:BB:DD',
+                'เงินบำรุง / เงินเก็บค่าบริการทางการแพทย์',
+                'จัดซื้อจัดจ้าง (เงินงบประมาณ/เงินบำรุง)',
+                'owned',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
                 'พิมพ์ใบสั่งยา',
+            ]);
+
+            // Sample 5: Rented Multi-Function Printer (เครื่องพิมพ์เช่าคุมสัญญา)
+            fputcsv($handle, [
+                'RENT-PRN-001/67',
+                'FX-APEOS-C3070-01',
+                'เครื่องพิมพ์มัลติฟังก์ชันเช่า แผนกธุรการ',
+                'เครื่องพิมพ์เลเซอร์/อิงค์เจ็ท (Laser/Inkjet)',
+                'FUJIFILM (Fuji Xerox)',
+                'ApeosPrint C3070',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                'Multifunction Copy/Print/Scan Network 35 ppm',
+                'กลุ่มงานบริหารทั่วไป (ธุรการ/สารบรรณ)',
+                'ห้องธุรการ อาคารอำนวยการ ชั้น 1',
+                'หัวหน้างานธุรการ',
+                'active',
+                '0.00',
+                '2567',
+                '',
+                '',
+                '192.168.2.200',
+                '00:11:22:33:44:55',
+                'เงินบำรุง / เงินเก็บค่าบริการทางการแพทย์',
+                'เช่าใช้ / สัญญาเช่าบริการ (Lease / Rental)',
+                'rented',
+                'CN-IT-2567/012',
+                'บริษัท ฟูจิฟิล์ม บิสซิเนส อินโนเวชั่น (ประเทศไทย) จำกัด',
+                '2024-01-01',
+                '2026-12-31',
+                '2500.00',
+                '02-660-8000',
+                'ฟรีผงหมึกพิมพ์ทุกสีและค่าช่างซ่อมบำรุง สิทธิ์พิมพ์ขาวดำ 5,000 แผ่น/เดือน สี 1,000 แผ่น/เดือน',
+                'เครื่องเช่าพร้อมบริการบำรุงรักษา',
             ]);
 
             fclose($handle);
@@ -644,6 +841,8 @@ class AssetController extends Controller
 
         $deviceTypes = DeviceType::all();
         $departments = Department::all();
+        $budgetSources = BudgetSource::all();
+        $acquisitionMethods = AcquisitionMethod::all();
 
         $createdCount = 0;
         $updatedCount = 0;
@@ -726,6 +925,35 @@ class AssetController extends Controller
             $rawPrice = $getVal(['ราคา (บาท)', 'ราคา', 'price']);
             $price = is_numeric(str_replace(',', '', $rawPrice ?? '')) ? (float)str_replace(',', '', $rawPrice) : null;
 
+            $budgetSourceName = $getVal(['แหล่งเงินงบประมาณ', 'แหล่งเงิน', 'budget_source']);
+            $budgetSource = null;
+            if ($budgetSourceName) {
+                $budgetSource = $budgetSources->first(function ($b) use ($budgetSourceName) {
+                    return mb_stripos($b->name, $budgetSourceName) !== false || 
+                           strcasecmp($b->code, $budgetSourceName) === 0;
+                });
+            }
+
+            $acqMethodName = $getVal(['วิธีการได้มา', 'acquisition_method']);
+            $acquisitionMethod = null;
+            if ($acqMethodName) {
+                $acquisitionMethod = $acquisitionMethods->first(function ($a) use ($acqMethodName) {
+                    return mb_stripos($a->name, $acqMethodName) !== false || 
+                           strcasecmp($a->code, $acqMethodName) === 0;
+                });
+            }
+
+            $rawOwnership = mb_strtolower($getVal(['กรรมสิทธิ์', 'ownership_type', 'ประเภทการครอบครอง'], 'owned'));
+            $ownershipType = match (true) {
+                str_contains($rawOwnership, 'rent') || str_contains($rawOwnership, 'เช่า') => 'rented',
+                str_contains($rawOwnership, 'donat') || str_contains($rawOwnership, 'บริจาค') => 'donated',
+                str_contains($rawOwnership, 'borrow') || str_contains($rawOwnership, 'ยืม') => 'borrowed',
+                default => 'owned',
+            };
+
+            $rawRentalFee = $getVal(['ค่าเช่าต่อเดือน (บาท)', 'ค่าเช่ารายเดือน', 'rental_monthly_fee']);
+            $rentalMonthlyFee = is_numeric(str_replace(',', '', $rawRentalFee ?? '')) ? (float)str_replace(',', '', $rawRentalFee) : null;
+
             $assetData = [
                 'asset_code' => $assetCode,
                 'serial_number' => $getVal(['serial number', 's/n', 'serial_number']),
@@ -753,6 +981,16 @@ class AssetController extends Controller
                 'status' => $status,
                 'price' => $price,
                 'budget_year' => $getVal(['ปีงบประมาณ', 'budget_year']),
+                'budget_source_id' => $budgetSource?->id,
+                'acquisition_method_id' => $acquisitionMethod?->id,
+                'ownership_type' => $ownershipType,
+                'rental_contract_no' => $getVal(['เลขที่สัญญาเช่า', 'rental_contract_no', 'เลขที่สัญญา']),
+                'rental_vendor' => $getVal(['ผู้ให้เช่า/บริษัทคู่สัญญา', 'ผู้ให้เช่า', 'rental_vendor', 'บริษัทผู้ให้เช่า']),
+                'rental_start_date' => $parseDate($getVal(['วันเริ่มสัญญาเช่า (yyyy-mm-dd)', 'วันเริ่มสัญญาเช่า', 'rental_start_date'])),
+                'rental_end_date' => $parseDate($getVal(['วันสิ้นสุดสัญญาเช่า (yyyy-mm-dd)', 'วันสิ้นสุดสัญญาเช่า', 'rental_end_date'])),
+                'rental_monthly_fee' => $rentalMonthlyFee,
+                'rental_contact_phone' => $getVal(['เบอร์ติดต่อผู้ให้เช่า', 'rental_contact_phone', 'เบอร์ติดต่อ']),
+                'rental_conditions' => $getVal(['เงื่อนไขสัญญาเช่า', 'rental_conditions', 'เงื่อนไข']),
                 'purchase_date' => $parseDate($getVal(['วันที่ซื้อ (yyyy-mm-dd)', 'purchase_date', 'วันที่ซื้อ'])),
                 'warranty_expire_date' => $parseDate($getVal(['วันหมดประกัน (yyyy-mm-dd)', 'warranty_expire_date', 'วันหมดประกัน'])),
                 'ip_address' => $getVal(['ip address', 'ip_address', 'ip']),

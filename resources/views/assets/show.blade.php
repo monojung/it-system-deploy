@@ -80,6 +80,58 @@
 </div>
 @endif
 
+@if($asset->is_rented)
+<div style="background: linear-gradient(135deg, #fffaf5 0%, #fff7ed 100%); border: 1.5px solid #fdba74; border-radius: 14px; padding: 18px 22px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.08);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; border-bottom: 1px dashed #fed7aa; padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #ffedd5; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 1px solid #fdba74; flex-shrink: 0;">
+                <i class="bi bi-printer-fill"></i>
+            </div>
+            <div>
+                <div style="font-weight: 800; font-size: 15px; color: #9a3412; display: flex; align-items: center; gap: 8px;">
+                    <span>สัญญาเช่าครุภัณฑ์ / เครื่องพิมพ์เช่า (Lease / Rental Contract)</span>
+                    <span class="badge {{ $asset->rental_status_badge }}">{{ $asset->rental_status_label }}</span>
+                </div>
+                <div style="font-size: 12.5px; color: #c2410c; margin-top: 2px;">
+                    เลขที่สัญญา: <strong>{{ $asset->rental_contract_no ?: 'ไม่ระบุเลขที่สัญญา' }}</strong>
+                    • ผู้ให้เช่า: <strong>{{ $asset->rental_vendor ?: 'ไม่ระบุคู่สัญญา' }}</strong>
+                </div>
+            </div>
+        </div>
+        @if($asset->rental_monthly_fee)
+        <div style="text-align: right;">
+            <div style="font-size: 11px; color: #9a3412;">ค่าเช่ารายเดือน</div>
+            <div style="font-size: 18px; font-weight: 800; color: #ea580c;">{{ number_format($asset->rental_monthly_fee, 2) }} <span style="font-size: 12px; font-weight: 500;">บ./ด.</span></div>
+        </div>
+        @endif
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 13px;">
+        <div>
+            <span style="color: #9a3412; font-size: 11.5px; display: block;">ระยะเวลาสัญญาเช่า:</span>
+            <strong>{{ $asset->rental_start_date ? $asset->rental_start_date->format('d/m/Y') : '-' }}</strong> ถึง 
+            <strong>{{ $asset->rental_end_date ? $asset->rental_end_date->format('d/m/Y') : '-' }}</strong>
+        </div>
+        <div>
+            <span style="color: #9a3412; font-size: 11.5px; display: block;">เบอร์ติดต่อบริษัท/ช่าง:</span>
+            @if($asset->rental_contact_phone)
+                <a href="tel:{{ $asset->rental_contact_phone }}" style="color: #ea580c; font-weight: 700; text-decoration: none;">
+                    <i class="bi bi-telephone-fill me-1"></i> {{ $asset->rental_contact_phone }}
+                </a>
+            @else
+                <span style="color: #94a3b8;">-</span>
+            @endif
+        </div>
+        @if($asset->rental_conditions)
+        <div style="grid-column: 1 / -1; margin-top: 6px; background: rgba(255,255,255,0.6); padding: 8px 12px; border-radius: 8px; border: 1px solid #ffedd5;">
+            <span style="color: #9a3412; font-size: 11.5px; font-weight: 700; display: block; margin-bottom: 2px;">เงื่อนไขสัญญาเช่าและบริการ:</span>
+            <span style="color: #7c2d12;">{{ $asset->rental_conditions }}</span>
+        </div>
+        @endif
+    </div>
+</div>
+@endif
+
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
     <!-- Asset Info Card -->
     <div class="card">
@@ -373,6 +425,31 @@
                 </div>
 
                 <hr style="border: none; border-top: 1px solid var(--border); margin: 16px 0;">
+
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 12px; color: var(--text-muted);">กรรมสิทธิ์ / การครอบครอง:</div>
+                    <div style="margin-top: 3px;">
+                        <span class="badge {{ $asset->ownership_badge }}" style="font-size: 12px; padding: 4px 10px;">
+                            {{ $asset->ownership_label }}
+                        </span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 12px; color: var(--text-muted);">วิธีการได้มาของครุภัณฑ์:</div>
+                    <div style="font-weight: 600; font-size: 13.5px; color: #059669; margin-top: 2px;">
+                        <i class="bi bi-box-arrow-in-down-right me-1"></i>
+                        {{ $asset->acquisitionMethod?->name ?? 'ไม่ระบุ' }}
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 12px; color: var(--text-muted);">แหล่งเงินงบประมาณ / เงินที่ซื้อ:</div>
+                    <div style="font-weight: 600; font-size: 13.5px; color: #4338ca; margin-top: 2px;">
+                        <i class="bi bi-wallet2 me-1"></i>
+                        {{ $asset->budgetSource?->name ?? 'ไม่ระบุ' }}
+                    </div>
+                </div>
 
                 <div style="margin-bottom: 12px;">
                     <div style="font-size: 12px; color: var(--text-muted);">วันที่จัดซื้อ / ตรวจรับ:</div>

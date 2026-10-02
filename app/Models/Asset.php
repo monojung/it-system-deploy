@@ -46,6 +46,16 @@ class Asset extends Model
         'price',
         'warranty_expire_date',
         'budget_year',
+        'budget_source_id',
+        'acquisition_method_id',
+        'ownership_type',
+        'rental_contract_no',
+        'rental_vendor',
+        'rental_start_date',
+        'rental_end_date',
+        'rental_monthly_fee',
+        'rental_contact_phone',
+        'rental_conditions',
         'image',
         'notes',
         'last_audited_at',
@@ -55,11 +65,24 @@ class Asset extends Model
     protected $casts = [
         'purchase_date' => 'date',
         'warranty_expire_date' => 'date',
+        'rental_start_date' => 'date',
+        'rental_end_date' => 'date',
         'price' => 'decimal:2',
+        'rental_monthly_fee' => 'decimal:2',
         'ram_capacity' => 'integer',
         'last_audited_at' => 'datetime',
         'last_audited_fiscal_year' => 'integer',
     ];
+
+    public function budgetSource(): BelongsTo
+    {
+        return $this->belongsTo(BudgetSource::class, 'budget_source_id');
+    }
+
+    public function acquisitionMethod(): BelongsTo
+    {
+        return $this->belongsTo(AcquisitionMethod::class, 'acquisition_method_id');
+    }
 
     public function deviceType(): BelongsTo
     {
@@ -196,6 +219,72 @@ class Asset extends Model
 
         $name = mb_strtolower($this->deviceType?->name ?? $this->name);
         return str_contains($name, 'คอมพิวเตอร์') || str_contains($name, 'โน้ตบุ๊ก') || str_contains($name, 'server') || str_contains($name, 'pc');
+    }
+
+    public function getOwnershipLabelAttribute(): string
+    {
+        return match ($this->ownership_type) {
+            'rented' => 'เช่าใช้ (เครื่องเช่า)',
+            'donated' => 'ได้รับบริจาค',
+            'borrowed' => 'ยืมใช้งานภายนอก',
+            default => 'เป็นของ รพ. (ซื้อขาด)',
+        };
+    }
+
+    public function getOwnershipBadgeAttribute(): string
+    {
+        return match ($this->ownership_type) {
+            'rented' => 'badge-warning',
+            'donated' => 'badge-info',
+            'borrowed' => 'badge-primary',
+            default => 'badge-success',
+        };
+    }
+
+    public function getIsRentedAttribute(): bool
+    {
+        return $this->ownership_type === 'rented';
+    }
+
+    public function getRentalDaysRemainingAttribute(): ?int
+    {
+        if (!$this->rental_end_date) return null;
+        return (int) now()->startOfDay()->diffInDays($this->rental_end_date->startOfDay(), false);
+    }
+
+    public function getRentalStatusLabelAttribute(): string
+    {
+        if (!$this->is_rented) return '-';
+        if (!$this->rental_end_date) return 'มีสัญญาเช่า';
+
+        $days = $this->rental_days_remaining;
+        if ($days < 0) {
+            return 'หมดสัญญาเช่าแล้ว (เกินกำหนด ' . abs($days) . ' วัน)';
+        } elseif ($days === 0) {
+            return 'หมดสัญญาเช่าวันนี้';
+        } elseif ($days <= 30) {
+            return 'ใกล้หมดสัญญาเช่า (เหลือ ' . $days . ' วัน)';
+        }
+        return 'อยู่ในสัญญาเช่า (เหลือ ' . $days . ' วัน)';
+    }
+
+    public function getRentalStatusBadgeAttribute(): string
+    {
+        if (!$this->is_rented || !$this->rental_end_date) return 'badge-secondary';
+        $days = $this->rental_days_remaining;
+        if ($days < 0) return 'badge-danger';
+        if ($days <= 30) return 'badge-warning';
+        return 'badge-success';
+    }
+
+    public function scopeRented($query)
+    {
+        return $query->where('ownership_type', 'rented');
+    }
+
+    public function scopeOwned($query)
+    {
+        return $query->where('ownership_type', 'owned');
     }
 }
 

@@ -10,6 +10,8 @@ use App\Models\Department;
 use App\Models\DeviceType;
 use App\Models\SparePart;
 use App\Models\DataRequest;
+use App\Models\BudgetSource;
+use App\Models\AcquisitionMethod;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -178,7 +180,7 @@ class ReportController extends Controller
     public function assets(Request $request)
     {
         $user = Auth::user();
-        $query = Asset::with(['deviceType', 'department']);
+        $query = Asset::with(['deviceType', 'department', 'budgetSource', 'acquisitionMethod']);
 
         if ($user && $user->isUser()) {
             $departmentId = $user->department_id;
@@ -195,9 +197,43 @@ class ReportController extends Controller
         $status = $request->status;
         if ($status) $query->where('status', $status);
 
+        $budgetSourceId = $request->budget_source_id;
+        if ($budgetSourceId) {
+            $query->where('budget_source_id', $budgetSourceId);
+        }
+
+        $acquisitionMethodId = $request->acquisition_method_id;
+        if ($acquisitionMethodId) {
+            $query->where('acquisition_method_id', $acquisitionMethodId);
+        }
+
+        $ownershipType = $request->ownership_type;
+        if ($ownershipType) {
+            $query->where('ownership_type', $ownershipType);
+        }
+
+        $rentalStatus = $request->rental_status;
+        if ($rentalStatus) {
+            $query->where('ownership_type', 'rented');
+            $today = Carbon::today()->toDateString();
+            $soon = Carbon::today()->addDays(30)->toDateString();
+
+            if ($rentalStatus === 'active') {
+                $query->where(function ($q) use ($today) {
+                    $q->whereNull('rental_end_date')->orWhere('rental_end_date', '>=', $today);
+                });
+            } elseif ($rentalStatus === 'expiring_soon') {
+                $query->whereNotNull('rental_end_date')->whereBetween('rental_end_date', [$today, $soon]);
+            } elseif ($rentalStatus === 'expired') {
+                $query->whereNotNull('rental_end_date')->where('rental_end_date', '<', $today);
+            }
+        }
+
         $assets = $query->orderBy('department_id')->orderBy('asset_code')->get();
 
         $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $budgetSources = BudgetSource::where('is_active', true)->orderBy('name')->get();
+        $acquisitionMethods = AcquisitionMethod::where('is_active', true)->orderBy('name')->get();
 
         $countQuery = Asset::query();
         if ($user && $user->isUser()) {
@@ -218,7 +254,69 @@ class ReportController extends Controller
             'disposed' => (clone $countQuery)->where('status', 'disposed')->count(),
         ];
 
-        return view('reports.assets', compact('assets', 'departments', 'totalCount', 'totalValue', 'statusCounts', 'departmentId', 'status', 'user'));
+        // Budget Sources Summary
+        $budgetSourceStats = BudgetSource::withCount(['assets' => function ($q) use ($user, $departmentId) {
+            if ($user && $user->isUser()) {
+                $q->where('department_id', $user->department_id ?: 0);
+            } elseif ($departmentId) {
+                $q->where('department_id', $departmentId);
+            }
+        }])->withSum(['assets as total_value' => function ($q) use ($user, $departmentId) {
+            if ($user && $user->isUser()) {
+                $q->where('department_id', $user->department_id ?: 0);
+            } elseif ($departmentId) {
+                $q->where('department_id', $departmentId);
+            }
+        }], 'price')->get();
+
+        // Acquisition Methods Summary
+        $acquisitionMethodStats = AcquisitionMethod::withCount(['assets' => function ($q) use ($user, $departmentId) {
+            if ($user && $user->isUser()) {
+                $q->where('department_id', $user->department_id ?: 0);
+            } elseif ($departmentId) {
+                $q->where('department_id', $departmentId);
+            }
+        }])->get();
+
+        // Leased & Rental Fleet Stats (เครื่องเช่า & เครื่องพิมพ์เช่า)
+        $rentalBaseQuery = (clone $countQuery)->where('ownership_type', 'rented');
+        $rentedTotal = (clone $rentalBaseQuery)->count();
+        $rentedPrinters = (clone $rentalBaseQuery)->where(function ($q) {
+            $q->whereHas('deviceType', function ($dq) {
+                $dq->where('code', 'PRINTER')->orWhere('name', 'like', '%ปริ้น%')->orWhere('name', 'like', '%พิมพ์%');
+            })->orWhere('name', 'like', '%ปริ้น%')
+              ->orWhere('name', 'like', '%พิมพ์%')
+              ->orWhere('brand', 'like', '%Fuji%')
+              ->orWhere('brand', 'like', '%Ricoh%')
+              ->orWhere('brand', 'like', '%Canon%')
+              ->orWhere('brand', 'like', '%Epson%')
+              ->orWhere('brand', 'like', '%HP%')
+              ->orWhere('brand', 'like', '%Brother%');
+        })->count();
+        $rentedMonthlyTotal = (clone $rentalBaseQuery)->sum('rental_monthly_fee');
+        $todayStr = Carbon::today()->toDateString();
+        $soonStr = Carbon::today()->addDays(30)->toDateString();
+        $rentedExpiringSoon = (clone $rentalBaseQuery)->whereNotNull('rental_end_date')
+            ->whereBetween('rental_end_date', [$todayStr, $soonStr])
+            ->count();
+        $rentedExpired = (clone $rentalBaseQuery)->whereNotNull('rental_end_date')
+            ->where('rental_end_date', '<', $todayStr)
+            ->count();
+
+        $rentalStats = [
+            'total' => $rentedTotal,
+            'printers' => $rentedPrinters,
+            'monthly_fee' => $rentedMonthlyTotal,
+            'expiring_soon' => $rentedExpiringSoon,
+            'expired' => $rentedExpired,
+        ];
+
+        return view('reports.assets', compact(
+            'assets', 'departments', 'budgetSources', 'acquisitionMethods',
+            'totalCount', 'totalValue', 'statusCounts', 'budgetSourceStats',
+            'acquisitionMethodStats', 'rentalStats', 'departmentId', 'status',
+            'budgetSourceId', 'acquisitionMethodId', 'ownershipType', 'rentalStatus', 'user'
+        ));
     }
 
     public function exportCsv(Request $request, $type)
@@ -256,12 +354,50 @@ class ReportController extends Controller
                     ]);
                 }
             } elseif ($type === 'assets') {
-                fputcsv($handle, ['รหัสครุภัณฑ์', 'Serial Number', 'ชื่อรายการ', 'ประเภท', 'ยี่ห้อ/รุ่น', 'CPU', 'RAM (GB)', 'ชนิด RAM', 'Storage', 'ระบบ OS', 'สเปคสรุป', 'แผนก', 'สถานที่ตั้ง', 'ผู้ครอบครอง', 'สถานะ', 'ราคา (บาท)', 'ปีงบประมาณ']);
-                $assetQuery = Asset::with(['deviceType', 'department']);
+                fputcsv($handle, [
+                    'รหัสครุภัณฑ์', 'Serial Number', 'ชื่อรายการ', 'ประเภท', 'ยี่ห้อ/รุ่น',
+                    'CPU', 'RAM (GB)', 'ชนิด RAM', 'Storage', 'ระบบ OS', 'สเปคสรุป',
+                    'แผนก', 'สถานที่ตั้ง', 'ผู้ครอบครอง', 'สถานะ', 'ราคา (บาท)', 'ปีงบประมาณ',
+                    'กรรมสิทธิ์', 'วิธีการได้มา', 'แหล่งเงินที่ใช้ซื้อ',
+                    'เลขที่สัญญาเช่า', 'บริษัทผู้ให้เช่า', 'วันที่เริ่มสัญญาเช่า', 'วันที่สิ้นสุดสัญญาเช่า',
+                    'ค่าเช่า/เดือน (บาท)', 'เบอร์ติดต่อผู้ให้เช่า', 'เงื่อนไขสัญญา'
+                ]);
+                $assetQuery = Asset::with(['deviceType', 'department', 'budgetSource', 'acquisitionMethod']);
                 if ($user && $user->isUser()) {
                     $assetQuery->where('department_id', $user->department_id ?: 0);
+                } else {
+                    if ($request->filled('department_id')) {
+                        $assetQuery->where('department_id', $request->department_id);
+                    }
                 }
-                $assets = $assetQuery->get();
+                if ($request->filled('status')) {
+                    $assetQuery->where('status', $request->status);
+                }
+                if ($request->filled('budget_source_id')) {
+                    $assetQuery->where('budget_source_id', $request->budget_source_id);
+                }
+                if ($request->filled('acquisition_method_id')) {
+                    $assetQuery->where('acquisition_method_id', $request->acquisition_method_id);
+                }
+                if ($request->filled('ownership_type')) {
+                    $assetQuery->where('ownership_type', $request->ownership_type);
+                }
+                if ($request->filled('rental_status')) {
+                    $assetQuery->where('ownership_type', 'rented');
+                    $today = Carbon::today()->toDateString();
+                    $soon = Carbon::today()->addDays(30)->toDateString();
+                    if ($request->rental_status === 'active') {
+                        $assetQuery->where(function ($q) use ($today) {
+                            $q->whereNull('rental_end_date')->orWhere('rental_end_date', '>=', $today);
+                        });
+                    } elseif ($request->rental_status === 'expiring_soon') {
+                        $assetQuery->whereNotNull('rental_end_date')->whereBetween('rental_end_date', [$today, $soon]);
+                    } elseif ($request->rental_status === 'expired') {
+                        $assetQuery->whereNotNull('rental_end_date')->where('rental_end_date', '<', $today);
+                    }
+                }
+
+                $assets = $assetQuery->orderBy('department_id')->orderBy('asset_code')->get();
                 foreach ($assets as $a) {
                     fputcsv($handle, [
                         $a->asset_code,
@@ -281,6 +417,16 @@ class ReportController extends Controller
                         $a->getStatusLabelAttribute(),
                         $a->price,
                         $a->budget_year,
+                        $a->ownership_label,
+                        $a->acquisitionMethod?->name ?? '-',
+                        $a->budgetSource?->name ?? '-',
+                        $a->rental_contract_no ?? '-',
+                        $a->rental_vendor ?? '-',
+                        $a->rental_start_date ? $a->rental_start_date->format('Y-m-d') : '-',
+                        $a->rental_end_date ? $a->rental_end_date->format('Y-m-d') : '-',
+                        $a->rental_monthly_fee !== null ? number_format($a->rental_monthly_fee, 2) : '-',
+                        $a->rental_contact_phone ?? '-',
+                        $a->rental_conditions ?? '-',
                     ]);
                 }
             } elseif ($type === 'spare_parts') {

@@ -6,6 +6,8 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Department;
 use App\Models\DeviceType;
+use App\Models\BudgetSource;
+use App\Models\AcquisitionMethod;
 use App\Models\User;
 use App\Models\Asset;
 use App\Models\SparePart;
@@ -132,6 +134,32 @@ class DatabaseSeeder extends Seeder
         foreach ($deviceTypes as $type) {
             $dt = DeviceType::firstOrCreate(['code' => $type['code']], $type);
             $typeMap[$type['code']] = $dt->id;
+        }
+
+        // 3.1 Budget Sources (แหล่งเงินที่ใช้ซื้อ)
+        $budgetSources = [
+            ['code' => 'UC', 'name' => 'เงิน UC (กองทุนหลักประกันสุขภาพถ้วนหน้า)', 'color' => '#0284c7', 'description' => 'งบเหมาจ่ายรายหัว สปสช. / กองทุนหลักประกันสุขภาพ'],
+            ['code' => 'REVENUE', 'name' => 'เงินบำรุง / เงินเก็บค่าบริการ', 'color' => '#059669', 'description' => 'เงินรายได้ของโรงพยาบาลจากการให้บริการทางการแพทย์'],
+            ['code' => 'GOV', 'name' => 'เงินงบประมาณแผ่นดิน', 'color' => '#7c3aed', 'description' => 'งบประมาณรายจ่ายประจำปี งบลงทุนจากกระทรวงสาธารณสุข'],
+            ['code' => 'DONATION', 'name' => 'เงินบริจาค / มูลนิธิ', 'color' => '#f59e0b', 'description' => 'เงินบริจาคจากผู้มีจิตศรัทธา ภาคประชาชน และองค์กรการกุศล'],
+        ];
+        $budgetMap = [];
+        foreach ($budgetSources as $bs) {
+            $createdBs = BudgetSource::firstOrCreate(['code' => $bs['code']], $bs);
+            $budgetMap[$bs['code']] = $createdBs->id;
+        }
+
+        // 3.2 Acquisition Methods (วิธีการได้มาของครุภัณฑ์)
+        $acquisitionMethods = [
+            ['code' => 'PROCURE', 'name' => 'จัดซื้อจัดจ้าง', 'color' => '#0284c7', 'description' => 'การจัดซื้อตามระเบียบกระทรวงการคลังว่าด้วยการจัดซื้อจัดจ้างฯ'],
+            ['code' => 'DONATE', 'name' => 'ได้รับบริจาค', 'color' => '#059669', 'description' => 'ได้รับมอบบริจาคจากบุคคลภายนอก บริษัท หรือองค์กร'],
+            ['code' => 'RENT', 'name' => 'เช่าใช้ (Rental / Leased)', 'color' => '#f59e0b', 'description' => 'การเช่าใช้เครื่องพิมพ์และอุปกรณ์คอมพิวเตอร์ตามสัญญาบริการ'],
+            ['code' => 'TRANSFER', 'name' => 'รับโอนจากหน่วยงานอื่น', 'color' => '#7c3aed', 'description' => 'การรับโอนครุภัณฑ์จาก สสจ., สป., หรือหน่วยบริการอื่น'],
+        ];
+        $acqMap = [];
+        foreach ($acquisitionMethods as $am) {
+            $createdAm = AcquisitionMethod::firstOrCreate(['code' => $am['code']], $am);
+            $acqMap[$am['code']] = $createdAm->id;
         }
 
         // 4. Spare Parts (คลังอะไหล่และอุปกรณ์สิ้นเปลือง)

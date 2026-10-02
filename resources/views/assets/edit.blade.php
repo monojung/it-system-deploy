@@ -573,6 +573,132 @@
                     </div>
                 </div>
 
+                {{-- วิธีการได้มา แหล่งเงิน และกรรมสิทธิ์ (Acquisition, Funding & Ownership) --}}
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 18px; margin-bottom: 20px;">
+                    <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-wallet2 text-primary"></i>
+                        <span>วิธีการได้มา แหล่งเงินงบประมาณ และกรรมสิทธิ์การครอบครอง</span>
+                    </div>
+                    
+                    <div class="form-row" style="margin-bottom: 12px;">
+                        {{-- วิธีการได้มาของครุภัณฑ์ --}}
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label" for="acquisition_method_id">
+                                วิธีการได้มาของครุภัณฑ์
+                                <a href="{{ route('acquisition-methods.index') }}" target="_blank" class="text-primary text-decoration-none ms-1" style="font-size: 11px;" title="จัดการวิธีการได้มา">+ จัดการตัวเลือก</a>
+                            </label>
+                            <select id="acquisition_method_id" name="acquisition_method_id" class="form-select" onchange="handleAcquisitionMethodChange(this)">
+                                <option value="">-- ไม่ระบุ / ระบุภายหลัง --</option>
+                                @foreach($acquisitionMethods as $method)
+                                    <option value="{{ $method->id }}" 
+                                            data-code="{{ $method->code }}"
+                                            {{ old('acquisition_method_id', $asset->acquisition_method_id) == $method->id ? 'selected' : '' }}>
+                                        {{ $method->name }} {{ $method->code ? '('.$method->code.')' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <span class="form-text" style="font-size: 11.5px; color: #64748b;">เช่น จัดซื้อจัดจ้าง, ได้รับบริจาค, เช่าใช้บริการ, รับโอน</span>
+                        </div>
+
+                        {{-- แหล่งเงินที่ใช้ซื้อ --}}
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label" for="budget_source_id">
+                                แหล่งเงินที่ใช้ซื้อ / แหล่งงบประมาณ
+                                <a href="{{ route('budget-sources.index') }}" target="_blank" class="text-primary text-decoration-none ms-1" style="font-size: 11px;" title="จัดการแหล่งเงินงบประมาณ">+ จัดการตัวเลือก</a>
+                            </label>
+                            <select id="budget_source_id" name="budget_source_id" class="form-select">
+                                <option value="">-- ไม่ระบุ / ระบุภายหลัง --</option>
+                                @foreach($budgetSources as $source)
+                                    <option value="{{ $source->id }}" 
+                                            {{ old('budget_source_id', $asset->budget_source_id) == $source->id ? 'selected' : '' }}>
+                                        {{ $source->name }} {{ $source->code ? '('.$source->code.')' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <span class="form-text" style="font-size: 11.5px; color: #64748b;">เช่น เงิน UC, เงินเก็บค่าบริการ (เงินบำรุง), เงินงบประมาณแผ่นดิน</span>
+                        </div>
+
+                        {{-- ประเภทกรรมสิทธิ์ / การครอบครอง --}}
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label required" for="ownership_type">ประเภทกรรมสิทธิ์ / การครอบครอง</label>
+                            @php $curOwnership = old('ownership_type', $asset->ownership_type ?? 'owned'); @endphp
+                            <select id="ownership_type" name="ownership_type" class="form-select" onchange="toggleRentalBox(this.value)" required>
+                                <option value="owned" {{ $curOwnership == 'owned' ? 'selected' : '' }}>🏢 เป็นของ รพ. (ซื้อขาด)</option>
+                                <option value="rented" {{ $curOwnership == 'rented' ? 'selected' : '' }}>🖨️ เช่าใช้ (เครื่องเช่า / สัญญาเช่า)</option>
+                                <option value="donated" {{ $curOwnership == 'donated' ? 'selected' : '' }}>🎁 ได้รับบริจาค</option>
+                                <option value="borrowed" {{ $curOwnership == 'borrowed' ? 'selected' : '' }}>🔄 ยืมใช้งานภายนอก</option>
+                            </select>
+                            <span class="form-text" style="font-size: 11.5px; color: #64748b;">เลือก "เช่าใช้" สำหรับเครื่องพิมพ์หรืออุปกรณ์ที่เช่ารายเดือน/รายปี</span>
+                        </div>
+                    </div>
+
+                    {{-- Collapsible Rental Contract Details Box (เครื่องเช่า เช่น เครื่องพิมพ์เช่า) --}}
+                    <div id="rentalContractBox" style="display: {{ $curOwnership == 'rented' ? 'block' : 'none' }}; background: #fffaf5; border: 1.5px dashed #fdba74; border-radius: 10px; padding: 16px; margin-top: 14px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px dashed #fed7aa; padding-bottom: 8px;">
+                            <div style="font-size: 13px; font-weight: 700; color: #c2410c; display: flex; align-items: center; gap: 6px;">
+                                <i class="bi bi-printer-fill" style="font-size: 16px;"></i>
+                                <span>ข้อมูลสัญญาเช่าและบริษัทผู้ให้เช่า (Lease / Rental Contract Details)</span>
+                            </div>
+                            <span class="badge" style="background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; font-size: 11px;">
+                                สำหรับควบคุมเครื่องเช่า & เครื่องพิมพ์เช่า
+                            </span>
+                        </div>
+
+                        <div class="form-row" style="margin-bottom: 10px;">
+                            <div class="form-group" style="flex: 1.2;">
+                                <label class="form-label" for="rental_contract_no">เลขที่สัญญาเช่า</label>
+                                <input type="text" id="rental_contract_no" name="rental_contract_no" class="form-control" 
+                                       placeholder="เช่น CN-IT-2567/012, สัญญาเช่าที่ 45/2567" 
+                                       value="{{ old('rental_contract_no', $asset->rental_contract_no) }}">
+                            </div>
+
+                            <div class="form-group" style="flex: 1.5;">
+                                <label class="form-label" for="rental_vendor">บริษัทผู้ให้เช่า / คู่สัญญา</label>
+                                <input type="text" id="rental_vendor" name="rental_vendor" class="form-control" 
+                                       placeholder="เช่น บจก. ฟูจิฟิล์ม บิสซิเนสฯ, ริโก้ (ประเทศไทย), แคนนอน" 
+                                       value="{{ old('rental_vendor', $asset->rental_vendor) }}">
+                            </div>
+
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label" for="rental_contact_phone">เบอร์ติดต่อบริษัท/ช่างบริการ</label>
+                                <input type="text" id="rental_contact_phone" name="rental_contact_phone" class="form-control" 
+                                       placeholder="เช่น 02-xxx-xxxx, 081-xxx-xxxx" 
+                                       value="{{ old('rental_contact_phone', $asset->rental_contact_phone) }}">
+                            </div>
+                        </div>
+
+                        <div class="form-row" style="margin-bottom: 10px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label" for="rental_start_date">วันเริ่มสัญญาเช่า</label>
+                                <input type="date" id="rental_start_date" name="rental_start_date" class="form-control" 
+                                       value="{{ old('rental_start_date', $asset->rental_start_date?->format('Y-m-d')) }}">
+                            </div>
+
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label" for="rental_end_date">วันสิ้นสุดสัญญาเช่า</label>
+                                <input type="date" id="rental_end_date" name="rental_end_date" class="form-control" 
+                                       value="{{ old('rental_end_date', $asset->rental_end_date?->format('Y-m-d')) }}">
+                            </div>
+
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label" for="rental_monthly_fee">ค่าเช่ารายเดือน/งวด (บาท)</label>
+                                <div style="position: relative;">
+                                    <input type="number" step="0.01" id="rental_monthly_fee" name="rental_monthly_fee" class="form-control" 
+                                           placeholder="เช่น 2500.00" 
+                                           value="{{ old('rental_monthly_fee', $asset->rental_monthly_fee) }}" style="padding-right: 42px;">
+                                    <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #94a3b8;">บาท</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="rental_conditions">เงื่อนไขสัญญาและบริการ (Conditions & Service Level)</label>
+                            <textarea id="rental_conditions" name="rental_conditions" class="form-control" rows="2" 
+                                      placeholder="เช่น รวมหมึกพิมพ์ทุกสีและค่าบริการซ่อมบำรุง, โควตาพิมพ์ขาวดำ 5,000 แผ่น/เดือน, สี 1,000 แผ่น/เดือน ส่วนเกินแผ่นละ 0.50 บาท">{{ old('rental_conditions', $asset->rental_conditions) }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Financial & Dates --}}
                 <div class="form-row">
                     <div class="form-group">
@@ -883,5 +1009,26 @@
             }
         }
     });
+
+    function toggleRentalBox(type) {
+        const box = document.getElementById('rentalContractBox');
+        if (box) {
+            box.style.display = (type === 'rented') ? 'block' : 'none';
+        }
+    }
+
+    function handleAcquisitionMethodChange(select) {
+        const selectedOption = select.options[select.selectedIndex];
+        const code = selectedOption ? selectedOption.getAttribute('data-code') : '';
+        const text = selectedOption ? selectedOption.text : '';
+        
+        if (code === 'RENTAL' || text.includes('เช่า')) {
+            const ownershipSelect = document.getElementById('ownership_type');
+            if (ownershipSelect) {
+                ownershipSelect.value = 'rented';
+                toggleRentalBox('rented');
+            }
+        }
+    }
 </script>
 @endpush

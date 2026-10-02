@@ -20,6 +20,8 @@ use App\Http\Controllers\HardwareAuditController;
 use App\Http\Controllers\AssetBorrowController;
 use App\Http\Controllers\AssetTransferController;
 use App\Http\Controllers\DeviceTypeController;
+use App\Http\Controllers\BudgetSourceController;
+use App\Http\Controllers\AcquisitionMethodController;
 
 // Initial Server Setup Route (Storage link, cache clear, migrations)
 Route::get('/server-init', [ServerInitController::class, 'init'])
@@ -344,6 +346,18 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::post('/device-types', [DeviceTypeController::class, 'store'])->name('device-types.store');
         Route::put('/device-types/{deviceType}', [DeviceTypeController::class, 'update'])->name('device-types.update');
         Route::delete('/device-types/{deviceType}', [DeviceTypeController::class, 'destroy'])->name('device-types.destroy');
+
+        // Budget Sources (แหล่งเงินงบประมาณ / เงินที่ใช้ซื้อ)
+        Route::get('/budget-sources', [BudgetSourceController::class, 'index'])->name('budget-sources.index');
+        Route::post('/budget-sources', [BudgetSourceController::class, 'store'])->name('budget-sources.store');
+        Route::put('/budget-sources/{budgetSource}', [BudgetSourceController::class, 'update'])->name('budget-sources.update');
+        Route::delete('/budget-sources/{budgetSource}', [BudgetSourceController::class, 'destroy'])->name('budget-sources.destroy');
+
+        // Acquisition Methods (วิธีการได้มาของครุภัณฑ์)
+        Route::get('/acquisition-methods', [AcquisitionMethodController::class, 'index'])->name('acquisition-methods.index');
+        Route::post('/acquisition-methods', [AcquisitionMethodController::class, 'store'])->name('acquisition-methods.store');
+        Route::put('/acquisition-methods/{acquisitionMethod}', [AcquisitionMethodController::class, 'update'])->name('acquisition-methods.update');
+        Route::delete('/acquisition-methods/{acquisitionMethod}', [AcquisitionMethodController::class, 'destroy'])->name('acquisition-methods.destroy');
 
         // System Settings & Data Management
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');

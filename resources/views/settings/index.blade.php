@@ -644,6 +644,51 @@
                             </div>
                         </label>
 
+                        <div class="form-section-title" style="margin-top: 26px;">
+                            <i class="bi bi-diagram-3 text-primary"></i> 3. ข้อมูลหลักครุภัณฑ์และระบบคุมเครื่องเช่า (Master Data)
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                            <a href="{{ route('budget-sources.index') }}" style="text-decoration: none; color: inherit; display: block; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 18px; transition: all 0.2s;" onmouseover="this.style.borderColor='#0284c7'; this.style.transform='translateY(-2px)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='none';">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                        <i class="bi bi-cash-coin"></i>
+                                    </div>
+                                    <span style="font-size: 12px; color: #0284c7; font-weight: 600;">จัดการข้อมูล &rarr;</span>
+                                </div>
+                                <div style="font-weight: 700; font-size: 15px; color: #0f172a;">แหล่งเงินที่ใช้ซื้อ (Budget Sources)</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 4px; line-height: 1.4;">
+                                    เช่น เงิน UC (กองทุนหลักประกันสุขภาพ), เงินบำรุง/เงินเก็บค่าบริการ, เงินงบประมาณแผ่นดิน, เงินบริจาค
+                                </div>
+                            </a>
+
+                            <a href="{{ route('acquisition-methods.index') }}" style="text-decoration: none; color: inherit; display: block; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 18px; transition: all 0.2s;" onmouseover="this.style.borderColor='#0d9488'; this.style.transform='translateY(-2px)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='none';">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #ccfbf1; color: #0d9488; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                        <i class="bi bi-box-seam"></i>
+                                    </div>
+                                    <span style="font-size: 12px; color: #0d9488; font-weight: 600;">จัดการข้อมูล &rarr;</span>
+                                </div>
+                                <div style="font-weight: 700; font-size: 15px; color: #0f172a;">วิธีการได้มาของครุภัณฑ์ (Acquisition)</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 4px; line-height: 1.4;">
+                                    เช่น จัดซื้อจัดจ้าง, ได้รับบริจาค, เช่าใช้ (Leased/เครื่องปริ้นเช่า), รับโอน
+                                </div>
+                            </a>
+
+                            <a href="{{ route('device-types.index') }}" style="text-decoration: none; color: inherit; display: block; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 18px; transition: all 0.2s;" onmouseover="this.style.borderColor='#6366f1'; this.style.transform='translateY(-2px)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='none';">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #ede9fe; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                        <i class="bi bi-hdd-network"></i>
+                                    </div>
+                                    <span style="font-size: 12px; color: #7c3aed; font-weight: 600;">จัดการข้อมูล &rarr;</span>
+                                </div>
+                                <div style="font-weight: 700; font-size: 15px; color: #0f172a;">ประเภทอุปกรณ์ IT (Device Types)</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 4px; line-height: 1.4;">
+                                    หมวดหมู่และประเภทครุภัณฑ์ เช่น PC, All-in-One, Notebook, Printer, Server, Network
+                                </div>
+                            </a>
+                        </div>
+
                         <div
                             style="display: flex; justify-content: flex-end; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border);">
                             <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 600;">
