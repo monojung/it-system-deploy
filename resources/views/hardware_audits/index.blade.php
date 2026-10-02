@@ -1170,6 +1170,90 @@
                         </div>
                     </div>
 
+                    {{-- Official System Documentation & PDF Manuals (v2.8.0) --}}
+                    <div style="grid-column: 1 / -1; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-top: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                                </div>
+                                <div>
+                                    <h4 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 0;">
+                                        คู่มือการใช้งานระบบฉบับทางการ (Official System Documentation - PDF)
+                                    </h4>
+                                    <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">
+                                        เอกสารคู่มือการใช้งานฉบับสมบูรณ์พร้อมภาพประกอบและแผนผังเชิงเทคนิค (เวอร์ชัน 2.8.0 Production)
+                                    </p>
+                                </div>
+                            </div>
+                            <a href="{{ url('/manuals') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 8px; font-weight: 600;">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> ไปที่ศูนย์คู่มือทั้งหมด
+                            </a>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+                            {{-- User Manual --}}
+                            <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="font-size: 13.5px; font-weight: 700; color: #0369a1; margin-bottom: 4px;">
+                                        <i class="bi bi-person-circle me-1"></i> คู่มือสำหรับผู้ใช้งานทั่วไป
+                                    </div>
+                                    <div style="font-size: 11.5px; color: #0284c7; margin-bottom: 12px;">
+                                        การแจ้งซ่อม, ติดตามสถานะ, ตรวจรับงาน (1.8 MB)
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 6px;">
+                                    <a href="{{ asset('docs/User_Manual_IT_System_THC.pdf') }}" download class="btn btn-primary btn-sm flex-grow-1" style="font-size: 12px; font-weight: 700; border-radius: 8px; padding: 6px 10px;">
+                                        <i class="bi bi-download me-1"></i> ดาวน์โหลด PDF
+                                    </a>
+                                    <a href="{{ asset('docs/User_Manual_IT_System_THC.pdf') }}" target="_blank" class="btn btn-outline-primary btn-sm" style="font-size: 12px; border-radius: 8px; padding: 6px 10px;" title="เปิดอ่าน">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                            {{-- Admin Manual --}}
+                            <div style="background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="font-size: 13.5px; font-weight: 700; color: #3730a3; margin-bottom: 4px;">
+                                        <i class="bi bi-shield-lock-fill me-1"></i> คู่มือแอดมินและช่างไอที
+                                    </div>
+                                    <div style="font-size: 11.5px; color: #4338ca; margin-bottom: 12px;">
+                                        Helpdesk, IT Assets, Agent Fleet, Remote Commands (2.2 MB)
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 6px;">
+                                    <a href="{{ asset('docs/Admin_Manual_IT_System_THC.pdf') }}" download class="btn btn-dark btn-sm flex-grow-1" style="background: #312e81; border-color: #312e81; font-size: 12px; font-weight: 700; border-radius: 8px; padding: 6px 10px;">
+                                        <i class="bi bi-download me-1"></i> ดาวน์โหลด PDF
+                                    </a>
+                                    <a href="{{ asset('docs/Admin_Manual_IT_System_THC.pdf') }}" target="_blank" class="btn btn-outline-dark btn-sm" style="font-size: 12px; border-radius: 8px; padding: 6px 10px;" title="เปิดอ่าน">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                            {{-- Developer Manual --}}
+                            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">
+                                        <i class="bi bi-code-slash me-1"></i> คู่มือสำหรับผู้พัฒนา
+                                    </div>
+                                    <div style="font-size: 11.5px; color: #475569; margin-bottom: 12px;">
+                                        Architecture, DB Schema, C# Agent, CI/CD (2.3 MB)
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 6px;">
+                                    <a href="{{ asset('docs/Developer_Manual_IT_System_THC.pdf') }}" download class="btn btn-secondary btn-sm flex-grow-1" style="background: #334155; border-color: #334155; font-size: 12px; font-weight: 700; border-radius: 8px; padding: 6px 10px;">
+                                        <i class="bi bi-download me-1"></i> ดาวน์โหลด PDF
+                                    </a>
+                                    <a href="{{ asset('docs/Developer_Manual_IT_System_THC.pdf') }}" target="_blank" class="btn btn-outline-secondary btn-sm" style="font-size: 12px; border-radius: 8px; padding: 6px 10px;" title="เปิดอ่าน">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>

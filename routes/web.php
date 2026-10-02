@@ -156,6 +156,13 @@ Route::get('/scripts/{filename}', function ($filename) {
     abort(404, 'Script not found');
 })->where('filename', '[A-Za-z0-9_\-\.]+')->name('scripts.download');
 
+Route::get('/manuals', function () {
+    return view('docs.manuals');
+})->name('docs.manuals');
+Route::get('/docs/manuals', function () {
+    return view('docs.manuals');
+});
+
 // Authenticated Routes
 Route::middleware(['auth', 'approved'])->group(function () {
     // Dashboard & Profile

@@ -1661,6 +1661,12 @@
                     <span>อัปเดตระบบ (System Update)</span>
                 </a>
                 @endif
+
+                <div class="nav-section-title">เอกสารและคู่มือ</div>
+                <a href="{{ url('/manuals') }}" class="nav-item {{ request()->is('manuals*') || request()->is('docs*') ? 'active' : '' }}">
+                    <i class="bi bi-book"></i>
+                    <span>คู่มือการใช้งาน (PDF)</span>
+                </a>
             </nav>
 
             <div class="sidebar-footer">
