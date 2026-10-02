@@ -1620,9 +1620,13 @@
 
                 @if(auth()->check() && auth()->user()->isSuperAdmin())
                 <div class="nav-section-title">แอดมินระบบ (Super Admin)</div>
-                <a href="{{ route('settings.index') }}" class="nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                <a href="{{ route('settings.index') }}" class="nav-item {{ request()->routeIs('settings.index') ? 'active' : '' }}">
                     <i class="bi bi-sliders"></i>
                     <span>การตั้งค่าระบบ</span>
+                </a>
+                <a href="{{ route('system-reset.index') }}" class="nav-item {{ request()->routeIs('system-reset.*') || request()->routeIs('settings.data-management') ? 'active' : '' }}" style="color: #fca5a5;">
+                    <i class="bi bi-radioactive" style="color: #ef4444;"></i>
+                    <span>จัดการข้อมูล & ล้างระบบ</span>
                 </a>
                 <a href="{{ route('backups.index') }}" class="nav-item {{ request()->routeIs('backups.*') ? 'active' : '' }}">
                     <i class="bi bi-database-gear"></i>

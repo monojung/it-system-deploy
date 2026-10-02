@@ -1953,6 +1953,25 @@
                 </div>
             </div>
 
+            <!-- Hub Link Banner to New Comprehensive System Reset Center -->
+            <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 14px; padding: 22px 26px; color: white; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 16px rgba(15,23,42,0.12);">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(239, 68, 68, 0.2); color: #f87171; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 1px solid rgba(248, 113, 113, 0.4);">
+                        <i class="bi bi-radioactive"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 16.5px; font-weight: 700; color: white;">ศูนย์จัดการข้อมูลและล้างระบบสารสนเทศ (Data Management & System Reset Center)</h4>
+                        <div style="font-size: 13px; color: #94a3b8; margin-top: 2px;">
+                            ครอบคลุมทุก 12 โมดูล: ล้างเฉพาะโมดูล (ซ่อม, ขอข้อมูล, ยืม-คืน, โอนย้าย, ตรวจสเปค Agent), สแกนความสมบูรณ์ฐานข้อมูล (Integrity Scanner)
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ route('system-reset.index') }}" class="btn" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; font-weight: 600; font-size: 13.5px; padding: 10px 20px; border-radius: 8px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
+                    <span>เปิดศูนย์ควบคุมจัดการข้อมูล & ล้างระบบเต็มรูปแบบ</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
             <!-- Danger Zone Box -->
             <div class="card"
                 style="border: 2px solid #fee2e2; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 16px rgba(220, 38, 38, 0.06);">

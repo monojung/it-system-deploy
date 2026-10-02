@@ -354,6 +354,14 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::post('/settings/test-user-notify', [SettingController::class, 'testUserNotify'])->name('settings.test-user-notify');
         Route::post('/settings/clear-data', [SystemResetController::class, 'clearData'])->name('settings.clear-data');
 
+        // Comprehensive Data Management & System Reset Center (ศูนย์จัดการข้อมูลและล้างระบบ)
+        Route::get('/system-reset', [SystemResetController::class, 'index'])->name('system-reset.index');
+        Route::get('/settings/data-management', [SystemResetController::class, 'index'])->name('settings.data-management');
+        Route::get('/system-reset/stats', [SystemResetController::class, 'getStats'])->name('system-reset.stats');
+        Route::post('/system-reset/module', [SystemResetController::class, 'clearModule'])->name('system-reset.module');
+        Route::post('/system-reset/check-integrity', [SystemResetController::class, 'checkIntegrity'])->name('system-reset.check-integrity');
+        Route::post('/system-reset/repair-integrity', [SystemResetController::class, 'repairIntegrity'])->name('system-reset.repair-integrity');
+
         // Audit Logs (บันทึกกิจกรรมและความปลอดภัยระบบ)
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
         Route::get('/audit-logs/export', [AuditLogController::class, 'export'])->name('audit-logs.export');

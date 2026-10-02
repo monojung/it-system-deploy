@@ -103,10 +103,16 @@ class SettingController extends Controller
         $systemStats = [
             'repairs' => \App\Models\Repair::count(),
             'data_requests' => \App\Models\DataRequest::count(),
+            'asset_borrows' => \App\Models\AssetBorrow::count(),
+            'asset_transfers' => \App\Models\AssetTransfer::count(),
+            'hardware_audits' => \App\Models\HardwareAudit::count(),
+            'agent_commands' => \App\Models\AgentCommand::count(),
             'audit_logs' => \App\Models\AuditLog::count(),
             'assets' => \App\Models\Asset::count(),
             'spare_parts' => \App\Models\SparePart::count(),
             'users' => \App\Models\User::count(),
+            'departments' => \App\Models\Department::count(),
+            'device_types' => \App\Models\DeviceType::count(),
             'backups' => \App\Models\BackupLog::count(),
         ];
 
