@@ -308,8 +308,8 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::get('/hardware-audits/export-csv', [HardwareAuditController::class, 'exportCsv'])->name('hardware-audits.export-csv');
     });
 
-    // Super Admin Only: System Settings, Backup & Restore, User Management, Master Data, Audit Logs, System Updates
-    Route::middleware(['role:super_admin'])->group(function () {
+    // Super Admin & Admin: System Settings, Backup & Restore, User Management, Master Data, Audit Logs, System Updates
+    Route::middleware(['role:super_admin,admin'])->group(function () {
         // Backup & Restore
         Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
         Route::post('/backups', [BackupController::class, 'create'])->name('backups.create');

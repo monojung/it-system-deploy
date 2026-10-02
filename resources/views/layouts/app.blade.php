@@ -1618,8 +1618,8 @@
                     <span>รายงานสถานะครุภัณฑ์</span>
                 </a>
 
-                @if(auth()->check() && auth()->user()->isSuperAdmin())
-                <div class="nav-section-title">แอดมินระบบ (Super Admin)</div>
+                @if(auth()->check() && auth()->user()->isAdmin())
+                <div class="nav-section-title">แอดมินระบบ (Admin)</div>
                 <a href="{{ route('settings.index') }}" class="nav-item {{ request()->routeIs('settings.index') ? 'active' : '' }}">
                     <i class="bi bi-sliders"></i>
                     <span>การตั้งค่าระบบ</span>

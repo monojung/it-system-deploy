@@ -34,8 +34,8 @@ class SystemResetController extends Controller
     public function index()
     {
         $user = Auth::user();
-        if (!$user || !$user->isSuperAdmin()) {
-            abort(403, 'เฉพาะผู้ดูแลระบบสารสนเทศ (Super Admin) เท่านั้นที่สามารถเข้าถึงศูนย์จัดการข้อมูลและล้างระบบได้');
+        if (!$user || !$user->isAdmin()) {
+            abort(403, 'เฉพาะผู้ดูแลระบบสารสนเทศ (Admin) เท่านั้นที่สามารถเข้าถึงศูนย์จัดการข้อมูลและล้างระบบได้');
         }
 
         $stats = $this->gatherSystemMetrics();
@@ -51,7 +51,7 @@ class SystemResetController extends Controller
     public function getStats()
     {
         $user = Auth::user();
-        if (!$user || !$user->isSuperAdmin()) {
+        if (!$user || !$user->isAdmin()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -72,8 +72,8 @@ class SystemResetController extends Controller
     public function clearModule(Request $request)
     {
         $user = Auth::user();
-        if (!$user || !$user->isSuperAdmin()) {
-            abort(403, 'เฉพาะผู้ดูแลระบบสารสนเทศ (Super Admin) เท่านั้นที่สามารถดำเนินการล้างข้อมูลได้');
+        if (!$user || !$user->isAdmin()) {
+            abort(403, 'เฉพาะผู้ดูแลระบบสารสนเทศ (Admin) เท่านั้นที่สามารถดำเนินการล้างข้อมูลได้');
         }
 
         $request->validate([
@@ -230,10 +230,10 @@ class SystemResetController extends Controller
 
                 case 'assets_reset':
                     // Safe reset: detach references from active operational records
-                    AssetBorrow::query()->update(['asset_id' => null]);
-                    AssetTransfer::query()->update(['asset_id' => null]);
-                    HardwareAudit::query()->update(['asset_id' => null]);
-                    Repair::query()->update(['asset_id' => null]);
+                    AssetBorrow::query()->delete();
+                    AssetTransfer::query()->delete();
+                    HardwareAudit::whereNotNull('asset_id')->update(['asset_id' => null]);
+                    Repair::whereNotNull('asset_id')->update(['asset_id' => null]);
 
                     $deletedAssets = Asset::count();
                     Asset::query()->delete();
@@ -305,8 +305,8 @@ class SystemResetController extends Controller
         $user = Auth::user();
 
         // 1. Authorization check
-        if (!$user || !$user->isSuperAdmin()) {
-            abort(403, 'เฉพาะแอดมินระบบ (Super Admin) เท่านั้นที่สามารถดำเนินการล้างข้อมูลได้');
+        if (!$user || !$user->isAdmin()) {
+            abort(403, 'เฉพาะแอดมินระบบ (Admin) เท่านั้นที่สามารถดำเนินการล้างข้อมูลได้');
         }
 
         // 2. Validate input
@@ -520,7 +520,7 @@ class SystemResetController extends Controller
     public function checkIntegrity(Request $request)
     {
         $user = Auth::user();
-        if (!$user || !$user->isSuperAdmin()) {
+        if (!$user || !$user->isAdmin()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -540,7 +540,7 @@ class SystemResetController extends Controller
     public function repairIntegrity(Request $request)
     {
         $user = Auth::user();
-        if (!$user || !$user->isSuperAdmin()) {
+        if (!$user || !$user->isAdmin()) {
             abort(403, 'Unauthorized');
         }
 
@@ -577,6 +577,7 @@ class SystemResetController extends Controller
 
             // 2. Asset Borrows pointing to non-existent assets -> delete orphan borrows
             $invalidBorrowAssetIds = DB::table('it_asset_borrows')
+                ->whereNotNull('asset_id')
                 ->whereNotExists(function ($query) {
                     $query->select(DB::raw(1))->from('it_assets')->whereColumn('it_assets.id', 'it_asset_borrows.asset_id');
                 })->pluck('id');
@@ -596,6 +597,7 @@ class SystemResetController extends Controller
 
             // 4. Asset Transfers pointing to non-existent assets -> delete orphan transfers
             $invalidTransferAssetIds = DB::table('it_asset_transfers')
+                ->whereNotNull('asset_id')
                 ->whereNotExists(function ($query) {
                     $query->select(DB::raw(1))->from('it_assets')->whereColumn('it_assets.id', 'it_asset_transfers.asset_id');
                 })->pluck('id');
@@ -696,7 +698,7 @@ class SystemResetController extends Controller
                 'color' => '#0d9488',
                 'count' => AssetBorrow::count(),
                 'pending' => AssetBorrow::where('status', 'pending')->count(),
-                'borrowed' => AssetBorrow::where('status', 'approved')->whereNull('returned_at')->count(),
+                'borrowed' => AssetBorrow::whereIn('status', ['approved', 'borrowed'])->whereNull('actual_return_date')->count(),
                 'returned' => AssetBorrow::where('status', 'returned')->count(),
                 'last_activity' => AssetBorrow::latest('updated_at')->value('updated_at')?->diffForHumans() ?? '-',
             ],
@@ -720,7 +722,12 @@ class SystemResetController extends Controller
                 'icon' => 'bi-cpu-fill',
                 'color' => '#f59e0b',
                 'count' => HardwareAudit::count(),
-                'online' => HardwareAudit::where('last_ping_at', '>=', Carbon::now()->subMinutes(10))->count(),
+                'online' => (function () {
+                    $registry = \Illuminate\Support\Facades\Cache::get('agent_online_registry', []);
+                    $nowTs = now()->timestamp;
+                    $online = is_array($registry) ? count(array_filter($registry, fn($a) => isset($a['expires_at']) && $a['expires_at'] > $nowTs)) : 0;
+                    return $online ?: HardwareAudit::where('updated_at', '>=', Carbon::now()->subMinutes(10))->count();
+                })(),
                 'pending' => HardwareAudit::where('status', 'pending')->count(),
                 'approved' => HardwareAudit::where('status', 'approved')->count(),
                 'commands_count' => AgentCommand::count(),
@@ -748,8 +755,8 @@ class SystemResetController extends Controller
                 'icon' => 'bi-box-seam',
                 'color' => '#eab308',
                 'count' => SparePart::count(),
-                'low_stock' => SparePart::whereColumn('quantity', '<=', 'min_quantity')->count(),
-                'out_of_stock' => SparePart::where('quantity', '<=', 0)->count(),
+                'low_stock' => SparePart::whereColumn('stock_quantity', '<=', 'minimum_quantity')->count(),
+                'out_of_stock' => SparePart::where('stock_quantity', '<=', 0)->count(),
                 'last_activity' => SparePart::latest('updated_at')->value('updated_at')?->diffForHumans() ?? '-',
             ],
 
@@ -786,7 +793,7 @@ class SystemResetController extends Controller
                 'super_admin' => User::where('role', 'super_admin')->count(),
                 'admin' => User::where('role', 'admin')->count(),
                 'user' => User::where('role', 'user')->count(),
-                'pending_approval' => User::where('status', 'pending_approval')->count(),
+                'pending_approval' => User::where('approval_status', 'pending')->count(),
                 'last_activity' => User::latest('updated_at')->value('updated_at')?->diffForHumans() ?? '-',
             ],
 
@@ -840,6 +847,7 @@ class SystemResetController extends Controller
 
         // 2. Asset Borrows with deleted/missing asset_id
         $brokenBorrowAssets = DB::table('it_asset_borrows')
+            ->whereNotNull('asset_id')
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))->from('it_assets')->whereColumn('it_assets.id', 'it_asset_borrows.asset_id');
             })->count();
@@ -856,6 +864,7 @@ class SystemResetController extends Controller
 
         // 3. Asset Transfers with deleted/missing asset_id
         $brokenTransferAssets = DB::table('it_asset_transfers')
+            ->whereNotNull('asset_id')
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))->from('it_assets')->whereColumn('it_assets.id', 'it_asset_transfers.asset_id');
             })->count();
