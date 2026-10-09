@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.8.0'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Production Gold Release)',
-    'release_date' => '2026-10-02',
-    'build' => '20261002.3',
+    'version' => env('APP_VERSION', '2.9.0'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Mobile & Tablet Cross-Platform Responsive Suite)',
+    'release_date' => '2026-10-09',
+    'build' => '20261009.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,22 @@ return [
     |
     */
     'changelog' => [
+        '2.9.0' => [
+            'date' => '2026-10-09',
+            'badge' => 'Major UI/UX Suite: 100% Cross-Platform Mobile & Tablet Responsive Modernization',
+            'badge_color' => '#0d9488',
+            'title' => 'ปรับปรุงระบบรองรับการใช้งานบนมือถือและแท็บเล็ตทุกระบบ 100% (iOS, iPadOS, Android, Windows Touch, Chrome, Safari, Samsung Internet, Edge): ป้องกัน iOS Safari Auto-Zoom, ปรับปรุงระบบ Touch Targets, รองรับ Safe Area Insets, ปรับเลย์เอาต์กริดและกล่องโต้ตอบอัตโนมัติ',
+            'highlights' => [
+                'ระบบรองรับ Responsive แบบ Multi-Tier 4 ระดับหน้าจอ: เพิ่มและปรับแต่ง Breakpoints ให้ครอบคลุมทุกอุปกรณ์ ได้แก่ Tablet Landscape / iPad Pro (< 1200px), Tablet Portrait / iPad Air / Android Tablets (< 992px), สมาร์ตโฟนมาตรฐาน (< 768px) และสมาร์ตโฟนขนาดกะทัดรัด (< 480px) พร้อมรองรับ Mobile Landscape Orientation (< 540px height)',
+                'แก้ปัญหา iOS Safari Auto-Zoom 100%: ปรับขนาดตัวอักษรของช่องกรอกข้อมูล Form Inputs, Dropdown Select และ Textarea เป็น 16px บนหน้าจอมือถืออย่างเคร่งครัด ป้องกันไม่ให้เบราว์เซอร์ Safari บน iPhone ขยายหน้าจอซูมเข้าอัตโนมัติขณะพิมพ์ข้อมูล',
+                'รองรับ Safe Area Insets สำหรับสมาร์ตโฟนทุกรุ่น: ใช้งาน env(safe-area-inset-top/bottom/left/right) อย่างสมบูรณ์บน Topbar, Bottom Application Navigation, Modal Dialogs และ Content Body ป้องกันเนื้อหาถูกบังโดยรอยบาก Dynamic Island, ขอบหน้าจอโค้งมน หรือแถบ Home Bar ของ iOS และ Android',
+                'ยกระดับมาตรฐาน Touch Targets (WCAG 2.5.5 / 2.5.8): ปรับปุ่มกด ลิงก์ และช่องกรอกข้อมูลให้มีความสูงอย่างน้อย 44px พร้อมขยายพื้นที่สัมผัสบนแถบ Bottom Nav, ป้ายกำกับแท็บ และปุ่มจัดการข้อมูล เพื่อให้แตะใช้งานด้วยนิ้วมือได้อย่างแม่นยำและสะดวกสบาย',
+                'ระบบ Auto-Collapse สำหรับ CSS Grid Layouts ทั่วทั้งระบบ: ปรับลดคอลัมน์ของกริด multi-column (เช่น 3fr 2fr, 2fr 1fr, repeat(3-4, 1fr), และ repeat(auto-fit, minmax(240px-360px, 1fr))) ให้จัดเรียงเป็น 1 คอลัมน์บนมือถือโดยอัตโนมัติ ป้องกันหน้าจอแตกหรือการล้นในแนวนอน (Horizontal Overflow) บนหน้าจอขนาด 360px - 414px',
+                'โมดอลและหน้าต่างโต้ตอบแบบ Responsive (Cross-Module Modal Engine): ปรับปรุงโครงสร้าง .custom-modal-backdrop และ .custom-modal-dialog ครอบคลุมทั้ง 6 โมดอลของ Hardware Audits, SweetAlert2, และหน้าต่างข้อมูลเวอร์ชัน ให้ปรับขนาดเต็มหน้าจออย่างลงตัว (Full-width 96%-100%) พร้อมระบบเลื่อนข้อมูลภายในแบบ Touch Momentum Scrolling',
+                'แถบนำทางลอยตัวสำหรับแท็บเล็ต (Tablet Floating Dock Navigation): ออกแบบแถบนำทางด้านล่างช่วง 768px - 992px ให้เป็น Floating Pill Dock โค้งมนสวยงามตรงกลางหน้าจอ เพื่อความสะดวกในการใช้งานแบบสองมือบน iPad และ Galaxy Tab',
+                'การเลื่อนตารางข้อมูลด้วยระบบสัมผัส (Touch Momentum Table Scrolling): ปรับปรุง .table-responsive ให้รองรับ -webkit-overflow-scrolling: touch พร้อมแถบเลื่อนที่บางลงและลื่นไหล รองรับการปัดดูข้อมูลสเปคและรายการครุภัณฑ์ขนาดใหญ่ได้อย่างไร้รอยต่อ',
+            ],
+        ],
         '2.8.0' => [
             'date' => '2026-10-02',
             'badge' => 'Production Gold Release: Agent Lifecycle Suite (Updater & Uninstaller), Machine Purge & Cross-Module Linkages',

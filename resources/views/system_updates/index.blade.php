@@ -554,6 +554,27 @@
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
     }
+
+    @media (max-width: 768px) {
+        .repo-hero-card {
+            padding: 16px !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 14px !important;
+        }
+        .repo-hero-main {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+        }
+        .repo-hero-url {
+            font-size: 13px !important;
+        }
+        .terminal-box {
+            font-size: 11px !important;
+            max-height: 320px !important;
+        }
+    }
 </style>
 @endpush
 

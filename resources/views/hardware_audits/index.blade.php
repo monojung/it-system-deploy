@@ -1788,8 +1788,42 @@
     transform: translateY(-2px);
     box-shadow: var(--shadow-md) !important;
 }
+.tab-nav-btn {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+}
 .tab-nav-btn:hover {
     color: #0f766e !important;
+}
+
+/* Hardware Audits View Mobile & Tablet Enhancements */
+@media (max-width: 992px) {
+    .custom-modal-dialog {
+        width: 96% !important;
+        max-width: 96% !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .tab-nav-btn {
+        padding: 10px 14px !important;
+        font-size: 12.5px !important;
+    }
+    .custom-modal-backdrop {
+        padding: 8px !important;
+    }
+    .custom-modal-dialog {
+        border-radius: 14px !important;
+        max-height: calc(100dvh - 16px) !important;
+        max-height: calc(100vh - 16px) !important;
+        margin: 6px auto !important;
+    }
+    #agentInspectionModalContent,
+    #auditDiffModalBody,
+    #linkAssetResultsContainer {
+        padding: 12px !important;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 </style>
 

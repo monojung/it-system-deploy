@@ -227,6 +227,20 @@
         .copy-pill:hover {
             background: #fecaca;
         }
+
+        @media (max-width: 768px) {
+            .module-grid {
+                grid-template-columns: 1fr !important;
+                gap: 14px !important;
+            }
+            .reset-tab-btn {
+                padding: 8px 12px;
+                font-size: 12.5px;
+            }
+            .reset-nav-wrapper {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
     </style>
 @endpush
 
