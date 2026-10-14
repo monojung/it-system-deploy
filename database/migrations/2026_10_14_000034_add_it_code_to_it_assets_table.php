@@ -37,9 +37,8 @@ return new class extends Migration
                 }
 
                 if (!empty($code)) {
-                    $cleanCode = str_replace('-', '', $code);
                     DB::table('it_assets')->where('id', $asset->id)->update([
-                        'it_code' => $cleanCode
+                        'it_code' => $code
                     ]);
                 }
             }

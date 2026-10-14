@@ -1213,28 +1213,55 @@
      */
     function parseAssetCodeJs(code) {
         if (!code) return { hasCode: false, seq: null, year: null };
-        const c = code.trim().toUpperCase();
+        let c = code.trim().toUpperCase();
+        c = c.replace(/(\d{4})-(\d{3})\/(\d{4})\/(\d+)/, '$1-$2-$3/$4');
+
         if (c.startsWith('RENT-') || c.startsWith('DON-') || c.startsWith('PENDING-') || c.startsWith('TEMP-') || c.startsWith('NO-ASSET') || c.startsWith('NOASSET-')) {
             return { hasCode: false, seq: null, year: null };
         }
-        // รูปแบบ 1: มี Slash ระบุปีงบประมาณ เช่น 7440-001-0005/66 หรือ .../2566
-        const slashMatch = c.match(/(?:^|[^\d])(\d+)\/(\d{2,4})$/);
-        if (slashMatch) {
-            return {
-                hasCode: true,
-                seq: slashMatch[1],
-                year: slashMatch[2].slice(-2)
-            };
+
+        // รูปแบบที่ 1: รหัสพัสดุมาตรฐาน 4 ส่วน เช่น 7440-001-0010/67 หรือ 7440-001-0008/1
+        const m1 = c.match(/^(\d{4})-(\d{3})-(\d+)\/(\d+)$/);
+        if (m1) {
+            const part3 = m1[3];
+            const part4 = m1[4];
+            const p4Int = parseInt(part4, 10);
+            const isFiscalYear = (part4.length === 2 && p4Int >= 60 && p4Int <= 75) ||
+                                 (part4.length === 4 && p4Int >= 2560 && p4Int <= 2575);
+            if (isFiscalYear) {
+                return { hasCode: true, seq: part3, year: part4.slice(-2) };
+            } else {
+                return { hasCode: true, seq: `${part3}/${part4}`, year: null };
+            }
         }
-        // รูปแบบ 2: มาตรฐาน 7440-xxx-xxxx หรือลงท้ายด้วยขีดตามด้วยตัวเลข
-        const dashMatch = c.match(/^7440-\d+-(\d+)$/) || c.match(/-(\d{1,6})$/);
-        if (dashMatch) {
-            return {
-                hasCode: true,
-                seq: dashMatch[1],
-                year: null
-            };
+
+        // รูปแบบที่ 2: รหัสพัสดุที่มี slash ทั่วไป เช่น .../67 หรือ .../17
+        const m2 = c.match(/(?:^|[^\d])(\d+)\/(\d+)$/);
+        if (m2) {
+            const p1 = m2[1];
+            const p2 = m2[2];
+            const p2Int = parseInt(p2, 10);
+            const isFiscalYear = (p2.length === 2 && p2Int >= 60 && p2Int <= 75) ||
+                                 (p2.length === 4 && p2Int >= 2560 && p2Int <= 2575);
+            if (isFiscalYear) {
+                return { hasCode: true, seq: p1, year: p2.slice(-2) };
+            } else {
+                return { hasCode: true, seq: `${p1}/${p2}`, year: null };
+            }
         }
+
+        // รูปแบบที่ 3: มาตรฐาน 7440-xxx-xxxx (ไม่มี slash)
+        const m3 = c.match(/^7440-\d+-(\d+)$/i);
+        if (m3) {
+            return { hasCode: true, seq: m3[1], year: null };
+        }
+
+        // รูปแบบที่ 4: ลงท้ายด้วยขีดตามด้วยตัวเลข (ไม่เกิน 6 หลัก)
+        const m4 = c.match(/-(\d{1,6})$/i);
+        if (m4) {
+            return { hasCode: true, seq: m4[1], year: null };
+        }
+
         return { hasCode: true, seq: null, year: null };
     }
 
@@ -1292,6 +1319,7 @@
 
     /**
      * คำนวณและผูกรหัสคุมไอทีอัตโนมัติ (Smart Auto-Binding)
+     * สูตร: [แผนก] - [ประเภท] - [ปี] - [ลำดับจากเลขพัสดุ]
      */
     function updateSmartBoundItTag() {
         if (isManualTagOverride && currentPrefixMode === 'custom') {
@@ -1305,7 +1333,7 @@
         const parsed = parseAssetCodeJs(assetCodeVal);
 
         let prefix = deptCode;
-        let seq = '001';
+        let seq = '0001';
         let year = defaultYear;
         let badgeHtml = '';
         let hintHtml = '';
@@ -1316,32 +1344,34 @@
 
         if (currentPrefixMode === 'rent') {
             prefix = 'RENT';
+            seq = '001';
             badgeHtml = '<i class="bi bi-printer"></i> เครื่องเช่า (ไม่มีเลขพัสดุ)';
-            hintHtml = `สูตร: RENT${typeCode}${year}${seq} &rarr; เครื่องสัญญาเช่า คุมด้วยรหัส IT`;
+            hintHtml = `สูตร: RENT-${typeCode}-${year}-${seq} &rarr; เครื่องสัญญาเช่า คุมด้วยรหัส IT`;
             if (itBadge) itBadge.style.background = '#ea580c';
         } else if (currentPrefixMode === 'don') {
             prefix = 'DON';
+            seq = '001';
             badgeHtml = '<i class="bi bi-gift"></i> รับบริจาค (ไม่มีเลขพัสดุ)';
-            hintHtml = `สูตร: DON${typeCode}${year}${seq} &rarr; ครุภัณฑ์รับบริจาค คุมด้วยรหัส IT`;
+            hintHtml = `สูตร: DON-${typeCode}-${year}-${seq} &rarr; ครุภัณฑ์รับบริจาค คุมด้วยรหัส IT`;
             if (itBadge) itBadge.style.background = '#0284c7';
         } else {
             prefix = deptCode;
             if (parsed.hasCode && parsed.seq) {
-                seq = parsed.seq.length < 3 ? parsed.seq.padStart(3, '0') : parsed.seq;
+                seq = parsed.seq;
                 year = parsed.year || defaultYear;
                 badgeHtml = `<i class="bi bi-link-45deg"></i> ผูกตรงกับเลขพัสดุ (${seq} / ปี ${year})`;
-                hintHtml = `🔗 <strong>ผูกรหัสอัตโนมัติ:</strong> ${prefix}${typeCode}${year}${seq}`;
+                hintHtml = `🔗 <strong>ผูกรหัสอัตโนมัติ:</strong> ${prefix}-${typeCode}-${year}-${seq}`;
                 if (itBadge) itBadge.style.background = '#0d9488';
             } else {
-                seq = 'T001';
+                seq = '0001';
                 year = defaultYear;
                 badgeHtml = '<i class="bi bi-clock-history"></i> รหัสชั่วคราว (รอเลขพัสดุ)';
-                hintHtml = `รหัสชั่วคราว: ${prefix}${typeCode}${year}T001 (เมื่อใส่เลขพัสดุจะผูกตรงอัตโนมัติ)`;
+                hintHtml = `รหัสชั่วคราว: ${prefix}-${typeCode}-${year}-${seq} (เมื่อใส่เลขพัสดุจะผูกตรงอัตโนมัติ)`;
                 if (itBadge) itBadge.style.background = '#64748b';
             }
         }
 
-        const newCode = `${prefix}${typeCode}${year}${seq}`;
+        const newCode = `${prefix}-${typeCode}-${year}-${seq}`;
         if (itInput) {
             itInput.value = newCode;
             itInput.style.backgroundColor = '#f0fdfa';

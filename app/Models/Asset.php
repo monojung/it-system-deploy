@@ -325,16 +325,16 @@ class Asset extends Model
     {
         // 1. ถ้ามีค่าจริงในคอลัมน์ it_code
         if (!empty($value)) {
-            return str_replace('-', '', $value);
+            return trim($value);
         }
 
         if (!empty($this->attributes['it_code'])) {
-            return str_replace('-', '', $this->attributes['it_code']);
+            return trim($this->attributes['it_code']);
         }
 
-        // 2. ถ้ามีการบันทึกแท็กปรับแต่งพิเศษไว้ใน notes เช่น [IT-TAG: ER-PC-67-001]
+        // 2. ถ้ามีการบันทึกแท็กปรับแต่งพิเศษไว้ใน notes เช่น [IT-TAG: ER-PC-67-0010]
         if (!empty($this->notes) && preg_match('/\[IT-TAG:\s*([^\]]+)\]/', $this->notes, $matches)) {
-            return str_replace('-', '', trim($matches[1]));
+            return trim($matches[1]);
         }
 
         // 3. ผูกรหัสอัตโนมัติจากเลขพัสดุและสังกัด (Smart Binding)
@@ -343,7 +343,7 @@ class Asset extends Model
 
     public function setItCodeAttribute($value): void
     {
-        $this->attributes['it_code'] = !empty($value) ? str_replace('-', '', trim($value)) : null;
+        $this->attributes['it_code'] = !empty($value) ? trim($value) : null;
     }
 
     /**
