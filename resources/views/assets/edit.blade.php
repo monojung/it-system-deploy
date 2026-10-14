@@ -390,7 +390,7 @@
                                 </div>
                             </div>
                             <span class="form-text" id="it_tag_hint" style="color: #0f766e; font-size: 11.5px;">
-                                สูตร: [แผนก] - [ประเภท] - [ปี] - [ลำดับจากเลขพัสดุ]
+                                สูตร: [แผนก] [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น เช่น PHARPC670001)
                             </span>
                         </div>
                     </div>
@@ -1243,8 +1243,9 @@
 
     /**
      * คำนวณและผูกรหัสคุมไอทีอัตโนมัติ (Smart Auto-Binding)
-     * สูตร: [แผนก] - [ประเภท] - [ปี] - [ลำดับจากเลขพัสดุ]
+     * สูตรใหม่: [แผนก] [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น)
      */
+    let itCodeFetchTimer = null;
     function updateSmartBoundItTag() {
         if (isManualTagOverride && currentPrefixMode === 'custom') {
             return;
@@ -1253,8 +1254,6 @@
         const typeCode = resolveSelectedTypeCode();
         const deptCode = resolveSelectedDeptCode();
         const defaultYear = resolveBudgetYearShort();
-        const assetCodeVal = document.getElementById('asset_code')?.value || '';
-        const parsed = parseAssetCodeJs(assetCodeVal);
 
         let prefix = deptCode;
         let seq = '0001';
@@ -1268,35 +1267,23 @@
 
         if (currentPrefixMode === 'rent') {
             prefix = 'RENT';
-            seq = '001';
             badgeHtml = '<i class="bi bi-printer"></i> เครื่องเช่า (ไม่มีเลขพัสดุ)';
-            hintHtml = `สูตร: RENT-${typeCode}-${year}-${seq} &rarr; เครื่องสัญญาเช่า คุมด้วยรหัส IT`;
+            hintHtml = `สูตร: RENT${typeCode}${year}${seq} &rarr; เครื่องสัญญาเช่า คุมด้วยรหัส IT อัตโนมัติ`;
             if (itBadge) itBadge.style.background = '#ea580c';
         } else if (currentPrefixMode === 'don') {
             prefix = 'DON';
-            seq = '001';
             badgeHtml = '<i class="bi bi-gift"></i> รับบริจาค (ไม่มีเลขพัสดุ)';
-            hintHtml = `สูตร: DON-${typeCode}-${year}-${seq} &rarr; ครุภัณฑ์รับบริจาค คุมด้วยรหัส IT`;
+            hintHtml = `สูตร: DON${typeCode}${year}${seq} &rarr; ครุภัณฑ์รับบริจาค คุมด้วยรหัส IT อัตโนมัติ`;
             if (itBadge) itBadge.style.background = '#0284c7';
         } else {
             prefix = deptCode;
-            if (parsed.hasCode && parsed.seq) {
-                seq = parsed.seq;
-                year = parsed.year || defaultYear;
-                badgeHtml = `<i class="bi bi-link-45deg"></i> ผูกตรงกับเลขพัสดุ (${seq} / ปี ${year})`;
-                hintHtml = `🔗 <strong>ผูกรหัสอัตโนมัติ:</strong> ${prefix}-${typeCode}-${year}-${seq}`;
-                if (itBadge) itBadge.style.background = '#0d9488';
-            } else {
-                seq = '0001';
-                year = defaultYear;
-                badgeHtml = '<i class="bi bi-clock-history"></i> รหัสชั่วคราว (รอเลขพัสดุ)';
-                hintHtml = `รหัสชั่วคราว: ${prefix}-${typeCode}-${year}-${seq} (เมื่อใส่เลขพัสดุจะผูกตรงอัตโนมัติ)`;
-                if (itBadge) itBadge.style.background = '#64748b';
-            }
+            badgeHtml = `<i class="bi bi-magic"></i> รหัสอัตโนมัติ (${prefix}${typeCode}${year})`;
+            hintHtml = `🔗 <strong>สูตรใหม่:</strong> [${prefix}][${typeCode}][${year}][${seq}] &rarr; ${prefix}${typeCode}${year}${seq}`;
+            if (itBadge) itBadge.style.background = '#0d9488';
         }
 
-        const newCode = `${prefix}-${typeCode}-${year}-${seq}`;
-        if (itInput) {
+        const newCode = `${prefix}${typeCode}${year}${seq}`;
+        if (itInput && !itInput.value) {
             itInput.value = newCode;
             itInput.style.backgroundColor = '#f0fdfa';
             setTimeout(() => { itInput.style.backgroundColor = '#ffffff'; }, 300);
@@ -1307,6 +1294,46 @@
         if (itHint) {
             itHint.innerHTML = hintHtml;
         }
+
+        // ซิงค์ลำดับถัดไปที่แน่นอนจากฐานข้อมูลผ่าน AJAX
+        clearTimeout(itCodeFetchTimer);
+        itCodeFetchTimer = setTimeout(() => {
+            fetchNextItCodeFromServer(prefix, typeCode, year);
+        }, 150);
+    }
+
+    function fetchNextItCodeFromServer(prefix, typeCode, year) {
+        if (isManualTagOverride && currentPrefixMode === 'custom') return;
+        const deptId = document.getElementById('department_id')?.value || '';
+        const typeId = document.getElementById('device_type_id')?.value || '';
+        const bYear = document.getElementById('budget_year')?.value || '';
+        const ownership = document.getElementById('ownership_type')?.value || '{{ $asset->ownership_type ?: "owned" }}';
+
+        const params = new URLSearchParams({
+            department_id: deptId,
+            department_code: prefix,
+            device_type_id: typeId,
+            device_type_code: typeCode,
+            ownership_type: currentPrefixMode === 'rent' ? 'rented' : (currentPrefixMode === 'don' ? 'donated' : ownership),
+            budget_year: bYear,
+            exclude_id: '{{ $asset->id }}'
+        });
+
+        fetch(`{{ route('assets.next-it-code') }}?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.success && data.it_code) {
+                    const itInput = document.getElementById('it_code') || document.getElementById('it_asset_code');
+                    const itHint = document.getElementById('it_tag_hint');
+                    if (itInput && !itInput.value) {
+                        itInput.value = data.it_code;
+                    }
+                    if (itHint) {
+                        itHint.innerHTML = `🔗 <strong>รหัสคุม IT อัตโนมัติ:</strong> <span style="font-family: monospace; font-weight: 700;">${data.it_code}</span> (สูตร: [แผนก][ประเภท][ปี][ลำดับ])`;
+                    }
+                }
+            })
+            .catch(e => {});
     }
 
     function handleAssetCodeInput(val) {

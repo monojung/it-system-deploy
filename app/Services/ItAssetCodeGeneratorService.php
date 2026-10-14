@@ -28,51 +28,51 @@ class ItAssetCodeGeneratorService
         return [
             'dept_standard' => [
                 'id' => 'dept_standard',
-                'name' => 'รูปแบบที่ 1: รหัสย่อแผนก รพ. (มาตรฐานคลัง - มีขีดคั่น)',
-                'pattern' => '[DEPT]-[TYPE]-[YY]-[SEQ]',
-                'sample' => 'ER-PC-67-0010',
-                'desc' => 'ประกอบด้วย รหัสย่อแผนก (ER/OPD/LAB/IT/PHAR) + รหัสประเภท (PC/NB/PRN) + ปีงบประมาณ 2 หลัก (67) + ลำดับจากเลขพัสดุ (0010)',
-                'badge' => 'แนะนำ แยกตามแผนกชัดเจน',
-                'prefix' => 'ER',
+                'name' => 'รูปแบบมาตรฐาน: [แผนก][ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น)',
+                'pattern' => '[DEPT][TYPE][YY][SEQ]',
+                'sample' => 'PHARPC670001',
+                'desc' => 'ประกอบด้วย รหัสย่อแผนก (PHAR/IT/LAB/THC) + รหัสประเภท (PC/NB/AIO) + ปีงบประมาณ 2 หลัก (67) + ลำดับอัตโนมัติ 4 หลัก (0001) ไม่มีขีดคั่น',
+                'badge' => 'แนะนำ สูตรใหม่คลัง IT',
+                'prefix' => 'THC',
                 'year_format' => 'short', // 67
                 'seq_digits' => 4,
-                'separator' => '-',
+                'separator' => '',
             ],
             'rental_fleet' => [
                 'id' => 'rental_fleet',
-                'name' => 'รูปแบบที่ 2: เครื่องเช่า (RENT - ไม่มีเลขพัสดุ)',
-                'pattern' => 'RENT-[TYPE]-[YY]-[SEQ]',
-                'sample' => 'RENT-PC-67-001',
-                'desc' => 'Prefix RENT สำหรับอุปกรณ์สัญญาเช่า/เครื่องพิมพ์เช่ารายปี คุมด้วยรหัสไอทีโดยไม่ต้องมีเลขพัสดุ',
+                'name' => 'รูปแบบเครื่องเช่า: RENT[TYPE][YY][SEQ] (ไม่มีขีดคั่น)',
+                'pattern' => 'RENT[TYPE][YY][SEQ]',
+                'sample' => 'RENTPRN670001',
+                'desc' => 'Prefix RENT สำหรับอุปกรณ์สัญญาเช่า คุมด้วยรหัสไอทีต่อเนื่องโดยไม่มีเลขพัสดุ',
                 'badge' => 'เครื่องเช่า (ไม่มีเลขพัสดุ)',
                 'prefix' => 'RENT',
                 'year_format' => 'short',
-                'seq_digits' => 3,
-                'separator' => '-',
+                'seq_digits' => 4,
+                'separator' => '',
             ],
             'donation_fleet' => [
                 'id' => 'donation_fleet',
-                'name' => 'รูปแบบที่ 3: รับบริจาค (DON - ไม่มีเลขพัสดุ)',
-                'pattern' => 'DON-[TYPE]-[YY]-[SEQ]',
-                'sample' => 'DON-NB-67-001',
-                'desc' => 'Prefix DON สำหรับอุปกรณ์ที่ได้รับบริจาค คุมประวัติและส่งซ่อมได้ทันทีโดยไม่ต้องรอเลขพัสดุ',
+                'name' => 'รูปแบบรับบริจาค: DON[TYPE][YY][SEQ] (ไม่มีขีดคั่น)',
+                'pattern' => 'DON[TYPE][YY][SEQ]',
+                'sample' => 'DONNB670001',
+                'desc' => 'Prefix DON สำหรับอุปกรณ์ที่ได้รับบริจาค คุมด้วยรหัสไอทีต่อเนื่องโดยไม่มีเลขพัสดุ',
                 'badge' => 'รับบริจาค (ไม่มีเลขพัสดุ)',
                 'prefix' => 'DON',
                 'year_format' => 'short',
-                'seq_digits' => 3,
-                'separator' => '-',
+                'seq_digits' => 4,
+                'separator' => '',
             ],
             'type_running' => [
                 'id' => 'type_running',
-                'name' => 'รูปแบบที่ 4: ลำดับต่อเนื่องตามประเภทอุปกรณ์',
-                'pattern' => '[DEPT]-[TYPE]-[SEQ]',
-                'sample' => 'IT-PC-0142',
+                'name' => 'รูปแบบลำดับต่อเนื่องตามประเภทอุปกรณ์ (ไม่มีขีดคั่น)',
+                'pattern' => '[DEPT][TYPE][SEQ]',
+                'sample' => 'ITPC0142',
                 'desc' => 'รหัสย่อแผนก + รหัสประเภท + ลำดับ 4 หลักต่อเนื่องตลอดชีพ ไม่ผูกกับปีงบประมาณ',
                 'badge' => 'รันต่อเนื่องตลอดชีพ',
                 'prefix' => 'IT',
                 'year_format' => 'none', // ไม่มีปี
                 'seq_digits' => 4,       // 0142
-                'separator' => '-',
+                'separator' => '',
             ],
         ];
     }
@@ -131,8 +131,7 @@ class ItAssetCodeGeneratorService
     }
 
     /**
-     * ประกอบรหัสคุมครุภัณฑ์ไอทีตามพารามิเตอร์ที่กำหนด มีเครื่องหมายขีดคั่นตามสูตร
-     * [แผนก] - [ประเภท] - [ปี] - [ลำดับจากเลขพัสดุ]
+     * ประกอบรหัสคุมครุภัณฑ์ไอทีตามสูตรใหม่: [แผนก] [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น)
      */
     public static function buildCode(
         string $prefix,
@@ -140,16 +139,17 @@ class ItAssetCodeGeneratorService
         ?string $yearStr,
         string|int $sequence,
         int $seqDigits = 4,
-        string $separator = '-'
+        string $separator = ''
     ): string {
-        $prefix = strtoupper(trim($prefix));
-        $type = strtoupper(trim($deviceTypeCode));
+        $prefix = strtoupper(str_replace(['-', ' '], '', trim($prefix)));
+        $type = strtoupper(str_replace(['-', ' '], '', trim($deviceTypeCode)));
+        $year = trim((string)$yearStr);
         
         // หากเป็นตัวเลขล้วนและสั้นกว่า seqDigits ให้ pad
-        if (is_numeric($sequence) && strlen((string)$sequence) < $seqDigits) {
+        if (is_numeric($sequence)) {
             $seq = str_pad((string)$sequence, $seqDigits, '0', STR_PAD_LEFT);
         } else {
-            $seq = (string)$sequence;
+            $seq = str_replace(['-', ' '], '', (string)$sequence);
         }
 
         $parts = [];
@@ -159,8 +159,8 @@ class ItAssetCodeGeneratorService
         if (!empty($type)) {
             $parts[] = $type;
         }
-        if (!empty($yearStr)) {
-            $parts[] = $yearStr;
+        if (!empty($year)) {
+            $parts[] = $year;
         }
         if (!empty($seq)) {
             $parts[] = $seq;
@@ -328,8 +328,44 @@ class ItAssetCodeGeneratorService
     }
 
     /**
-     * ผูกรหัสคุมครุภัณฑ์ไอที (IT Tag) ตามสูตร: [แผนก] - [ประเภท] - [ปี] - [ลำดับจากเลขพัสดุ]
-     * กฎเหล็ก: ห้ามเอาเลข Asset No มาผูกเด็ดขาด
+     * ค้นหาและดึงลำดับถัดไป (4 หลัก) สำหรับ [แผนก][ประเภท][ปีงบประมาณ]
+     * โดยตรวจสอบจากฐานข้อมูล it_assets เพื่อให้ได้เลขรันอัตโนมัติต่อเนื่องและไม่ซ้ำซ้อน
+     */
+    public static function getNextSequence(string $prefix, string $type, string $year, ?int $excludeAssetId = null): string
+    {
+        $basePrefix = strtoupper(str_replace(['-', ' '], '', trim($prefix)))
+                    . strtoupper(str_replace(['-', ' '], '', trim($type)))
+                    . trim($year);
+
+        $query = Asset::where(function ($q) use ($basePrefix) {
+            $q->where('it_code', 'like', "{$basePrefix}%")
+              ->orWhere('it_code', 'like', "{$basePrefix}-%");
+        });
+
+        if ($excludeAssetId) {
+            $query->where('id', '!=', $excludeAssetId);
+        }
+
+        $existingCodes = $query->pluck('it_code');
+        $maxSeq = 0;
+
+        foreach ($existingCodes as $code) {
+            $clean = strtoupper(str_replace(['-', ' '], '', (string)$code));
+            if (preg_match('/^' . preg_quote($basePrefix, '/') . '(\d+)$/', $clean, $m)) {
+                $num = (int)$m[1];
+                if ($num > $maxSeq) {
+                    $maxSeq = $num;
+                }
+            }
+        }
+
+        return str_pad((string)($maxSeq + 1), 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * ผูกรหัสคุมครุภัณฑ์ไอที (IT Tag) ตามสูตรใหม่:
+     * [แผนก] [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับที่ได้อัตโนมัติ]
+     * ไม่มีขีดคั่น และไม่นำเลข Asset No มาใช้เด็ดขาด
      */
     public static function generateAutoBoundCode(
         $assetOrCode = null,
@@ -341,8 +377,11 @@ class ItAssetCodeGeneratorService
     ): string {
         $asset = null;
         $assetName = null;
+        $excludeId = null;
+
         if ($assetOrCode instanceof Asset) {
             $asset = $assetOrCode;
+            $excludeId = $asset->id;
             $assetName = $asset->name;
             $ownershipType = $asset->ownership_type ?: 'owned';
             $deptCode = self::resolveDepartmentCode($asset->department);
@@ -351,53 +390,64 @@ class ItAssetCodeGeneratorService
             $budgetYear = $asset->budget_year ?: ($asset->purchase_date ? (string)$asset->purchase_date->year : null);
         } else {
             $assetCode = $assetOrCode;
+            if (is_numeric($id)) {
+                $excludeId = (int)$id;
+            }
         }
 
         // ตรวจสอบกรณีเครื่องเช่า
         $isRented = ($ownershipType === 'rented') || ($asset && $asset->is_rented) || ($assetCode && str_starts_with(strtoupper((string)$assetCode), 'RENT'));
         if ($isRented) {
-            $type = $typeCode ?: 'DEV';
-            $yearStr = $budgetYear ? substr((string)$budgetYear, -2) : '67';
-            $seqStr = '001';
-            return "RENT-{$type}-{$yearStr}-{$seqStr}";
+            $prefix = 'RENT';
+            $type = $typeCode ? strtoupper(str_replace(['-', ' '], '', $typeCode)) : 'PRN';
+            $yearStr = $budgetYear ? substr((string)$budgetYear, -2) : self::calculateFiscalYear();
+            $seqStr = self::getNextSequence($prefix, $type, $yearStr, $excludeId);
+            return "{$prefix}{$type}{$yearStr}{$seqStr}";
         }
 
         // ตรวจสอบกรณีรับบริจาค
         $isDonated = ($ownershipType === 'donated') || ($asset && $asset->is_donated) || ($assetCode && str_starts_with(strtoupper((string)$assetCode), 'DON'));
         if ($isDonated) {
-            $type = $typeCode ?: 'DEV';
-            $yearStr = $budgetYear ? substr((string)$budgetYear, -2) : '67';
-            $seqStr = '001';
-            return "DON-{$type}-{$yearStr}-{$seqStr}";
+            $prefix = 'DON';
+            $type = $typeCode ? strtoupper(str_replace(['-', ' '], '', $typeCode)) : 'NB';
+            $yearStr = $budgetYear ? substr((string)$budgetYear, -2) : self::calculateFiscalYear();
+            $seqStr = self::getNextSequence($prefix, $type, $yearStr, $excludeId);
+            return "{$prefix}{$type}{$yearStr}{$seqStr}";
         }
 
         // กรณีเป็นของ รพ. / ซื้อขาด
-        $prefix = !empty($deptCode) ? strtoupper(trim($deptCode)) : self::DEFAULT_PREFIX;
-        $type = !empty($typeCode) ? strtoupper(trim($typeCode)) : 'DEV';
+        $prefix = !empty($deptCode) ? strtoupper(str_replace(['-', ' '], '', $deptCode)) : self::DEFAULT_PREFIX;
+        $type = !empty($typeCode) ? strtoupper(str_replace(['-', ' '], '', $typeCode)) : 'PC';
 
-        $parsed = self::parseOfficialAssetCode($assetCode);
-
-        // กำหนดปีงบประมาณ [ปี]
+        // กำหนดปีงบประมาณ [ปีงบประมาณ 2 หลัก]
         $yearStr = null;
-        if (!empty($parsed['year'])) {
-            $yearStr = $parsed['year'];
-        } elseif (!empty($budgetYear)) {
+        if (!empty($budgetYear)) {
             $yearStr = substr((string)$budgetYear, -2);
         } else {
-            $yearStr = '67';
+            $parsed = self::parseOfficialAssetCode($assetCode);
+            if (!empty($parsed['year'])) {
+                $yearStr = $parsed['year'];
+            } else {
+                $yearStr = self::calculateFiscalYear();
+            }
         }
 
-        // กำหนดเลขลำดับ [ลำดับจากเลขพัสดุ]
-        // ห้ามเอาเลข Asset No มาผูกเด็ดขาด!
-        if (!empty($parsed['seq'])) {
-            $seqStr = $parsed['seq'];
-        } else {
-            // เมื่อยังไม่มีเลขพัสดุ ให้ใช้ลำดับตั้งต้น 0001 (ห้ามใช้ Asset ID เด็ดขาด)
-            $seqStr = '0001';
-        }
+        // กำหนด [ตัวเลขลำดับที่ได้อัตโนมัติ] (4 หลัก รันต่อเนื่องอัตโนมัติ)
+        $seqStr = self::getNextSequence($prefix, $type, $yearStr, $excludeId);
 
-        // ประกอบตามสูตร: [แผนก] - [ประเภท] - [ปี] - [ลำดับจากเลขพัสดุ]
-        return "{$prefix}-{$type}-{$yearStr}-{$seqStr}";
+        // ประกอบตามสูตรใหม่: [แผนก][ประเภท][ปีงบประมาณ][ตัวเลขลำดับที่ได้อัตโนมัติ] (ไม่มีขีดคั่น)
+        return "{$prefix}{$type}{$yearStr}{$seqStr}";
+    }
+
+    public static function generateNextAutoCode(
+        $assetOrCode = null,
+        ?string $deptCode = null,
+        ?string $typeCode = null,
+        string $ownershipType = 'owned',
+        ?string $budgetYear = null,
+        ?int $excludeId = null
+    ): string {
+        return self::generateAutoBoundCode($assetOrCode, $deptCode, $typeCode, $ownershipType, $budgetYear, $excludeId);
     }
 
     /**
@@ -409,10 +459,13 @@ class ItAssetCodeGeneratorService
         array $existingSimulatedCodes = []
     ): int {
         $maxSeq = 0;
-        $pattern = "/-(" . preg_quote($deviceTypeCode, '/') . ")-" . ($yearStr ? preg_quote($yearStr, '/') . "-" : "") . "(\d+)/i";
+        $typeClean = strtoupper(str_replace(['-', ' '], '', $deviceTypeCode));
+        $yearClean = $yearStr ? trim($yearStr) : "";
+        $pattern = "/(?:" . preg_quote($typeClean, '/') . ")" . ($yearClean ? preg_quote($yearClean, '/') : "") . "(\d{3,5})/i";
 
         foreach ($existingSimulatedCodes as $code) {
-            if (preg_match($pattern, $code, $matches)) {
+            $cleanCode = str_replace(['-', ' '], '', $code);
+            if (preg_match($pattern, $cleanCode, $matches)) {
                 $seqVal = (int)end($matches);
                 if ($seqVal > $maxSeq) {
                     $maxSeq = $seqVal;

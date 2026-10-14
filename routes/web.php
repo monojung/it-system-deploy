@@ -228,8 +228,8 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::get('/assets', [AssetController::class, 'index'])->name('assets.index');
 
 
-    // IT Staff / Admin asset management
     Route::middleware(['role:admin,technician'])->group(function () {
+        Route::get('/assets/next-it-code', [AssetController::class, 'nextItCode'])->name('assets.next-it-code');
         Route::get('/assets/create/new', [AssetController::class, 'create'])->name('assets.create');
         Route::get('/assets/create', [AssetController::class, 'create']);
         Route::post('/assets', [AssetController::class, 'store'])->name('assets.store');

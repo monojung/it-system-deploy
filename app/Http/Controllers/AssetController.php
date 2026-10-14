@@ -10,6 +10,7 @@ use App\Models\Department;
 use App\Models\BudgetSource;
 use App\Models\AcquisitionMethod;
 use App\Services\IctStandardCatalog;
+use App\Services\ItAssetCodeGeneratorService;
 use Carbon\Carbon;
 
 class AssetController extends Controller
@@ -397,8 +398,22 @@ class AssetController extends Controller
         $data = $request->except(['image', 'no_asset_code', 'prefix_mode', 'it_asset_code', 'it_code']);
         $data['ownership_type'] = $data['ownership_type'] ?? 'owned';
 
-        // บันทึกรหัสคุมไอที (IT Asset Tag)
-        $itTag = trim($request->input('it_code') ?: $request->input('it_asset_code', ''));
+        // บันทึกรหัสคุมไอที (IT Asset Tag) ตามสูตรใหม่: [แผนก][ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น)
+        $itTag = strtoupper(str_replace(['-', ' '], '', trim($request->input('it_code') ?: $request->input('it_asset_code', ''))));
+        if (empty($itTag)) {
+            $dept = !empty($data['department_id']) ? Department::find($data['department_id']) : null;
+            $deptCode = ItAssetCodeGeneratorService::resolveDepartmentCode($dept);
+            $devType = !empty($data['device_type_id']) ? DeviceType::find($data['device_type_id']) : null;
+            $typeCode = ItAssetCodeGeneratorService::resolveDeviceTypeCode($devType, $data['name'] ?? null, $data['asset_code'] ?? null);
+            $yearStr = !empty($data['budget_year']) ? substr((string)$data['budget_year'], -2) : ItAssetCodeGeneratorService::calculateFiscalYear();
+            $itTag = ItAssetCodeGeneratorService::generateNextAutoCode(
+                null,
+                $deptCode,
+                $typeCode,
+                $data['ownership_type'] ?? 'owned',
+                $yearStr
+            );
+        }
         if (!empty($itTag)) {
             $data['it_code'] = $itTag;
             $cleanNotes = preg_replace('/\[IT-TAG:\s*[^\]]+\]\s*/', '', $data['notes'] ?? '');
@@ -533,8 +548,8 @@ class AssetController extends Controller
             $data['ownership_type'] = $asset->ownership_type ?? 'owned';
         }
 
-        // บันทึกรหัสคุมไอที (IT Asset Tag)
-        $itTag = trim($request->input('it_code') ?: $request->input('it_asset_code', ''));
+        // บันทึกรหัสคุมไอที (IT Asset Tag) ตามสูตรใหม่: [แผนก][ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น)
+        $itTag = strtoupper(str_replace(['-', ' '], '', trim($request->input('it_code') ?: $request->input('it_asset_code', ''))));
         if (!empty($itTag)) {
             $data['it_code'] = $itTag;
             $cleanNotes = preg_replace('/\[IT-TAG:\s*[^\]]+\]\s*/', '', $data['notes'] ?? $asset->notes ?? '');
@@ -1113,5 +1128,45 @@ class AssetController extends Controller
         if ($errorCount > 0) $summaryParts[] = "ข้อมูลไม่สมบูรณ์ {$errorCount} แถว";
 
         return redirect()->route('assets.index')->with('success', implode(' | ', $summaryParts));
+    }
+
+    /**
+     * ดึงรหัสคุมครุภัณฑ์ไอที (IT Tag) ลำดับถัดไปแบบอัตโนมัติ (AJAX API)
+     * ตามสูตรใหม่: [แผนก][ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น)
+     */
+    public function nextItCode(Request $request)
+    {
+        $deptId = $request->input('department_id');
+        $deptCodeParam = $request->input('department_code');
+        $deviceTypeId = $request->input('device_type_id');
+        $deviceTypeCodeParam = $request->input('device_type_code');
+        $ownershipType = $request->input('ownership_type', 'owned');
+        $budgetYear = $request->input('budget_year');
+        $excludeId = $request->input('exclude_id');
+
+        $dept = $deptId ? Department::find($deptId) : null;
+        $resolvedDeptCode = $deptCodeParam ?: ItAssetCodeGeneratorService::resolveDepartmentCode($dept);
+
+        $deviceType = $deviceTypeId ? DeviceType::find($deviceTypeId) : null;
+        $resolvedTypeCode = $deviceTypeCodeParam ?: ItAssetCodeGeneratorService::resolveDeviceTypeCode($deviceType);
+
+        $yearStr = $budgetYear ? substr((string)$budgetYear, -2) : ItAssetCodeGeneratorService::calculateFiscalYear();
+
+        $code = ItAssetCodeGeneratorService::generateNextAutoCode(
+            null,
+            $resolvedDeptCode,
+            $resolvedTypeCode,
+            $ownershipType,
+            $yearStr,
+            $excludeId ? (int)$excludeId : null
+        );
+
+        return response()->json([
+            'success' => true,
+            'it_code' => $code,
+            'dept' => $resolvedDeptCode,
+            'type' => $resolvedTypeCode,
+            'year' => $yearStr,
+        ]);
     }
 }

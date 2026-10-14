@@ -315,35 +315,32 @@ class Asset extends Model
     }
 
     /**
-     * ดึงรหัสคุมครุภัณฑ์ไอที (IT Asset Tag / IT Code)
-     * นำรหัสย่อ (Code) ของแผนกในโรงพยาบาลมาเป็น Prefix (เช่น ER, OPD, LAB, PHAR, IT)
-     * ผูกเข้ากับรหัสครุภัณฑ์พัสดุราชการโดยตรง (Direct Smart Binding)
-     * และใช้ Prefix RENT (เครื่องเช่า) / DON (รับบริจาค) โดยไม่มีเลขพัสดุ
-     * ตามรูปแบบ [PREFIX]-[TYPE]-[YEAR]-[SEQ]
+     * รหัสคุมครุภัณฑ์ไอที (IT Asset Tag / it_code)
+     * ตามสูตรใหม่: [แผนก] [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับที่ได้อัตโนมัติ] (ไม่มีขีดคั่น)
      */
     public function getItCodeAttribute($value = null): string
     {
         // 1. ถ้ามีค่าจริงในคอลัมน์ it_code
         if (!empty($value)) {
-            return trim($value);
+            return strtoupper(str_replace(['-', ' '], '', trim($value)));
         }
 
         if (!empty($this->attributes['it_code'])) {
-            return trim($this->attributes['it_code']);
+            return strtoupper(str_replace(['-', ' '], '', trim($this->attributes['it_code'])));
         }
 
-        // 2. ถ้ามีการบันทึกแท็กปรับแต่งพิเศษไว้ใน notes เช่น [IT-TAG: ER-PC-67-0010]
+        // 2. ถ้ามีการบันทึกแท็กปรับแต่งพิเศษไว้ใน notes เช่น [IT-TAG: PHARPC670001]
         if (!empty($this->notes) && preg_match('/\[IT-TAG:\s*([^\]]+)\]/', $this->notes, $matches)) {
-            return trim($matches[1]);
+            return strtoupper(str_replace(['-', ' '], '', trim($matches[1])));
         }
 
-        // 3. ผูกรหัสอัตโนมัติจากเลขพัสดุและสังกัด (Smart Binding)
+        // 3. ผูกรหัสอัตโนมัติ (Smart Auto Running IT Code)
         return \App\Services\ItAssetCodeGeneratorService::generateAutoBoundCode($this);
     }
 
     public function setItCodeAttribute($value): void
     {
-        $this->attributes['it_code'] = !empty($value) ? trim($value) : null;
+        $this->attributes['it_code'] = !empty($value) ? strtoupper(str_replace(['-', ' '], '', trim($value))) : null;
     }
 
     /**
