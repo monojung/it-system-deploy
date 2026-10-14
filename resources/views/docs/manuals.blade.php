@@ -2,7 +2,7 @@
 
 @section('title', 'คู่มือการใช้งานระบบ (System Manuals)')
 @section('page_title', 'ศูนย์คู่มือการใช้งานระบบ')
-@section('page_subtitle', 'เอกสารคู่มือการใช้งานและสถาปัตยกรรมระบบเวอร์ชัน 2.8.0 (ไฟล์ PDF พร้อมภาพประกอบ)')
+@section('page_subtitle', 'เอกสารคู่มือการใช้งานและสถาปัตยกรรมระบบเวอร์ชัน ' . app_version() . ' (ไฟล์ PDF พร้อมภาพประกอบ)')
 
 @section('content')
 <div style="max-width: 1200px; margin: 0 auto; padding-bottom: 40px;">
@@ -15,7 +15,7 @@
         <div style="max-width: 720px; position: relative; z-index: 1;">
             <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.12); padding: 5px 14px; border-radius: 9999px; font-size: 12px; font-weight: 600; margin-bottom: 14px; backdrop-filter: blur(8px);">
                 <i class="bi bi-patch-check-fill text-warning"></i>
-                <span>เอกสารฉบับทางการ &bull; Release v2.8.0 Production Ready</span>
+                <span>เอกสารฉบับทางการ &bull; Release v{{ app_version() }} Production Ready</span>
             </div>
             <h2 style="font-size: 26px; font-weight: 800; margin: 0 0 10px 0; line-height: 1.3;">
                 คู่มือการใช้งานและเอกสารเชิงเทคนิคประจำระบบ

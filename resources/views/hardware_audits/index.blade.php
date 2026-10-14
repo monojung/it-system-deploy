@@ -1127,7 +1127,7 @@
                                 </div>
                             </div>
                             <span class="badge" style="background: #eff6ff; color: #2563eb; font-weight: 700; font-size: 11.5px; padding: 5px 12px; border-radius: 8px; border: 1px solid #bfdbfe;">
-                                <i class="bi bi-shield-check me-1"></i> Agent v2.8.0 Production
+                                <i class="bi bi-shield-check me-1"></i> Agent v{{ app_version() }} Production
                             </span>
                         </div>
 
@@ -1182,7 +1182,7 @@
                                         คู่มือการใช้งานระบบฉบับทางการ (Official System Documentation - PDF)
                                     </h4>
                                     <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">
-                                        เอกสารคู่มือการใช้งานฉบับสมบูรณ์พร้อมภาพประกอบและแผนผังเชิงเทคนิค (เวอร์ชัน 2.8.0 Production)
+                                        เอกสารคู่มือการใช้งานฉบับสมบูรณ์พร้อมภาพประกอบและแผนผังเชิงเทคนิค (เวอร์ชัน {{ app_version() }} Production)
                                     </p>
                                 </div>
                             </div>
