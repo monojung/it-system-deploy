@@ -138,10 +138,17 @@
                         </td>
                         <td>
                             @if($repair->asset)
-                                <a href="{{ route('assets.show', $repair->asset) }}" style="font-weight: 500; color: #0284c7; text-decoration: none; font-size: 13px;">
-                                    <i class="bi bi-pc"></i> {{ $repair->asset->asset_code }}
-                                </a>
-                                <div style="font-size: 11.5px; color: var(--text-muted);">{{ $repair->asset->name }}</div>
+                                <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+                                    <a href="{{ route('assets.show', $repair->asset) }}" style="font-weight: 700; color: #4338ca; text-decoration: none; font-size: 12px; font-family: monospace;">
+                                        <i class="bi bi-tag-fill me-1"></i>{{ $repair->asset->it_asset_code }}
+                                    </a>
+                                    @if($repair->asset->has_official_asset_code)
+                                        <span style="font-family: monospace; font-size: 11px; color: #64748b;">
+                                            ({{ $repair->asset->asset_code }})
+                                        </span>
+                                    @endif
+                                </div>
+                                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">{{ $repair->asset->name }}</div>
                             @elseif($repair->other_device_info)
                                 <span style="font-size: 13px; color: #475569;">{{ $repair->other_device_info }}</span>
                             @else

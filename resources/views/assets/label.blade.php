@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ป้ายสติกเกอร์ครุภัณฑ์ - {{ $asset->asset_code }}</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}?v=2">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -36,16 +39,23 @@
         }
 
         .label-logo {
-            width: 32px;
-            height: 32px;
-            background: #0f766e;
-            color: white;
-            border-radius: 6px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
-            font-weight: 700;
+            flex-shrink: 0;
+            overflow: hidden;
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .label-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
 
         .label-title {
@@ -156,7 +166,9 @@
 
     <div class="label-card">
         <div class="label-header">
-            <div class="label-logo">{{ setting('hospital_code', 'THC') }}</div>
+            <div class="label-logo">
+                <img src="{{ asset('images/logo.png') }}?v=2" alt="Logo">
+            </div>
             <div>
                 <div class="label-title">{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</div>
                 <div class="label-subtitle">{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }} (ครุภัณฑ์คอมพิวเตอร์)</div>
@@ -170,7 +182,21 @@
             </div>
 
             <div class="label-info">
-                <div class="code-box">{{ $asset->asset_code }}</div>
+                {{-- Dual-Tag Code Banner --}}
+                <div style="background: #f0fdfa; border: 1.5px solid #0d9488; border-radius: 6px; padding: 4px 8px; margin-bottom: 6px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-family: monospace; font-size: 15.5px; font-weight: 800; color: #0f766e; letter-spacing: 0.3px;">
+                            {{ $asset->it_asset_code }}
+                        </span>
+                        <span style="background: #0d9488; color: white; font-size: 8.5px; font-weight: 700; padding: 1px 4px; border-radius: 3px;">
+                            IT TAG
+                        </span>
+                    </div>
+                    <div style="font-size: 10px; color: #475569; margin-top: 1px; font-family: monospace;">
+                        พัสดุ: <strong>{{ $asset->official_asset_code_display }}</strong>
+                    </div>
+                </div>
+
                 <div class="info-row"><strong>รายการ:</strong> {{ $asset->name }}</div>
                 <div class="info-row"><strong>รุ่น:</strong> {{ $asset->brand }} {{ $asset->model }}</div>
                 <div class="info-row"><strong>แผนก:</strong> {{ $asset->department?->name ?? 'ส่วนกลาง' }}</div>

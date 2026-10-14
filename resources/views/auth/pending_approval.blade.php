@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>รอการตรวจสอบยืนยันตัวตน - กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลทุ่งหัวช้าง</title>
     
+    <!-- Favicon & Hospital Emblem -->
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}?v=2">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=2">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}?v=2">
+    
     <!-- Google Fonts: Prompt & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

@@ -130,22 +130,56 @@ class AssetController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = trim($request->search);
             $query->where(function ($q) use ($search) {
-                $q->where('asset_code', 'like', "%{$search}%")
+                $q->where('it_code', 'like', "%{$search}%")
+                  ->orWhere('asset_code', 'like', "%{$search}%")
                   ->orWhere('serial_number', 'like', "%{$search}%")
                   ->orWhere('name', 'like', "%{$search}%")
                   ->orWhere('brand', 'like', "%{$search}%")
                   ->orWhere('model', 'like', "%{$search}%")
                   ->orWhere('custodian_name', 'like', "%{$search}%")
+                  ->orWhere('location_detail', 'like', "%{$search}%")
                   ->orWhere('ip_address', 'like', "%{$search}%")
+                  ->orWhere('mac_address', 'like', "%{$search}%")
                   ->orWhere('specs', 'like', "%{$search}%")
                   ->orWhere('cpu_model', 'like', "%{$search}%")
                   ->orWhere('ram_type', 'like', "%{$search}%")
                   ->orWhere('os_name', 'like', "%{$search}%")
                   ->orWhere('storage_type', 'like', "%{$search}%")
                   ->orWhere('rental_contract_no', 'like', "%{$search}%")
-                  ->orWhere('rental_vendor', 'like', "%{$search}%");
+                  ->orWhere('rental_vendor', 'like', "%{$search}%")
+                  ->orWhere('notes', 'like', "%{$search}%");
+
+                // รองรับค้นหาด้วยชื่อหรือรหัสย่อของแผนก
+                $q->orWhereHas('department', function ($dq) use ($search) {
+                    $dq->where('name', 'like', "%{$search}%")
+                       ->orWhere('code', 'like', "%{$search}%");
+                });
+
+                // รองรับค้นหาด้วยประเภทอุปกรณ์
+                $q->orWhereHas('deviceType', function ($dtq) use ($search) {
+                    $dtq->where('name', 'like', "%{$search}%")
+                       ->orWhere('code', 'like', "%{$search}%");
+                });
+
+                // รองรับการค้นหาด้วยรหัสคุมไอที เช่น ER-PC-66-0005, RENT-PRN-67-001, DON-NB-67-001
+                if (preg_match('/(?:[A-Z0-9_]+)-([A-Z]+)-?(\d{2,4})?-?([A-Z0-9]+)/i', $search, $m)) {
+                    $typeCode = $m[1] ?? null;
+                    $seqStr = $m[3] ?? null;
+                    if ($seqStr) {
+                        $cleanSeq = ltrim($seqStr, 'Tt0');
+                        $q->orWhere('asset_code', 'like', "%{$seqStr}%");
+                        if (!empty($cleanSeq)) {
+                            $q->orWhere('id', (int)$cleanSeq);
+                        }
+                    }
+                    if ($typeCode) {
+                        $q->orWhereHas('deviceType', function ($dtQ) use ($typeCode) {
+                            $dtQ->where('code', $typeCode);
+                        });
+                    }
+                }
             });
         }
 
@@ -295,7 +329,24 @@ class AssetController extends Controller
 
     public function store(Request $request)
     {
+        // จัดการกรณีเครื่องเช่า / รับบริจาค / รอพัสดุออกเลข (ไม่มีเลขพัสดุ)
+        $isRented = ($request->input('ownership_type') === 'rented') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'RENT-');
+        $isDonated = ($request->input('ownership_type') === 'donated') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'DON-');
+        $noAssetCode = $request->boolean('no_asset_code') || empty($request->input('asset_code')) || $isRented || $isDonated;
+
+        if ($noAssetCode) {
+            $prefixTemp = $isRented ? 'RENT' : ($isDonated ? 'DON' : 'PENDING');
+            $uniqueSuffix = time() . '-' . rand(100, 999);
+            $rawTag = $request->input('it_code') ?: $request->input('it_asset_code');
+            $cleanTag = $rawTag ? preg_replace('/[^A-Za-z0-9_-]/', '', $rawTag) : $uniqueSuffix;
+            $request->merge([
+                'asset_code' => "{$prefixTemp}-{$cleanTag}"
+            ]);
+        }
+
         $request->validate([
+            'it_code' => 'nullable|string|max:50',
+            'it_asset_code' => 'nullable|string|max:50',
             'asset_code' => 'required|string|max:100|unique:it_assets,asset_code',
             'serial_number' => 'nullable|string|max:100',
             'hardware_id' => 'nullable|string|max:100',
@@ -341,8 +392,16 @@ class AssetController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $data = $request->except(['image']);
+        $data = $request->except(['image', 'no_asset_code', 'prefix_mode', 'it_asset_code', 'it_code']);
         $data['ownership_type'] = $data['ownership_type'] ?? 'owned';
+
+        // บันทึกรหัสคุมไอที (IT Asset Tag)
+        $itTag = trim($request->input('it_code') ?: $request->input('it_asset_code', ''));
+        if (!empty($itTag)) {
+            $data['it_code'] = $itTag;
+            $cleanNotes = preg_replace('/\[IT-TAG:\s*[^\]]+\]\s*/', '', $data['notes'] ?? '');
+            $data['notes'] = trim("[IT-TAG: {$itTag}]\n" . $cleanNotes);
+        }
 
         // Auto-format fallback specs string if left empty
         if (empty($data['specs'])) {
@@ -405,7 +464,23 @@ class AssetController extends Controller
 
     public function update(Request $request, Asset $asset)
     {
+        // จัดการกรณีเครื่องเช่า / รับบริจาค / รอพัสดุออกเลข (ไม่มีเลขพัสดุ)
+        $isRented = ($request->input('ownership_type') === 'rented') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'RENT-');
+        $isDonated = ($request->input('ownership_type') === 'donated') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'DON-');
+        $noAssetCode = $request->boolean('no_asset_code') || empty($request->input('asset_code')) || $isRented || $isDonated;
+
+        if ($noAssetCode && !$asset->has_official_asset_code) {
+            $prefixTemp = $isRented ? 'RENT' : ($isDonated ? 'DON' : 'PENDING');
+            $rawTag = $request->input('it_code') ?: $request->input('it_asset_code');
+            $cleanTag = $rawTag ? preg_replace('/[^A-Za-z0-9_-]/', '', $rawTag) : $asset->id;
+            $request->merge([
+                'asset_code' => "{$prefixTemp}-{$cleanTag}"
+            ]);
+        }
+
         $request->validate([
+            'it_code' => 'nullable|string|max:50',
+            'it_asset_code' => 'nullable|string|max:50',
             'asset_code' => 'required|string|max:100|unique:it_assets,asset_code,' . $asset->id,
             'serial_number' => 'nullable|string|max:100',
             'hardware_id' => 'nullable|string|max:100',
@@ -451,10 +526,19 @@ class AssetController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $data = $request->except(['image']);
+        $data = $request->except(['image', 'no_asset_code', 'prefix_mode', 'it_asset_code', 'it_code']);
         if (empty($data['ownership_type'])) {
             $data['ownership_type'] = $asset->ownership_type ?? 'owned';
         }
+
+        // บันทึกรหัสคุมไอที (IT Asset Tag)
+        $itTag = trim($request->input('it_code') ?: $request->input('it_asset_code', ''));
+        if (!empty($itTag)) {
+            $data['it_code'] = $itTag;
+            $cleanNotes = preg_replace('/\[IT-TAG:\s*[^\]]+\]\s*/', '', $data['notes'] ?? $asset->notes ?? '');
+            $data['notes'] = trim("[IT-TAG: {$itTag}]\n" . $cleanNotes);
+        }
+
 
         // Auto-format fallback specs string if left empty
         if (empty($data['specs'])) {

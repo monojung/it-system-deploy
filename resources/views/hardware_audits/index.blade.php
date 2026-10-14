@@ -62,11 +62,11 @@
                        style="background: #ffffff; color: #0284c7; font-weight: 700; padding: 7px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); text-decoration: none; transition: all 0.2s; font-size: 12.5px;"
                        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 14px rgba(0,0,0,0.16)'"
                        onmouseout="this.style.transform='none'; this.style.boxShadow='0 3px 10px rgba(0,0,0,0.1)'"
-                       title="ดาวน์โหลดโปรแกรม THC IT Agent (Standalone .exe 34 KB รันได้ทันที มี System Tray Icon บอกสถานะ Online/Offline)">
+                       title="ดาวน์โหลดโปรแกรม THC IT Agent (Standalone .exe 46 KB รันได้ทันที มี System Tray Icon บอกสถานะ Online/Offline)">
                         <i class="bi bi-download text-primary" style="font-size: 14px;"></i>
                         <span>โหลด Agent (.exe)</span>
-                        <span class="badge" style="background: #0284c7; color: #ffffff; font-size: 10px; padding: 2px 5px; border-radius: 5px;">
-                            v2.5.7
+                        <span class="badge" style="background: #16a34a; color: #ffffff; font-size: 10px; padding: 2px 5px; border-radius: 5px;">
+                            v2.9.0
                         </span>
                     </a>
 
@@ -1009,127 +1009,132 @@
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0 24px 0;">
                     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; text-align: center;">
                         <div style="width: 32px; height: 32px; border-radius: 50%; background: #0f766e; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto;">1</div>
-                        <div style="font-weight: 700; font-size: 13px; color: #0f172a;">ดาวน์โหลดหรือสั่งรัน</div>
-                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">เลือกไฟล์ .bat หรือคำสั่ง PowerShell One-Liner</div>
+                        <div style="font-weight: 700; font-size: 13px; color: #0f172a;">ดาวน์โหลดโปรแกรม Standalone</div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">ดาวน์โหลด THC_IT_Agent.exe ขนาด 46 KB แล้วเปิดได้ทันที</div>
                     </div>
                     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; text-align: center;">
                         <div style="width: 32px; height: 32px; border-radius: 50%; background: #0284c7; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto;">2</div>
-                        <div style="font-weight: 700; font-size: 13px; color: #0f172a;">สแกนสเปคอัตโนมัติ</div>
-                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">อ่าน CPU, RAM, SSD, OS, S/N ใน 3 วินาที</div>
+                        <div style="font-weight: 700; font-size: 13px; color: #0f172a;">สแตนด์บายในถาดระบบ</div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">ไอคอน 🟢 ข้างนาฬิกา พร้อมส่งสเปกเมื่อแอดมินสั่งดึง</div>
                     </div>
                     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; text-align: center;">
                         <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto;">3</div>
-                        <div style="font-weight: 700; font-size: 13px; color: #0f172a;">แอดมินกดอนุมัติ</div>
+                        <div style="font-weight: 700; font-size: 13px; color: #0f172a;">ดึงข้อมูลสเปกเข้าคลัง</div>
                         <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">ข้อมูลเข้าคิวรอแอดมินยืนยันอัปเดตลงคลัง</div>
                     </div>
                 </div>
 
-                <!-- Streamlined 3-Column Agent Deployment Section -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                <!-- Focused Standalone Agent Deployment Section -->
+                <div style="margin-bottom: 24px;">
                     
-                    {{-- Method 1: Standalone .EXE System Tray Agent (TOP RECOMMENDED) --}}
-                    <div style="background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #22c55e; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 25px -5px rgba(34, 197, 94, 0.2); position: relative; overflow: hidden;">
-                        <div style="position: absolute; right: -10px; top: -10px; background: #22c55e; color: #ffffff; font-size: 10.5px; font-weight: 800; padding: 4px 14px; border-radius: 0 0 0 12px; text-transform: uppercase;">
-                            แนะนำสูงสุด ★
+                    {{-- Method 1: Standalone .EXE System Tray Agent (SOLE OFFICIAL METHOD) --}}
+                    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 60%, #ecfdf5 100%); border: 2px solid #22c55e; border-radius: 18px; padding: 26px; box-shadow: 0 10px 30px -5px rgba(34, 197, 94, 0.22); position: relative; overflow: hidden;">
+                        <div style="position: absolute; right: 0; top: 0; background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; font-size: 11.5px; font-weight: 800; padding: 6px 18px; border-radius: 0 0 0 14px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(0,0,0,0.12);">
+                            ★ วิธีทางการแนะนำสูงสุด (Official Standard)
                         </div>
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #ffffff; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
-                                    <i class="bi bi-window-desktop"></i>
-                                </div>
-                                <div>
-                                    <span style="font-size: 14px; font-weight: 800; color: #15803d; display: block;">
+
+                        <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 18px; flex-wrap: wrap;">
+                            <div style="width: 52px; height: 52px; border-radius: 14px; background: #ffffff; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2); flex-shrink: 0;">
+                                <i class="bi bi-window-desktop"></i>
+                            </div>
+                            <div style="flex: 1; min-width: 260px;">
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <h4 style="font-size: 18px; font-weight: 800; color: #15803d; margin: 0;">
                                         วิธีที่ 1: โปรแกรม Standalone (.exe)
+                                    </h4>
+                                    <span class="badge" style="background: #16a34a; color: #ffffff; font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: 6px;">
+                                        v2.9.0 Production
                                     </span>
-                                    <span style="font-size: 11px; color: #166534; font-weight: 600;">
-                                        THC_IT_Agent.exe &bull; ขนาด 34 KB &bull; รันได้ทันที
+                                    <span class="badge" style="background: #ffffff; color: #166534; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; border: 1px solid #bbf7d0;">
+                                        ขนาด 46 KB
                                     </span>
+                                </div>
+                                <div style="font-size: 13px; color: #166534; font-weight: 600; margin-top: 4px;">
+                                    THC_IT_Agent.exe &bull; รันได้ทันที ไม่ต้องติดตั้ง ไม่ต้องมีสิทธิ์ Admin
                                 </div>
                             </div>
-                            <p style="font-size: 12.5px; color: #1e3a1f; line-height: 1.5; margin: 12px 0;">
-                                โหลดแล้วดับเบิลคลิกรันได้ทันที มีไอคอน 🟢 <strong>System Tray</strong> ข้างนาฬิกา แสดงสถานะ Online/Offline เชื่อมต่อกับ Server ตลอดเวลา <strong>สแตนด์บายไม่กินสเปคและไม่ส่งข้อมูลจนกว่าแอดมินจะกดดึง</strong>
-                            </p>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
-                            <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-success btn-sm" style="font-weight: 800; padding: 10px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);">
-                                <i class="bi bi-download"></i> ดาวน์โหลด THC_IT_Agent.exe (34 KB)
+
+                        <p style="font-size: 13.5px; color: #1e3a1f; line-height: 1.6; margin: 0 0 18px 0;">
+                            โปรแกรมตรวจสอบฮาร์ดแวร์ประจำเครื่องลูกข่าย พัฒนาด้วย Native C# .NET Framework เป็นไฟล์ Standalone ไฟล์เดียว โหลดแล้วดับเบิลคลิกเปิดใช้งานได้ทันที มีไอคอน 🟢 <strong>System Tray</strong> ข้างนาฬิกา แสดงสถานะ Online/Offline เชื่อมต่อกับระบบ IT แบบ Real-time <strong>สแตนด์บายกินทรัพยากรเครื่องน้อยมาก และจะไม่ส่งข้อมูลใดๆ จนกว่าแอดมินส่วนกลางจะกดสั่งดึงข้อมูล</strong>
+                        </p>
+
+                        <!-- 4 Highlights Grid -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                            <div style="background: rgba(255,255,255,0.85); border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 14px;">
+                                <div style="font-weight: 700; font-size: 12.5px; color: #15803d; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                    <i class="bi bi-broadcast text-success"></i> สถานะ Real-time Live
+                                </div>
+                                <div style="font-size: 11.5px; color: #374151; line-height: 1.4;">
+                                    ไอคอนข้างนาฬิกาบอกสถานะ Online ทันที แอดมินมองเห็นจากหน้าเว็บส่วนกลาง
+                                </div>
+                            </div>
+
+                            <div style="background: rgba(255,255,255,0.85); border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 14px;">
+                                <div style="font-weight: 700; font-size: 12.5px; color: #15803d; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                    <i class="bi bi-shield-check text-success"></i> ไม่โดน Antivirus บล็อก
+                                </div>
+                                <div style="font-size: 11.5px; color: #374151; line-height: 1.4;">
+                                    คอมไพล์เป็นไบนารี .NET แท้ ปลอดภัย 100% ไม่เสี่ยงโดนบล็อกเหมือนสคริปต์
+                                </div>
+                            </div>
+
+                            <div style="background: rgba(255,255,255,0.85); border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 14px;">
+                                <div style="font-weight: 700; font-size: 12.5px; color: #15803d; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                    <i class="bi bi-lightning-charge-fill text-warning"></i> สแกนลึกระดับ WMI/BIOS
+                                </div>
+                                <div style="font-size: 11.5px; color: #374151; line-height: 1.4;">
+                                    อ่าน S/N เมนบอร์ด, CPU, บัส RAM, ชนิด SSD NVMe และ MAC Address ครบถ้วน
+                                </div>
+                            </div>
+
+                            <div style="background: rgba(255,255,255,0.85); border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 14px;">
+                                <div style="font-weight: 700; font-size: 12.5px; color: #15803d; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                    <i class="bi bi-arrow-repeat text-primary"></i> Auto-Discovery Failover
+                                </div>
+                                <div style="font-size: 11.5px; color: #374151; line-height: 1.4;">
+                                    สลับเส้นทางเชื่อมต่อ MOPH HTTPS / IP LAN ภายในอัตโนมัติหากเครือข่ายเปลี่ยน
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Main Action Bar -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; background: #ffffff; border: 1.5px solid #86efac; border-radius: 12px; padding: 14px 18px;">
+                            <div>
+                                <div style="font-weight: 800; font-size: 13.5px; color: #0f172a;">
+                                    พร้อมใช้งานทันทีบนระบบปฏิบัติการ Windows ทุกรุ่น
+                                </div>
+                                <div style="font-size: 12px; color: #64748b;">
+                                    รองรับ Windows 7, 8, 8.1, 10, 11 และ Windows Server (ต้องการ .NET Framework 4.0 ขึ้นไป ซึ่งมีติดมากับ Windows ทุกเครื่อง)
+                                </div>
+                            </div>
+                            <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-success" style="font-weight: 800; font-size: 14px; padding: 12px 24px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35); flex-shrink: 0;">
+                                <i class="bi bi-download" style="font-size: 18px;"></i> ดาวน์โหลด THC_IT_Agent.exe (v2.9.0 • 46 KB)
                             </a>
                         </div>
                     </div>
+                </div>
 
-                    {{-- Method 2: One-Click Self-Healing Batch Installer --}}
-                    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm);">
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                                    <i class="bi bi-hdd-rack-fill"></i>
-                                </div>
-                                <div>
-                                    <span style="font-weight: 800; font-size: 14px; color: #0f172a; display: block;">
-                                        วิธีที่ 2: ติดตั้งลงเครื่องถาวร (Batch)
-                                    </span>
-                                    <span style="font-size: 11px; color: #64748b;">
-                                        install_thc_agent.bat &bull; Auto-Start on Boot
-                                    </span>
-                                </div>
+                {{-- Agent Lifecycle Management Tools: Updater & Uninstaller --}}
+                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-top: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef2f2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                <i class="bi bi-tools"></i>
                             </div>
-                            <p style="font-size: 12.5px; color: #374151; line-height: 1.5; margin: 12px 0;">
-                                ดับเบิลคลิกไฟล์ <code>install_thc_agent.bat</code> ระบบจะคัดลอก Agent ไปยัง <code>C:\ProgramData</code> และตั้งค่าให้เริ่มทำงานอัตโนมัติเมื่อเปิดเครื่อง (Windows Startup) ทันที
-                            </p>
+                            <div>
+                                <h4 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 0;">
+                                    เครื่องมือจัดการและดูแลรักษา Agent ประจำเครื่อง (Agent Lifecycle Tools)
+                                </h4>
+                                <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">
+                                    สคริปต์สำหรับอัปเดตเวอร์ชัน Agent อัตโนมัติ และสคริปต์ถอนการติดตั้ง Agent ออกจากเครื่องลูกข่ายอย่างหมดจด
+                                </p>
+                            </div>
                         </div>
-                        <a href="{{ asset('agent/install_thc_agent.bat') }}" download class="btn btn-outline-primary btn-sm" style="font-weight: 700; width: 100%; padding: 10px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                            <i class="bi bi-download"></i> ดาวน์โหลด install_thc_agent.bat
-                        </a>
+                        <span class="badge" style="background: #eff6ff; color: #2563eb; font-weight: 700; font-size: 11.5px; padding: 5px 12px; border-radius: 8px; border: 1px solid #bfdbfe;">
+                            <i class="bi bi-shield-check me-1"></i> Agent v2.9.0 Production Standalone
+                        </span>
                     </div>
-
-                    {{-- Method 3: Web One-Liner (No file download needed) --}}
-                    <div style="background: #0f172a; border-radius: 16px; padding: 22px; color: #f8fafc; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 20px rgba(15,23,42,0.15);">
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                                    <i class="bi bi-terminal-fill"></i>
-                                </div>
-                                <div>
-                                    <span style="font-size: 14px; font-weight: 800; color: #38bdf8; display: block;">
-                                        วิธีที่ 3: รันคำสั่ง PowerShell ด่วน
-                                    </span>
-                                    <span style="font-size: 11px; color: #94a3b8;">
-                                        ไม่ต้องโหลดไฟล์ &bull; ตรวจสเปกครั้งเดียว
-                                    </span>
-                                </div>
-                            </div>
-                            <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 8px 0 10px 0;">
-                                เปิด PowerShell วางคำสั่งด้านล่างแล้วกด Enter ระบบจะส่งสเปคเข้าสู่ระบบทันที:
-                            </p>
-                            <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;">
-                                <code id="networkCmdText" style="font-family: Consolas, monospace; font-size: 11px; color: #38bdf8; display: block; word-break: break-all; line-height: 1.4;">[Net.ServicePointManager]::SecurityProtocol = 3072; $w = New-Object Net.WebClient; $w.Encoding = [Text.Encoding]::UTF8; iex ($w.DownloadString('{{ url('/agent/thc_audit_agent.ps1') }}'))</code>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-outline-info btn-sm" onclick="copyNetworkCommand()" style="font-weight: 700; padding: 9px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                            <i class="bi bi-clipboard me-1"></i> คัดลอกคำสั่ง PowerShell
-                        </button>
-                    </div>
-
-                    {{-- Agent Lifecycle Management Tools: Updater & Uninstaller --}}
-                    <div style="grid-column: 1 / -1; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-top: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
-                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef2f2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                                    <i class="bi bi-tools"></i>
-                                </div>
-                                <div>
-                                    <h4 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 0;">
-                                        เครื่องมือจัดการและดูแลรักษา Agent ประจำเครื่อง (Agent Lifecycle Tools)
-                                    </h4>
-                                    <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">
-                                        สคริปต์สำหรับอัปเดตเวอร์ชัน Agent อัตโนมัติ และสคริปต์ถอนการติดตั้ง Agent ออกจากเครื่องลูกข่ายอย่างหมดจด
-                                    </p>
-                                </div>
-                            </div>
-                            <span class="badge" style="background: #eff6ff; color: #2563eb; font-weight: 700; font-size: 11.5px; padding: 5px 12px; border-radius: 8px; border: 1px solid #bfdbfe;">
-                                <i class="bi bi-shield-check me-1"></i> Agent v{{ app_version() }} Production
-                            </span>
-                        </div>
 
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
                             {{-- Tool 1: Updater --}}
@@ -1171,7 +1176,7 @@
                     </div>
 
                     {{-- Official System Documentation & PDF Manuals (v2.8.0) --}}
-                    <div style="grid-column: 1 / -1; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-top: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
+                    <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-top: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
                         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <div style="width: 38px; height: 38px; border-radius: 10px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px;">
@@ -1256,7 +1261,6 @@
 
                 </div>
             </div>
-        </div>
         @endif
 
     </div>
@@ -3205,18 +3209,6 @@
 
     function closeAuditDiffModal() {
         document.getElementById('auditDiffModal').style.display = 'none';
-    }
-
-    // Copy network command button
-    function copyNetworkCommand() {
-        const text = `[Net.ServicePointManager]::SecurityProtocol = 3072; $w = New-Object Net.WebClient; $w.Encoding = [Text.Encoding]::UTF8; iex ($w.DownloadString('{{ url('/agent/thc_audit_agent.ps1') }}'))`;
-        navigator.clipboard.writeText(text).then(() => {
-            if (window.Swal) {
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'คัดลอกคำสั่งเรียบร้อยแล้ว (UTF-8 100%)', showConfirmButton: false, timer: 1500 });
-            } else {
-                alert('คัดลอกคำสั่งเรียบร้อยแล้ว (UTF-8 100%)');
-            }
-        });
     }
 
     // Filter department cards

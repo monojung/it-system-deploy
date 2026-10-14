@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>เข้าสู่ระบบ - กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลทุ่งหัวช้าง</title>
     
+    <!-- Favicon & Hospital Emblem -->
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}?v=2">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=2">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}?v=2">
+    
     <!-- Google Fonts: Prompt & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -110,18 +115,25 @@
         }
 
         .hospital-icon-wrapper {
-            width: 72px;
-            height: 72px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.18);
-            backdrop-filter: blur(10px);
+            width: 76px;
+            height: 76px;
+            border-radius: 22px;
+            background: #ffffff;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 36px;
             margin-bottom: 14px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.35);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            padding: 4px;
+            overflow: hidden;
+        }
+
+        .hospital-icon-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
 
         .auth-title {
@@ -609,7 +621,7 @@
         <!-- Header -->
         <div class="auth-header">
             <div class="hospital-icon-wrapper">
-                <i class="bi bi-hospital"></i>
+                <img src="{{ asset('images/logo.png') }}?v=2" alt="MOPH Logo">
             </div>
             <h1 class="auth-title">ระบบบริหารจัดการสารสนเทศ</h1>
             <p class="auth-subtitle">กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลทุ่งหัวช้าง</p>

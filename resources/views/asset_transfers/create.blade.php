@@ -47,6 +47,7 @@
                                 @foreach($assets as $ast)
                                     <option value="{{ $ast->id }}" 
                                         data-code="{{ $ast->asset_code }}"
+                                        data-it-tag="{{ $ast->it_asset_code }}"
                                         data-name="{{ $ast->name }}"
                                         data-brand="{{ $ast->brand }} {{ $ast->model }}"
                                         data-sn="{{ $ast->serial_number }}"
@@ -57,7 +58,7 @@
                                         data-ip="{{ $ast->ip_address }}"
                                         data-type="{{ $ast->deviceType?->name ?? 'อุปกรณ์' }}"
                                         {{ (old('asset_id', $selectedAsset?->id) == $ast->id) ? 'selected' : '' }}>
-                                        [{{ $ast->asset_code }}] {{ $ast->name }} - {{ $ast->department?->name ?? 'ไม่ระบุแผนก' }} ({{ $ast->location_detail ?: 'ไม่ระบุห้อง' }})
+                                        [{{ $ast->it_asset_code }}] {{ $ast->name }} - {{ $ast->department?->name ?? 'ไม่ระบุแผนก' }} (พัสดุ: {{ $ast->official_asset_code_display }})
                                     </option>
                                 @endforeach
                             </select>

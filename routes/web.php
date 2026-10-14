@@ -227,6 +227,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
     // IT Assets (คลังคอมพิวเตอร์)
     Route::get('/assets', [AssetController::class, 'index'])->name('assets.index');
 
+
     // IT Staff / Admin asset management
     Route::middleware(['role:admin,technician'])->group(function () {
         Route::get('/assets/create/new', [AssetController::class, 'create'])->name('assets.create');

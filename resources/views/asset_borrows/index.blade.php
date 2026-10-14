@@ -197,13 +197,22 @@
                                 <div style="font-weight: 700; color: #0f172a;">
                                     {{ $borrow->asset->name }}
                                 </div>
-                                <div style="font-size: 11.5px; color: #475569; display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                                <div style="font-size: 11.5px; color: #475569; display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap;">
+                                    <span class="badge" style="background: #eef2ff; color: #4338ca; font-size: 11px; font-weight: 700; border: 1px solid #c7d2fe; font-family: monospace;">
+                                        <i class="bi bi-tag-fill me-1"></i>{{ $borrow->asset->it_asset_code }}
+                                    </span>
+                                    @if($borrow->asset->has_official_asset_code)
+                                        <code>{{ $borrow->asset->asset_code }}</code>
+                                    @else
+                                        <span style="font-size: 10px; color: #c2410c; background: #fff7ed; padding: 1px 5px; border-radius: 4px; border: 1px dashed #fed7aa;">
+                                            {{ $borrow->asset->official_asset_code_display }}
+                                        </span>
+                                    @endif
                                     @if($borrow->asset->brand || $borrow->asset->model)
                                         <span class="badge bg-light text-dark border px-1 py-0" style="font-size: 10.5px;">
                                             {{ $borrow->asset->brand }} {{ $borrow->asset->model }}
                                         </span>
                                     @endif
-                                    <code>{{ $borrow->asset->asset_code }}</code>
                                     @if($borrow->asset->serial_number)
                                         <span style="color: #94a3b8;">(S/N: {{ $borrow->asset->serial_number }})</span>
                                     @endif

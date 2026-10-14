@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>แบบฟอร์มขอข้อมูลสารสนเทศ - {{ $dataRequest->request_no }}</title>
+    <!-- Favicon & Hospital Emblem -->
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}?v=2">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
@@ -146,17 +149,24 @@
         }
 
         .hospital-emblem {
-            width: 56px;
-            height: 56px;
-            border: 2px solid #0f766e;
-            border-radius: 12px;
+            width: 58px;
+            height: 58px;
+            border: 1.5px solid #0f766e;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
-            color: #0f766e;
-            background: #f0fdfa;
+            background: #ffffff;
             flex-shrink: 0;
+            overflow: hidden;
+            padding: 2px;
+        }
+
+        .hospital-emblem img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
 
         .hospital-title h1 {
@@ -465,7 +475,7 @@
             <div class="doc-header">
                 <div class="header-brand">
                     <div class="hospital-emblem">
-                        <i class="bi bi-hospital"></i>
+                        <img src="{{ asset('images/logo.png') }}?v=2" alt="MOPH Logo">
                     </div>
                     <div class="hospital-title">
                         <h1>{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }} {{ setting('hospital_address') ? '(' . Str::limit(setting('hospital_address'), 40) . ')' : '' }}</h1>

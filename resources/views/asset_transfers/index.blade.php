@@ -182,13 +182,24 @@
                         {{-- Asset Details --}}
                         <td style="padding: 14px 16px;">
                             @if($transfer->asset)
-                                <div style="font-weight: 700; font-size: 13.5px; color: #0f172a;">
-                                    <a href="{{ route('assets.show', $transfer->asset) }}" style="color: inherit; text-decoration: none;">
-                                        {{ $transfer->asset->asset_code }}
-                                    </a>
+                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <span class="badge" style="background: #eef2ff; color: #4338ca; font-size: 11px; font-weight: 700; border: 1px solid #c7d2fe; font-family: monospace;">
+                                        <i class="bi bi-tag-fill me-1"></i>{{ $transfer->asset->it_asset_code }}
+                                    </span>
+                                    @if($transfer->asset->has_official_asset_code)
+                                        <span style="font-family: monospace; font-size: 11.5px; color: #64748b; font-weight: 600;">
+                                            {{ $transfer->asset->asset_code }}
+                                        </span>
+                                    @else
+                                        <span style="font-size: 10px; color: #c2410c; background: #fff7ed; padding: 1px 5px; border-radius: 4px; border: 1px dashed #fed7aa;">
+                                            {{ $transfer->asset->official_asset_code_display }}
+                                        </span>
+                                    @endif
                                 </div>
-                                <div style="font-size: 12px; color: #475569;">
-                                    {{ $transfer->asset->name }}
+                                <div style="font-size: 12px; color: #475569; margin-top: 2px;">
+                                    <a href="{{ route('assets.show', $transfer->asset) }}" style="color: inherit; text-decoration: none; font-weight: 600;">
+                                        {{ $transfer->asset->name }}
+                                    </a>
                                 </div>
                                 <div style="font-size: 11.5px; color: #94a3b8;">
                                     {{ $transfer->asset->brand }} {{ $transfer->asset->model }}

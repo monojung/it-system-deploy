@@ -131,7 +131,7 @@
                                 data-status="{{ $asset->status_label }}"
                                 data-dept="{{ $asset->department?->name ?? 'คลังส่วนกลาง' }}"
                                 {{ old('asset_id', $borrow->asset_id) == $asset->id ? 'selected' : '' }}>
-                            [{{ $asset->status_label }}] {{ $asset->name }} - {{ $asset->brand }} {{ $asset->model }} (รหัส: {{ $asset->asset_code }})
+                            [{{ $asset->status_label }}] {{ $asset->it_asset_code }} - {{ $asset->name }} (พัสดุ: {{ $asset->official_asset_code_display }})
                         </option>
                     @endforeach
                 </select>
@@ -186,7 +186,7 @@
                                  id="device-card-{{ $asset->id }}"
                                  data-id="{{ $asset->id }}"
                                  data-category="{{ $cat }}"
-                                 data-search="{{ mb_strtolower($asset->name . ' ' . $asset->brand . ' ' . $asset->model . ' ' . $asset->asset_code . ' ' . $asset->serial_number . ' ' . $asset->formatted_specs . ' ' . ($asset->department?->name ?? '')) }}"
+                                 data-search="{{ mb_strtolower($asset->name . ' ' . $asset->brand . ' ' . $asset->model . ' ' . $asset->it_asset_code . ' ' . $asset->asset_code . ' ' . $asset->serial_number . ' ' . $asset->formatted_specs . ' ' . ($asset->department?->name ?? '')) }}"
                                  onclick="selectAssetCard('{{ $asset->id }}')"
                                  style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.2s ease; position: relative;">
                                 
@@ -210,9 +210,18 @@
                                 </div>
 
                                 <div style="margin-top: 10px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                    <span style="font-family: monospace; font-size: 11px; background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 5px; font-weight: 600;">
-                                        {{ $asset->asset_code }}
+                                    <span class="badge" style="background: #eef2ff; color: #4338ca; font-size: 11px; font-weight: 700; border: 1px solid #c7d2fe; font-family: monospace;">
+                                        <i class="bi bi-tag-fill me-1"></i>{{ $asset->it_asset_code }}
                                     </span>
+                                    @if($asset->has_official_asset_code)
+                                        <span style="font-family: monospace; font-size: 11px; background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 5px; font-weight: 600;">
+                                            {{ $asset->asset_code }}
+                                        </span>
+                                    @else
+                                        <span style="font-size: 10.5px; background: #fff7ed; color: #c2410c; padding: 2px 6px; border-radius: 5px; border: 1px dashed #fed7aa;">
+                                            {{ $asset->official_asset_code_display }}
+                                        </span>
+                                    @endif
                                     @if($asset->status === 'spare')
                                         <span class="badge" style="background: #e0f2fe; color: #0284c7; font-size: 10.5px;">เครื่องสำรอง</span>
                                     @else

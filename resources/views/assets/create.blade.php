@@ -19,6 +19,32 @@
 
 @push('styles')
 <style>
+    .btn-prefix-pill {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 600;
+        cursor: pointer;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        user-select: none;
+    }
+    .btn-prefix-pill.active {
+        background: #0d9488;
+        color: #ffffff;
+        border-color: #0f766e;
+        box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3);
+    }
+    .btn-prefix-pill:hover:not(.active) {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+
     .form-section-card {
         background: #ffffff;
         border-radius: 14px;
@@ -317,13 +343,95 @@
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group" style="flex: 1.2;">
-                        <label class="form-label required" for="asset_code">หมายเลขครุภัณฑ์ (Asset Code)</label>
-                        <input type="text" id="asset_code" name="asset_code" class="form-control"
-                               value="{{ old('asset_code') }}" placeholder="เช่น 7440-001-0001/67" required autofocus>
-                        <span class="form-text">รหัสหมายเลขครุภัณฑ์ตามทะเบียนพัสดุ รพ.ทุ่งหัวช้าง</span>
+                {{-- Dual Identifiers Setup: รหัสคุมไอที (Smart Auto-Binding) & รหัสพัสดุราชการ --}}
+                <div style="background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 100%); border: 1.5px solid #99f6e4; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 28px; height: 28px; border-radius: 7px; background: #0d9488; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+                                <i class="bi bi-link-45deg" style="font-size: 16px;"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13.5px; color: #0f766e;">การผูกรหัสประจำตัวครุภัณฑ์อัตโนมัติ (Smart Dual-Code Binding)</strong>
+                                <span style="font-size: 11.5px; color: #64748b; margin-left: 4px;">ผูกรหัสคุมฝ่าย IT เข้ากับรหัสครุภัณฑ์พัสดุราชการโดยตรง</span>
+                            </div>
+                        </div>
                     </div>
+
+                    {{-- Prefix Selector: รหัสย่อแผนก, RENT (เครื่องเช่า), DON (รับบริจาค), กำหนดเอง --}}
+                    <div style="background: #ffffff; border: 1px solid #ccfbf1; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 12px; font-weight: 700; color: #0f766e;">หมวด / Prefix รหัสคุม:</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" id="prefixButtonGroup">
+                            <label class="btn-prefix-pill active" onclick="setPrefixMode('dept')">
+                                <input type="radio" name="prefix_mode" value="dept" checked style="display: none;">
+                                <i class="bi bi-hospital"></i> รหัสย่อแผนก (<span id="deptCodeDisplay">THC</span>)
+                            </label>
+                            <label class="btn-prefix-pill" onclick="setPrefixMode('rent')">
+                                <input type="radio" name="prefix_mode" value="rent" style="display: none;">
+                                <i class="bi bi-printer"></i> RENT (เครื่องเช่า)
+                            </label>
+                            <label class="btn-prefix-pill" onclick="setPrefixMode('don')">
+                                <input type="radio" name="prefix_mode" value="don" style="display: none;">
+                                <i class="bi bi-gift"></i> DON (รับบริจาค)
+                            </label>
+                            <label class="btn-prefix-pill" onclick="setPrefixMode('custom')">
+                                <input type="radio" name="prefix_mode" value="custom" style="display: none;">
+                                <i class="bi bi-pencil"></i> กำหนดเอง
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="margin-bottom: 0;">
+                        {{-- 1. Official Asset Code (Primary Source) --}}
+                        <div class="form-group" style="flex: 1.3;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label class="form-label" for="asset_code">
+                                    <i class="bi bi-file-earmark-text text-primary"></i> หมายเลขครุภัณฑ์พัสดุ (Asset No.)
+                                </label>
+                                <label style="font-size: 11.5px; color: #64748b; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" id="no_asset_code" name="no_asset_code" value="1" onchange="toggleNoAssetCode(this)">
+                                    <span style="color: #ea580c; font-weight: 600;">ไม่มีเลขพัสดุ (เครื่องเช่า / บริจาค)</span>
+                                </label>
+                            </div>
+                            <input type="text" id="asset_code" name="asset_code" class="form-control"
+                                   value="{{ old('asset_code') }}" placeholder="เช่น 7440-001-0005/66 หรือ 7440-002-0001/67" 
+                                   style="font-family: monospace; font-size: 13.5px;"
+                                   oninput="handleAssetCodeInput(this.value)">
+                            <span class="form-text" id="asset_code_hint">พิมพ์เลขพัสดุเพื่อผูกรหัส IT Tag อัตโนมัติ (เช่น 7440-001-0005/66 &rarr; ลำดับ 0005, ปี 66)</span>
+                        </div>
+
+                        {{-- 2. IT Asset Tag (Auto-Bound Target) --}}
+                        <div class="form-group" style="flex: 1.2;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label class="form-label required" for="it_code" style="color: #0f766e;">
+                                    <i class="bi bi-tag-fill text-primary"></i> รหัสคุมครุภัณฑ์ไอที (IT Tag)
+                                </label>
+                                <span id="itBindingBadge" class="badge" style="background: #0d9488; color: white; font-size: 10px;">
+                                    <i class="bi bi-link-45deg"></i> ผูกอัตโนมัติ
+                                </span>
+                            </div>
+                            <div style="position: relative;">
+                                <input type="text" id="it_code" name="it_code" class="form-control"
+                                       value="{{ old('it_code', old('it_asset_code')) }}" placeholder="เช่น ER-PC-66-0005"
+                                       style="font-family: monospace; font-size: 14px; font-weight: 700; color: #0f766e; background: #ffffff; border-color: #0d9488;"
+                                       oninput="handleManualTagInput()">
+                                <div style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px;">
+                                    <button type="button" id="btnToggleManualTag" onclick="toggleManualTag()" 
+                                            style="background: #f0fdfa; border: 1px solid #ccfbf1; color: #0d9488; border-radius: 4px; padding: 3px 8px; font-size: 11px; font-weight: 600; cursor: pointer;" 
+                                            title="คลิกเพื่อปลดล็อกแก้ไขรหัสเอง หรือซิงค์อัตโนมัติ">
+                                        <i class="bi bi-pencil" id="manualTagIcon"></i> <span id="manualTagLabel">แก้ไขเอง</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <span class="form-text" id="it_tag_hint" style="color: #0f766e; font-size: 11.5px;">
+                                สูตร: [แผนก] - [ประเภท] - [ปี] - [ลำดับจากเลขพัสดุ]
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
 
                     <div class="form-group" style="flex: 1;">
                         <label class="form-label" for="serial_number">Serial Number (S/N)</label>
@@ -510,11 +618,11 @@
                         <label class="form-label" for="department_id">
                             <i class="bi bi-building text-secondary"></i> แผนก / หน่วยงานที่รับผิดชอบ
                         </label>
-                        <select name="department_id" id="department_id" class="form-select">
+                        <select name="department_id" id="department_id" class="form-select" onchange="handleDepartmentChange(this)">
                             <option value="">-- ไม่ระบุแผนก --</option>
                             @foreach($departments as $dept)
-                                <option value="{{ $dept->id }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>
-                                    {{ $dept->name }}
+                                <option value="{{ $dept->id }}" data-code="{{ $dept->code }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>
+                                    {{ $dept->name }} {{ $dept->code ? '['.$dept->code.']' : '' }}
                                 </option>
                             @endforeach
                         </select>
@@ -1094,7 +1202,332 @@
         if (box) {
             box.style.display = (type === 'rented') ? 'block' : 'none';
         }
+        autoGenerateItAssetTag();
     }
+    let currentPrefixMode = 'dept';
+    let isManualTagOverride = false;
+
+    /**
+     * วิเคราะห์รหัสครุภัณฑ์พัสดุราชการ (Client-side Parser)
+     * สอดคล้อง 100% กับ ItAssetCodeGeneratorService::parseOfficialAssetCode ของฝั่ง Backend
+     */
+    function parseAssetCodeJs(code) {
+        if (!code) return { hasCode: false, seq: null, year: null };
+        const c = code.trim().toUpperCase();
+        if (c.startsWith('RENT-') || c.startsWith('DON-') || c.startsWith('PENDING-') || c.startsWith('TEMP-') || c.startsWith('NO-ASSET') || c.startsWith('NOASSET-')) {
+            return { hasCode: false, seq: null, year: null };
+        }
+        // รูปแบบ 1: มี Slash ระบุปีงบประมาณ เช่น 7440-001-0005/66 หรือ .../2566
+        const slashMatch = c.match(/(?:^|[^\d])(\d+)\/(\d{2,4})$/);
+        if (slashMatch) {
+            return {
+                hasCode: true,
+                seq: slashMatch[1],
+                year: slashMatch[2].slice(-2)
+            };
+        }
+        // รูปแบบ 2: มาตรฐาน 7440-xxx-xxxx หรือลงท้ายด้วยขีดตามด้วยตัวเลข
+        const dashMatch = c.match(/^7440-\d+-(\d+)$/) || c.match(/-(\d{1,6})$/);
+        if (dashMatch) {
+            return {
+                hasCode: true,
+                seq: dashMatch[1],
+                year: null
+            };
+        }
+        return { hasCode: true, seq: null, year: null };
+    }
+
+    function resolveSelectedTypeCode() {
+        const typeSelect = document.getElementById('device_type_id');
+        const selectedOption = typeSelect ? typeSelect.options[typeSelect.selectedIndex] : null;
+        let typeCode = selectedOption ? (selectedOption.getAttribute('data-code') || '') : '';
+        if (!typeCode && selectedOption && selectedOption.value) {
+            const text = selectedOption.text.toLowerCase();
+            if (text.includes('pc') || text.includes('ตั้งโต๊ะ')) typeCode = 'PC';
+            else if (text.includes('โน้ต') || text.includes('nb') || text.includes('laptop')) typeCode = 'NB';
+            else if (text.includes('all-in-one') || text.includes('aio')) typeCode = 'AIO';
+            else if (text.includes('สติกเกอร์') || text.includes('ความร้อน')) typeCode = 'THM';
+            else if (text.includes('พิมพ์') || text.includes('printer')) typeCode = 'PRN';
+            else if (text.includes('สำรองไฟ') || text.includes('ups')) typeCode = 'UPS';
+            else if (text.includes('เครือข่าย') || text.includes('switch')) typeCode = 'NET';
+            else if (text.includes('สแกน') || text.includes('scanner')) typeCode = 'SCN';
+            else if (text.includes('server') || text.includes('เซิร์ฟ')) typeCode = 'SRV';
+            else typeCode = 'DEV';
+        }
+        return typeCode || 'DEV';
+    }
+
+    function resolveSelectedDeptCode() {
+        const deptSelect = document.getElementById('department_id');
+        const selectedDept = deptSelect ? deptSelect.options[deptSelect.selectedIndex] : null;
+        let code = selectedDept ? (selectedDept.getAttribute('data-code') || '') : '';
+        if (!code && selectedDept && selectedDept.value) {
+            const name = selectedDept.text.toLowerCase();
+            if (name.includes('it') || name.includes('สารสนเทศ')) code = 'IT';
+            else if (name.includes('er') || name.includes('ฉุกเฉิน')) code = 'ER';
+            else if (name.includes('opd') || name.includes('ผู้ป่วยนอก')) code = 'OPD';
+            else if (name.includes('ipd') || name.includes('ผู้ป่วยใน')) code = 'IPD';
+            else if (name.includes('lab') || name.includes('ชันสูตร')) code = 'LAB';
+            else if (name.includes('phar') || name.includes('เภสัช')) code = 'PHAR';
+            else if (name.includes('xray') || name.includes('รังสี')) code = 'XRAY';
+            else if (name.includes('dent') || name.includes('ทันต')) code = 'DENT';
+            else if (name.includes('adm') || name.includes('บริหาร')) code = 'ADM';
+        }
+        return code || 'THC';
+    }
+
+    function resolveBudgetYearShort() {
+        const bYearInput = document.getElementById('budget_year');
+        if (bYearInput && bYearInput.value) {
+            const val = bYearInput.value.trim();
+            if (val.length >= 2) {
+                return val.slice(-2);
+            }
+        }
+        const now = new Date();
+        const beYear = (now.getMonth() + 1 >= 10) ? now.getFullYear() + 544 : now.getFullYear() + 543;
+        return String(beYear).slice(-2);
+    }
+
+    /**
+     * คำนวณและผูกรหัสคุมไอทีอัตโนมัติ (Smart Auto-Binding)
+     */
+    function updateSmartBoundItTag() {
+        if (isManualTagOverride && currentPrefixMode === 'custom') {
+            return;
+        }
+
+        const typeCode = resolveSelectedTypeCode();
+        const deptCode = resolveSelectedDeptCode();
+        const defaultYear = resolveBudgetYearShort();
+        const assetCodeVal = document.getElementById('asset_code')?.value || '';
+        const parsed = parseAssetCodeJs(assetCodeVal);
+
+        let prefix = deptCode;
+        let seq = '001';
+        let year = defaultYear;
+        let badgeHtml = '';
+        let hintHtml = '';
+
+        const itInput = document.getElementById('it_code') || document.getElementById('it_asset_code');
+        const itBadge = document.getElementById('itBindingBadge');
+        const itHint = document.getElementById('it_tag_hint');
+
+        if (currentPrefixMode === 'rent') {
+            prefix = 'RENT';
+            badgeHtml = '<i class="bi bi-printer"></i> เครื่องเช่า (ไม่มีเลขพัสดุ)';
+            hintHtml = `สูตร: RENT + ${typeCode} + ${year} + ${seq} &rarr; เครื่องสัญญาเช่า คุมด้วยรหัส IT`;
+            if (itBadge) itBadge.style.background = '#ea580c';
+        } else if (currentPrefixMode === 'don') {
+            prefix = 'DON';
+            badgeHtml = '<i class="bi bi-gift"></i> รับบริจาค (ไม่มีเลขพัสดุ)';
+            hintHtml = `สูตร: DON + ${typeCode} + ${year} + ${seq} &rarr; ครุภัณฑ์รับบริจาค คุมด้วยรหัส IT`;
+            if (itBadge) itBadge.style.background = '#0284c7';
+        } else {
+            prefix = deptCode;
+            if (parsed.hasCode && parsed.seq) {
+                seq = parsed.seq.length < 3 ? parsed.seq.padStart(3, '0') : parsed.seq;
+                year = parsed.year || defaultYear;
+                badgeHtml = `<i class="bi bi-link-45deg"></i> ผูกตรงกับเลขพัสดุ (${seq} / ปี ${year})`;
+                hintHtml = `🔗 <strong>ผูกรหัสอัตโนมัติ:</strong> [แผนก: ${prefix}] - [ประเภท: ${typeCode}] - [ปี: ${year}] - [ลำดับพัสดุ: ${seq}]`;
+                if (itBadge) itBadge.style.background = '#0d9488';
+            } else {
+                seq = 'T001';
+                year = defaultYear;
+                badgeHtml = '<i class="bi bi-clock-history"></i> รหัสชั่วคราว (รอเลขพัสดุ)';
+                hintHtml = `รหัสชั่วคราว: [${prefix}]-[${typeCode}]-[${year}]-[T001] (เมื่อใส่เลขพัสดุจะผูกตรงอัตโนมัติ)`;
+                if (itBadge) itBadge.style.background = '#64748b';
+            }
+        }
+
+        const newCode = `${prefix}-${typeCode}-${year}-${seq}`;
+        if (itInput) {
+            itInput.value = newCode;
+            itInput.style.backgroundColor = '#f0fdfa';
+            setTimeout(() => { itInput.style.backgroundColor = '#ffffff'; }, 300);
+        }
+        if (itBadge) {
+            itBadge.innerHTML = badgeHtml;
+        }
+        if (itHint) {
+            itHint.innerHTML = hintHtml;
+        }
+    }
+
+    function handleAssetCodeInput(val) {
+        if (!isManualTagOverride) {
+            updateSmartBoundItTag();
+        }
+    }
+
+    function toggleManualTag() {
+        const input = document.getElementById('it_code') || document.getElementById('it_asset_code');
+        const icon = document.getElementById('manualTagIcon');
+        const label = document.getElementById('manualTagLabel');
+        const badge = document.getElementById('itBindingBadge');
+
+        if (!isManualTagOverride) {
+            // ปลดล็อกให้แก้ไขเอง
+            isManualTagOverride = true;
+            currentPrefixMode = 'custom';
+            if (icon) icon.className = 'bi bi-arrow-repeat';
+            if (label) label.textContent = 'ซิงค์อัตโนมัติ';
+            if (badge) {
+                badge.innerHTML = '<i class="bi bi-pencil"></i> ปรับแต่งเอง';
+                badge.style.background = '#8b5cf6';
+            }
+            if (input) {
+                input.focus();
+                input.select();
+            }
+            // ปรับปุ่ม prefix pills ให้ตรงกับ custom
+            document.querySelectorAll('#prefixButtonGroup .btn-prefix-pill').forEach(btn => {
+                const radio = btn.querySelector('input');
+                if (radio && radio.value === 'custom') {
+                    btn.classList.add('active');
+                    radio.checked = true;
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        } else {
+            // กลับไปผูกอัตโนมัติ
+            isManualTagOverride = false;
+            currentPrefixMode = 'dept';
+            if (icon) icon.className = 'bi bi-pencil';
+            if (label) label.textContent = 'แก้ไขเอง';
+            // ปรับปุ่ม prefix pills กลับมาเป็น dept
+            document.querySelectorAll('#prefixButtonGroup .btn-prefix-pill').forEach(btn => {
+                const radio = btn.querySelector('input');
+                if (radio && radio.value === 'dept') {
+                    btn.classList.add('active');
+                    radio.checked = true;
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            updateSmartBoundItTag();
+        }
+    }
+
+    function handleManualTagInput() {
+        isManualTagOverride = true;
+        currentPrefixMode = 'custom';
+        const icon = document.getElementById('manualTagIcon');
+        const label = document.getElementById('manualTagLabel');
+        const badge = document.getElementById('itBindingBadge');
+        if (icon) icon.className = 'bi bi-arrow-repeat';
+        if (label) label.textContent = 'ซิงค์อัตโนมัติ';
+        if (badge) {
+            badge.innerHTML = '<i class="bi bi-pencil"></i> ปรับแต่งเอง';
+            badge.style.background = '#8b5cf6';
+        }
+    }
+
+    function setPrefixMode(mode) {
+        currentPrefixMode = mode;
+        if (mode !== 'custom') {
+            isManualTagOverride = false;
+            const icon = document.getElementById('manualTagIcon');
+            const label = document.getElementById('manualTagLabel');
+            if (icon) icon.className = 'bi bi-pencil';
+            if (label) label.textContent = 'แก้ไขเอง';
+        }
+
+        document.querySelectorAll('#prefixButtonGroup .btn-prefix-pill').forEach(btn => {
+            const radio = btn.querySelector('input');
+            if (radio && radio.value === mode) {
+                btn.classList.add('active');
+                radio.checked = true;
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        const noAssetCheckbox = document.getElementById('no_asset_code');
+        const ownershipSelect = document.getElementById('ownership_type');
+
+        if (mode === 'rent') {
+            if (ownershipSelect) {
+                ownershipSelect.value = 'rented';
+                if (typeof toggleRentalBox === 'function') toggleRentalBox('rented');
+            }
+            if (noAssetCheckbox && !noAssetCheckbox.checked) {
+                noAssetCheckbox.checked = true;
+                toggleNoAssetCode(noAssetCheckbox);
+            }
+        } else if (mode === 'don') {
+            if (ownershipSelect) {
+                ownershipSelect.value = 'donated';
+                if (typeof toggleRentalBox === 'function') toggleRentalBox('donated');
+            }
+            if (noAssetCheckbox && !noAssetCheckbox.checked) {
+                noAssetCheckbox.checked = true;
+                toggleNoAssetCode(noAssetCheckbox);
+            }
+        } else if (mode === 'dept') {
+            if (ownershipSelect && (ownershipSelect.value === 'rented' || ownershipSelect.value === 'donated')) {
+                ownershipSelect.value = 'owned';
+                if (typeof toggleRentalBox === 'function') toggleRentalBox('owned');
+            }
+            if (noAssetCheckbox && noAssetCheckbox.checked) {
+                noAssetCheckbox.checked = false;
+                toggleNoAssetCode(noAssetCheckbox);
+            }
+        }
+
+        updateSmartBoundItTag();
+    }
+
+    function handleDepartmentChange(selectElem) {
+        const code = resolveSelectedDeptCode();
+        const display = document.getElementById('deptCodeDisplay');
+        if (display) {
+            display.textContent = code;
+        }
+        if (currentPrefixMode === 'dept') {
+            updateSmartBoundItTag();
+        }
+    }
+
+    function toggleNoAssetCode(checkbox) {
+        const assetCodeInput = document.getElementById('asset_code');
+        const hint = document.getElementById('asset_code_hint');
+        if (checkbox.checked) {
+            assetCodeInput.value = '';
+            assetCodeInput.placeholder = '(เครื่องเช่า / รับบริจาค โดยไม่มีเลขพัสดุ)';
+            assetCodeInput.disabled = true;
+            assetCodeInput.style.backgroundColor = '#f1f5f9';
+            if (hint) hint.innerHTML = '<span style="color: #ea580c; font-weight: 600;">✓ ไม่มีเลขพัสดุ: จัดการในระบบคลังและส่งซ่อมด้วยรหัสคุม IT</span>';
+        } else {
+            assetCodeInput.disabled = false;
+            assetCodeInput.placeholder = 'เช่น 7440-001-0005/66 หรือ 7440-002-0001/67';
+            assetCodeInput.style.backgroundColor = '#ffffff';
+            if (hint) hint.innerHTML = 'พิมพ์เลขพัสดุเพื่อผูกรหัส IT Tag อัตโนมัติ (เช่น 7440-001-0005/66 &rarr; ลำดับ 0005, ปี 66)';
+        }
+        updateSmartBoundItTag();
+    }
+
+    function autoGenerateItAssetTag() {
+        updateSmartBoundItTag();
+    }
+
+    // Auto-bind on load if empty
+    document.addEventListener('DOMContentLoaded', function() {
+        const itCodeInput = document.getElementById('it_code') || document.getElementById('it_asset_code');
+        if (itCodeInput && !itCodeInput.value) {
+            updateSmartBoundItTag();
+        }
+
+        // เชื่อมโยง event listener ให้ budget_year
+        const bYearInput = document.getElementById('budget_year');
+        if (bYearInput) {
+            bYearInput.addEventListener('input', function() {
+                if (!isManualTagOverride) updateSmartBoundItTag();
+            });
+        }
+    });
 
     function handleAcquisitionMethodChange(select) {
         const selectedOption = select.options[select.selectedIndex];
@@ -1107,6 +1540,14 @@
                 ownershipSelect.value = 'rented';
                 toggleRentalBox('rented');
             }
+            setPrefixMode('rent');
+        } else if (code === 'DONATION' || text.includes('บริจาค')) {
+            const ownershipSelect = document.getElementById('ownership_type');
+            if (ownershipSelect) {
+                ownershipSelect.value = 'donated';
+                toggleRentalBox('donated');
+            }
+            setPrefixMode('don');
         }
     }
 </script>

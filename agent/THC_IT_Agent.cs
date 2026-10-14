@@ -665,8 +665,8 @@ namespace ThcItAgent
                 { "mac_address", MacAddress },
                 { "monitor_size", MonitorSize },
                 { "monitor_info", MonitorSize },
-                { "client_agent_version", "2.8.0-TrayExe" },
-                { "agent_version", "2.8.0-TrayExe" }
+                { "client_agent_version", "2.9.0-Standalone" },
+                { "agent_version", "2.9.0-Standalone" }
             };
 
             if (commandId.HasValue && commandId.Value > 0)
@@ -713,7 +713,7 @@ namespace ThcItAgent
             _contextMenu.Font = new Font("Segoe UI", 9F);
 
             // Title Item
-            var titleItem = new ToolStripMenuItem("🖥️ THC IT Agent v2.8.0 (รพ.ทุ่งหัวช้าง)")
+            var titleItem = new ToolStripMenuItem("🖥️ THC IT Agent v2.9.0 (รพ.ทุ่งหัวช้าง)")
             {
                 Enabled = false,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold)
@@ -882,8 +882,8 @@ namespace ThcItAgent
                         { "hardware_id", _cachedSpecs.HardwareId },
                         { "mac_address", _cachedSpecs.MacAddress },
                         { "ip_address", _cachedSpecs.IpAddress },
-                        { "agent_version", "2.8.0-TrayExe" },
-                        { "client_version", "2.8.0-TrayExe" },
+                        { "agent_version", "2.9.0-Standalone" },
+                        { "client_version", "2.9.0-Standalone" },
                         { "mode", "tray_agent" }
                     };
 
@@ -1118,7 +1118,7 @@ namespace ThcItAgent
             req.ContentType = "application/json; charset=utf-8";
             req.Accept = "application/json";
             req.Timeout = timeoutMs;
-            req.UserAgent = "THC-IT-Agent/2.8.0";
+            req.UserAgent = "THC-IT-Agent/2.9.0";
             req.KeepAlive = false;
 
             byte[] bytes = Encoding.UTF8.GetBytes(jsonBody);
@@ -1171,7 +1171,7 @@ namespace ThcItAgent
             };
             var lblSub = new Label
             {
-                Text = "THC Client Hardware Audit Agent v2.8.0 (Standalone System Tray)",
+                Text = "THC Client Hardware Audit Agent v2.9.0 (Standalone System Tray)",
                 ForeColor = Color.FromArgb(220, 240, 255),
                 Font = new Font("Segoe UI", 9F),
                 Location = new Point(17, 36),

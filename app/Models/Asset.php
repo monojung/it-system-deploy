@@ -16,6 +16,7 @@ class Asset extends Model
 
     protected $fillable = [
         'asset_code',
+        'it_code',
         'serial_number',
         'hardware_id',
         'name',
@@ -285,6 +286,114 @@ class Asset extends Model
     public function scopeOwned($query)
     {
         return $query->where('ownership_type', 'owned');
+    }
+
+    public function getIsDonatedAttribute(): bool
+    {
+        if ($this->ownership_type === 'donated') {
+            return true;
+        }
+        if ($this->acquisitionMethod && str_contains(mb_strtolower($this->acquisitionMethod->name), 'บริจาค')) {
+            return true;
+        }
+        return false;
+    }
+
+    public function scopeDonated($query)
+    {
+        return $query->where('ownership_type', 'donated')
+            ->orWhereHas('acquisitionMethod', fn($q) => $q->where('name', 'like', '%บริจาค%'));
+    }
+
+    protected static function booted()
+    {
+        static::saving(function ($asset) {
+            if (empty($asset->it_code)) {
+                $asset->it_code = \App\Services\ItAssetCodeGeneratorService::generateAutoBoundCode($asset);
+            }
+        });
+    }
+
+    /**
+     * ดึงรหัสคุมครุภัณฑ์ไอที (IT Asset Tag / IT Code)
+     * นำรหัสย่อ (Code) ของแผนกในโรงพยาบาลมาเป็น Prefix (เช่น ER, OPD, LAB, PHAR, IT)
+     * ผูกเข้ากับรหัสครุภัณฑ์พัสดุราชการโดยตรง (Direct Smart Binding)
+     * และใช้ Prefix RENT (เครื่องเช่า) / DON (รับบริจาค) โดยไม่มีเลขพัสดุ
+     * ตามรูปแบบ [PREFIX]-[TYPE]-[YEAR]-[SEQ]
+     */
+    public function getItCodeAttribute($value = null): string
+    {
+        // 1. ถ้ามีค่าจริงในคอลัมน์ it_code
+        if (!empty($value)) {
+            return $value;
+        }
+
+        if (!empty($this->attributes['it_code'])) {
+            return $this->attributes['it_code'];
+        }
+
+        // 2. ถ้ามีการบันทึกแท็กปรับแต่งพิเศษไว้ใน notes เช่น [IT-TAG: ER-PC-67-001]
+        if (!empty($this->notes) && preg_match('/\[IT-TAG:\s*([^\]]+)\]/', $this->notes, $matches)) {
+            return trim($matches[1]);
+        }
+
+        // 3. ผูกรหัสอัตโนมัติจากเลขพัสดุและสังกัด (Smart Binding)
+        return \App\Services\ItAssetCodeGeneratorService::generateAutoBoundCode($this);
+    }
+
+    public function setItCodeAttribute($value): void
+    {
+        $this->attributes['it_code'] = !empty($value) ? trim($value) : null;
+    }
+
+    /**
+     * Alias สำหรับ it_asset_code เพื่อความเข้ากันได้ 100% กับระบบเดิมและ Blade Views
+     */
+    public function getItAssetCodeAttribute(): string
+    {
+        return $this->it_code;
+    }
+
+    public function setItAssetCodeAttribute($value): void
+    {
+        $this->it_code = $value;
+    }
+
+    /**
+     * ตรวจสอบว่ามีรหัสครุภัณฑ์พัสดุราชการที่แท้จริงหรือไม่
+     */
+    public function getHasOfficialAssetCodeAttribute(): bool
+    {
+        if ($this->is_rented || $this->is_donated) {
+            return false;
+        }
+        if (empty($this->asset_code)) {
+            return false;
+        }
+        $code = strtoupper(trim($this->asset_code));
+        return !str_starts_with($code, 'PENDING-') 
+            && !str_starts_with($code, 'TEMP-') 
+            && !str_starts_with($code, 'NO-ASSET') 
+            && !str_starts_with($code, 'NOASSET-') 
+            && !str_starts_with($code, 'RENT-') 
+            && !str_starts_with($code, 'DON-');
+    }
+
+    /**
+     * ข้อความแสดงรหัสครุภัณฑ์พัสดุสำหรับแสดงผล
+     */
+    public function getOfficialAssetCodeDisplayAttribute(): string
+    {
+        if ($this->is_rented || str_starts_with($this->it_code, 'RENT-')) {
+            return 'เครื่องเช่า (ไม่มีเลขพัสดุ)';
+        }
+        if ($this->is_donated || str_starts_with($this->it_code, 'DON-')) {
+            return 'รับบริจาค (ไม่มีเลขพัสดุ)';
+        }
+        if ($this->has_official_asset_code) {
+            return $this->asset_code;
+        }
+        return 'รอเลขพัสดุ';
     }
 }
 

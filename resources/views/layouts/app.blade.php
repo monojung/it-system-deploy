@@ -11,6 +11,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'ระบบบริหารจัดการสารสนเทศ') - {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }} {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</title>
 
+    <!-- Favicon & Hospital Emblem -->
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}?v=2">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v=2">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}?v=2">
+
     <!-- Google Fonts: Prompt -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -203,13 +208,21 @@
             width: 44px;
             height: 44px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
+            background: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
-            color: white;
             box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+            padding: 3px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .brand-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
 
         .brand-title {
@@ -1784,7 +1797,7 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-brand">
                 <div class="brand-icon">
-                    <i class="bi bi-hospital"></i>
+                    <img src="{{ asset('images/logo.png') }}?v=2" alt="MOPH Logo">
                 </div>
                 <div>
                     <div class="brand-title">{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}</div>
@@ -1833,7 +1846,7 @@
                 </a>
 
                 <div class="nav-section-title">คลังและพัสดุ (Inventory)</div>
-                <a href="{{ route('assets.index') }}" class="nav-item {{ request()->routeIs('assets.*') && !request()->routeIs('asset-transfers.*') ? 'active' : '' }}">
+                <a href="{{ route('assets.index') }}" class="nav-item {{ request()->routeIs('assets.index') || (request()->routeIs('assets.*') && !request()->routeIs('asset-transfers.*')) ? 'active' : '' }}">
                     <i class="bi bi-pc-display"></i>
                     <span>คลังคอมพิวเตอร์ & ครุภัณฑ์</span>
                 </a>

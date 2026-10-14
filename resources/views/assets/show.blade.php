@@ -140,16 +140,57 @@
                 <i class="bi bi-info-circle text-primary"></i>
                 <span>ข้อมูลจำเพาะครุภัณฑ์ (Specifications)</span>
             </div>
-            <span style="font-family: monospace; font-weight: 700; color: #0284c7; font-size: 15px;">
-                {{ $asset->asset_code }}
-            </span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge" style="background: #f0fdfa; color: #0f766e; border: 1.5px solid #99f6e4; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13.5px; font-weight: 800; padding: 4px 10px;">
+                    <i class="bi bi-tag-fill me-1" style="color: #0d9488;"></i> {{ $asset->it_code }}
+                </span>
+                <span style="font-family: monospace; font-weight: 600; color: #64748b; font-size: 12.5px;">
+                    พัสดุ: {{ $asset->official_asset_code_display }}
+                </span>
+            </div>
         </div>
         <div class="card-body">
             <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">
                 {{ $asset->name }}
             </h2>
-            <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
+            <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
                 {{ $asset->brand }} {{ $asset->model }} &bull; ประเภท: {{ $asset->deviceType?->name }}
+            </div>
+
+            {{-- Dual Code Showcase Card --}}
+            <div style="background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 100%); border: 1.5px solid #ccfbf1; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 42px; height: 42px; border-radius: 10px; background: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="bi bi-qr-code"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #0f766e; font-weight: 700; letter-spacing: 0.5px;">รหัสคุมครุภัณฑ์ไอที (IT Asset Tag)</div>
+                        <div style="font-family: 'SFMono-Regular', Consolas, monospace; font-size: 20px; font-weight: 800; color: #0f766e;">
+                            {{ $asset->it_code }}
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                    <div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 600;">รหัสครุภัณฑ์พัสดุราชการ:</div>
+                        <div style="font-family: monospace; font-size: 14.5px; font-weight: 700; color: #1e293b;">
+                            @if($asset->has_official_asset_code)
+                                {{ $asset->asset_code }}
+                            @elseif($asset->is_rented || str_starts_with($asset->it_code, 'RENT-'))
+                                <span style="color: #ea580c; font-style: italic;">[ เครื่องเช่า (ไม่มีเลขพัสดุ) ]</span>
+                            @elseif($asset->is_donated || str_starts_with($asset->it_code, 'DON-'))
+                                <span style="color: #8b5cf6; font-style: italic;">[ รับบริจาค (ไม่มีเลขพัสดุ) ]</span>
+                            @else
+                                <span style="color: #f59e0b; font-style: italic;">[ รอเลขพัสดุ ]</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <a href="{{ route('assets.label', $asset) }}" target="_blank" class="btn btn-sm btn-primary" style="padding: 6px 14px; font-size: 12px;">
+                        <i class="bi bi-printer"></i> ป้ายสติกเกอร์ Dual-Tag
+                    </a>
+                </div>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">

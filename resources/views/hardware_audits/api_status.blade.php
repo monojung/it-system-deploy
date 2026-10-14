@@ -356,8 +356,8 @@
                 <a href="{{ url('/api/hardware-audit/submit?format=json') }}" class="btn btn-outline" target="_blank">
                     <i class="bi bi-filetype-json"></i> ดูผลลัพธ์แบบ JSONดิบ (?format=json)
                 </a>
-                <a href="{{ url('/agent/thc_audit_agent.ps1') }}" class="btn btn-outline" target="_blank">
-                    <i class="bi bi-file-earmark-code"></i> สคริปต์ thc_audit_agent.ps1
+                <a href="{{ url('/agent/THC_IT_Agent.exe') }}" class="btn btn-outline" download>
+                    <i class="bi bi-download"></i> ดาวน์โหลด Standalone Agent v2.9.0 (.exe)
                 </a>
             </div>
 
@@ -365,7 +365,7 @@
 
         <div class="footer-note">
             <i class="bi bi-shield-lock-fill"></i>
-            <span>THC Hospital Telemetry Agent Platform v2.1.0 • CSRF-Exempt API Protected</span>
+            <span>THC Hospital Telemetry Agent Platform v2.9.0 • Standalone System Tray Protected</span>
         </div>
     </div>
 

@@ -105,9 +105,19 @@
             <div class="card-body">
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
                     <div>
-                        <div style="font-size: 12px; color: var(--text-muted);">รหัสครุภัณฑ์:</div>
-                        <div style="font-weight: 700; color: #0284c7; font-size: 15px;">{{ $repair->asset->asset_code }}</div>
-                        <div style="font-size: 12px; color: #64748b;">Serial No: {{ $repair->asset->serial_number ?? '-' }}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">รหัสคุม IT:</div>
+                        <div style="font-weight: 800; color: #4338ca; font-size: 15px; font-family: monospace;">
+                            <i class="bi bi-tag-fill me-1"></i>{{ $repair->asset->it_asset_code }}
+                        </div>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                            รหัสพัสดุ: 
+                            @if($repair->asset->has_official_asset_code)
+                                <strong style="font-family: monospace; color: #334155;">{{ $repair->asset->asset_code }}</strong>
+                            @else
+                                <span style="color: #c2410c;">{{ $repair->asset->official_asset_code_display }}</span>
+                            @endif
+                        </div>
+                        <div style="font-size: 11.5px; color: #94a3b8;">Serial No: {{ $repair->asset->serial_number ?? '-' }}</div>
                     </div>
                     <div>
                         <div style="font-size: 12px; color: var(--text-muted);">ชื่อรายการ / รุ่น:</div>
