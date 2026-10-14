@@ -1317,12 +1317,12 @@
         if (currentPrefixMode === 'rent') {
             prefix = 'RENT';
             badgeHtml = '<i class="bi bi-printer"></i> เครื่องเช่า (ไม่มีเลขพัสดุ)';
-            hintHtml = `สูตร: RENT + ${typeCode} + ${year} + ${seq} &rarr; เครื่องสัญญาเช่า คุมด้วยรหัส IT`;
+            hintHtml = `สูตร: RENT${typeCode}${year}${seq} &rarr; เครื่องสัญญาเช่า คุมด้วยรหัส IT`;
             if (itBadge) itBadge.style.background = '#ea580c';
         } else if (currentPrefixMode === 'don') {
             prefix = 'DON';
             badgeHtml = '<i class="bi bi-gift"></i> รับบริจาค (ไม่มีเลขพัสดุ)';
-            hintHtml = `สูตร: DON + ${typeCode} + ${year} + ${seq} &rarr; ครุภัณฑ์รับบริจาค คุมด้วยรหัส IT`;
+            hintHtml = `สูตร: DON${typeCode}${year}${seq} &rarr; ครุภัณฑ์รับบริจาค คุมด้วยรหัส IT`;
             if (itBadge) itBadge.style.background = '#0284c7';
         } else {
             prefix = deptCode;
@@ -1330,18 +1330,18 @@
                 seq = parsed.seq.length < 3 ? parsed.seq.padStart(3, '0') : parsed.seq;
                 year = parsed.year || defaultYear;
                 badgeHtml = `<i class="bi bi-link-45deg"></i> ผูกตรงกับเลขพัสดุ (${seq} / ปี ${year})`;
-                hintHtml = `🔗 <strong>ผูกรหัสอัตโนมัติ:</strong> [แผนก: ${prefix}] - [ประเภท: ${typeCode}] - [ปี: ${year}] - [ลำดับพัสดุ: ${seq}]`;
+                hintHtml = `🔗 <strong>ผูกรหัสอัตโนมัติ:</strong> ${prefix}${typeCode}${year}${seq}`;
                 if (itBadge) itBadge.style.background = '#0d9488';
             } else {
                 seq = 'T001';
                 year = defaultYear;
                 badgeHtml = '<i class="bi bi-clock-history"></i> รหัสชั่วคราว (รอเลขพัสดุ)';
-                hintHtml = `รหัสชั่วคราว: [${prefix}]-[${typeCode}]-[${year}]-[T001] (เมื่อใส่เลขพัสดุจะผูกตรงอัตโนมัติ)`;
+                hintHtml = `รหัสชั่วคราว: ${prefix}${typeCode}${year}T001 (เมื่อใส่เลขพัสดุจะผูกตรงอัตโนมัติ)`;
                 if (itBadge) itBadge.style.background = '#64748b';
             }
         }
 
-        const newCode = `${prefix}-${typeCode}-${year}-${seq}`;
+        const newCode = `${prefix}${typeCode}${year}${seq}`;
         if (itInput) {
             itInput.value = newCode;
             itInput.style.backgroundColor = '#f0fdfa';

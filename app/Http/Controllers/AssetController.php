@@ -131,8 +131,10 @@ class AssetController extends Controller
 
         if ($request->filled('search')) {
             $search = trim($request->search);
-            $query->where(function ($q) use ($search) {
+            $cleanSearch = str_replace('-', '', $search);
+            $query->where(function ($q) use ($search, $cleanSearch) {
                 $q->where('it_code', 'like', "%{$search}%")
+                  ->orWhere('it_code', 'like', "%{$cleanSearch}%")
                   ->orWhere('asset_code', 'like', "%{$search}%")
                   ->orWhere('serial_number', 'like', "%{$search}%")
                   ->orWhere('name', 'like', "%{$search}%")
@@ -330,8 +332,8 @@ class AssetController extends Controller
     public function store(Request $request)
     {
         // จัดการกรณีเครื่องเช่า / รับบริจาค / รอพัสดุออกเลข (ไม่มีเลขพัสดุ)
-        $isRented = ($request->input('ownership_type') === 'rented') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'RENT-');
-        $isDonated = ($request->input('ownership_type') === 'donated') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'DON-');
+        $isRented = ($request->input('ownership_type') === 'rented') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'RENT');
+        $isDonated = ($request->input('ownership_type') === 'donated') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'DON');
         $noAssetCode = $request->boolean('no_asset_code') || empty($request->input('asset_code')) || $isRented || $isDonated;
 
         if ($noAssetCode) {
@@ -465,8 +467,8 @@ class AssetController extends Controller
     public function update(Request $request, Asset $asset)
     {
         // จัดการกรณีเครื่องเช่า / รับบริจาค / รอพัสดุออกเลข (ไม่มีเลขพัสดุ)
-        $isRented = ($request->input('ownership_type') === 'rented') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'RENT-');
-        $isDonated = ($request->input('ownership_type') === 'donated') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'DON-');
+        $isRented = ($request->input('ownership_type') === 'rented') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'RENT');
+        $isDonated = ($request->input('ownership_type') === 'donated') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'DON');
         $noAssetCode = $request->boolean('no_asset_code') || empty($request->input('asset_code')) || $isRented || $isDonated;
 
         if ($noAssetCode && !$asset->has_official_asset_code) {

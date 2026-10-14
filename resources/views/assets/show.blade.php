@@ -177,9 +177,9 @@
                         <div style="font-family: monospace; font-size: 14.5px; font-weight: 700; color: #1e293b;">
                             @if($asset->has_official_asset_code)
                                 {{ $asset->asset_code }}
-                            @elseif($asset->is_rented || str_starts_with($asset->it_code, 'RENT-'))
+                            @elseif($asset->is_rented || str_starts_with($asset->it_code, 'RENT'))
                                 <span style="color: #ea580c; font-style: italic;">[ เครื่องเช่า (ไม่มีเลขพัสดุ) ]</span>
-                            @elseif($asset->is_donated || str_starts_with($asset->it_code, 'DON-'))
+                            @elseif($asset->is_donated || str_starts_with($asset->it_code, 'DON'))
                                 <span style="color: #8b5cf6; font-style: italic;">[ รับบริจาค (ไม่มีเลขพัสดุ) ]</span>
                             @else
                                 <span style="color: #f59e0b; font-style: italic;">[ รอเลขพัสดุ ]</span>

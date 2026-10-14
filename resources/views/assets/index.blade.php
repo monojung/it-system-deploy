@@ -223,346 +223,79 @@
         color: #64748b;
     }
 
-    /* Modern Search & Filter Hub */
+    /* Unified Filter Hub Card */
     .filter-hub-card {
         background: #ffffff;
-        border-radius: 16px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
-        margin-bottom: 22px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        margin-bottom: 20px;
         overflow: hidden;
-        transition: all 0.2s ease;
     }
 
-    .search-hero-bar {
-        padding: 16px 20px 12px 20px;
-        background: #ffffff;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .search-input-group {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .search-box-wrapper {
-        flex: 1;
-        min-width: 280px;
-        position: relative;
-        display: flex;
-        align-items: center;
-    }
-
-    .search-box-icon {
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #0d9488;
-        font-size: 17px;
-        pointer-events: none;
-        z-index: 2;
-    }
-
-    .search-main-input {
-        width: 100%;
-        height: 46px;
-        padding-left: 42px;
-        padding-right: 76px;
-        font-size: 14px;
-        border-radius: 12px;
-        border: 1.5px solid #cbd5e1;
-        background: #f8fafc;
-        color: #1e293b;
-        transition: all 0.2s ease;
-        font-family: inherit;
-    }
-
-    .search-main-input:focus {
-        background: #ffffff;
-        border-color: #0d9488;
-        outline: none;
-        box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.12);
-    }
-
-    .search-main-input::placeholder {
-        color: #94a3b8;
-        font-size: 13.5px;
-    }
-
-    .search-box-actions {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        z-index: 2;
-    }
-
-    .search-clear-btn {
-        background: #e2e8f0;
-        border: none;
-        color: #64748b;
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        cursor: pointer;
-        padding: 0;
-        transition: all 0.15s ease;
-    }
-
-    .search-clear-btn:hover {
-        background: #cbd5e1;
-        color: #0f172a;
-    }
-
-    .search-kbd-hint {
-        background: #f1f5f9;
-        border: 1px solid #cbd5e1;
-        color: #64748b;
-        border-radius: 6px;
-        padding: 2px 6px;
-        font-size: 11px;
-        font-family: monospace;
-        font-weight: 700;
-        pointer-events: none;
-    }
-
-    .search-actions-bar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-shrink: 0;
-    }
-
-    .btn-search-primary {
-        background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
-        color: #ffffff;
-        border: none;
-        font-weight: 600;
-        padding: 0 18px;
-        height: 46px;
-        border-radius: 12px;
-        font-size: 14px;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-    .btn-search-primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
-        color: #ffffff;
-    }
-
-    .btn-filter-drawer {
-        background: #f8fafc;
-        color: #334155;
-        border: 1.5px solid #cbd5e1;
-        font-weight: 600;
-        padding: 0 14px;
-        height: 46px;
-        border-radius: 12px;
-        font-size: 13px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-    .btn-filter-drawer:hover {
-        background: #f1f5f9;
-        border-color: #94a3b8;
-        color: #0f172a;
-    }
-
-    .btn-filter-drawer.active {
-        background: #f0fdfa;
-        border-color: #0d9488;
-        color: #0f766e;
-    }
-
-    .btn-filter-drawer .filter-count-badge {
-        background: #0d9488;
-        color: #ffffff;
-        border-radius: 999px;
-        padding: 1px 7px;
-        font-size: 11px;
-        font-weight: 700;
-        margin-left: 2px;
-    }
-
-    .btn-search-reset {
-        height: 46px;
-        padding: 0 12px;
-        border-radius: 12px;
-        background: #ffffff;
-        border: 1.5px solid #cbd5e1;
-        color: #64748b;
-        font-size: 13px;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        text-decoration: none;
-        transition: all 0.2s ease;
-    }
-
-    .btn-search-reset:hover {
-        background: #fee2e2;
-        border-color: #fca5a5;
-        color: #dc2626;
-    }
-
-    /* Quick Filter Chips */
-    .search-quick-chips {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-        padding: 10px 20px;
-        background: #fbfcfe;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .quick-chips-label {
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin-right: 4px;
-        flex-shrink: 0;
-    }
-
-    .quick-chip-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 11px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 500;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        color: #475569;
-        text-decoration: none;
-        transition: all 0.18s ease;
-        cursor: pointer;
-        user-select: none;
-    }
-
-    .quick-chip-item:hover {
-        background: #f0fdfa;
-        border-color: #5eead4;
-        color: #0f766e;
-        transform: translateY(-1px);
-    }
-
-    .quick-chip-item.active {
-        background: #0f766e;
-        border-color: #0f766e;
-        color: #ffffff;
-        font-weight: 600;
-        box-shadow: 0 2px 6px rgba(15, 118, 110, 0.25);
-    }
-
-    /* Advanced Filters Collapsible Drawer */
-    .advanced-filters-drawer {
+    .filter-main-body {
         padding: 18px 22px;
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        animation: fadeInSlide 0.2s ease-out;
     }
 
-    .advanced-filters-grid {
+    .filter-form-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) auto;
+        gap: 12px;
+        align-items: end;
     }
 
     @media (max-width: 1200px) {
-        .advanced-filters-grid {
-            grid-template-columns: repeat(2, 1fr);
+        .filter-form-grid {
+            grid-template-columns: 1fr 1fr;
         }
     }
 
     @media (max-width: 640px) {
-        .advanced-filters-grid {
+        .filter-form-grid {
             grid-template-columns: 1fr;
-        }
-        .search-actions-bar {
-            width: 100%;
-            justify-content: stretch;
-        }
-        .search-actions-bar > * {
-            flex: 1;
-            text-align: center;
-            justify-content: center;
         }
     }
 
-    .adv-filter-field {
+    .filter-group {
         display: flex;
         flex-direction: column;
         gap: 5px;
     }
 
-    .adv-filter-label {
+    .filter-label {
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 600;
         color: #475569;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
     }
 
-    .adv-filter-select {
-        height: 38px;
-        font-size: 13px;
-        border-radius: 8px;
-        border: 1px solid #cbd5e1;
-        background: #ffffff;
+    .filter-input-wrap {
+        position: relative;
     }
 
-    /* Copy Button for IT Code */
-    .btn-copy-itcode {
-        background: transparent;
-        border: none;
+    .filter-input-wrap i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
         color: #94a3b8;
-        padding: 0 4px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.15s ease;
-        display: inline-flex;
-        align-items: center;
+        font-size: 14px;
     }
 
-    .btn-copy-itcode:hover {
-        color: #0d9488;
-        transform: scale(1.18);
+    .filter-input-wrap .form-control {
+        padding-left: 36px;
+        height: 40px;
+        font-size: 13.5px;
+        border-radius: 8px;
     }
 
-    /* Search match mark highlight */
-    mark.search-highlight {
-        background: #fef08a;
-        color: #854d0e;
-        padding: 1px 3px;
-        border-radius: 3px;
-        font-weight: 700;
+    .filter-select {
+        height: 40px;
+        min-height: 40px;
+        font-size: 13.5px;
+        border-radius: 8px;
     }
 
     /* Sub Toolbar inside Filter Card */
@@ -852,41 +585,6 @@
         background: #e0f2fe;
         color: #0369a1;
         border-color: #7dd3fc;
-    }
-
-    .asset-it-tag-link {
-        font-family: 'SFMono-Regular', Consolas, monospace;
-        font-weight: 800;
-        font-size: 13.5px;
-        color: #0f766e;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 2.5px 8px;
-        background: #f0fdfa;
-        border: 1.5px solid #99f6e4;
-        border-radius: 6px;
-        transition: all 0.2s ease;
-        letter-spacing: 0.3px;
-    }
-
-    .asset-it-tag-link:hover {
-        background: #ccfbf1;
-        color: #0d9488;
-        border-color: #5eead4;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(13, 148, 136, 0.15);
-    }
-
-    .asset-procure-code {
-        font-family: 'SFMono-Regular', Consolas, monospace;
-        font-size: 11px;
-        color: #64748b;
-        margin-top: 3px;
-        display: flex;
-        align-items: center;
-        gap: 4px;
     }
 
     .asset-sn-text {
@@ -1279,7 +977,6 @@
         </button>
         @endif
 
-
         <a href="{{ route('reports.export', 'assets') }}" class="btn-hero-ghost" title="ส่งออกข้อมูลครุภัณฑ์เป็น Excel/CSV">
             <i class="bi bi-file-earmark-excel"></i>
             <span>Export CSV</span>
@@ -1552,184 +1249,77 @@
 @endif
 
 <!-- Unified Filter Hub Card -->
-@php
-    $hasAdvancedFilters = request()->hasAny(['device_type_id', 'department_id', 'status', 'budget_source_id', 'acquisition_method_id', 'ownership_type', 'audited_fiscal_year', 'audit_status']);
-    $advFilterCount = collect(['device_type_id', 'department_id', 'status', 'budget_source_id', 'acquisition_method_id', 'ownership_type', 'audited_fiscal_year', 'audit_status'])->filter(fn($k) => request()->filled($k))->count();
-    $hwFilterCount = collect(['cpu', 'ram_type', 'ram_capacity', 'os', 'storage_type'])->filter(fn($k) => request()->filled($k))->count();
-@endphp
 <div class="filter-hub-card">
-    <form action="{{ route('assets.index') }}" method="GET" id="assetMainFilterForm">
-        {{-- Preserve active specs & pagination if any --}}
-        @if(request('cpu')) <input type="hidden" name="cpu" value="{{ request('cpu') }}"> @endif
-        @if(request('ram_type')) <input type="hidden" name="ram_type" value="{{ request('ram_type') }}"> @endif
-        @if(request('ram_capacity')) <input type="hidden" name="ram_capacity" value="{{ request('ram_capacity') }}"> @endif
-        @if(request('os')) <input type="hidden" name="os" value="{{ request('os') }}"> @endif
-        @if(request('storage_type')) <input type="hidden" name="storage_type" value="{{ request('storage_type') }}"> @endif
-        <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
+    <div class="filter-main-body">
+        <form action="{{ route('assets.index') }}" method="GET" id="assetMainFilterForm">
+            {{-- Preserve active specs if any --}}
+            @if(request('cpu')) <input type="hidden" name="cpu" value="{{ request('cpu') }}"> @endif
+            @if(request('ram_type')) <input type="hidden" name="ram_type" value="{{ request('ram_type') }}"> @endif
+            @if(request('ram_capacity')) <input type="hidden" name="ram_capacity" value="{{ request('ram_capacity') }}"> @endif
+            @if(request('os')) <input type="hidden" name="os" value="{{ request('os') }}"> @endif
+            @if(request('storage_type')) <input type="hidden" name="storage_type" value="{{ request('storage_type') }}"> @endif
+            <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
 
-        {{-- 1. Main Hero Search Bar --}}
-        <div class="search-hero-bar">
-            <div class="search-input-group">
-                <div class="search-box-wrapper">
-                    <i class="bi bi-search search-box-icon"></i>
-                    <input type="text" 
-                           id="mainAssetSearchInput"
-                           name="search" 
-                           class="search-main-input" 
-                           placeholder="ค้นหารหัสคุมไอที (เช่น IT-PC-66-0002, RENT-), รหัสพัสดุ, Serial Number, ชื่อเครื่อง, แผนก, IP, ผู้ครอบครอง..." 
-                           value="{{ request('search') }}"
-                           autocomplete="off">
-                    <div class="search-box-actions">
-                        <button type="button" 
-                                id="searchClearBtn" 
-                                class="search-clear-btn" 
-                                style="display: {{ request('search') ? 'inline-flex' : 'none' }};" 
-                                onclick="clearMainSearch()" 
-                                title="ล้างข้อความค้นหา">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
-                        <span class="search-kbd-hint" title="กดแป้นพิมพ์ / เพื่อค้นหาด่วน"><kbd>/</kbd></span>
+            {{-- 1. Prominent Search Bar (ค้นหาข้อมูลสะดวก กว้างขวาง ใช้งานง่าย) --}}
+            <div style="margin-bottom: 14px;">
+                <label class="filter-label" style="font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">
+                    <i class="bi bi-search text-primary"></i>
+                    <span>ค้นหาข้อมูล (Search)</span>
+                </label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <div class="filter-input-wrap" style="flex: 1; position: relative;">
+                        <i class="bi bi-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #0d9488; font-size: 15px;"></i>
+                        <input type="text" 
+                               name="search" 
+                               class="form-control" 
+                               placeholder="ค้นหารหัสคุม IT (เช่น ITPC670099, PHARPC670010), รหัสพัสดุราชการ, S/N, ชื่อเครื่อง, แผนก, IP, ผู้ครอบครอง..." 
+                               value="{{ request('search') }}"
+                               style="padding-left: 42px; padding-right: 36px; height: 42px; font-size: 14px; border-radius: 8px; border: 1.5px solid #cbd5e1; background: #ffffff;">
+                        @if(request('search'))
+                            <a href="{{ route('assets.index', request()->except(['search', 'page'])) }}" 
+                               style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; text-decoration: none;" 
+                               title="ล้างคำค้นหา">✕</a>
+                        @endif
                     </div>
-                </div>
-
-                <div class="search-actions-bar">
-                    <button type="submit" class="btn-search-primary" title="เริ่มค้นหาข้อมูล">
-                        <i class="bi bi-search"></i>
-                        <span>ค้นหา</span>
+                    <button type="submit" class="btn btn-primary" style="height: 42px; padding: 0 20px; font-weight: 600; font-size: 13.5px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                        <i class="bi bi-search"></i> ค้นหา
                     </button>
-
-                    <button type="button" 
-                            class="btn-filter-drawer {{ $hasAdvancedFilters ? 'active' : '' }}" 
-                            onclick="toggleAdvancedFilters()" 
-                            id="btnToggleAdvanced" 
-                            title="เปิด/ปิด ตัวกรองขั้นสูง">
-                        <i class="bi bi-sliders"></i>
-                        <span>ตัวกรองละเอียด</span>
-                        @if($advFilterCount > 0)
-                            <span class="filter-count-badge">{{ $advFilterCount }}</span>
-                        @endif
-                        <i class="bi bi-chevron-down ms-1" id="advChevron" style="transition: transform 0.2s ease; transform: {{ $hasAdvancedFilters ? 'rotate(180deg)' : 'none' }};"></i>
-                    </button>
-
-                    <button type="button" 
-                            class="btn-filter-drawer {{ $hasHardwareFilters ? 'active' : '' }}" 
-                            onclick="toggleHwDrawer()" 
-                            id="hwDrawerBtn" 
-                            title="เปิด/ปิด ลิ้นชักสเปคฮาร์ดแวร์">
-                        <i class="bi bi-cpu-fill text-primary"></i>
-                        <span>สเปค</span>
-                        @if($hwFilterCount > 0)
-                            <span class="filter-count-badge">{{ $hwFilterCount }}</span>
-                        @endif
-                        <i class="bi bi-chevron-down ms-1" id="hwDrawerChevron" style="transition: transform 0.2s ease;"></i>
-                    </button>
-
-                    @if($hasActiveFilters)
-                        <a href="{{ route('assets.index') }}" class="btn-search-reset" title="ล้างตัวกรองและคำค้นทั้งหมด">
-                            <i class="bi bi-arrow-counterclockwise"></i>
-                            <span>ล้างค่า</span>
-                        </a>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        {{-- 2. Quick Search & Filter Chips --}}
-        <div class="search-quick-chips">
-            <span class="quick-chips-label">
-                <i class="bi bi-lightning-charge-fill text-warning"></i> ทางลัดด่วน:
-            </span>
-            <a href="{{ route('assets.index') }}" 
-               class="quick-chip-item {{ !$hasActiveFilters ? 'active' : '' }}">
-                ทั้งหมด ({{ number_format($statusCounts['total']) }})
-            </a>
-
-            {{-- Device Types Quick Chips --}}
-            @foreach($deviceTypes->take(4) as $dt)
-                <a href="{{ route('assets.index', array_merge(request()->except(['device_type_id', 'page']), ['device_type_id' => $dt->id])) }}" 
-                   class="quick-chip-item {{ request('device_type_id') == $dt->id ? 'active' : '' }}">
-                    @if(str_contains(mb_strtolower($dt->name), 'ตั้งโต๊ะ') || str_contains(mb_strtolower($dt->name), 'pc'))
-                        💻
-                    @elseif(str_contains(mb_strtolower($dt->name), 'โน้ต') || str_contains(mb_strtolower($dt->name), 'nb'))
-                        💻
-                    @elseif(str_contains(mb_strtolower($dt->name), 'all-in-one') || str_contains(mb_strtolower($dt->name), 'aio'))
-                        🖥️
-                    @elseif(str_contains(mb_strtolower($dt->name), 'พิมพ์') || str_contains(mb_strtolower($dt->name), 'print'))
-                        🖨️
-                    @else
-                        🏷️
-                    @endif
-                    {{ $dt->name }}
-                </a>
-            @endforeach
-
-            {{-- Ownership Quick Chips --}}
-            <a href="{{ route('assets.index', array_merge(request()->except(['ownership_type', 'page']), ['ownership_type' => 'owned'])) }}" 
-               class="quick-chip-item {{ request('ownership_type') == 'owned' ? 'active' : '' }}">
-                🏢 ของ รพ. (ซื้อขาด)
-            </a>
-            <a href="{{ route('assets.index', array_merge(request()->except(['ownership_type', 'page']), ['ownership_type' => 'rented'])) }}" 
-               class="quick-chip-item {{ request('ownership_type') == 'rented' ? 'active' : '' }}"
-               style="{{ request('ownership_type') == 'rented' ? '' : 'color: #ea580c; border-color: #fed7aa;' }}">
-                🖨️ เครื่องเช่า (RENT)
-            </a>
-            <a href="{{ route('assets.index', array_merge(request()->except(['ownership_type', 'page']), ['ownership_type' => 'donated'])) }}" 
-               class="quick-chip-item {{ request('ownership_type') == 'donated' ? 'active' : '' }}"
-               style="{{ request('ownership_type') == 'donated' ? '' : 'color: #8b5cf6; border-color: #ddd6fe;' }}">
-                🎁 รับบริจาค (DON)
-            </a>
-
-            {{-- Status Quick Chips --}}
-            <a href="{{ route('assets.index', array_merge(request()->except(['status', 'page']), ['status' => 'active'])) }}" 
-               class="quick-chip-item {{ request('status') == 'active' ? 'active' : '' }}">
-                🟢 ปกติ ({{ $statusCounts['active'] }})
-            </a>
-            <a href="{{ route('assets.index', array_merge(request()->except(['status', 'page']), ['status' => 'repairing'])) }}" 
-               class="quick-chip-item {{ request('status') == 'repairing' ? 'active' : '' }}"
-               style="{{ request('status') == 'repairing' ? '' : 'color: #d97706; border-color: #fde68a;' }}">
-                🟠 ส่งซ่อม ({{ $statusCounts['repairing'] }})
-            </a>
-            <a href="{{ route('assets.index', array_merge(request()->except(['status', 'page']), ['status' => 'broken'])) }}" 
-               class="quick-chip-item {{ request('status') == 'broken' ? 'active' : '' }}"
-               style="{{ request('status') == 'broken' ? '' : 'color: #dc2626; border-color: #fecaca;' }}">
-                🔴 ชำรุด ({{ $statusCounts['broken'] }})
-            </a>
-        </div>
-
-        {{-- 3. Collapsible Advanced Filters Drawer --}}
-        <div class="advanced-filters-drawer" id="advancedFiltersDrawer" style="display: {{ $hasAdvancedFilters ? 'block' : 'none' }};">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-                <div style="font-size: 13px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
-                    <i class="bi bi-sliders text-primary"></i>
-                    <span>ตัวกรองละเอียดตามหมวดหมู่ (Advanced Filters)</span>
-                    @if($advFilterCount > 0)
-                        <span class="badge bg-primary" style="font-size: 11px;">เลือกอยู่ {{ $advFilterCount }} เงื่อนไข</span>
-                    @endif
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <button type="submit" class="btn btn-sm btn-primary" style="font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 8px;">
-                        <i class="bi bi-funnel-fill me-1"></i> ปรับใช้ตัวกรอง
-                    </button>
-                    @if($hasAdvancedFilters)
-                        <a href="{{ route('assets.index', request()->only(['search', 'cpu', 'ram_type', 'ram_capacity', 'os', 'storage_type'])) }}" 
-                           class="btn btn-sm btn-outline-secondary" 
-                           style="font-size: 12px; padding: 4px 10px; border-radius: 8px;">
-                            ล้างตัวกรองหมวดหมู่
+                    @if(request()->hasAny(['search', 'device_type_id', 'department_id', 'status', 'budget_source_id', 'acquisition_method_id', 'ownership_type', 'rental_status', 'cpu', 'ram_type', 'ram_capacity', 'os', 'storage_type', 'audited_fiscal_year', 'audit_status']))
+                        <a href="{{ route('assets.index') }}" class="btn btn-outline-danger" style="height: 42px; padding: 0 14px; font-size: 13px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; background: #ffffff;" title="ล้างเงื่อนไขตัวกรองทั้งหมด">
+                            <i class="bi bi-arrow-counterclockwise"></i> ล้างตัวกรอง
                         </a>
                     @endif
                 </div>
             </div>
 
-            <div class="advanced-filters-grid">
+            <div class="filter-form-grid">
+
+                {{-- Device Type --}}
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="bi bi-hdd-network text-primary"></i>
+                        <span>ประเภทอุปกรณ์</span>
+                    </label>
+                    <select name="device_type_id" class="form-select filter-select" onchange="this.form.submit()">
+                        <option value="">-- ทุกประเภทอุปกรณ์ --</option>
+                        @foreach($deviceTypes as $type)
+                            <option value="{{ $type->id }}" {{ request('device_type_id') == $type->id ? 'selected' : '' }}>
+                                {{ $type->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
                 {{-- Department --}}
-                <div class="adv-filter-field">
-                    <label class="adv-filter-label">
-                        <i class="bi bi-building text-primary"></i> แผนก / หน่วยงาน
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="bi bi-building text-primary"></i>
+                        <span>แผนก / สถานที่ตั้ง</span>
                     </label>
                     @if(auth()->user()->isUser())
-                        <input type="text" class="form-control adv-filter-select" value="{{ auth()->user()->department->name ?? 'แผนกของท่าน' }}" readonly style="background: #f1f5f9; color: #475569;">
+                        <input type="text" class="form-control filter-select" value="{{ auth()->user()->department->name ?? 'แผนกของท่าน' }}" readonly style="background: #f1f5f9; color: #475569;">
                     @else
-                        <select name="department_id" class="form-select adv-filter-select" onchange="this.form.submit()">
+                        <select name="department_id" class="form-select filter-select" onchange="this.form.submit()">
                             <option value="">-- ทุกแผนก / หน่วยงาน --</option>
                             @foreach($departments as $dept)
                                 <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>
@@ -1740,27 +1330,13 @@
                     @endif
                 </div>
 
-                {{-- Device Type --}}
-                <div class="adv-filter-field">
-                    <label class="adv-filter-label">
-                        <i class="bi bi-hdd-network text-primary"></i> ประเภทอุปกรณ์
-                    </label>
-                    <select name="device_type_id" class="form-select adv-filter-select" onchange="this.form.submit()">
-                        <option value="">-- ทุกประเภทอุปกรณ์ --</option>
-                        @foreach($deviceTypes as $type)
-                            <option value="{{ $type->id }}" {{ request('device_type_id') == $type->id ? 'selected' : '' }}>
-                                {{ $type->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
                 {{-- Status --}}
-                <div class="adv-filter-field">
-                    <label class="adv-filter-label">
-                        <i class="bi bi-flag text-primary"></i> สถานะครุภัณฑ์
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="bi bi-flag text-primary"></i>
+                        <span>สถานะครุภัณฑ์</span>
                     </label>
-                    <select name="status" class="form-select adv-filter-select" onchange="this.form.submit()">
+                    <select name="status" class="form-select filter-select" onchange="this.form.submit()">
                         <option value="">-- ทุกสถานะ --</option>
                         <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>🟢 ใช้งานปกติ</option>
                         <option value="spare" {{ request('status') == 'spare' ? 'selected' : '' }}>🔵 เครื่องสำรอง</option>
@@ -1770,26 +1346,13 @@
                     </select>
                 </div>
 
-                {{-- Ownership Type --}}
-                <div class="adv-filter-field">
-                    <label class="adv-filter-label">
-                        <i class="bi bi-patch-question text-primary"></i> กรรมสิทธิ์ / การครอบครอง
+                {{-- Budget Source (แหล่งเงิน) --}}
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="bi bi-wallet2 text-primary"></i>
+                        <span>แหล่งเงินงบประมาณ</span>
                     </label>
-                    <select name="ownership_type" class="form-select adv-filter-select" onchange="this.form.submit()">
-                        <option value="">-- ทุกประเภทกรรมสิทธิ์ --</option>
-                        <option value="owned" {{ request('ownership_type') == 'owned' ? 'selected' : '' }}>🏢 เป็นของ รพ. (ซื้อขาด)</option>
-                        <option value="rented" {{ request('ownership_type') == 'rented' ? 'selected' : '' }}>🖨️ เช่าใช้ (เครื่องเช่า)</option>
-                        <option value="donated" {{ request('ownership_type') == 'donated' ? 'selected' : '' }}>🎁 ได้รับบริจาค</option>
-                        <option value="borrowed" {{ request('ownership_type') == 'borrowed' ? 'selected' : '' }}>🔄 ยืมใช้งานภายนอก</option>
-                    </select>
-                </div>
-
-                {{-- Budget Source --}}
-                <div class="adv-filter-field">
-                    <label class="adv-filter-label">
-                        <i class="bi bi-wallet2 text-primary"></i> แหล่งเงินงบประมาณ
-                    </label>
-                    <select name="budget_source_id" class="form-select adv-filter-select" onchange="this.form.submit()">
+                    <select name="budget_source_id" class="form-select filter-select" onchange="this.form.submit()">
                         <option value="">-- ทุกแหล่งเงิน --</option>
                         @foreach($budgetSources as $bs)
                             <option value="{{ $bs->id }}" {{ request('budget_source_id') == $bs->id ? 'selected' : '' }}>
@@ -1799,12 +1362,13 @@
                     </select>
                 </div>
 
-                {{-- Acquisition Method --}}
-                <div class="adv-filter-field">
-                    <label class="adv-filter-label">
-                        <i class="bi bi-box-arrow-in-down-right text-primary"></i> วิธีการได้มา
+                {{-- Acquisition Method (วิธีการได้มา) --}}
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="bi bi-box-arrow-in-down-right text-primary"></i>
+                        <span>วิธีการได้มา</span>
                     </label>
-                    <select name="acquisition_method_id" class="form-select adv-filter-select" onchange="this.form.submit()">
+                    <select name="acquisition_method_id" class="form-select filter-select" onchange="this.form.submit()">
                         <option value="">-- ทุกวิธีการได้มา --</option>
                         @foreach($acquisitionMethods as $am)
                             <option value="{{ $am->id }}" {{ request('acquisition_method_id') == $am->id ? 'selected' : '' }}>
@@ -1814,59 +1378,85 @@
                     </select>
                 </div>
 
-                {{-- Audited Fiscal Year --}}
-                <div class="adv-filter-field">
-                    <label class="adv-filter-label">
-                        <i class="bi bi-calendar-check text-primary"></i> ตรวจนับสเปคประจำปีงบ
+                {{-- Ownership Type (กรรมสิทธิ์ / เครื่องเช่า) --}}
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="bi bi-patch-question text-primary"></i>
+                        <span>กรรมสิทธิ์ / การครอบครอง</span>
                     </label>
-                    <select name="audited_fiscal_year" class="form-select adv-filter-select" onchange="this.form.submit()">
-                        <option value="">-- ทุกปีงบประมาณ --</option>
-                        @php
-                            $fyOptions = collect([$currentFiscalYear ?? 2569, ($currentFiscalYear ?? 2569) - 1, ($currentFiscalYear ?? 2569) - 2])
-                                ->merge($auditedYears ?? [])
-                                ->filter()
-                                ->unique()
-                                ->sortDesc();
-                        @endphp
-                        @foreach($fyOptions as $fy)
-                            <option value="{{ $fy }}" {{ request('audited_fiscal_year') == $fy ? 'selected' : '' }}>
-                                ตรวจนับปีงบ {{ $fy }}
-                            </option>
-                        @endforeach
+                    <select name="ownership_type" class="form-select filter-select" onchange="this.form.submit()">
+                        <option value="">-- ทุกประเภทกรรมสิทธิ์ --</option>
+                        <option value="owned" {{ request('ownership_type') == 'owned' ? 'selected' : '' }}>🏢 เป็นของ รพ. (ซื้อขาด)</option>
+                        <option value="rented" {{ request('ownership_type') == 'rented' ? 'selected' : '' }}>🖨️ เช่าใช้ (เครื่องเช่า)</option>
+                        <option value="donated" {{ request('ownership_type') == 'donated' ? 'selected' : '' }}>🎁 ได้รับบริจาค</option>
+                        <option value="borrowed" {{ request('ownership_type') == 'borrowed' ? 'selected' : '' }}>🔄 ยืมใช้งานภายนอก</option>
                     </select>
                 </div>
 
-                {{-- Audit Status --}}
-                <div class="adv-filter-field">
-                    <label class="adv-filter-label">
-                        <i class="bi bi-clipboard-check text-primary"></i> สถานะการตรวจนับสเปค
-                    </label>
-                    <select name="audit_status" class="form-select adv-filter-select" onchange="this.form.submit()">
-                        <option value="">-- ทุกสถานะการตรวจนับ --</option>
-                        <option value="audited" {{ request('audit_status') == 'audited' ? 'selected' : '' }}>✅ ตรวจนับสเปคแล้ว</option>
-                        <option value="not_audited" {{ request('audit_status') == 'not_audited' ? 'selected' : '' }}>⏳ ยังไม่ได้ตรวจนับ</option>
-                    </select>
+                {{-- Action Buttons --}}
+                <div style="display: flex; gap: 6px;">
+                    <button type="submit" class="btn btn-primary" style="height: 40px; padding: 0 16px; font-weight: 600; font-size: 13.5px;">
+                        <i class="bi bi-funnel-fill"></i> ค้นหา
+                    </button>
+                    <a href="{{ route('assets.index') }}" class="btn btn-secondary" style="height: 40px; width: 40px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="ล้างตัวกรอง">
+                        <i class="bi bi-arrow-counterclockwise" style="font-size: 15px;"></i>
+                    </a>
                 </div>
             </div>
-        </div>
 
-        {{-- 4. Footer Sub-Toolbar (Fleet overview & Status bar) --}}
-        <div style="padding: 10px 20px; background: #ffffff; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-            <div style="font-size: 12.5px; color: #64748b; display: flex; align-items: center; gap: 8px;">
-                <span class="badge" style="background: #f0fdfa; color: #0f766e; border: 1px solid #ccfbf1; font-size: 11.5px; font-weight: 700;">
-                    <i class="bi bi-tag-fill me-1"></i> IT Asset Tag (it_code)
-                </span>
-                <span>รหัสคุมไอทีเชื่อมโยงพัสดุราชการ &bull; กด <kbd style="background:#f1f5f9;border:1px solid #cbd5e1;color:#475569;font-size:10px;padding:1px 5px;border-radius:4px;">/</kbd> เพื่อค้นหา</span>
+            {{-- Sub Toolbar: Audit + Hardware Specs Drawer Toggle --}}
+            <div class="filter-sub-toolbar">
+                <div class="audit-filter-group">
+                    <div class="audit-filter-label">
+                        <i class="bi bi-clipboard-check text-info"></i>
+                        <span>ตรวจนับสเปค:</span>
+                    </div>
+                    <div style="min-width: 160px;">
+                        <select name="audited_fiscal_year" class="form-select form-select-sm" style="border-radius: 8px; font-size: 13px; min-height: 38px; height: 38px; padding: 6px 32px 6px 12px;" onchange="this.form.submit()">
+                            <option value="">-- ทุกปีงบประมาณ --</option>
+                            @php
+                                $fyOptions = collect([$currentFiscalYear ?? 2569, ($currentFiscalYear ?? 2569) - 1, ($currentFiscalYear ?? 2569) - 2])
+                                    ->merge($auditedYears ?? [])
+                                    ->filter()
+                                    ->unique()
+                                    ->sortDesc();
+                            @endphp
+                            @foreach($fyOptions as $fy)
+                                <option value="{{ $fy }}" {{ request('audited_fiscal_year') == $fy ? 'selected' : '' }}>
+                                    ตรวจนับปีงบ {{ $fy }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div style="min-width: 170px;">
+                        <select name="audit_status" class="form-select form-select-sm" style="border-radius: 8px; font-size: 13px; min-height: 38px; height: 38px; padding: 6px 32px 6px 12px;" onchange="this.form.submit()">
+                            <option value="">-- สถานะการตรวจนับ --</option>
+                            <option value="audited" {{ request('audit_status') == 'audited' ? 'selected' : '' }}>✅ ตรวจนับสเปคแล้ว</option>
+                            <option value="not_audited" {{ request('audit_status') == 'not_audited' ? 'selected' : '' }}>⏳ ยังไม่ได้ตรวจนับ</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    {{-- Toggle Hardware Specs Drawer --}}
+                    <button type="button" class="filter-toggle-btn {{ $hasHardwareFilters ? 'active' : '' }}" onclick="toggleHwDrawer()" id="hwDrawerBtn">
+                        <i class="bi bi-cpu-fill text-primary"></i>
+                        <span>สเปคฮาร์ดแวร์ (Hardware Specs Explorer)</span>
+                        @if($hasHardwareFilters)
+                            <span class="badge bg-primary" style="font-size: 10px; padding: 2px 6px; border-radius: 999px;">ใช้งาน</span>
+                        @endif
+                        <i class="bi bi-chevron-down ms-1" id="hwDrawerChevron"></i>
+                    </button>
+
+                    {{-- Fleet Overview Modal Button --}}
+                    <button type="button" class="filter-toggle-btn" onclick="openFleetModal()" title="ดูสัดส่วนสเปคเครื่องทั้งโรงพยาบาล">
+                        <i class="bi bi-pie-chart-fill text-success"></i>
+                        <span>สรุปภาพรวมสเปค รพ.</span>
+                    </button>
+                </div>
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <button type="button" class="filter-toggle-btn" onclick="openFleetModal()" title="ดูสัดส่วนสเปคเครื่องทั้งโรงพยาบาล">
-                    <i class="bi bi-pie-chart-fill text-success"></i>
-                    <span>สรุปภาพรวมสเปค รพ.</span>
-                </button>
-            </div>
-        </div>
-    </form>
-</div>
+        </form>
+    </div>
 
     {{-- Collapsible Hardware Specs Drawer --}}
     <div id="hwSpecsDrawer" class="hw-specs-drawer" style="display: {{ $hasHardwareFilters ? 'block' : 'none' }};">
@@ -2092,7 +1682,7 @@
         <table class="assets-table">
             <thead>
                 <tr>
-                    <th style="min-width: 185px;"><i class="bi bi-tag-fill text-primary me-1"></i>รหัสคุม IT (it_code) / พัสดุ</th>
+                    <th style="width: 170px;">รหัสคุม IT / S/N</th>
                     <th style="min-width: 240px;">ชื่อรายการ / สเปคเครื่อง</th>
                     <th style="width: 140px;">ประเภท</th>
                     <th style="min-width: 180px;">แผนก / สถานที่ตั้ง</th>
@@ -2105,34 +1695,26 @@
             <tbody>
                 @forelse($assets as $asset)
                 <tr>
-                    {{-- Dual Identifiers: IT Asset Tag (it_code) & Official Asset Code --}}
+                    {{-- IT Asset Tag (it_code) & Official Code & Serial Number --}}
                     <td>
-                        {{-- 1. รหัสคุมครุภัณฑ์ไอที (IT Asset Tag / it_code) --}}
-                        <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 3px;">
-                            <a href="{{ route('assets.show', $asset) }}" class="asset-it-tag-link" title="คลิกดูข้อมูลครุภัณฑ์">
-                                <i class="bi bi-tag-fill" style="font-size: 11px; color: #0d9488;"></i>
-                                <span class="it-code-value">{{ $asset->it_code }}</span>
-                            </a>
-                            <button type="button" class="btn-copy-itcode" onclick="copyItCode('{{ $asset->it_code }}', this)" title="คัดลอกรหัส IT Tag">
-                                <i class="bi bi-clipboard"></i>
-                            </button>
-                        </div>
-
-                        {{-- 2. รหัสครุภัณฑ์พัสดุราชการ (Asset Code) --}}
-                        <div class="asset-procure-code" title="รหัสครุภัณฑ์ตามทะเบียนพัสดุราชการ">
-                            <i class="bi bi-file-earmark-text" style="font-size: 10px;"></i>
-                            @if($asset->has_official_asset_code)
+                        <a href="{{ route('assets.show', $asset) }}" class="asset-code-link" title="รหัสคุมครุภัณฑ์ IT">
+                            <i class="bi bi-tag-fill text-primary" style="font-size: 11px;"></i>
+                            <span>{{ $asset->it_code ?: $asset->asset_code }}</span>
+                        </a>
+                        @if($asset->has_official_asset_code && $asset->it_code && $asset->asset_code !== $asset->it_code)
+                            <div class="asset-sn-text" style="color: #475569;" title="รหัสครุภัณฑ์ตามทะเบียนพัสดุราชการ">
+                                <i class="bi bi-file-earmark-text"></i>
                                 <span>{{ $asset->asset_code }}</span>
-                            @elseif($asset->is_rented || str_starts_with($asset->it_code, 'RENT-'))
-                                <span style="color: #ea580c; font-style: italic; font-weight: 600;">[ เครื่องเช่า ]</span>
-                            @elseif($asset->is_donated || str_starts_with($asset->it_code, 'DON-'))
-                                <span style="color: #8b5cf6; font-style: italic; font-weight: 600;">[ รับบริจาค ]</span>
-                            @else
-                                <span style="color: #f59e0b; font-style: italic; font-weight: 600;">[ รอเลขพัสดุ ]</span>
-                            @endif
-                        </div>
-
-                        {{-- 3. หมายเลขประจำเครื่อง (Serial Number) --}}
+                            </div>
+                        @elseif($asset->is_rented || str_starts_with((string)$asset->it_code, 'RENT'))
+                            <div class="asset-sn-text" style="color: #ea580c; font-weight: 600;">
+                                <span>[ เครื่องเช่า ]</span>
+                            </div>
+                        @elseif($asset->ownership_type === 'donated' || str_starts_with((string)$asset->it_code, 'DON'))
+                            <div class="asset-sn-text" style="color: #059669; font-weight: 600;">
+                                <span>[ รับบริจาค ]</span>
+                            </div>
+                        @endif
                         @if($asset->serial_number)
                             <div class="asset-sn-text" title="Serial Number">
                                 <i class="bi bi-upc"></i>
@@ -2552,79 +2134,6 @@
 
 @push('scripts')
 <script>
-    function toggleAdvancedFilters() {
-        const drawer = document.getElementById('advancedFiltersDrawer');
-        const chevron = document.getElementById('advChevron');
-        const btn = document.getElementById('btnToggleAdvanced');
-        if (!drawer) return;
-        if (drawer.style.display === 'none' || drawer.style.display === '') {
-            drawer.style.display = 'block';
-            if (chevron) chevron.style.transform = 'rotate(180deg)';
-            if (btn) btn.classList.add('active');
-        } else {
-            drawer.style.display = 'none';
-            if (chevron) chevron.style.transform = 'none';
-            if (btn && !{{ $hasAdvancedFilters ? 'true' : 'false' }}) btn.classList.remove('active');
-        }
-    }
-
-    function clearMainSearch() {
-        const input = document.getElementById('mainAssetSearchInput');
-        const clearBtn = document.getElementById('searchClearBtn');
-        if (input) {
-            input.value = '';
-            if (clearBtn) clearBtn.style.display = 'none';
-            input.focus();
-            document.getElementById('assetMainFilterForm').submit();
-        }
-    }
-
-    // Toggle clear button on input
-    const searchInputElem = document.getElementById('mainAssetSearchInput');
-    if (searchInputElem) {
-        searchInputElem.addEventListener('input', function() {
-            const clearBtn = document.getElementById('searchClearBtn');
-            if (clearBtn) {
-                clearBtn.style.display = this.value.trim().length > 0 ? 'inline-flex' : 'none';
-            }
-        });
-    }
-
-    // Keyboard shortcut: Press '/' to focus search box
-    document.addEventListener('keydown', function(e) {
-        if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
-            e.preventDefault();
-            const input = document.getElementById('mainAssetSearchInput');
-            if (input) {
-                input.focus();
-                input.select();
-            }
-        }
-    });
-
-    // Copy IT Code to clipboard
-    function copyItCode(code, btn) {
-        if (!navigator.clipboard) {
-            const temp = document.createElement('textarea');
-            temp.value = code;
-            document.body.appendChild(temp);
-            temp.select();
-            document.execCommand('copy');
-            document.body.removeChild(temp);
-        } else {
-            navigator.clipboard.writeText(code);
-        }
-        const icon = btn.querySelector('i');
-        if (icon) {
-            icon.className = 'bi bi-check2 text-success';
-            btn.setAttribute('title', 'คัดลอกสำเร็จ!');
-            setTimeout(() => {
-                icon.className = 'bi bi-clipboard';
-                btn.setAttribute('title', 'คัดลอกรหัส IT Tag');
-            }, 1500);
-        }
-    }
-
     function toggleHwDrawer() {
         const drawer = document.getElementById('hwSpecsDrawer');
         const btn = document.getElementById('hwDrawerBtn');

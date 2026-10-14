@@ -325,16 +325,16 @@ class Asset extends Model
     {
         // 1. ถ้ามีค่าจริงในคอลัมน์ it_code
         if (!empty($value)) {
-            return $value;
+            return str_replace('-', '', $value);
         }
 
         if (!empty($this->attributes['it_code'])) {
-            return $this->attributes['it_code'];
+            return str_replace('-', '', $this->attributes['it_code']);
         }
 
         // 2. ถ้ามีการบันทึกแท็กปรับแต่งพิเศษไว้ใน notes เช่น [IT-TAG: ER-PC-67-001]
         if (!empty($this->notes) && preg_match('/\[IT-TAG:\s*([^\]]+)\]/', $this->notes, $matches)) {
-            return trim($matches[1]);
+            return str_replace('-', '', trim($matches[1]));
         }
 
         // 3. ผูกรหัสอัตโนมัติจากเลขพัสดุและสังกัด (Smart Binding)
@@ -343,7 +343,7 @@ class Asset extends Model
 
     public function setItCodeAttribute($value): void
     {
-        $this->attributes['it_code'] = !empty($value) ? trim($value) : null;
+        $this->attributes['it_code'] = !empty($value) ? str_replace('-', '', trim($value)) : null;
     }
 
     /**
@@ -371,12 +371,12 @@ class Asset extends Model
             return false;
         }
         $code = strtoupper(trim($this->asset_code));
-        return !str_starts_with($code, 'PENDING-') 
-            && !str_starts_with($code, 'TEMP-') 
+        return !str_starts_with($code, 'PENDING') 
+            && !str_starts_with($code, 'TEMP') 
             && !str_starts_with($code, 'NO-ASSET') 
-            && !str_starts_with($code, 'NOASSET-') 
-            && !str_starts_with($code, 'RENT-') 
-            && !str_starts_with($code, 'DON-');
+            && !str_starts_with($code, 'NOASSET') 
+            && !str_starts_with($code, 'RENT') 
+            && !str_starts_with($code, 'DON');
     }
 
     /**
@@ -384,10 +384,10 @@ class Asset extends Model
      */
     public function getOfficialAssetCodeDisplayAttribute(): string
     {
-        if ($this->is_rented || str_starts_with($this->it_code, 'RENT-')) {
+        if ($this->is_rented || str_starts_with((string)$this->it_code, 'RENT')) {
             return 'เครื่องเช่า (ไม่มีเลขพัสดุ)';
         }
-        if ($this->is_donated || str_starts_with($this->it_code, 'DON-')) {
+        if ($this->is_donated || str_starts_with((string)$this->it_code, 'DON')) {
             return 'รับบริจาค (ไม่มีเลขพัสดุ)';
         }
         if ($this->has_official_asset_code) {
