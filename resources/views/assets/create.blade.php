@@ -408,24 +408,25 @@
                                     <i class="bi bi-tag-fill text-primary"></i> รหัสคุมครุภัณฑ์ไอที (IT Tag)
                                 </label>
                                 <span id="itBindingBadge" class="badge" style="background: #0d9488; color: white; font-size: 10px;">
-                                    <i class="bi bi-link-45deg"></i> ผูกอัตโนมัติ
+                                    <i class="bi bi-magic"></i> คำนวณอัตโนมัติ
                                 </span>
                             </div>
                             <div style="position: relative;">
                                 <input type="text" id="it_code" name="it_code" class="form-control"
-                                       value="{{ old('it_code', old('it_asset_code')) }}" placeholder="เช่น PC670001 หรือ NB660001"
-                                       style="font-family: monospace; font-size: 14px; font-weight: 700; color: #0f766e; background: #ffffff; border-color: #0d9488;"
+                                       value="{{ old('it_code', old('it_asset_code')) }}" placeholder="เช่น PCXX0001 หรือ PC670001"
+                                       readonly
+                                       style="font-family: monospace; font-size: 14px; font-weight: 700; color: #0f766e; background: #f8fafc; border-color: #0d9488; cursor: default;"
                                        oninput="handleManualTagInput()">
                                 <div style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px;">
                                     <button type="button" id="btnToggleManualTag" onclick="toggleManualTag()" 
                                             style="background: #f0fdfa; border: 1px solid #ccfbf1; color: #0d9488; border-radius: 4px; padding: 3px 8px; font-size: 11px; font-weight: 600; cursor: pointer;" 
                                             title="คลิกเพื่อปลดล็อกแก้ไขรหัสเอง หรือซิงค์อัตโนมัติ">
-                                        <i class="bi bi-pencil" id="manualTagIcon"></i> <span id="manualTagLabel">แก้ไขเอง</span>
+                                        <i class="bi bi-lock-fill" id="manualTagIcon"></i> <span id="manualTagLabel">แก้ไขเอง</span>
                                     </button>
                                 </div>
                             </div>
                             <span class="form-text" id="it_tag_hint" style="color: #0f766e; font-size: 11.5px;">
-                                สูตร: [ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น เช่น PC670001) &bull; ปริ้นสติ๊กเกอร์ครั้งเดียว ย้ายแผนกไม่ต้องปริ้นใหม่
+                                สูตร: [ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] &bull; ปริ้นสติ๊กเกอร์ครั้งเดียว ย้ายแผนกไม่ต้องปริ้นใหม่
                             </span>
                         </div>
                     </div>
@@ -902,7 +903,10 @@
                     <div class="form-group">
                         <label class="form-label" for="budget_year">ปีงบประมาณ</label>
                         <input type="text" id="budget_year" name="budget_year" class="form-control"
-                               value="{{ old('budget_year', $prefillAudit->fiscal_year ?? '2569') }}" placeholder="เช่น 2568, 2569">
+                               value="{{ old('budget_year', $prefillAudit->fiscal_year ?? '') }}" 
+                               placeholder="เช่น 2567, 2568 (หากว่าง ระบบจะใช้ XX อัตโนมัติ)"
+                               oninput="if (!isManualTagOverride) updateSmartBoundItTag()"
+                               onchange="if (!isManualTagOverride) updateSmartBoundItTag()">
                     </div>
                 </div>
             </div>
@@ -1019,6 +1023,10 @@
                 hwSection.style.boxShadow = '0 2px 8px rgba(0,0,0,0.02)';
             }
         }
+
+        if (typeof updateSmartBoundItTag === 'function') {
+            updateSmartBoundItTag();
+        }
     }
 
     // Quick fill helpers
@@ -1056,13 +1064,16 @@
 
     function handlePurchaseDateChange(val) {
         const budgetYearInput = document.getElementById('budget_year');
-        if (val && budgetYearInput && (!budgetYearInput.value || budgetYearInput.value === '2568')) {
+        if (val && budgetYearInput) {
             const date = new Date(val);
             const gregorianYear = date.getFullYear();
             const month = date.getMonth() + 1;
             // Thai Fiscal Year: Oct (month 10) starts new budget year
             const budgetYear = (month >= 10 ? gregorianYear + 1 : gregorianYear) + 543;
             budgetYearInput.value = budgetYear;
+            if (!isManualTagOverride && typeof updateSmartBoundItTag === 'function') {
+                updateSmartBoundItTag();
+            }
         }
     }
 
@@ -1306,15 +1317,20 @@
 
     function resolveBudgetYearShort() {
         const bYearInput = document.getElementById('budget_year');
-        if (bYearInput && bYearInput.value) {
+        if (bYearInput && bYearInput.value && bYearInput.value.trim() !== '') {
             const val = bYearInput.value.trim();
             if (val.length >= 2) {
                 return val.slice(-2);
             }
         }
-        const now = new Date();
-        const beYear = (now.getMonth() + 1 >= 10) ? now.getFullYear() + 544 : now.getFullYear() + 543;
-        return String(beYear).slice(-2);
+        const assetCodeInput = document.getElementById('asset_code');
+        if (assetCodeInput && assetCodeInput.value) {
+            const parsed = parseAssetCodeJs(assetCodeInput.value);
+            if (parsed && parsed.year) {
+                return parsed.year;
+            }
+        }
+        return 'XX';
     }
 
     /**
@@ -1352,16 +1368,22 @@
             if (itBadge) itBadge.style.background = '#0284c7';
         } else {
             prefix = '';
-            badgeHtml = `<i class="bi bi-magic"></i> รหัสอัตโนมัติ (${typeCode}${year})`;
-            hintHtml = `🔗 <strong>สูตรใหม่:</strong> [${typeCode}][${year}][${seq}] &rarr; ${typeCode}${year}${seq} &bull; <em>ปริ้นสติ๊กเกอร์ครั้งเดียว ย้ายแผนกไม่ต้องปริ้นใหม่</em>`;
-            if (itBadge) itBadge.style.background = '#0d9488';
+            if (year === 'XX') {
+                badgeHtml = `<i class="bi bi-clock-history"></i> ปีงบประมาณว่าง (${typeCode}XX)`;
+                hintHtml = `🔗 <strong>สูตร:</strong> [${typeCode}][XX][${seq}] &rarr; <span style="color:#d97706; font-weight:700;">ปีงบว่างใส่เป็น XX ชั่วคราว</span> (เมื่อระบุปีงบจะเปลี่ยนเป็นปีจริงอัตโนมัติ)`;
+                if (itBadge) itBadge.style.background = '#f59e0b';
+            } else {
+                badgeHtml = `<i class="bi bi-magic"></i> รหัสอัตโนมัติ (${typeCode}${year})`;
+                hintHtml = `🔗 <strong>สูตร:</strong> [${typeCode}][${year}][${seq}] &rarr; ${typeCode}${year}${seq} &bull; <em>ปริ้นสติ๊กเกอร์ครั้งเดียว ย้ายแผนกไม่ต้องปริ้นใหม่</em>`;
+                if (itBadge) itBadge.style.background = '#0d9488';
+            }
         }
 
         const newCode = `${prefix}${typeCode}${year}${seq}`;
-        if (itInput) {
+        if (itInput && !isManualTagOverride) {
             itInput.value = newCode;
             itInput.style.backgroundColor = '#f0fdfa';
-            setTimeout(() => { itInput.style.backgroundColor = '#ffffff'; }, 300);
+            setTimeout(() => { itInput.style.backgroundColor = '#f8fafc'; }, 300);
         }
         if (itBadge) {
             itBadge.innerHTML = badgeHtml;
@@ -1404,7 +1426,11 @@
                         itInput.value = data.it_code;
                     }
                     if (itHint) {
-                        itHint.innerHTML = `🔗 <strong>รหัสคุม IT อัตโนมัติ:</strong> <span style="font-family: monospace; font-weight: 700;">${data.it_code}</span> (สูตร: [ประเภท][ปีงบ][ลำดับ] &bull; ปริ้นครั้งเดียว ไม่ผูกแผนก)`;
+                        if (data.year === 'XX' || (!bYear && !assetCode)) {
+                            itHint.innerHTML = `🔗 <strong>รหัสคุม IT อัตโนมัติ:</strong> <span style="font-family: monospace; font-weight: 700; color: #0d9488;">${data.it_code}</span> <span class="badge" style="background: #f59e0b; font-size: 10px;">ปีงบว่าง (XX)</span> <span style="color: #64748b; font-size: 11px;">(ระบุปีงบประมาณด้านล่างเพื่อเปลี่ยนเป็นปีจริงอัตโนมัติ)</span>`;
+                        } else {
+                            itHint.innerHTML = `🔗 <strong>รหัสคุม IT อัตโนมัติ:</strong> <span style="font-family: monospace; font-weight: 700; color: #0d9488;">${data.it_code}</span> <span style="color: #64748b; font-size: 11px;">(สูตร: [ประเภท][ปีงบ][ลำดับ] &bull; ปริ้นครั้งเดียว ไม่ผูกแผนก)</span>`;
+                        }
                     }
                 }
             })
@@ -1430,10 +1456,13 @@
             if (icon) icon.className = 'bi bi-arrow-repeat';
             if (label) label.textContent = 'ซิงค์อัตโนมัติ';
             if (badge) {
-                badge.innerHTML = '<i class="bi bi-pencil"></i> ปรับแต่งเอง';
+                badge.innerHTML = '<i class="bi bi-pencil-fill"></i> กำหนดเอง';
                 badge.style.background = '#8b5cf6';
             }
             if (input) {
+                input.removeAttribute('readonly');
+                input.style.backgroundColor = '#ffffff';
+                input.style.cursor = 'text';
                 input.focus();
                 input.select();
             }
@@ -1451,8 +1480,13 @@
             // กลับไปผูกอัตโนมัติ
             isManualTagOverride = false;
             currentPrefixMode = 'auto';
-            if (icon) icon.className = 'bi bi-pencil';
+            if (icon) icon.className = 'bi bi-lock-fill';
             if (label) label.textContent = 'แก้ไขเอง';
+            if (input) {
+                input.setAttribute('readonly', 'readonly');
+                input.style.backgroundColor = '#f8fafc';
+                input.style.cursor = 'default';
+            }
             // ปรับปุ่ม prefix pills กลับมาเป็น auto
             document.querySelectorAll('#prefixButtonGroup .btn-prefix-pill').forEach(btn => {
                 const radio = btn.querySelector('input');

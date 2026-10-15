@@ -336,15 +336,15 @@ class ItAssetCodeGeneratorService
         // ยืดหยุ่นรองรับ:
         // 1. getNextSequence(string $type, string $year, ?int $excludeAssetId = null, ?string $prefix = null)
         // 2. getNextSequence(string $prefix, string $type, string $year, ?int $excludeAssetId = null)
-        if (is_numeric($arg2) && strlen((string)$arg2) <= 4) {
+        if ((is_numeric($arg2) && strlen((string)$arg2) <= 4) || strtoupper(trim((string)$arg2)) === 'XX') {
             $type = (string)$arg1;
-            $year = (string)$arg2;
+            $year = strtoupper(trim((string)$arg2));
             $excludeAssetId = $arg3 ? (int)$arg3 : null;
             $prefix = $arg4 ? (string)$arg4 : null;
         } else {
             $prefix = (string)$arg1;
             $type = (string)$arg2;
-            $year = (string)$arg3;
+            $year = strtoupper(trim((string)$arg3));
             $excludeAssetId = $arg4 ? (int)$arg4 : null;
             // หาก prefix เป็นรหัสแผนกทั่วไป (ไม่ใช่ RENT หรือ DON) ให้ละเว้นเพื่อไม่ให้ติดแผนก
             if (!in_array(strtoupper(trim($prefix)), ['RENT', 'DON'])) {
@@ -386,6 +386,7 @@ class ItAssetCodeGeneratorService
      * ผูกรหัสคุมครุภัณฑ์ไอที (IT Tag) ตามสูตรใหม่:
      * [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับที่ได้อัตโนมัติ]
      * ไม่มีขีดคั่น ไม่ผูกกับแผนก เพื่อให้ย้ายตำแหน่งได้โดยไม่ต้องปริ้นสติ๊กเกอร์ใหม่
+     * ถ้าปีงบประมาณว่าง ให้ใส่เป็น XX ก่อน
      */
     public static function generateAutoBoundCode(
         $assetOrCode = null,
@@ -419,7 +420,7 @@ class ItAssetCodeGeneratorService
         if ($isRented) {
             $prefix = 'RENT';
             $type = $typeCode ? strtoupper(str_replace(['-', ' '], '', $typeCode)) : 'PRN';
-            $yearStr = $budgetYear ? substr((string)$budgetYear, -2) : '67';
+            $yearStr = !empty($budgetYear) ? substr((string)$budgetYear, -2) : 'XX';
             $seqStr = self::getNextSequence($type, $yearStr, $excludeId, $prefix);
             return self::buildCode($type, $yearStr, $seqStr, 4, '', $prefix);
         }
@@ -429,7 +430,7 @@ class ItAssetCodeGeneratorService
         if ($isDonated) {
             $prefix = 'DON';
             $type = $typeCode ? strtoupper(str_replace(['-', ' '], '', $typeCode)) : 'NB';
-            $yearStr = $budgetYear ? substr((string)$budgetYear, -2) : '67';
+            $yearStr = !empty($budgetYear) ? substr((string)$budgetYear, -2) : 'XX';
             $seqStr = self::getNextSequence($type, $yearStr, $excludeId, $prefix);
             return self::buildCode($type, $yearStr, $seqStr, 4, '', $prefix);
         }
@@ -437,15 +438,14 @@ class ItAssetCodeGeneratorService
         // กรณีเป็นของ รพ. / ซื้อขาด (สูตรสากล: [ประเภท][ปีงบ][ลำดับอัตโนมัติ] ปริ้นครั้งเดียว ไม่ขึ้นกับแผนก)
         $type = !empty($typeCode) ? strtoupper(str_replace(['-', ' '], '', $typeCode)) : 'PC';
 
-        // กำหนดปีงบประมาณ [ปีงบประมาณ 2 หลัก]
-        // เช็คจากเลขพัสดุราชการก่อน ถ้าไม่มีจึงใช้ budget_year ถ้าไม่มีใช้ 67
+        // กำหนดปีงบประมาณ [ปีงบประมาณ 2 หลัก หรือ XX หากไม่ระบุ]
         $parsed = self::parseOfficialAssetCode($assetCode);
         if (!empty($parsed['year'])) {
             $yearStr = $parsed['year'];
         } elseif (!empty($budgetYear)) {
             $yearStr = substr((string)$budgetYear, -2);
         } else {
-            $yearStr = '67';
+            $yearStr = 'XX'; // ถ้าปีงบประมาณว่าง ให้ใส่เป็น XX ก่อน
         }
 
         // ถ้ามีการระบุ prefix เฉพาะเจาะจง เช่น RENT หรือ DON

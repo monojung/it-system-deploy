@@ -405,7 +405,7 @@ class AssetController extends Controller
             $typeCode = ItAssetCodeGeneratorService::resolveDeviceTypeCode($devType, $data['name'] ?? null, $data['asset_code'] ?? null);
             
             $parsed = ItAssetCodeGeneratorService::parseOfficialAssetCode($data['asset_code'] ?? null);
-            $yearStr = !empty($parsed['year']) ? $parsed['year'] : (!empty($data['budget_year']) ? substr((string)$data['budget_year'], -2) : '67');
+            $yearStr = !empty($parsed['year']) ? $parsed['year'] : (!empty($data['budget_year']) ? substr((string)$data['budget_year'], -2) : 'XX');
             
             $prefixMode = $request->input('prefix_mode', 'auto');
             $customPrefix = match($prefixMode) {
@@ -561,8 +561,33 @@ class AssetController extends Controller
             $data['ownership_type'] = $asset->ownership_type ?? 'owned';
         }
 
-        // บันทึกรหัสคุมไอที (IT Asset Tag) ตามสูตรใหม่: [แผนก][ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น)
+        // บันทึกรหัสคุมไอที (IT Asset Tag) ตามสูตรใหม่: [ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น ไม่ผูกแผนก เพื่อให้ย้ายตำแหน่งได้โดยไม่ต้องปริ้นสติ๊กเกอร์ใหม่)
         $itTag = strtoupper(str_replace(['-', ' '], '', trim($request->input('it_code') ?: $request->input('it_asset_code', ''))));
+        $prefixMode = $request->input('prefix_mode', 'auto');
+        if (empty($itTag)) {
+            $devType = !empty($data['device_type_id']) ? DeviceType::find($data['device_type_id']) : null;
+            $typeCode = ItAssetCodeGeneratorService::resolveDeviceTypeCode($devType, $data['name'] ?? null, $data['asset_code'] ?? null);
+            $parsed = ItAssetCodeGeneratorService::parseOfficialAssetCode($data['asset_code'] ?? null);
+            $yearStr = !empty($parsed['year']) ? $parsed['year'] : (!empty($data['budget_year']) ? substr((string)$data['budget_year'], -2) : 'XX');
+            $customPrefix = match($prefixMode) {
+                'rent' => 'RENT',
+                'don' => 'DON',
+                default => null,
+            };
+            if ($customPrefix === null && ($data['ownership_type'] ?? 'owned') === 'rented') {
+                $customPrefix = 'RENT';
+            } elseif ($customPrefix === null && ($data['ownership_type'] ?? 'owned') === 'donated') {
+                $customPrefix = 'DON';
+            }
+            $itTag = ItAssetCodeGeneratorService::generateNextAutoCode(
+                $data['asset_code'] ?? null,
+                $customPrefix,
+                $typeCode,
+                $data['ownership_type'] ?? 'owned',
+                $yearStr,
+                $asset->id
+            );
+        }
         if (!empty($itTag)) {
             $data['it_code'] = $itTag;
             $cleanNotes = preg_replace('/\[IT-TAG:\s*[^\]]+\]\s*/', '', $data['notes'] ?? $asset->notes ?? '');
@@ -1161,7 +1186,7 @@ class AssetController extends Controller
         $resolvedTypeCode = $deviceTypeCodeParam ?: ItAssetCodeGeneratorService::resolveDeviceTypeCode($deviceType);
 
         $parsed = ItAssetCodeGeneratorService::parseOfficialAssetCode($assetCode);
-        $yearStr = !empty($parsed['year']) ? $parsed['year'] : ($budgetYear ? substr((string)$budgetYear, -2) : '67');
+        $yearStr = !empty($parsed['year']) ? $parsed['year'] : (!empty($budgetYear) ? substr((string)$budgetYear, -2) : 'XX');
 
         $prefix = null;
         if ($prefixMode === 'rent' || $ownershipType === 'rented') {

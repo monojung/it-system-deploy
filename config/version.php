@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.6.3'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Mobile & Tablet Cross-Platform Responsive Suite)',
+    'version' => env('APP_VERSION', '2.6.4'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Smart Auto-Updating IT Asset Tag Suite & XX Year Fallback)',
     'release_date' => '2026-10-15',
-    'build' => '20261009.1',
+    'build' => '20261015.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,18 @@ return [
     |
     */
     'changelog' => [
+        '2.6.4' => [
+            'date' => '2026-10-15',
+            'badge' => 'Smart Auto-Updating IT Tag & XX Year Fallback',
+            'badge_color' => '#0d9488',
+            'title' => 'ระบบรหัสคุมครุภัณฑ์ไอที (IT Tag) อัตโนมัติเต็มรูปแบบ: เปลี่ยนแปลงอัตโนมัติเมื่อแก้ไขข้อมูล, ลดการแก้ไขเองด้วยโหมด Readonly Auto-Sync, รองรับปีงบประมาณว่างใส่เป็น XX ก่อน พร้อมอัปเดตเป็นปีจริงทันทีเมื่อระบุปีงบ',
+            'highlights' => [
+                'ระบบคำนวณและเปลี่ยนแปลงรหัส IT Tag อัตโนมัติ (Dynamic Live Recalibration): เมื่อแก้ไขข้อมูลประเภทอุปกรณ์ (Device Type), ปีงบประมาณ (Budget Year), หมายเลขพัสดุราชการ (Asset No.), หรือประเภทการครอบครอง (เครื่องเช่า RENT / รับบริจาค DON) ระบบจะคำนวณและดึงรหัส IT Tag ลำดับถัดไปแบบอัตโนมัติทันทีทั้งในหน้าลงทะเบียนใหม่ (Create) และหน้าแก้ไขข้อมูล (Edit)',
+                'ลดการแก้ไขเองให้น้อยที่สุด (Readonly Auto-Sync by Default): ช่องรหัสคุม IT ถูกล็อกเป็น Readonly พร้อมสไตล์ระบุสถานะอัตโนมัติ ป้องกันการพิมพ์ผิดหรือข้อมูลคลาดเคลื่อน พร้อมมีปุ่มปลดล็อก [แก้ไขเอง] เฉพาะกรณีจำเป็นเท่านั้น',
+                'รองรับกรณีปีงบประมาณว่างด้วยรหัส XX ชั่วคราว (Fallback Year Placeholder): หากสินทรัพย์ยังไม่ได้ระบุปีงบประมาณ ระบบจะสร้างรหัสโดยใช้ XX แทนปีงบประมาณโดยอัตโนมัติ (เช่น PCXX0001, UPSXX0001) และเมื่อมีการระบุปีงบประมาณในภายหลัง (เช่น 2567) ระบบจะเปลี่ยนเป็นปีจริง (เช่น PC670001) ให้ทันที',
+                'ซิงค์ฐานข้อมูลครุภัณฑ์เดิม 208 รายการ: รายการที่ยังไม่มีปีงบประมาณได้รับการปรับเป็น [ประเภท]XX[ลำดับ] อย่างเป็นระเบียบและไม่มีรายการซ้ำซ้อน 100%',
+            ],
+        ],
         '2.6.3' => [
             'date' => '2026-10-09',
             'badge' => 'Major UI/UX Suite: 100% Cross-Platform Mobile & Tablet Responsive Modernization',
