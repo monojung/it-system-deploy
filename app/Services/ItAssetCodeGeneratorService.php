@@ -5,168 +5,150 @@ namespace App\Services;
 use App\Models\DeviceType;
 use App\Models\Department;
 use App\Models\Asset;
-use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 /**
- * Service สำหรับออกแบบและเชื่อมระบบรหัสคุมครุภัณฑ์ไอที (IT Asset Tag / IT Code)
- * เข้ากับระบบคลังคอมพิวเตอร์และครุภัณฑ์ IT
- * - ใช้รหัสย่อ (Code) ของแผนกในโรงพยาบาลเป็น Prefix (เช่น ER, OPD, LAB, IT, PHAR)
- * - ใช้ Prefix RENT สำหรับเครื่องเช่า และ DON สำหรับรับบริจาค โดยไม่มีเลขพัสดุ
+ * Service สำหรับออกแบบและสร้างรหัสคุมครุภัณฑ์ไอที (IT Code / IT Asset Tag)
+ * ดีไซน์ใหม่: ไม่ใช้สูตรปีงบ/ไม่ผูกเลขพัสดุ/ไม่ผูกแผนก
+ * โครงสร้าง: [รหัสย่อประเภท]-[สุ่ม 6 หลัก อักษรพิมพ์ใหญ่และตัวเลข]
+ * เช่น PC-K9M2X4, NB-7A8B9C, PRN-3F2W9K, AIO-8H2K6W
+ * รองรับการสร้าง Barcode (Code 128) และ QR Code แบบสากล
  */
 class ItAssetCodeGeneratorService
 {
     /**
-     * ค่าตั้งต้นของหน่วยงาน
+     * ชุดอักขระสำหรับสุ่มรหัส 6 หลัก (ตัวอักษรภาษาอังกฤษพิมพ์ใหญ่ และ ตัวเลข)
+     * คัดกรองตัวอักษรที่อาจสับสนออก เช่น O กับ 0, I กับ 1 เพื่อความชัดเจนเมื่ออ่านด้วยตาเปล่า
+     * แต่ยังคงรองรับการสแกนผ่าน Barcode 1D และ QR Code ได้อย่างแม่นยำ 100%
      */
-    public const DEFAULT_PREFIX = '';
+    public const CHARSET_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    public const CHARSET_DIGITS  = '23456789';
 
     /**
-     * รายการ Preset รูปแบบรหัสที่เตรียมไว้สำหรับคลังและจำลอง
+     * ข้อมูลคำอธิบายระบบรหัสใหม่
      */
     public static function getPresets(): array
     {
         return [
-            'standard' => [
-                'id' => 'standard',
-                'name' => 'รูปแบบมาตรฐาน: [ประเภท][ปีงบประมาณ][ลำดับอัตโนมัติ] (ไร้ขีดคั่น ไม่ผูกแผนก)',
-                'pattern' => '[TYPE][YY][SEQ]',
-                'sample' => 'PC670001',
-                'desc' => 'ประกอบด้วย รหัสประเภท (PC/NB/AIO) + ปีงบประมาณ 2 หลัก (67) + ลำดับอัตโนมัติ 4 หลัก (0001) ปริ้นสติ๊กเกอร์ครั้งเดียว ย้ายตำแหน่งไปแผนกอื่นไม่ต้องปริ้นใหม่',
-                'badge' => 'แนะนำ สูตรมาตรฐานคลัง IT',
-                'prefix' => '',
-                'year_format' => 'short', // 67
-                'seq_digits' => 4,
-                'separator' => '',
-            ],
-            'rental_fleet' => [
-                'id' => 'rental_fleet',
-                'name' => 'รูปแบบเครื่องเช่า: RENT[TYPE][YY][SEQ] (ไม่มีขีดคั่น)',
-                'pattern' => 'RENT[TYPE][YY][SEQ]',
-                'sample' => 'RENTPRN670001',
-                'desc' => 'Prefix RENT สำหรับอุปกรณ์สัญญาเช่า คุมด้วยรหัสไอทีต่อเนื่องโดยไม่มีเลขพัสดุ',
-                'badge' => 'เครื่องเช่า (ไม่มีเลขพัสดุ)',
-                'prefix' => 'RENT',
-                'year_format' => 'short',
-                'seq_digits' => 4,
-                'separator' => '',
-            ],
-            'donation_fleet' => [
-                'id' => 'donation_fleet',
-                'name' => 'รูปแบบรับบริจาค: DON[TYPE][YY][SEQ] (ไม่มีขีดคั่น)',
-                'pattern' => 'DON[TYPE][YY][SEQ]',
-                'sample' => 'DONNB670001',
-                'desc' => 'Prefix DON สำหรับอุปกรณ์ที่ได้รับบริจาค คุมด้วยรหัสไอทีต่อเนื่องโดยไม่มีเลขพัสดุ',
-                'badge' => 'รับบริจาค (ไม่มีเลขพัสดุ)',
-                'prefix' => 'DON',
-                'year_format' => 'short',
-                'seq_digits' => 4,
-                'separator' => '',
-            ],
-            'type_running' => [
-                'id' => 'type_running',
-                'name' => 'รูปแบบลำดับต่อเนื่องตามประเภทอุปกรณ์ (ไม่มีขีดคั่น)',
-                'pattern' => '[TYPE][SEQ]',
-                'sample' => 'PC0142',
-                'desc' => 'รหัสประเภท + ลำดับ 4 หลักต่อเนื่องตลอดชีพ ไม่ผูกกับปีงบประมาณ',
-                'badge' => 'รันต่อเนื่องตลอดชีพ',
-                'prefix' => '',
-                'year_format' => 'none', // ไม่มีปี
-                'seq_digits' => 4,       // 0142
-                'separator' => '',
+            'random_alphanumeric' => [
+                'id' => 'random_alphanumeric',
+                'name' => 'รูปแบบสุ่มอิสระ: [รหัสประเภท]-[สุ่ม 6 หลัก พิมพ์ใหญ่+ตัวเลข] (พร้อม Barcode)',
+                'pattern' => '[TYPE]-[RANDOM6]',
+                'sample' => 'PC-K9M2X4',
+                'desc' => 'รหัสย่อประเภทอุปกรณ์ (เช่น PC, NB, PRN) ตามด้วยรหัสสุ่ม 6 หลักที่ไม่ซ้ำกัน สแกนได้ทันทีด้วยเครื่องอ่าน Barcode 1D และ QR Code',
+                'badge' => 'ระบบใหม่ มาตรฐานสากล',
             ],
         ];
     }
 
     /**
-     * ดึงรหัสย่อ (Code) ของแผนก หากในตารางยังไม่มี ให้แปลงจากชื่อแผนกตามมาตรฐาน รพ.
+     * สุ่มรหัส 6 หลัก ประกอบด้วยตัวอักษรพิมพ์ใหญ่และตัวเลข
+     * รับประกันว่ามีทั้งตัวอักษรและตัวเลขผสมกันเสมอ
      */
-    public static function resolveDepartmentCode(?Department $department): string
+    public static function generateRandomToken(int $length = 6): string
     {
-        if (!$department) {
-            return self::DEFAULT_PREFIX;
-        }
+        $letters = self::CHARSET_LETTERS;
+        $digits = self::CHARSET_DIGITS;
+        $all = $letters . $digits;
+        $allLen = strlen($all);
 
-        if (!empty($department->code)) {
-            return strtoupper(trim($department->code));
-        }
+        do {
+            $token = '';
+            $hasLetter = false;
+            $hasDigit = false;
 
-        $name = mb_strtolower((string)($department->name ?? ''));
-        return match (true) {
-            str_contains($name, 'สารสนเทศ') || str_contains($name, 'คอมพิวเตอร์') || str_contains($name, 'it') => 'IT',
-            str_contains($name, 'ฉุกเฉิน') || str_contains($name, 'ems') || str_contains($name, 'er') => 'ER',
-            str_contains($name, 'ผู้ป่วยนอก') || str_contains($name, 'opd') => 'OPD',
-            str_contains($name, 'ผู้ป่วยใน') || str_contains($name, 'ipd') => 'IPD',
-            str_contains($name, 'เภสัช') || str_contains($name, 'ยา') => 'PHAR',
-            str_contains($name, 'ชันสูตร') || str_contains($name, 'แล็บ') || str_contains($name, 'lab') => 'LAB',
-            str_contains($name, 'รังสี') || str_contains($name, 'x-ray') || str_contains($name, 'xray') => 'XRAY',
-            str_contains($name, 'ทันต') || str_contains($name, 'dent') => 'DENT',
-            str_contains($name, 'กายภาพ') || str_contains($name, 'pt') => 'PT',
-            str_contains($name, 'บริหาร') || str_contains($name, 'สารบรรณ') || str_contains($name, 'ธุรการ') => 'ADM',
-            str_contains($name, 'พัสดุ') || str_contains($name, 'บำรุง') => 'SUP',
-            str_contains($name, 'การเงิน') || str_contains($name, 'บัญชี') || str_contains($name, 'fin') => 'FIN',
-            str_contains($name, 'ประกัน') || str_contains($name, 'เวชระเบียน') => 'INS',
-            str_contains($name, 'คลอด') || str_contains($name, 'lr') || str_contains($name, 'ผ่าตัด') => 'LR',
-            default => self::DEFAULT_PREFIX,
-        };
+            for ($i = 0; $i < $length; $i++) {
+                $char = $all[random_int(0, $allLen - 1)];
+                $token .= $char;
+
+                if (str_contains($letters, $char)) {
+                    $hasLetter = true;
+                }
+                if (str_contains($digits, $char)) {
+                    $hasDigit = true;
+                }
+            }
+        } while (!$hasLetter || !$hasDigit);
+
+        return $token;
     }
 
     /**
-     * คำนวณปีงบประมาณราชการไทย (เดือน ต.ค. เป็นต้นไป คือปีงบประมาณถัดไป)
+     * สร้างรหัสคุมครุภัณฑ์ไอที (IT Code) ตามโครงสร้างใหม่:
+     * [รหัสย่อประเภท]-[สุ่ม 6 หลัก พิมพ์ใหญ่และตัวเลข]
+     * พร้อมตรวจสอบความซ้ำซ้อนในฐานข้อมูล it_assets ให้ได้รหัสที่ไม่ซ้ำ 100%
      *
-     * @param Carbon|string|null $date
-     * @param string $format 'short' (67) หรือ 'full' (2567) หรือ 'ad' (2024)
-     * @return string
+     * @param DeviceType|string|null $deviceTypeOrCode วัตถุประเภทอุปกรณ์ หรือรหัสย่อ
+     * @param int|null $excludeAssetId รหัส asset ที่ต้องการยกเว้นการตรวจสอบ (กรณีแก้ไข)
+     * @param string|null $assetName ชื่ออุปกรณ์สำหรับช่วยวิเคราะห์กรณีไม่มีประเภท
+     * @param string|null $assetCode รหัสพัสดุสำหรับช่วยวิเคราะห์
+     * @return string เช่น 'PC-K9M2X4'
      */
-    public static function calculateFiscalYear($date = null, string $format = 'short'): string
-    {
-        $d = $date ? Carbon::parse($date) : Carbon::now('Asia/Bangkok');
-        $beYear = ($d->month >= 10) ? $d->year + 544 : $d->year + 543;
+    public static function generateCode(
+        $deviceTypeOrCode = null,
+        ?int $excludeAssetId = null,
+        ?string $assetName = null,
+        ?string $assetCode = null
+    ): string {
+        $typeCode = self::resolveTypeCodeString($deviceTypeOrCode, $assetName, $assetCode);
 
-        return match ($format) {
-            'short' => substr((string)$beYear, -2),
-            'full' => (string)$beYear,
-            'ad' => (string)($d->month >= 10 ? $d->year + 1 : $d->year),
-            default => substr((string)$beYear, -2),
-        };
+        // วนลูปสุ่มจนกว่าจะได้รหัสที่ไม่ซ้ำกับในระบบ
+        $maxAttempts = 100;
+        $attempts = 0;
+
+        do {
+            $attempts++;
+            $token = self::generateRandomToken(6);
+            $candidateCode = "{$typeCode}-{$token}";
+
+            // ตรวจสอบความซ้ำซ้อนในฐานข้อมูล it_assets
+            $query = Asset::where(function ($q) use ($candidateCode, $typeCode, $token) {
+                $q->where('it_code', $candidateCode)
+                  ->orWhere('it_code', "{$typeCode}{$token}");
+            });
+
+            if ($excludeAssetId) {
+                $query->where('id', '!=', $excludeAssetId);
+            }
+
+            $exists = $query->exists();
+        } while ($exists && $attempts < $maxAttempts);
+
+        // กรณีฉุกเฉินหากสุ่มซ้ำเกิน 100 ครั้ง ให้ต่อท้ายด้วย microtime
+        if ($exists) {
+            $candidateCode = "{$typeCode}-" . strtoupper(substr(md5(uniqid((string)mt_rand(), true)), 0, 6));
+        }
+
+        return $candidateCode;
     }
 
     /**
-     * ประกอบรหัสคุมครุภัณฑ์ไอทีตามสูตรใหม่: [ประเภท][ปีงบประมาณ][ลำดับอัตโนมัติ] (ไม่มีขีดคั่น ไม่ผูกแผนก)
+     * ดึงรหัสย่อของประเภทอุปกรณ์ (Type Code)
      */
-    public static function buildCode(
-        string $deviceTypeCode,
-        ?string $yearStr,
-        string|int $sequence,
-        int $seqDigits = 4,
-        string $separator = '',
-        ?string $prefix = null
-    ): string {
-        $prefix = !empty($prefix) ? strtoupper(str_replace(['-', ' '], '', trim($prefix))) : '';
-        $type = strtoupper(str_replace(['-', ' '], '', trim($deviceTypeCode)));
-        $year = trim((string)$yearStr);
-        
-        // หากเป็นตัวเลขล้วนและสั้นกว่า seqDigits ให้ pad
-        if (is_numeric($sequence)) {
-            $seq = str_pad((string)$sequence, $seqDigits, '0', STR_PAD_LEFT);
-        } else {
-            $seq = str_replace(['-', ' '], '', (string)$sequence);
+    public static function resolveTypeCodeString($deviceTypeOrCode = null, ?string $assetName = null, ?string $assetCode = null): string
+    {
+        if ($deviceTypeOrCode instanceof DeviceType) {
+            if (!empty($deviceTypeOrCode->code)) {
+                return strtoupper(trim($deviceTypeOrCode->code));
+            }
+            return self::resolveDeviceTypeCode($deviceTypeOrCode, $assetName, $assetCode);
         }
 
-        $parts = [];
-        if (!empty($prefix)) {
-            $parts[] = $prefix;
-        }
-        if (!empty($type)) {
-            $parts[] = $type;
-        }
-        if (!empty($year)) {
-            $parts[] = $year;
-        }
-        if (!empty($seq)) {
-            $parts[] = $seq;
+        if (is_numeric($deviceTypeOrCode)) {
+            $devType = DeviceType::find($deviceTypeOrCode);
+            if ($devType) {
+                return self::resolveTypeCodeString($devType, $assetName, $assetCode);
+            }
         }
 
-        return implode($separator, $parts);
+        if (is_string($deviceTypeOrCode) && !empty(trim($deviceTypeOrCode))) {
+            $clean = strtoupper(preg_replace('/[^A-Z0-9]/i', '', trim($deviceTypeOrCode)));
+            if (!empty($clean)) {
+                return $clean;
+            }
+        }
+
+        return self::resolveDeviceTypeCode(null, $assetName, $assetCode);
     }
 
     /**
@@ -174,6 +156,10 @@ class ItAssetCodeGeneratorService
      */
     public static function resolveDeviceTypeCode(?DeviceType $deviceType, ?string $assetName = null, ?string $assetCode = null): string
     {
+        if ($deviceType && !empty($deviceType->code)) {
+            return strtoupper(trim($deviceType->code));
+        }
+
         $name = mb_strtolower($assetName ?? $deviceType?->name ?? '');
         $code = strtoupper(trim($assetCode ?? ''));
 
@@ -215,10 +201,6 @@ class ItAssetCodeGeneratorService
             return 'MON';
         }
 
-        if ($deviceType && !empty($deviceType->code)) {
-            return strtoupper(trim($deviceType->code));
-        }
-
         if (str_contains($name, 'ตั้งโต๊ะ') || str_contains($name, 'pc') || str_contains($name, 'คอมพิวเตอร์')) {
             return 'PC';
         }
@@ -227,166 +209,7 @@ class ItAssetCodeGeneratorService
     }
 
     /**
-     * แกะวิเคราะห์เลขพัสดุราชการ (Asset Code) เพื่อดึง [ลำดับจากเลขพัสดุ] และ [ปี]
-     * รองรับทุกรูปแบบตามระเบียบพัสดุราชการไทย:
-     * - "7440-001-0010/67" -> seq: "0010", year: "67"
-     * - "7440-001-0008/1" -> seq: "0008/1", year: null (เครื่องที่ 1 ในชุด 0008)
-     * - "7440-001/0007/17" -> seq: "0007/17", year: null
-     * - "7490-016-0001/100" -> seq: "0001/100", year: null
-     * - "7440-001-0005" -> seq: "0005", year: null
-     */
-    public static function parseOfficialAssetCode(?string $code): array
-    {
-        if (empty($code)) {
-            return ['has_code' => false, 'seq' => null, 'year' => null, 'clean_code' => ''];
-        }
-
-        $c = strtoupper(trim($code));
-        // Normalize เช่น 7440-001/0007/17 -> 7440-001-0007/17
-        $c = preg_replace('/(\d{4})-(\d{3})\/(\d{4})\/(\d+)/', '$1-$2-$3/$4', $c);
-
-        // คัดกรองรหัสจำลอง/เครื่องเช่า/บริจาค/รอเลข
-        if (str_starts_with($c, 'RENT') || str_starts_with($c, 'DON') ||
-            str_starts_with($c, 'PENDING') || str_starts_with($c, 'TEMP') ||
-            str_starts_with($c, 'NO-ASSET') || str_starts_with($c, 'NOASSET')) {
-            return ['has_code' => false, 'seq' => null, 'year' => null, 'clean_code' => $c];
-        }
-
-        // รูปแบบที่ 1: รหัสพัสดุมาตรฐาน 4 ส่วน เช่น 7440-001-0010/67 หรือ 7440-001-0008/1
-        if (preg_match('/^(\d{4})-(\d{3})-(\d+)\/(\d+)$/', $c, $m)) {
-            $part3 = $m[3]; // ลำดับพัสดุ/ชุดจัดซื้อ เช่น 0010, 0008, 0001, 0002
-            $part4 = $m[4]; // ปีงบประมาณ หรือ ลำดับเครื่องย่อย
-            $part4Int = (int)$part4;
-
-            // ตรวจสอบว่าเป็นปีงบประมาณ พ.ศ. หรือไม่ (เช่น 60-75 หรือ 2560-2575)
-            $isFiscalYear = (strlen($part4) === 2 && $part4Int >= 60 && $part4Int <= 75) ||
-                            (strlen($part4) === 4 && $part4Int >= 2560 && $part4Int <= 2575);
-
-            if ($isFiscalYear) {
-                return [
-                    'has_code' => true,
-                    'seq' => $part3,
-                    'year' => substr($part4, -2),
-                    'clean_code' => $c,
-                ];
-            } else {
-                // ตัวเลขหลัง slash คือลำดับเครื่องย่อย เช่น เครื่องที่ 1 ในชุดจัดซื้อ 0008
-                return [
-                    'has_code' => true,
-                    'seq' => $part3 . '/' . $part4,
-                    'year' => null,
-                    'clean_code' => $c,
-                ];
-            }
-        }
-
-        // รูปแบบที่ 2: รหัสพัสดุที่มี slash ทั่วไป
-        if (preg_match('/(?:^|[^\d])(\d+)\/(\d+)$/', $c, $m)) {
-            $p1 = $m[1];
-            $p2 = $m[2];
-            $p2Int = (int)$p2;
-            $isFiscalYear = (strlen($p2) === 2 && $p2Int >= 60 && $p2Int <= 75) ||
-                            (strlen($p2) === 4 && $p2Int >= 2560 && $p2Int <= 2575);
-            if ($isFiscalYear) {
-                return [
-                    'has_code' => true,
-                    'seq' => $p1,
-                    'year' => substr($p2, -2),
-                    'clean_code' => $c,
-                ];
-            } else {
-                return [
-                    'has_code' => true,
-                    'seq' => $p1 . '/' . $p2,
-                    'year' => null,
-                    'clean_code' => $c,
-                ];
-            }
-        }
-
-        // รูปแบบที่ 3: รหัสพัสดุมาตรฐาน 7440-xxx-xxxx (ไม่มี slash)
-        if (preg_match('/^7440-\d+-(\d+)$/i', $c, $m)) {
-            return [
-                'has_code' => true,
-                'seq' => $m[1],
-                'year' => null,
-                'clean_code' => $c,
-            ];
-        }
-
-        // รูปแบบที่ 4: ลงท้ายด้วยเครื่องหมายขีดตามด้วยตัวเลข (ไม่เกิน 6 หลัก)
-        if (preg_match('/-(\d{1,6})$/i', $c, $m)) {
-            return [
-                'has_code' => true,
-                'seq' => $m[1],
-                'year' => null,
-                'clean_code' => $c,
-            ];
-        }
-
-        return ['has_code' => true, 'seq' => null, 'year' => null, 'clean_code' => $c];
-    }
-
-    /**
-     * ค้นหาและดึงลำดับถัดไป (4 หลัก) สำหรับ [ประเภท][ปีงบประมาณ]
-     * โดยตรวจสอบจากฐานข้อมูล it_assets เพื่อให้ได้เลขรันอัตโนมัติต่อเนื่องและไม่ซ้ำซ้อน
-     */
-    public static function getNextSequence($arg1, $arg2, $arg3 = null, $arg4 = null): string
-    {
-        // ยืดหยุ่นรองรับ:
-        // 1. getNextSequence(string $type, string $year, ?int $excludeAssetId = null, ?string $prefix = null)
-        // 2. getNextSequence(string $prefix, string $type, string $year, ?int $excludeAssetId = null)
-        if ((is_numeric($arg2) && strlen((string)$arg2) <= 4) || strtoupper(trim((string)$arg2)) === 'XX') {
-            $type = (string)$arg1;
-            $year = strtoupper(trim((string)$arg2));
-            $excludeAssetId = $arg3 ? (int)$arg3 : null;
-            $prefix = $arg4 ? (string)$arg4 : null;
-        } else {
-            $prefix = (string)$arg1;
-            $type = (string)$arg2;
-            $year = strtoupper(trim((string)$arg3));
-            $excludeAssetId = $arg4 ? (int)$arg4 : null;
-            // หาก prefix เป็นรหัสแผนกทั่วไป (ไม่ใช่ RENT หรือ DON) ให้ละเว้นเพื่อไม่ให้ติดแผนก
-            if (!in_array(strtoupper(trim($prefix)), ['RENT', 'DON'])) {
-                $prefix = null;
-            }
-        }
-
-        $prefixClean = !empty($prefix) ? strtoupper(str_replace(['-', ' '], '', trim($prefix))) : '';
-        $typeClean = strtoupper(str_replace(['-', ' '], '', trim($type)));
-        $yearClean = trim((string)$year);
-        $basePrefix = "{$prefixClean}{$typeClean}{$yearClean}";
-
-        $query = Asset::where(function ($q) use ($basePrefix) {
-            $q->where('it_code', 'like', "{$basePrefix}%")
-              ->orWhere('it_code', 'like', "{$basePrefix}-%");
-        });
-
-        if ($excludeAssetId) {
-            $query->where('id', '!=', $excludeAssetId);
-        }
-
-        $existingCodes = $query->pluck('it_code');
-        $maxSeq = 0;
-
-        foreach ($existingCodes as $code) {
-            $clean = strtoupper(str_replace(['-', ' '], '', (string)$code));
-            if (preg_match('/^' . preg_quote($basePrefix, '/') . '(\d+)$/', $clean, $m)) {
-                $num = (int)$m[1];
-                if ($num > $maxSeq) {
-                    $maxSeq = $num;
-                }
-            }
-        }
-
-        return str_pad((string)($maxSeq + 1), 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
-     * ผูกรหัสคุมครุภัณฑ์ไอที (IT Tag) ตามสูตรใหม่:
-     * [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับที่ได้อัตโนมัติ]
-     * ไม่มีขีดคั่น ไม่ผูกกับแผนก เพื่อให้ย้ายตำแหน่งได้โดยไม่ต้องปริ้นสติ๊กเกอร์ใหม่
-     * ถ้าปีงบประมาณว่าง ให้ใส่เป็น XX ก่อน
+     * Wrapper สำหรับ backward compatibility กับส่วนต่างๆ ของระบบ
      */
     public static function generateAutoBoundCode(
         $assetOrCode = null,
@@ -396,69 +219,28 @@ class ItAssetCodeGeneratorService
         ?string $budgetYear = null,
         $id = null
     ): string {
-        $asset = null;
+        $excludeId = is_numeric($id) ? (int)$id : null;
         $assetName = null;
-        $excludeId = null;
+        $assetCode = null;
+        $deviceType = null;
 
         if ($assetOrCode instanceof Asset) {
-            $asset = $assetOrCode;
-            $excludeId = $asset->id;
-            $assetName = $asset->name;
-            $ownershipType = $asset->ownership_type ?: 'owned';
-            $typeCode = self::resolveDeviceTypeCode($asset->deviceType, $asset->name, $asset->asset_code);
-            $assetCode = $asset->asset_code;
-            $budgetYear = $asset->budget_year ?: ($asset->purchase_date ? (string)$asset->purchase_date->year : null);
-        } else {
-            $assetCode = $assetOrCode;
-            if (is_numeric($id)) {
-                $excludeId = (int)$id;
+            $excludeId = $assetOrCode->id;
+            $assetName = $assetOrCode->name;
+            $assetCode = $assetOrCode->asset_code;
+            $deviceType = $assetOrCode->deviceType;
+            if (!$typeCode) {
+                $typeCode = self::resolveDeviceTypeCode($deviceType, $assetName, $assetCode);
             }
+        } elseif (is_string($assetOrCode)) {
+            $assetCode = $assetOrCode;
         }
 
-        // ตรวจสอบกรณีเครื่องเช่า
-        $isRented = ($ownershipType === 'rented') || ($asset && $asset->is_rented) || ($assetCode && str_starts_with(strtoupper((string)$assetCode), 'RENT'));
-        if ($isRented) {
-            $prefix = 'RENT';
-            $type = $typeCode ? strtoupper(str_replace(['-', ' '], '', $typeCode)) : 'PRN';
-            $yearStr = !empty($budgetYear) ? substr((string)$budgetYear, -2) : 'XX';
-            $seqStr = self::getNextSequence($type, $yearStr, $excludeId, $prefix);
-            return self::buildCode($type, $yearStr, $seqStr, 4, '', $prefix);
+        if (empty($typeCode) && $deviceType) {
+            $typeCode = self::resolveDeviceTypeCode($deviceType);
         }
 
-        // ตรวจสอบกรณีรับบริจาค
-        $isDonated = ($ownershipType === 'donated') || ($asset && $asset->is_donated) || ($assetCode && str_starts_with(strtoupper((string)$assetCode), 'DON'));
-        if ($isDonated) {
-            $prefix = 'DON';
-            $type = $typeCode ? strtoupper(str_replace(['-', ' '], '', $typeCode)) : 'NB';
-            $yearStr = !empty($budgetYear) ? substr((string)$budgetYear, -2) : 'XX';
-            $seqStr = self::getNextSequence($type, $yearStr, $excludeId, $prefix);
-            return self::buildCode($type, $yearStr, $seqStr, 4, '', $prefix);
-        }
-
-        // กรณีเป็นของ รพ. / ซื้อขาด (สูตรสากล: [ประเภท][ปีงบ][ลำดับอัตโนมัติ] ปริ้นครั้งเดียว ไม่ขึ้นกับแผนก)
-        $type = !empty($typeCode) ? strtoupper(str_replace(['-', ' '], '', $typeCode)) : 'PC';
-
-        // กำหนดปีงบประมาณ [ปีงบประมาณ 2 หลัก หรือ XX หากไม่ระบุ]
-        $parsed = self::parseOfficialAssetCode($assetCode);
-        if (!empty($parsed['year'])) {
-            $yearStr = $parsed['year'];
-        } elseif (!empty($budgetYear)) {
-            $yearStr = substr((string)$budgetYear, -2);
-        } else {
-            $yearStr = 'XX'; // ถ้าปีงบประมาณว่าง ให้ใส่เป็น XX ก่อน
-        }
-
-        // ถ้ามีการระบุ prefix เฉพาะเจาะจง เช่น RENT หรือ DON
-        $customPrefix = null;
-        if (!empty($prefixOrDept) && in_array(strtoupper(trim($prefixOrDept)), ['RENT', 'DON'])) {
-            $customPrefix = strtoupper(trim($prefixOrDept));
-        }
-
-        // กำหนด [ตัวเลขลำดับที่ได้อัตโนมัติ] (4 หลัก รันต่อเนื่องอัตโนมัติ)
-        $seqStr = self::getNextSequence($type, $yearStr, $excludeId, $customPrefix);
-
-        // ประกอบตามสูตรใหม่: [ประเภท][ปีงบประมาณ][ตัวเลขลำดับที่ได้อัตโนมัติ] (ไม่มีขีดคั่น)
-        return self::buildCode($type, $yearStr, $seqStr, 4, '', $customPrefix);
+        return self::generateCode($typeCode ?: 'PC', $excludeId, $assetName, $assetCode);
     }
 
     public static function generateNextAutoCode(
@@ -473,29 +255,64 @@ class ItAssetCodeGeneratorService
     }
 
     /**
-     * จำลองการค้นหา Running Number ถัดไปสำหรับประเภทอุปกรณ์ในปีงบประมาณที่ระบุ
+     * สร้าง Barcode SVG สำหรับรหัสคุมครุภัณฑ์
      */
-    public static function simulateNextSequence(
-        string $deviceTypeCode,
-        ?string $yearStr,
-        array $existingSimulatedCodes = []
-    ): int {
-        $maxSeq = 0;
-        $typeClean = strtoupper(str_replace(['-', ' '], '', $deviceTypeCode));
-        $yearClean = $yearStr ? trim($yearStr) : "";
-        $pattern = "/(?:" . preg_quote($typeClean, '/') . ")" . ($yearClean ? preg_quote($yearClean, '/') : "") . "(\d{3,5})/i";
+    public static function getBarcodeSvg(string $code, int $height = 55, bool $showText = true): string
+    {
+        return BarcodeService::generateSvg($code, $height, 2, $showText);
+    }
 
-        foreach ($existingSimulatedCodes as $code) {
-            $cleanCode = str_replace(['-', ' '], '', $code);
-            if (preg_match($pattern, $cleanCode, $matches)) {
-                $seqVal = (int)end($matches);
-                if ($seqVal > $maxSeq) {
-                    $maxSeq = $seqVal;
-                }
-            }
+    /**
+     * สร้าง Barcode Data URI สำหรับรหัสคุมครุภัณฑ์
+     */
+    public static function getBarcodeDataUri(string $code, int $height = 55, bool $showText = true): string
+    {
+        return BarcodeService::generateDataUri($code, $height, 2, $showText);
+    }
+
+    /**
+     * ดึงรหัสย่อ (Code) ของแผนก (Legacy helper)
+     */
+    public static function resolveDepartmentCode(?Department $department): string
+    {
+        if (!$department) {
+            return '';
         }
 
-        return $maxSeq + 1;
+        if (!empty($department->code)) {
+            return strtoupper(trim($department->code));
+        }
+
+        $name = mb_strtolower((string)($department->name ?? ''));
+        return match (true) {
+            str_contains($name, 'สารสนเทศ') || str_contains($name, 'คอมพิวเตอร์') || str_contains($name, 'it') => 'IT',
+            str_contains($name, 'ฉุกเฉิน') || str_contains($name, 'ems') || str_contains($name, 'er') => 'ER',
+            str_contains($name, 'ผู้ป่วยนอก') || str_contains($name, 'opd') => 'OPD',
+            str_contains($name, 'ผู้ป่วยใน') || str_contains($name, 'ipd') => 'IPD',
+            str_contains($name, 'เภสัช') || str_contains($name, 'ยา') => 'PHAR',
+            str_contains($name, 'ชันสูตร') || str_contains($name, 'แล็บ') || str_contains($name, 'lab') => 'LAB',
+            str_contains($name, 'รังสี') || str_contains($name, 'x-ray') || str_contains($name, 'xray') => 'XRAY',
+            str_contains($name, 'ทันต') || str_contains($name, 'dent') => 'DENT',
+            str_contains($name, 'กายภาพ') || str_contains($name, 'pt') => 'PT',
+            str_contains($name, 'บริหาร') || str_contains($name, 'สารบรรณ') || str_contains($name, 'ธุรการ') => 'ADM',
+            str_contains($name, 'พัสดุ') || str_contains($name, 'บำรุง') => 'SUP',
+            str_contains($name, 'การเงิน') || str_contains($name, 'บัญชี') || str_contains($name, 'fin') => 'FIN',
+            str_contains($name, 'ประกัน') || str_contains($name, 'เวชระเบียน') => 'INS',
+            str_contains($name, 'คลอด') || str_contains($name, 'lr') || str_contains($name, 'ผ่าตัด') => 'LR',
+            default => '',
+        };
+    }
+
+    /**
+     * แกะวิเคราะห์เลขพัสดุราชการ (Legacy helper)
+     */
+    public static function parseOfficialAssetCode(?string $code): array
+    {
+        if (empty($code)) {
+            return ['has_code' => false, 'seq' => null, 'year' => null, 'clean_code' => ''];
+        }
+
+        $c = strtoupper(trim($code));
+        return ['has_code' => true, 'seq' => null, 'year' => null, 'clean_code' => $c];
     }
 }
-

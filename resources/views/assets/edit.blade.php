@@ -366,33 +366,53 @@
                             <span class="form-text" id="asset_code_hint">พิมพ์เลขพัสดุเพื่อผูกรหัส IT Tag อัตโนมัติ (เช่น 7440-001-0005/66 &rarr; ลำดับ 0005, ปี 66)</span>
                         </div>
 
-                        {{-- 2. IT Asset Tag (Auto-Bound Target) --}}
+                        {{-- 2. IT Asset Tag (Random Alphanumeric + Barcode) --}}
                         <div class="form-group" style="flex: 1.2;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <label class="form-label required" for="it_code" style="color: #0f766e;">
-                                    <i class="bi bi-tag-fill text-primary"></i> รหัสคุมครุภัณฑ์ไอที (IT Tag)
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <label class="form-label required" for="it_code" style="color: #0f766e; margin-bottom: 0;">
+                                    <i class="bi bi-upc-scan text-primary"></i> รหัสคุมครุภัณฑ์ไอที (IT Code / Barcode)
                                 </label>
                                 <span id="itBindingBadge" class="badge" style="background: #0d9488; color: white; font-size: 10px;">
-                                    <i class="bi bi-magic"></i> คำนวณอัตโนมัติ
+                                    <i class="bi bi-dice-5-fill"></i> สุ่มรหัสอัตโนมัติ
                                 </span>
                             </div>
                             <div style="position: relative;">
                                 <input type="text" id="it_code" name="it_code" class="form-control"
-                                       value="{{ old('it_code', old('it_asset_code', $asset->it_code)) }}" placeholder="เช่น PCXX0001 หรือ PC670001"
+                                       value="{{ old('it_code', old('it_asset_code', $asset->it_code)) }}" placeholder="เช่น PC-K9M2X4"
                                        readonly
-                                       style="font-family: monospace; font-size: 14px; font-weight: 700; color: #0f766e; background: #f8fafc; border-color: #0d9488; cursor: default;"
+                                       style="font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace; font-size: 15px; font-weight: 800; color: #0f766e; background: #f8fafc; border-color: #0d9488; cursor: default; letter-spacing: 0.5px; padding-right: 175px;"
                                        oninput="handleManualTagInput()">
                                 <div style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px;">
+                                    <button type="button" id="btnRandomizeTag" onclick="randomizeNewItCode()" 
+                                            style="background: #0d9488; border: 1px solid #0f766e; color: #ffffff; border-radius: 4px; padding: 4px 9px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;" 
+                                            title="สุ่มรหัส 6 หลักใหม่ทันที">
+                                        <i class="bi bi-shuffle"></i> <span>สุ่มรหัสใหม่</span>
+                                    </button>
                                     <button type="button" id="btnToggleManualTag" onclick="toggleManualTag()" 
-                                            style="background: #f0fdfa; border: 1px solid #ccfbf1; color: #0d9488; border-radius: 4px; padding: 3px 8px; font-size: 11px; font-weight: 600; cursor: pointer;" 
+                                            style="background: #f0fdfa; border: 1px solid #ccfbf1; color: #0d9488; border-radius: 4px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;" 
                                             title="คลิกเพื่อปลดล็อกแก้ไขรหัสเอง หรือซิงค์อัตโนมัติ">
                                         <i class="bi bi-lock-fill" id="manualTagIcon"></i> <span id="manualTagLabel">แก้ไขเอง</span>
                                     </button>
                                 </div>
                             </div>
                             <span class="form-text" id="it_tag_hint" style="color: #0f766e; font-size: 11.5px;">
-                                สูตร: [ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] &bull; ปริ้นสติ๊กเกอร์ครั้งเดียว ย้ายแผนกไม่ต้องปริ้นใหม่
+                                โครงสร้าง: [รหัสย่อประเภท]-[สุ่ม 6 หลัก อักษรพิมพ์ใหญ่+ตัวเลข] &bull; พร้อมสร้าง Barcode (Code 128) อัตโนมัติ
                             </span>
+
+                            {{-- Live Barcode Preview --}}
+                            <div id="barcodePreviewBox" style="margin-top: 8px; background: #ffffff; border: 1px dashed #0d9488; border-radius: 6px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 12px;">
+                                <div id="barcodeSvgTarget" style="min-width: 140px; height: 38px; display: flex; align-items: center;">
+                                    @if($asset->it_code)
+                                        {!! \App\Services\BarcodeService::generateSvg($asset->it_code, 38, 2, false) !!}
+                                    @else
+                                        <span style="font-size: 10px; color: #94a3b8;"><i class="bi bi-hourglass-split"></i> กำลังโหลดบาร์โค้ด...</span>
+                                    @endif
+                                </div>
+                                <div style="font-size: 10.5px; color: #64748b; line-height: 1.2;">
+                                    <span style="font-weight: 700; color: #0f766e;"><i class="bi bi-upc"></i> Barcode 1D (Code 128)</span><br>
+                                    <span>สแกนด้วยเครื่องอ่านบาร์โค้ดได้ทันที</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1260,85 +1280,132 @@
     }
 
     /**
-     * คำนวณและผูกรหัสคุมไอทีอัตโนมัติ (Smart Auto-Binding)
-     * สูตรใหม่: [ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น ไม่ผูกแผนก เพื่อให้ย้ายตำแหน่งได้โดยไม่ต้องปริ้นสติ๊กเกอร์ใหม่)
+     * ระบบสุ่มรหัสคุมครุภัณฑ์ไอที (IT Code) รูปแบบใหม่:
+     * [รหัสย่อประเภท]-[สุ่ม 6 หลัก อักษรพิมพ์ใหญ่+ตัวเลข] พร้อม Barcode (Code 128)
      */
+    function generateClientRandomToken(length = 6) {
+        const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        const digits = '23456789';
+        const all = letters + digits;
+        let token = '';
+        let hasLetter = false;
+        let hasDigit = false;
+        do {
+            token = '';
+            hasLetter = false;
+            hasDigit = false;
+            for (let i = 0; i < length; i++) {
+                const char = all.charAt(Math.floor(Math.random() * all.length));
+                token += char;
+                if (letters.includes(char)) hasLetter = true;
+                if (digits.includes(char)) hasDigit = true;
+            }
+        } while (!hasLetter || !hasDigit);
+        return token;
+    }
+
+    let barcodeDebounceTimer = null;
+    function refreshBarcodePreview(code) {
+        const target = document.getElementById('barcodeSvgTarget');
+        if (!target) return;
+        if (!code || code.trim() === '') {
+            target.innerHTML = '<span style="font-size: 10px; color: #94a3b8;">ไม่มีรหัส</span>';
+            return;
+        }
+
+        clearTimeout(barcodeDebounceTimer);
+        barcodeDebounceTimer = setTimeout(() => {
+            fetch(`{{ route('assets.barcode.preview') }}?code=${encodeURIComponent(code)}`)
+                .then(res => res.text())
+                .then(svg => {
+                    if (svg && svg.includes('<svg')) {
+                        target.innerHTML = svg;
+                    }
+                })
+                .catch(() => {});
+        }, 100);
+    }
+
+    function randomizeNewItCode() {
+        const itInput = document.getElementById('it_code') || document.getElementById('it_asset_code');
+        const itBadge = document.getElementById('itBindingBadge');
+        const itHint = document.getElementById('it_tag_hint');
+        const typeCode = resolveSelectedTypeCode();
+        const randToken = generateClientRandomToken(6);
+        const newCode = `${typeCode}-${randToken}`;
+
+        if (itInput) {
+            itInput.value = newCode;
+            itInput.style.backgroundColor = '#ecfdf5';
+            setTimeout(() => { itInput.style.backgroundColor = isManualTagOverride ? '#ffffff' : '#f8fafc'; }, 300);
+        }
+        if (itBadge) {
+            itBadge.innerHTML = `<i class="bi bi-dice-5-fill"></i> สุ่มรหัสใหม่ (${typeCode})`;
+            itBadge.style.background = '#0d9488';
+        }
+        if (itHint) {
+            itHint.innerHTML = `🔗 <strong>รหัสคุม IT สุ่มอิสระ:</strong> <span style="font-family: monospace; font-weight: 800; color: #0d9488;">${newCode}</span> &bull; <em>สแกนบาร์โค้ดได้ทันที</em>`;
+        }
+
+        refreshBarcodePreview(newCode);
+
+        // ยืนยันรหัสที่ไม่ซ้ำจากเซิร์ฟเวอร์
+        fetchNextItCodeFromServer('', typeCode, '');
+    }
+
     let itCodeFetchTimer = null;
     function updateSmartBoundItTag() {
-        if (isManualTagOverride && currentPrefixMode === 'custom') {
+        if (isManualTagOverride) {
             return;
         }
 
         const typeCode = resolveSelectedTypeCode();
-        const defaultYear = resolveBudgetYearShort();
-
-        let prefix = '';
-        let seq = '0001';
-        let year = defaultYear;
-        let badgeHtml = '';
-        let hintHtml = '';
-
         const itInput = document.getElementById('it_code') || document.getElementById('it_asset_code');
         const itBadge = document.getElementById('itBindingBadge');
         const itHint = document.getElementById('it_tag_hint');
 
-        if (currentPrefixMode === 'rent') {
-            prefix = 'RENT';
-            badgeHtml = '<i class="bi bi-printer"></i> เครื่องเช่า (ไม่มีเลขพัสดุ)';
-            hintHtml = `สูตร: RENT${typeCode}${year}${seq} &rarr; เครื่องสัญญาเช่า คุมด้วยรหัส IT อัตโนมัติ`;
-            if (itBadge) itBadge.style.background = '#ea580c';
-        } else if (currentPrefixMode === 'don') {
-            prefix = 'DON';
-            badgeHtml = '<i class="bi bi-gift"></i> รับบริจาค (ไม่มีเลขพัสดุ)';
-            hintHtml = `สูตร: DON${typeCode}${year}${seq} &rarr; ครุภัณฑ์รับบริจาค คุมด้วยรหัส IT อัตโนมัติ`;
-            if (itBadge) itBadge.style.background = '#0284c7';
-        } else {
-            prefix = '';
-            if (year === 'XX') {
-                badgeHtml = `<i class="bi bi-clock-history"></i> ปีงบประมาณว่าง (${typeCode}XX)`;
-                hintHtml = `🔗 <strong>สูตร:</strong> [${typeCode}][XX][${seq}] &rarr; <span style="color:#d97706; font-weight:700;">ปีงบว่างใส่เป็น XX ชั่วคราว</span> (เมื่อระบุปีงบจะเปลี่ยนเป็นปีจริงอัตโนมัติ)`;
-                if (itBadge) itBadge.style.background = '#f59e0b';
+        // สุ่มรหัสใหม่แบบ Client-side ทันทีเพื่อความลื่นไหล
+        const randToken = generateClientRandomToken(6);
+        const newCode = `${typeCode}-${randToken}`;
+
+        if (itInput && !itInput.value) {
+            itInput.value = newCode;
+        } else if (itInput && !isManualTagOverride) {
+            const parts = itInput.value.split('-');
+            if (parts.length === 2 && parts[1].length === 6) {
+                itInput.value = `${typeCode}-${parts[1]}`;
             } else {
-                badgeHtml = `<i class="bi bi-magic"></i> รหัสอัตโนมัติ (${typeCode}${year})`;
-                hintHtml = `🔗 <strong>สูตร:</strong> [${typeCode}][${year}][${seq}] &rarr; ${typeCode}${year}${seq} &bull; <em>ปริ้นสติ๊กเกอร์ครั้งเดียว ย้ายแผนกไม่ต้องปริ้นใหม่</em>`;
-                if (itBadge) itBadge.style.background = '#0d9488';
+                itInput.value = newCode;
             }
         }
 
-        const newCode = `${prefix}${typeCode}${year}${seq}`;
-        if (itInput && !isManualTagOverride) {
-            itInput.value = newCode;
-            itInput.style.backgroundColor = '#f0fdfa';
-            setTimeout(() => { itInput.style.backgroundColor = '#f8fafc'; }, 300);
-        }
         if (itBadge) {
-            itBadge.innerHTML = badgeHtml;
+            itBadge.innerHTML = `<i class="bi bi-dice-5-fill"></i> สุ่มรหัส (${typeCode})`;
+            itBadge.style.background = '#0d9488';
         }
-        if (itHint) {
-            itHint.innerHTML = hintHtml;
+        if (itHint && itInput) {
+            itHint.innerHTML = `🔗 <strong>รหัสคุม IT สุ่มอิสระ:</strong> <span style="font-family: monospace; font-weight: 800; color: #0d9488;">${itInput.value}</span> &bull; <em>สแกนบาร์โค้ดได้ทันที</em>`;
         }
 
-        // ซิงค์ลำดับถัดไปที่แน่นอนจากฐานข้อมูลผ่าน AJAX
+        refreshBarcodePreview(itInput ? itInput.value : newCode);
+
+        // ซิงค์ตรวจสอบความซ้ำซ้อนจากฐานข้อมูลผ่าน AJAX
         clearTimeout(itCodeFetchTimer);
         itCodeFetchTimer = setTimeout(() => {
-            fetchNextItCodeFromServer(prefix, typeCode, year);
+            fetchNextItCodeFromServer('', typeCode, '');
         }, 150);
     }
 
     function fetchNextItCodeFromServer(prefix, typeCode, year) {
-        if (isManualTagOverride && currentPrefixMode === 'custom') return;
+        if (isManualTagOverride) return;
         const typeId = document.getElementById('device_type_id')?.value || '';
-        const bYear = document.getElementById('budget_year')?.value || '';
+        const nameVal = document.getElementById('name')?.value || '';
         const assetCode = document.getElementById('asset_code')?.value || '';
-        const ownership = document.getElementById('ownership_type')?.value || '{{ $asset->ownership_type ?: "owned" }}';
 
         const params = new URLSearchParams({
-            prefix: prefix,
-            prefix_mode: currentPrefixMode,
             device_type_id: typeId,
             device_type_code: typeCode,
-            ownership_type: currentPrefixMode === 'rent' ? 'rented' : (currentPrefixMode === 'don' ? 'donated' : ownership),
-            budget_year: bYear,
+            name: nameVal,
             asset_code: assetCode,
             exclude_id: '{{ $asset->id }}'
         });
@@ -1349,25 +1416,31 @@
                 if (data && data.success && data.it_code) {
                     const itInput = document.getElementById('it_code') || document.getElementById('it_asset_code');
                     const itHint = document.getElementById('it_tag_hint');
-                    if (itInput && !isManualTagOverride) {
+                    const target = document.getElementById('barcodeSvgTarget');
+
+                    if (itInput && !isManualTagOverride && (!itInput.value || itInput.value.startsWith(typeCode))) {
                         itInput.value = data.it_code;
                     }
                     if (itHint) {
-                        if (data.year === 'XX' || (!bYear && !assetCode)) {
-                            itHint.innerHTML = `🔗 <strong>รหัสคุม IT อัตโนมัติ:</strong> <span style="font-family: monospace; font-weight: 700; color: #0d9488;">${data.it_code}</span> <span class="badge" style="background: #f59e0b; font-size: 10px;">ปีงบว่าง (XX)</span> <span style="color: #64748b; font-size: 11px;">(ระบุปีงบประมาณด้านล่างเพื่อเปลี่ยนเป็นปีจริงอัตโนมัติ)</span>`;
-                        } else {
-                            itHint.innerHTML = `🔗 <strong>รหัสคุม IT อัตโนมัติ:</strong> <span style="font-family: monospace; font-weight: 700; color: #0d9488;">${data.it_code}</span> <span style="color: #64748b; font-size: 11px;">(สูตร: [ประเภท][ปีงบ][ลำดับ] &bull; ปริ้นครั้งเดียว ไม่ผูกแผนก)</span>`;
-                        }
+                        itHint.innerHTML = `🔗 <strong>รหัสคุม IT สุ่มอิสระ:</strong> <span style="font-family: monospace; font-weight: 800; color: #0d9488;">${data.it_code}</span> &bull; <em>สแกนด้วย Barcode 1D และ QR Code ได้ทันที</em>`;
+                    }
+                    if (data.barcode_svg && target) {
+                        target.innerHTML = data.barcode_svg;
                     }
                 }
             })
             .catch(e => {});
     }
 
-    function handleAssetCodeInput(val) {
-        if (!isManualTagOverride) {
-            updateSmartBoundItTag();
+    function handleManualTagInput() {
+        const input = document.getElementById('it_code') || document.getElementById('it_asset_code');
+        if (input) {
+            refreshBarcodePreview(input.value);
         }
+    }
+
+    function handleAssetCodeInput(val) {
+        // เลขพัสดุไม่มีผลต่อรหัส IT Code อีกต่อไปตามดีไซน์ใหม่
     }
 
     function toggleManualTag() {
@@ -1548,49 +1621,23 @@
         }
     }
 
-    // Set initial badge and hint on page load
+    // Set initial badge, hint and barcode preview on page load
     document.addEventListener('DOMContentLoaded', function() {
-        const assetCodeVal = document.getElementById('asset_code')?.value || '';
-        const parsed = parseAssetCodeJs(assetCodeVal);
         const itBadge = document.getElementById('itBindingBadge');
         const itHint = document.getElementById('it_tag_hint');
         const itInput = document.getElementById('it_code') || document.getElementById('it_asset_code');
-        const currentYear = resolveBudgetYearShort();
 
-        if (currentPrefixMode === 'rent') {
+        if (itInput && itInput.value) {
+            refreshBarcodePreview(itInput.value);
             if (itBadge) {
-                itBadge.innerHTML = '<i class="bi bi-printer"></i> เครื่องเช่า (ไม่มีเลขพัสดุ)';
-                itBadge.style.background = '#ea580c';
-            }
-        } else if (currentPrefixMode === 'don') {
-            if (itBadge) {
-                itBadge.innerHTML = '<i class="bi bi-gift"></i> รับบริจาค (ไม่มีเลขพัสดุ)';
-                itBadge.style.background = '#0284c7';
-            }
-        } else if (currentYear === 'XX') {
-            if (itBadge) {
-                itBadge.innerHTML = '<i class="bi bi-clock-history"></i> ปีงบประมาณว่าง (XX)';
-                itBadge.style.background = '#f59e0b';
-            }
-            if (itHint && itInput && itInput.value) {
-                itHint.innerHTML = `🔗 <strong>รหัสคุม IT อัตโนมัติ:</strong> <span style="font-family: monospace; font-weight: 700; color: #0d9488;">${itInput.value}</span> <span class="badge" style="background: #f59e0b; font-size: 10px;">ปีงบว่าง (XX)</span> <span style="color: #64748b; font-size: 11px;">(ระบุปีงบประมาณด้านล่างเพื่อเปลี่ยนเป็นปีจริงอัตโนมัติ)</span>`;
-            }
-        } else if (parsed.hasCode && parsed.seq) {
-            if (itBadge) {
-                itBadge.innerHTML = `<i class="bi bi-magic"></i> รหัสอัตโนมัติ (${currentYear})`;
+                itBadge.innerHTML = `<i class="bi bi-upc-scan"></i> รหัสคุม IT พร้อมใช้งาน`;
                 itBadge.style.background = '#0d9488';
             }
-        }
-
-        if (itInput && !itInput.value) {
+            if (itHint) {
+                itHint.innerHTML = `🔗 <strong>รหัสคุม IT สุ่มอิสระ:</strong> <span style="font-family: monospace; font-weight: 800; color: #0d9488;">${itInput.value}</span> &bull; <em>สแกนด้วย Barcode 1D และ QR Code ได้ทันที</em>`;
+            }
+        } else if (itInput && !itInput.value) {
             updateSmartBoundItTag();
-        }
-
-        const bYearInput = document.getElementById('budget_year');
-        if (bYearInput) {
-            bYearInput.addEventListener('input', function() {
-                if (!isManualTagOverride) updateSmartBoundItTag();
-            });
         }
     });
 </script>

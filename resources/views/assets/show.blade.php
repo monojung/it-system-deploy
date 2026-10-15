@@ -157,39 +157,62 @@
                 {{ $asset->brand }} {{ $asset->model }} &bull; ประเภท: {{ $asset->deviceType?->name }}
             </div>
 
-            {{-- Dual Code Showcase Card --}}
-            <div style="background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 100%); border: 1.5px solid #ccfbf1; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 42px; height: 42px; border-radius: 10px; background: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                        <i class="bi bi-qr-code"></i>
-                    </div>
-                    <div>
-                        <div style="font-size: 11px; text-transform: uppercase; color: #0f766e; font-weight: 700; letter-spacing: 0.5px;">รหัสคุมครุภัณฑ์ไอที (IT Asset Tag)</div>
-                        <div style="font-family: 'SFMono-Regular', Consolas, monospace; font-size: 20px; font-weight: 800; color: #0f766e;">
-                            {{ $asset->it_code }}
+            {{-- IT Asset Tag & Barcode Showcase Card --}}
+            <div style="background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%); border: 1.5px solid #99f6e4; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.05);">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 8px rgba(13, 148, 136, 0.25);">
+                            <i class="bi bi-upc-scan"></i>
                         </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 11px; text-transform: uppercase; color: #0f766e; font-weight: 700; letter-spacing: 0.5px;">รหัสคุมครุภัณฑ์ไอที (IT Code)</span>
+                                <span class="badge" style="background: #ccfbf1; color: #0f766e; font-size: 10px; font-weight: 700; border: 1px solid #99f6e4;">รหัสสุ่ม 6 หลัก</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+                                <span style="font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace; font-size: 24px; font-weight: 800; color: #0f766e; letter-spacing: 0.5px;">
+                                    {{ $asset->it_code }}
+                                </span>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" style="padding: 2px 8px; font-size: 11px; border-radius: 4px;" onclick="navigator.clipboard.writeText('{{ $asset->it_code }}'); if (window.Swal) Swal.fire({toast:true, position:'top-end', icon:'success', title:'คัดลอกรหัส IT: {{ $asset->it_code }} แล้ว', showConfirmButton:false, timer:1500});" title="คัดลอกรหัส IT">
+                                    <i class="bi bi-clipboard"></i> คัดลอก
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                        <div style="text-align: right;">
+                            <div style="font-size: 11px; color: #64748b; font-weight: 600;">รหัสพัสดุราชการ:</div>
+                            <div style="font-family: monospace; font-size: 14px; font-weight: 700; color: #1e293b;">
+                                @if($asset->has_official_asset_code)
+                                    {{ $asset->asset_code }}
+                                @elseif($asset->is_rented || str_starts_with($asset->it_code, 'RENT'))
+                                    <span style="color: #ea580c; font-style: italic;">[ เครื่องเช่า ]</span>
+                                @elseif($asset->is_donated || str_starts_with($asset->it_code, 'DON'))
+                                    <span style="color: #8b5cf6; font-style: italic;">[ รับบริจาค ]</span>
+                                @else
+                                    <span style="color: #f59e0b; font-style: italic;">[ รอเลขพัสดุ ]</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        <a href="{{ route('assets.label', $asset) }}" target="_blank" class="btn btn-sm btn-primary" style="padding: 8px 16px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-printer-fill"></i> พิมพ์ป้ายสติกเกอร์ Barcode
+                        </a>
                     </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-                    <div>
-                        <div style="font-size: 11px; color: #64748b; font-weight: 600;">รหัสครุภัณฑ์พัสดุราชการ:</div>
-                        <div style="font-family: monospace; font-size: 14.5px; font-weight: 700; color: #1e293b;">
-                            @if($asset->has_official_asset_code)
-                                {{ $asset->asset_code }}
-                            @elseif($asset->is_rented || str_starts_with($asset->it_code, 'RENT'))
-                                <span style="color: #ea580c; font-style: italic;">[ เครื่องเช่า (ไม่มีเลขพัสดุ) ]</span>
-                            @elseif($asset->is_donated || str_starts_with($asset->it_code, 'DON'))
-                                <span style="color: #8b5cf6; font-style: italic;">[ รับบริจาค (ไม่มีเลขพัสดุ) ]</span>
-                            @else
-                                <span style="color: #f59e0b; font-style: italic;">[ รอเลขพัสดุ ]</span>
-                            @endif
-                        </div>
+                {{-- Barcode 1D Code 128 Display --}}
+                <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #99f6e4; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 14px; max-width: 320px; width: 100%;">
+                        {!! $asset->barcode_svg !!}
                     </div>
-
-                    <a href="{{ route('assets.label', $asset) }}" target="_blank" class="btn btn-sm btn-primary" style="padding: 6px 14px; font-size: 12px;">
-                        <i class="bi bi-printer"></i> ป้ายสติกเกอร์ Dual-Tag
-                    </a>
+                    <div style="font-size: 12px; color: #475569; max-width: 340px;">
+                        <div style="font-weight: 700; color: #0f766e; margin-bottom: 2px;">
+                            <i class="bi bi-upc"></i> Barcode มาตรฐาน Code 128
+                        </div>
+                        <div>รองรับการสแกนด้วยเครื่องอ่านบาร์โค้ด (Barcode Scanner Gun) ผ่าน USB และ Bluetooth ได้ทันทีโดยไม่ต้องตั้งค่าเพิ่มเติม</div>
+                    </div>
                 </div>
             </div>
 

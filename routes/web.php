@@ -255,6 +255,8 @@ Route::middleware(['auth', 'approved'])->group(function () {
 
     Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
     Route::get('/assets/{asset}/label', [AssetController::class, 'label'])->name('assets.label');
+    Route::get('/assets/{asset}/barcode', [AssetController::class, 'barcode'])->name('assets.barcode');
+    Route::get('/assets/barcode/preview', [AssetController::class, 'barcodePreview'])->name('assets.barcode.preview');
 
     // IT Equipment Borrowing (ระบบขอยืม-คืนอุปกรณ์ไอที)
     Route::get('/asset-borrows', [AssetBorrowController::class, 'index'])->name('asset-borrows.index');

@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.6.4'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Smart Auto-Updating IT Asset Tag Suite & XX Year Fallback)',
+    'version' => env('APP_VERSION', '2.7.0'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Redesigned Random IT Code, Dual-Scan Barcode & Streamlined Label Suite)',
     'release_date' => '2026-10-15',
-    'build' => '20261015.1',
+    'build' => '20261015.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,20 @@ return [
     |
     */
     'changelog' => [
+        '2.7.0' => [
+            'date' => '2026-10-15',
+            'badge' => 'Redesigned IT Code & Dual-Scan Barcode Suite',
+            'badge_color' => '#0f766e',
+            'title' => 'ระบบรหัสคุมครุภัณฑ์ไอทีสุ่ม 6 หลักรูปแบบใหม่ (Pure Random Alphanumeric IT Code), สร้างและสแกน Barcode 1D (Code 128) ควบคู่ QR Code พร้อมป้ายสติกเกอร์โฉมใหม่',
+            'highlights' => [
+                'ออกแบบระบบรหัสครุภัณฑ์ไอที (IT Code) รูปแบบใหม่: ยกเลิกระบบคำนวณตามสูตรเดิมทั้งหมด เปลี่ยนเป็นรหัสย่อประเภท + สุ่มตัวอักษรพิมพ์ใหญ่และตัวเลข 6 หลัก (เช่น PC-5S937Z, PRN-7K2M9X) มีการตรวจสอบป้องกันการซ้ำในฐานข้อมูล 100%',
+                'ปุ่มสุ่มรหัสใหม่แบบ Dynamic Live Generation: เพิ่มปุ่ม "🎲 สุ่มรหัสใหม่" ทั้งในหน้าลงทะเบียนและแก้ไขข้อมูลครุภัณฑ์ พร้อมระบบคำนวณรหัสย่อประเภทอัตโนมัติตามประเภทอุปกรณ์',
+                'ระบบสร้าง Barcode 1D (Code 128) มาตรฐานสากล: พัฒนาด้วย Pure PHP Vector SVG ความละเอียดสูง ยิงสแกนติดง่าย ไม่พึ่งพา Library ภายนอก พร้อมหน้าต่างแสดงตัวอย่าง Barcode สดขณะกรอกข้อมูล',
+                'ป้ายสติกเกอร์ครุภัณฑ์โฉมใหม่ (Dual-Scan Sticker Label): ออกแบบรองรับทั้งเครื่องยิงบาร์โค้ด 1D และสมาร์ตโฟนสแกน QR Code พร้อมปรับให้แสดงเฉพาะข้อมูลสำคัญ (IT TAG, ทะเบียนพัสดุ, ชื่อรายการ, แผนก) โดยตัดส่วน รุ่น, S/N, IP ออกตามต้องการเพื่อความสบายตาและลงตัวกับขนาดสติกเกอร์',
+                'อัปเกรดตารางทะเบียนครุภัณฑ์และหน้ารายละเอียด: แสดง IT Code ควบคู่ไอคอนสแกนบาร์โค้ด และทางลัดสั่งพิมพ์ป้ายสติกเกอร์ได้ทันที',
+                'คำสั่งแปลงรหัสย้อนหลังอัตโนมัติ: มี Artisan Command assets:regenerate-it-codes ปรับปรุงรหัสครุภัณฑ์เดิมทั้งหมดในฐานข้อมูลเป็นรูปแบบใหม่เรียบร้อยแล้ว',
+            ],
+        ],
         '2.6.4' => [
             'date' => '2026-10-15',
             'badge' => 'Smart Auto-Updating IT Tag & XX Year Fallback',

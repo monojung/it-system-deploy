@@ -335,7 +335,7 @@ class AssetController extends Controller
         // จัดการกรณีเครื่องเช่า / รับบริจาค / รอพัสดุออกเลข (ไม่มีเลขพัสดุ)
         $isRented = ($request->input('ownership_type') === 'rented') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'RENT');
         $isDonated = ($request->input('ownership_type') === 'donated') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'DON');
-        $noAssetCode = $request->boolean('no_asset_code') || empty($request->input('asset_code')) || $isRented || $isDonated;
+        $noAssetCode = $request->boolean('no_asset_code') || empty($request->input('asset_code'));
 
         if ($noAssetCode) {
             $prefixTemp = $isRented ? 'RENT' : ($isDonated ? 'DON' : 'PENDING');
@@ -398,34 +398,12 @@ class AssetController extends Controller
         $data = $request->except(['image', 'no_asset_code', 'prefix_mode', 'it_asset_code', 'it_code']);
         $data['ownership_type'] = $data['ownership_type'] ?? 'owned';
 
-        // บันทึกรหัสคุมไอที (IT Asset Tag) ตามสูตรใหม่: [ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น ไม่ผูกแผนก เพื่อให้ย้ายตำแหน่งได้โดยไม่ต้องปริ้นสติ๊กเกอร์ใหม่)
-        $itTag = strtoupper(str_replace(['-', ' '], '', trim($request->input('it_code') ?: $request->input('it_asset_code', ''))));
+        // บันทึกรหัสคุมไอที (IT Asset Tag / IT Code) โครงสร้างใหม่: [รหัสย่อประเภท]-[สุ่ม 6 หลัก อักษรพิมพ์ใหญ่+ตัวเลข]
+        $itTag = strtoupper(trim($request->input('it_code') ?: $request->input('it_asset_code', '')));
         if (empty($itTag)) {
             $devType = !empty($data['device_type_id']) ? DeviceType::find($data['device_type_id']) : null;
-            $typeCode = ItAssetCodeGeneratorService::resolveDeviceTypeCode($devType, $data['name'] ?? null, $data['asset_code'] ?? null);
-            
-            $parsed = ItAssetCodeGeneratorService::parseOfficialAssetCode($data['asset_code'] ?? null);
-            $yearStr = !empty($parsed['year']) ? $parsed['year'] : (!empty($data['budget_year']) ? substr((string)$data['budget_year'], -2) : 'XX');
-            
-            $prefixMode = $request->input('prefix_mode', 'auto');
-            $customPrefix = match($prefixMode) {
-                'rent' => 'RENT',
-                'don' => 'DON',
-                default => null,
-            };
-            if ($customPrefix === null && ($data['ownership_type'] ?? 'owned') === 'rented') {
-                $customPrefix = 'RENT';
-            } elseif ($customPrefix === null && ($data['ownership_type'] ?? 'owned') === 'donated') {
-                $customPrefix = 'DON';
-            }
-
-            $itTag = ItAssetCodeGeneratorService::generateNextAutoCode(
-                $data['asset_code'] ?? null,
-                $customPrefix,
-                $typeCode,
-                $data['ownership_type'] ?? 'owned',
-                $yearStr
-            );
+            $typeCode = ItAssetCodeGeneratorService::resolveTypeCodeString($devType, $data['name'] ?? null, $data['asset_code'] ?? null);
+            $itTag = ItAssetCodeGeneratorService::generateCode($typeCode, null, $data['name'] ?? null, $data['asset_code'] ?? null);
         }
         if (!empty($itTag)) {
             $data['it_code'] = $itTag;
@@ -497,7 +475,7 @@ class AssetController extends Controller
         // จัดการกรณีเครื่องเช่า / รับบริจาค / รอพัสดุออกเลข (ไม่มีเลขพัสดุ)
         $isRented = ($request->input('ownership_type') === 'rented') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'RENT');
         $isDonated = ($request->input('ownership_type') === 'donated') || str_starts_with(strtoupper($request->input('it_code', $request->input('it_asset_code', ''))), 'DON');
-        $noAssetCode = $request->boolean('no_asset_code') || empty($request->input('asset_code')) || $isRented || $isDonated;
+        $noAssetCode = $request->boolean('no_asset_code') || empty($request->input('asset_code'));
 
         if ($noAssetCode && !$asset->has_official_asset_code) {
             $prefixTemp = $isRented ? 'RENT' : ($isDonated ? 'DON' : 'PENDING');
@@ -561,32 +539,12 @@ class AssetController extends Controller
             $data['ownership_type'] = $asset->ownership_type ?? 'owned';
         }
 
-        // บันทึกรหัสคุมไอที (IT Asset Tag) ตามสูตรใหม่: [ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น ไม่ผูกแผนก เพื่อให้ย้ายตำแหน่งได้โดยไม่ต้องปริ้นสติ๊กเกอร์ใหม่)
-        $itTag = strtoupper(str_replace(['-', ' '], '', trim($request->input('it_code') ?: $request->input('it_asset_code', ''))));
-        $prefixMode = $request->input('prefix_mode', 'auto');
+        // บันทึกรหัสคุมไอที (IT Asset Tag / IT Code) โครงสร้างใหม่: [รหัสย่อประเภท]-[สุ่ม 6 หลัก อักษรพิมพ์ใหญ่+ตัวเลข]
+        $itTag = strtoupper(trim($request->input('it_code') ?: $request->input('it_asset_code', '')));
         if (empty($itTag)) {
             $devType = !empty($data['device_type_id']) ? DeviceType::find($data['device_type_id']) : null;
-            $typeCode = ItAssetCodeGeneratorService::resolveDeviceTypeCode($devType, $data['name'] ?? null, $data['asset_code'] ?? null);
-            $parsed = ItAssetCodeGeneratorService::parseOfficialAssetCode($data['asset_code'] ?? null);
-            $yearStr = !empty($parsed['year']) ? $parsed['year'] : (!empty($data['budget_year']) ? substr((string)$data['budget_year'], -2) : 'XX');
-            $customPrefix = match($prefixMode) {
-                'rent' => 'RENT',
-                'don' => 'DON',
-                default => null,
-            };
-            if ($customPrefix === null && ($data['ownership_type'] ?? 'owned') === 'rented') {
-                $customPrefix = 'RENT';
-            } elseif ($customPrefix === null && ($data['ownership_type'] ?? 'owned') === 'donated') {
-                $customPrefix = 'DON';
-            }
-            $itTag = ItAssetCodeGeneratorService::generateNextAutoCode(
-                $data['asset_code'] ?? null,
-                $customPrefix,
-                $typeCode,
-                $data['ownership_type'] ?? 'owned',
-                $yearStr,
-                $asset->id
-            );
+            $typeCode = ItAssetCodeGeneratorService::resolveTypeCodeString($devType, $data['name'] ?? null, $data['asset_code'] ?? null);
+            $itTag = ItAssetCodeGeneratorService::generateCode($typeCode, $asset->id, $data['name'] ?? null, $data['asset_code'] ?? null);
         }
         if (!empty($itTag)) {
             $data['it_code'] = $itTag;
@@ -1169,47 +1127,65 @@ class AssetController extends Controller
     }
 
     /**
-     * ดึงรหัสคุมครุภัณฑ์ไอที (IT Tag) ลำดับถัดไปแบบอัตโนมัติ (AJAX API)
-     * ตามสูตรใหม่: [แผนก][ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น)
+     * สุ่มรหัสคุมครุภัณฑ์ไอที (IT Code) พร้อมภาพ Barcode (SVG) แบบ Real-time (AJAX API)
+     * รูปแบบใหม่: [รหัสย่อประเภท]-[สุ่ม 6 หลัก อักษรพิมพ์ใหญ่+ตัวเลข]
      */
     public function nextItCode(Request $request)
     {
         $deviceTypeId = $request->input('device_type_id');
         $deviceTypeCodeParam = $request->input('device_type_code');
-        $ownershipType = $request->input('ownership_type', 'owned');
-        $budgetYear = $request->input('budget_year');
-        $assetCode = $request->input('asset_code');
         $excludeId = $request->input('exclude_id');
-        $prefixMode = $request->input('prefix_mode', $request->input('prefix', 'auto'));
+        $assetName = $request->input('name');
+        $assetCode = $request->input('asset_code');
 
         $deviceType = $deviceTypeId ? DeviceType::find($deviceTypeId) : null;
-        $resolvedTypeCode = $deviceTypeCodeParam ?: ItAssetCodeGeneratorService::resolveDeviceTypeCode($deviceType);
+        $resolvedTypeCode = $deviceTypeCodeParam ?: ItAssetCodeGeneratorService::resolveTypeCodeString($deviceType, $assetName, $assetCode);
 
-        $parsed = ItAssetCodeGeneratorService::parseOfficialAssetCode($assetCode);
-        $yearStr = !empty($parsed['year']) ? $parsed['year'] : (!empty($budgetYear) ? substr((string)$budgetYear, -2) : 'XX');
-
-        $prefix = null;
-        if ($prefixMode === 'rent' || $ownershipType === 'rented') {
-            $prefix = 'RENT';
-        } elseif ($prefixMode === 'don' || $ownershipType === 'donated') {
-            $prefix = 'DON';
-        }
-
-        $code = ItAssetCodeGeneratorService::generateNextAutoCode(
-            $assetCode,
-            $prefix,
+        $code = ItAssetCodeGeneratorService::generateCode(
             $resolvedTypeCode,
-            $ownershipType,
-            $yearStr,
-            $excludeId ? (int)$excludeId : null
+            $excludeId ? (int)$excludeId : null,
+            $assetName,
+            $assetCode
         );
+
+        $barcodeSvg = \App\Services\BarcodeService::generateSvg($code, 55, 2, true);
+        $barcodeDataUri = \App\Services\BarcodeService::generateDataUri($code, 55, 2, true);
 
         return response()->json([
             'success' => true,
             'it_code' => $code,
-            'prefix' => $prefix ?? '',
             'type' => $resolvedTypeCode,
-            'year' => $yearStr,
+            'barcode_svg' => $barcodeSvg,
+            'barcode_data_uri' => $barcodeDataUri,
+        ]);
+    }
+
+    /**
+     * ให้บริการภาพ Barcode SVG สำหรับครุภัณฑ์
+     */
+    public function barcode(Request $request, Asset $asset)
+    {
+        $code = $asset->it_code ?: ($asset->asset_code ?: 'ASSET');
+        $svg = \App\Services\BarcodeService::generateSvg($code, 55, 2, true);
+
+        return response($svg, 200, [
+            'Content-Type' => 'image/svg+xml',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
+    /**
+     * ให้บริการภาพ Barcode Preview (SVG) จากรหัสที่ส่งมา
+     */
+    public function barcodePreview(Request $request)
+    {
+        $code = $request->query('code', 'SAMPLE');
+        $code = strtoupper(trim((string)$code));
+        $svg = \App\Services\BarcodeService::generateSvg($code, 55, 2, true);
+
+        return response($svg, 200, [
+            'Content-Type' => 'image/svg+xml',
+            'Cache-Control' => 'no-cache, private',
         ]);
     }
 }

@@ -308,39 +308,59 @@ class Asset extends Model
     protected static function booted()
     {
         static::saving(function ($asset) {
-            if (empty($asset->it_code)) {
-                $asset->it_code = \App\Services\ItAssetCodeGeneratorService::generateAutoBoundCode($asset);
+            if (empty($asset->attributes['it_code'])) {
+                $asset->attributes['it_code'] = \App\Services\ItAssetCodeGeneratorService::generateAutoBoundCode($asset);
             }
         });
     }
 
     /**
      * รหัสคุมครุภัณฑ์ไอที (IT Asset Tag / it_code)
-     * ตามสูตรใหม่: [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับที่ได้อัตโนมัติ] (ไม่มีขีดคั่น ไม่ผูกแผนก)
+     * โครงสร้างใหม่: [รหัสย่อประเภท]-[สุ่ม 6 หลัก อักษรพิมพ์ใหญ่+ตัวเลข] (เช่น PC-K9M2X4)
      */
     public function getItCodeAttribute($value = null): string
     {
         // 1. ถ้ามีค่าจริงในคอลัมน์ it_code
         if (!empty($value)) {
-            return strtoupper(str_replace(['-', ' '], '', trim($value)));
+            return strtoupper(trim($value));
         }
 
         if (!empty($this->attributes['it_code'])) {
-            return strtoupper(str_replace(['-', ' '], '', trim($this->attributes['it_code'])));
+            return strtoupper(trim($this->attributes['it_code']));
         }
 
-        // 2. ถ้ามีการบันทึกแท็กปรับแต่งพิเศษไว้ใน notes เช่น [IT-TAG: PC670001]
+        // 2. ถ้ามีการบันทึกแท็กปรับแต่งพิเศษไว้ใน notes เช่น [IT-TAG: PC-K9M2X4]
         if (!empty($this->notes) && preg_match('/\[IT-TAG:\s*([^\]]+)\]/', $this->notes, $matches)) {
-            return strtoupper(str_replace(['-', ' '], '', trim($matches[1])));
+            return strtoupper(trim($matches[1]));
         }
 
-        // 3. ผูกรหัสอัตโนมัติ (Smart Auto Running IT Code)
-        return \App\Services\ItAssetCodeGeneratorService::generateAutoBoundCode($this);
+        // 3. ผูกรหัสสุ่มอิสระตามประเภทอุปกรณ์
+        $code = \App\Services\ItAssetCodeGeneratorService::generateAutoBoundCode($this);
+        $this->attributes['it_code'] = $code;
+        return $code;
     }
 
     public function setItCodeAttribute($value): void
     {
-        $this->attributes['it_code'] = !empty($value) ? strtoupper(str_replace(['-', ' '], '', trim($value))) : null;
+        $this->attributes['it_code'] = !empty($value) ? strtoupper(trim($value)) : null;
+    }
+
+    /**
+     * ดึง Barcode SVG ของรหัสคุมครุภัณฑ์ไอที
+     */
+    public function getBarcodeSvgAttribute(): string
+    {
+        $code = $this->it_code ?: ($this->asset_code ?: 'ASSET');
+        return \App\Services\BarcodeService::generateSvg($code, 55, 2, true);
+    }
+
+    /**
+     * ดึง Barcode Data URI สำหรับแสดงผลใน <img src="...">
+     */
+    public function getBarcodeDataUriAttribute(): string
+    {
+        $code = $this->it_code ?: ($this->asset_code ?: 'ASSET');
+        return \App\Services\BarcodeService::generateDataUri($code, 55, 2, true);
     }
 
     /**

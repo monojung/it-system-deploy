@@ -1697,9 +1697,9 @@
                 <tr>
                     {{-- IT Asset Tag (it_code) & Official Code & Serial Number --}}
                     <td>
-                        <a href="{{ route('assets.show', $asset) }}" class="asset-code-link" title="รหัสคุมครุภัณฑ์ IT">
-                            <i class="bi bi-tag-fill text-primary" style="font-size: 11px;"></i>
-                            <span>{{ $asset->it_code ?: $asset->asset_code }}</span>
+                        <a href="{{ route('assets.show', $asset) }}" class="asset-code-link" title="รหัสคุมครุภัณฑ์ IT (สแกนบาร์โค้ด)">
+                            <i class="bi bi-upc-scan text-primary" style="font-size: 11px;"></i>
+                            <span style="font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace; font-weight: 700;">{{ $asset->it_code ?: $asset->asset_code }}</span>
                         </a>
                         @if($asset->has_official_asset_code && $asset->it_code && $asset->asset_code !== $asset->it_code)
                             <div class="asset-sn-text" style="color: #475569;" title="รหัสครุภัณฑ์ตามทะเบียนพัสดุราชการ">
@@ -1872,9 +1872,9 @@
                                 <i class="bi bi-eye"></i>
                             </a>
 
-                            {{-- Print QR Code Label --}}
-                            <a href="{{ route('assets.label', $asset) }}" target="_blank" class="action-icon-btn" title="พิมพ์ป้ายสติกเกอร์ QR Code">
-                                <i class="bi bi-qr-code"></i>
+                            {{-- Print Barcode & QR Code Label --}}
+                            <a href="{{ route('assets.label', $asset) }}" target="_blank" class="action-icon-btn" title="พิมพ์ป้ายสติกเกอร์ Barcode &amp; QR Code">
+                                <i class="bi bi-upc-scan"></i>
                             </a>
 
                             {{-- Relocate / Transfer --}}
