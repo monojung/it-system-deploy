@@ -13,7 +13,7 @@ return [
 
     'version' => env('APP_VERSION', '2.6.3'),
     'release_name' => 'Thung Hua Chang IT Service Platform (Mobile & Tablet Cross-Platform Responsive Suite)',
-    'release_date' => '2026-10-14',
+    'release_date' => '2026-10-15',
     'build' => '20261009.1',
     'environment' => env('APP_ENV', 'production'),
 

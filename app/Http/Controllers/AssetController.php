@@ -398,17 +398,30 @@ class AssetController extends Controller
         $data = $request->except(['image', 'no_asset_code', 'prefix_mode', 'it_asset_code', 'it_code']);
         $data['ownership_type'] = $data['ownership_type'] ?? 'owned';
 
-        // บันทึกรหัสคุมไอที (IT Asset Tag) ตามสูตรใหม่: [แผนก][ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น)
+        // บันทึกรหัสคุมไอที (IT Asset Tag) ตามสูตรใหม่: [ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น ไม่ผูกแผนก เพื่อให้ย้ายตำแหน่งได้โดยไม่ต้องปริ้นสติ๊กเกอร์ใหม่)
         $itTag = strtoupper(str_replace(['-', ' '], '', trim($request->input('it_code') ?: $request->input('it_asset_code', ''))));
         if (empty($itTag)) {
-            $dept = !empty($data['department_id']) ? Department::find($data['department_id']) : null;
-            $deptCode = ItAssetCodeGeneratorService::resolveDepartmentCode($dept);
             $devType = !empty($data['device_type_id']) ? DeviceType::find($data['device_type_id']) : null;
             $typeCode = ItAssetCodeGeneratorService::resolveDeviceTypeCode($devType, $data['name'] ?? null, $data['asset_code'] ?? null);
-            $yearStr = !empty($data['budget_year']) ? substr((string)$data['budget_year'], -2) : ItAssetCodeGeneratorService::calculateFiscalYear();
+            
+            $parsed = ItAssetCodeGeneratorService::parseOfficialAssetCode($data['asset_code'] ?? null);
+            $yearStr = !empty($parsed['year']) ? $parsed['year'] : (!empty($data['budget_year']) ? substr((string)$data['budget_year'], -2) : '67');
+            
+            $prefixMode = $request->input('prefix_mode', 'auto');
+            $customPrefix = match($prefixMode) {
+                'rent' => 'RENT',
+                'don' => 'DON',
+                default => null,
+            };
+            if ($customPrefix === null && ($data['ownership_type'] ?? 'owned') === 'rented') {
+                $customPrefix = 'RENT';
+            } elseif ($customPrefix === null && ($data['ownership_type'] ?? 'owned') === 'donated') {
+                $customPrefix = 'DON';
+            }
+
             $itTag = ItAssetCodeGeneratorService::generateNextAutoCode(
-                null,
-                $deptCode,
+                $data['asset_code'] ?? null,
+                $customPrefix,
                 $typeCode,
                 $data['ownership_type'] ?? 'owned',
                 $yearStr
@@ -1136,25 +1149,30 @@ class AssetController extends Controller
      */
     public function nextItCode(Request $request)
     {
-        $deptId = $request->input('department_id');
-        $deptCodeParam = $request->input('department_code');
         $deviceTypeId = $request->input('device_type_id');
         $deviceTypeCodeParam = $request->input('device_type_code');
         $ownershipType = $request->input('ownership_type', 'owned');
         $budgetYear = $request->input('budget_year');
+        $assetCode = $request->input('asset_code');
         $excludeId = $request->input('exclude_id');
-
-        $dept = $deptId ? Department::find($deptId) : null;
-        $resolvedDeptCode = $deptCodeParam ?: ItAssetCodeGeneratorService::resolveDepartmentCode($dept);
+        $prefixMode = $request->input('prefix_mode', $request->input('prefix', 'auto'));
 
         $deviceType = $deviceTypeId ? DeviceType::find($deviceTypeId) : null;
         $resolvedTypeCode = $deviceTypeCodeParam ?: ItAssetCodeGeneratorService::resolveDeviceTypeCode($deviceType);
 
-        $yearStr = $budgetYear ? substr((string)$budgetYear, -2) : ItAssetCodeGeneratorService::calculateFiscalYear();
+        $parsed = ItAssetCodeGeneratorService::parseOfficialAssetCode($assetCode);
+        $yearStr = !empty($parsed['year']) ? $parsed['year'] : ($budgetYear ? substr((string)$budgetYear, -2) : '67');
+
+        $prefix = null;
+        if ($prefixMode === 'rent' || $ownershipType === 'rented') {
+            $prefix = 'RENT';
+        } elseif ($prefixMode === 'don' || $ownershipType === 'donated') {
+            $prefix = 'DON';
+        }
 
         $code = ItAssetCodeGeneratorService::generateNextAutoCode(
-            null,
-            $resolvedDeptCode,
+            $assetCode,
+            $prefix,
             $resolvedTypeCode,
             $ownershipType,
             $yearStr,
@@ -1164,7 +1182,7 @@ class AssetController extends Controller
         return response()->json([
             'success' => true,
             'it_code' => $code,
-            'dept' => $resolvedDeptCode,
+            'prefix' => $prefix ?? '',
             'type' => $resolvedTypeCode,
             'year' => $yearStr,
         ]);

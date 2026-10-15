@@ -316,7 +316,7 @@ class Asset extends Model
 
     /**
      * รหัสคุมครุภัณฑ์ไอที (IT Asset Tag / it_code)
-     * ตามสูตรใหม่: [แผนก] [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับที่ได้อัตโนมัติ] (ไม่มีขีดคั่น)
+     * ตามสูตรใหม่: [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับที่ได้อัตโนมัติ] (ไม่มีขีดคั่น ไม่ผูกแผนก)
      */
     public function getItCodeAttribute($value = null): string
     {
@@ -329,7 +329,7 @@ class Asset extends Model
             return strtoupper(str_replace(['-', ' '], '', trim($this->attributes['it_code'])));
         }
 
-        // 2. ถ้ามีการบันทึกแท็กปรับแต่งพิเศษไว้ใน notes เช่น [IT-TAG: PHARPC670001]
+        // 2. ถ้ามีการบันทึกแท็กปรับแต่งพิเศษไว้ใน notes เช่น [IT-TAG: PC670001]
         if (!empty($this->notes) && preg_match('/\[IT-TAG:\s*([^\]]+)\]/', $this->notes, $matches)) {
             return strtoupper(str_replace(['-', ' '], '', trim($matches[1])));
         }

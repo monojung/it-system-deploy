@@ -18,7 +18,7 @@ class ItAssetCodeGeneratorService
     /**
      * ค่าตั้งต้นของหน่วยงาน
      */
-    public const DEFAULT_PREFIX = 'THC';
+    public const DEFAULT_PREFIX = '';
 
     /**
      * รายการ Preset รูปแบบรหัสที่เตรียมไว้สำหรับคลังและจำลอง
@@ -26,14 +26,14 @@ class ItAssetCodeGeneratorService
     public static function getPresets(): array
     {
         return [
-            'dept_standard' => [
-                'id' => 'dept_standard',
-                'name' => 'รูปแบบมาตรฐาน: [แผนก][ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น)',
-                'pattern' => '[DEPT][TYPE][YY][SEQ]',
-                'sample' => 'PHARPC670001',
-                'desc' => 'ประกอบด้วย รหัสย่อแผนก (PHAR/IT/LAB/THC) + รหัสประเภท (PC/NB/AIO) + ปีงบประมาณ 2 หลัก (67) + ลำดับอัตโนมัติ 4 หลัก (0001) ไม่มีขีดคั่น',
-                'badge' => 'แนะนำ สูตรใหม่คลัง IT',
-                'prefix' => 'THC',
+            'standard' => [
+                'id' => 'standard',
+                'name' => 'รูปแบบมาตรฐาน: [ประเภท][ปีงบประมาณ][ลำดับอัตโนมัติ] (ไร้ขีดคั่น ไม่ผูกแผนก)',
+                'pattern' => '[TYPE][YY][SEQ]',
+                'sample' => 'PC670001',
+                'desc' => 'ประกอบด้วย รหัสประเภท (PC/NB/AIO) + ปีงบประมาณ 2 หลัก (67) + ลำดับอัตโนมัติ 4 หลัก (0001) ปริ้นสติ๊กเกอร์ครั้งเดียว ย้ายตำแหน่งไปแผนกอื่นไม่ต้องปริ้นใหม่',
+                'badge' => 'แนะนำ สูตรมาตรฐานคลัง IT',
+                'prefix' => '',
                 'year_format' => 'short', // 67
                 'seq_digits' => 4,
                 'separator' => '',
@@ -65,11 +65,11 @@ class ItAssetCodeGeneratorService
             'type_running' => [
                 'id' => 'type_running',
                 'name' => 'รูปแบบลำดับต่อเนื่องตามประเภทอุปกรณ์ (ไม่มีขีดคั่น)',
-                'pattern' => '[DEPT][TYPE][SEQ]',
-                'sample' => 'ITPC0142',
-                'desc' => 'รหัสย่อแผนก + รหัสประเภท + ลำดับ 4 หลักต่อเนื่องตลอดชีพ ไม่ผูกกับปีงบประมาณ',
+                'pattern' => '[TYPE][SEQ]',
+                'sample' => 'PC0142',
+                'desc' => 'รหัสประเภท + ลำดับ 4 หลักต่อเนื่องตลอดชีพ ไม่ผูกกับปีงบประมาณ',
                 'badge' => 'รันต่อเนื่องตลอดชีพ',
-                'prefix' => 'IT',
+                'prefix' => '',
                 'year_format' => 'none', // ไม่มีปี
                 'seq_digits' => 4,       // 0142
                 'separator' => '',
@@ -131,17 +131,17 @@ class ItAssetCodeGeneratorService
     }
 
     /**
-     * ประกอบรหัสคุมครุภัณฑ์ไอทีตามสูตรใหม่: [แผนก] [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น)
+     * ประกอบรหัสคุมครุภัณฑ์ไอทีตามสูตรใหม่: [ประเภท][ปีงบประมาณ][ลำดับอัตโนมัติ] (ไม่มีขีดคั่น ไม่ผูกแผนก)
      */
     public static function buildCode(
-        string $prefix,
         string $deviceTypeCode,
         ?string $yearStr,
         string|int $sequence,
         int $seqDigits = 4,
-        string $separator = ''
+        string $separator = '',
+        ?string $prefix = null
     ): string {
-        $prefix = strtoupper(str_replace(['-', ' '], '', trim($prefix)));
+        $prefix = !empty($prefix) ? strtoupper(str_replace(['-', ' '], '', trim($prefix))) : '';
         $type = strtoupper(str_replace(['-', ' '], '', trim($deviceTypeCode)));
         $year = trim((string)$yearStr);
         
@@ -328,14 +328,34 @@ class ItAssetCodeGeneratorService
     }
 
     /**
-     * ค้นหาและดึงลำดับถัดไป (4 หลัก) สำหรับ [แผนก][ประเภท][ปีงบประมาณ]
+     * ค้นหาและดึงลำดับถัดไป (4 หลัก) สำหรับ [ประเภท][ปีงบประมาณ]
      * โดยตรวจสอบจากฐานข้อมูล it_assets เพื่อให้ได้เลขรันอัตโนมัติต่อเนื่องและไม่ซ้ำซ้อน
      */
-    public static function getNextSequence(string $prefix, string $type, string $year, ?int $excludeAssetId = null): string
+    public static function getNextSequence($arg1, $arg2, $arg3 = null, $arg4 = null): string
     {
-        $basePrefix = strtoupper(str_replace(['-', ' '], '', trim($prefix)))
-                    . strtoupper(str_replace(['-', ' '], '', trim($type)))
-                    . trim($year);
+        // ยืดหยุ่นรองรับ:
+        // 1. getNextSequence(string $type, string $year, ?int $excludeAssetId = null, ?string $prefix = null)
+        // 2. getNextSequence(string $prefix, string $type, string $year, ?int $excludeAssetId = null)
+        if (is_numeric($arg2) && strlen((string)$arg2) <= 4) {
+            $type = (string)$arg1;
+            $year = (string)$arg2;
+            $excludeAssetId = $arg3 ? (int)$arg3 : null;
+            $prefix = $arg4 ? (string)$arg4 : null;
+        } else {
+            $prefix = (string)$arg1;
+            $type = (string)$arg2;
+            $year = (string)$arg3;
+            $excludeAssetId = $arg4 ? (int)$arg4 : null;
+            // หาก prefix เป็นรหัสแผนกทั่วไป (ไม่ใช่ RENT หรือ DON) ให้ละเว้นเพื่อไม่ให้ติดแผนก
+            if (!in_array(strtoupper(trim($prefix)), ['RENT', 'DON'])) {
+                $prefix = null;
+            }
+        }
+
+        $prefixClean = !empty($prefix) ? strtoupper(str_replace(['-', ' '], '', trim($prefix))) : '';
+        $typeClean = strtoupper(str_replace(['-', ' '], '', trim($type)));
+        $yearClean = trim((string)$year);
+        $basePrefix = "{$prefixClean}{$typeClean}{$yearClean}";
 
         $query = Asset::where(function ($q) use ($basePrefix) {
             $q->where('it_code', 'like', "{$basePrefix}%")
@@ -364,12 +384,12 @@ class ItAssetCodeGeneratorService
 
     /**
      * ผูกรหัสคุมครุภัณฑ์ไอที (IT Tag) ตามสูตรใหม่:
-     * [แผนก] [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับที่ได้อัตโนมัติ]
-     * ไม่มีขีดคั่น และไม่นำเลข Asset No มาใช้เด็ดขาด
+     * [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับที่ได้อัตโนมัติ]
+     * ไม่มีขีดคั่น ไม่ผูกกับแผนก เพื่อให้ย้ายตำแหน่งได้โดยไม่ต้องปริ้นสติ๊กเกอร์ใหม่
      */
     public static function generateAutoBoundCode(
         $assetOrCode = null,
-        ?string $deptCode = null,
+        ?string $prefixOrDept = null,
         ?string $typeCode = null,
         string $ownershipType = 'owned',
         ?string $budgetYear = null,
@@ -384,7 +404,6 @@ class ItAssetCodeGeneratorService
             $excludeId = $asset->id;
             $assetName = $asset->name;
             $ownershipType = $asset->ownership_type ?: 'owned';
-            $deptCode = self::resolveDepartmentCode($asset->department);
             $typeCode = self::resolveDeviceTypeCode($asset->deviceType, $asset->name, $asset->asset_code);
             $assetCode = $asset->asset_code;
             $budgetYear = $asset->budget_year ?: ($asset->purchase_date ? (string)$asset->purchase_date->year : null);
@@ -400,9 +419,9 @@ class ItAssetCodeGeneratorService
         if ($isRented) {
             $prefix = 'RENT';
             $type = $typeCode ? strtoupper(str_replace(['-', ' '], '', $typeCode)) : 'PRN';
-            $yearStr = $budgetYear ? substr((string)$budgetYear, -2) : self::calculateFiscalYear();
-            $seqStr = self::getNextSequence($prefix, $type, $yearStr, $excludeId);
-            return "{$prefix}{$type}{$yearStr}{$seqStr}";
+            $yearStr = $budgetYear ? substr((string)$budgetYear, -2) : '67';
+            $seqStr = self::getNextSequence($type, $yearStr, $excludeId, $prefix);
+            return self::buildCode($type, $yearStr, $seqStr, 4, '', $prefix);
         }
 
         // ตรวจสอบกรณีรับบริจาค
@@ -410,44 +429,47 @@ class ItAssetCodeGeneratorService
         if ($isDonated) {
             $prefix = 'DON';
             $type = $typeCode ? strtoupper(str_replace(['-', ' '], '', $typeCode)) : 'NB';
-            $yearStr = $budgetYear ? substr((string)$budgetYear, -2) : self::calculateFiscalYear();
-            $seqStr = self::getNextSequence($prefix, $type, $yearStr, $excludeId);
-            return "{$prefix}{$type}{$yearStr}{$seqStr}";
+            $yearStr = $budgetYear ? substr((string)$budgetYear, -2) : '67';
+            $seqStr = self::getNextSequence($type, $yearStr, $excludeId, $prefix);
+            return self::buildCode($type, $yearStr, $seqStr, 4, '', $prefix);
         }
 
-        // กรณีเป็นของ รพ. / ซื้อขาด
-        $prefix = !empty($deptCode) ? strtoupper(str_replace(['-', ' '], '', $deptCode)) : self::DEFAULT_PREFIX;
+        // กรณีเป็นของ รพ. / ซื้อขาด (สูตรสากล: [ประเภท][ปีงบ][ลำดับอัตโนมัติ] ปริ้นครั้งเดียว ไม่ขึ้นกับแผนก)
         $type = !empty($typeCode) ? strtoupper(str_replace(['-', ' '], '', $typeCode)) : 'PC';
 
         // กำหนดปีงบประมาณ [ปีงบประมาณ 2 หลัก]
-        $yearStr = null;
-        if (!empty($budgetYear)) {
+        // เช็คจากเลขพัสดุราชการก่อน ถ้าไม่มีจึงใช้ budget_year ถ้าไม่มีใช้ 67
+        $parsed = self::parseOfficialAssetCode($assetCode);
+        if (!empty($parsed['year'])) {
+            $yearStr = $parsed['year'];
+        } elseif (!empty($budgetYear)) {
             $yearStr = substr((string)$budgetYear, -2);
         } else {
-            $parsed = self::parseOfficialAssetCode($assetCode);
-            if (!empty($parsed['year'])) {
-                $yearStr = $parsed['year'];
-            } else {
-                $yearStr = self::calculateFiscalYear();
-            }
+            $yearStr = '67';
+        }
+
+        // ถ้ามีการระบุ prefix เฉพาะเจาะจง เช่น RENT หรือ DON
+        $customPrefix = null;
+        if (!empty($prefixOrDept) && in_array(strtoupper(trim($prefixOrDept)), ['RENT', 'DON'])) {
+            $customPrefix = strtoupper(trim($prefixOrDept));
         }
 
         // กำหนด [ตัวเลขลำดับที่ได้อัตโนมัติ] (4 หลัก รันต่อเนื่องอัตโนมัติ)
-        $seqStr = self::getNextSequence($prefix, $type, $yearStr, $excludeId);
+        $seqStr = self::getNextSequence($type, $yearStr, $excludeId, $customPrefix);
 
-        // ประกอบตามสูตรใหม่: [แผนก][ประเภท][ปีงบประมาณ][ตัวเลขลำดับที่ได้อัตโนมัติ] (ไม่มีขีดคั่น)
-        return "{$prefix}{$type}{$yearStr}{$seqStr}";
+        // ประกอบตามสูตรใหม่: [ประเภท][ปีงบประมาณ][ตัวเลขลำดับที่ได้อัตโนมัติ] (ไม่มีขีดคั่น)
+        return self::buildCode($type, $yearStr, $seqStr, 4, '', $customPrefix);
     }
 
     public static function generateNextAutoCode(
         $assetOrCode = null,
-        ?string $deptCode = null,
+        ?string $prefixOrDept = null,
         ?string $typeCode = null,
         string $ownershipType = 'owned',
         ?string $budgetYear = null,
         ?int $excludeId = null
     ): string {
-        return self::generateAutoBoundCode($assetOrCode, $deptCode, $typeCode, $ownershipType, $budgetYear, $excludeId);
+        return self::generateAutoBoundCode($assetOrCode, $prefixOrDept, $typeCode, $ownershipType, $budgetYear, $excludeId);
     }
 
     /**

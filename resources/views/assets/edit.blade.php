@@ -312,23 +312,23 @@
 
                     @php
                         $curTag = old('it_code', old('it_asset_code', $asset->it_code));
-                        $defaultMode = 'dept';
-                        if ($asset->is_rented || str_starts_with($curTag, 'RENT-')) {
+                        $defaultMode = 'auto';
+                        if ($asset->is_rented || str_starts_with((string)$curTag, 'RENT')) {
                             $defaultMode = 'rent';
-                        } elseif ($asset->is_donated || str_starts_with($curTag, 'DON-')) {
+                        } elseif ($asset->is_donated || str_starts_with((string)$curTag, 'DON')) {
                             $defaultMode = 'don';
                         }
                     @endphp
 
-                    {{-- Prefix Selector: รหัสย่อแผนก, RENT (เครื่องเช่า), DON (รับบริจาค) --}}
+                    {{-- Prefix Selector: มาตรฐาน (ไม่ผูกแผนก), RENT (เครื่องเช่า), DON (รับบริจาค), กำหนดเอง --}}
                     <div style="background: #ffffff; border: 1px solid #ccfbf1; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <span style="font-size: 12px; font-weight: 700; color: #0f766e;">หมวด / Prefix รหัสคุม:</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" id="prefixButtonGroup">
-                            <label class="btn-prefix-pill {{ $defaultMode === 'dept' ? 'active' : '' }}" onclick="setPrefixMode('dept')">
-                                <input type="radio" name="prefix_mode" value="dept" {{ $defaultMode === 'dept' ? 'checked' : '' }} style="display: none;">
-                                <i class="bi bi-hospital"></i> รหัสย่อแผนก (<span id="deptCodeDisplay">{{ $asset->department?->code ?: 'THC' }}</span>)
+                            <label class="btn-prefix-pill {{ $defaultMode === 'auto' ? 'active' : '' }}" onclick="setPrefixMode('auto')">
+                                <input type="radio" name="prefix_mode" value="auto" {{ $defaultMode === 'auto' ? 'checked' : '' }} style="display: none;">
+                                <i class="bi bi-tag-fill"></i> มาตรฐาน [ประเภท][ปีงบ][ลำดับ] (ไม่ผูกแผนก)
                             </label>
                             <label class="btn-prefix-pill {{ $defaultMode === 'rent' ? 'active' : '' }}" onclick="setPrefixMode('rent')">
                                 <input type="radio" name="prefix_mode" value="rent" {{ $defaultMode === 'rent' ? 'checked' : '' }} style="display: none;">
@@ -378,7 +378,7 @@
                             </div>
                             <div style="position: relative;">
                                 <input type="text" id="it_code" name="it_code" class="form-control"
-                                       value="{{ old('it_code', old('it_asset_code', $asset->it_code)) }}"
+                                       value="{{ old('it_code', old('it_asset_code', $asset->it_code)) }}" placeholder="เช่น PC670001 หรือ NB660001"
                                        style="font-family: monospace; font-size: 14px; font-weight: 700; color: #0f766e; background: #ffffff; border-color: #0d9488;"
                                        oninput="handleManualTagInput()">
                                 <div style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px;">
@@ -390,7 +390,7 @@
                                 </div>
                             </div>
                             <span class="form-text" id="it_tag_hint" style="color: #0f766e; font-size: 11.5px;">
-                                สูตร: [แผนก] [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น เช่น PHARPC670001)
+                                สูตร: [ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น เช่น PC670001) &bull; ปริ้นสติ๊กเกอร์ครั้งเดียว ย้ายแผนกไม่ต้องปริ้นใหม่
                             </span>
                         </div>
                     </div>
@@ -1243,7 +1243,7 @@
 
     /**
      * คำนวณและผูกรหัสคุมไอทีอัตโนมัติ (Smart Auto-Binding)
-     * สูตรใหม่: [แผนก] [ประเภท] [ปีงบประมาณ] [ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น)
+     * สูตรใหม่: [ประเภท][ปีงบประมาณ][ตัวเลขลำดับอัตโนมัติ] (ไม่มีขีดคั่น ไม่ผูกแผนก เพื่อให้ย้ายตำแหน่งได้โดยไม่ต้องปริ้นสติ๊กเกอร์ใหม่)
      */
     let itCodeFetchTimer = null;
     function updateSmartBoundItTag() {
@@ -1252,10 +1252,9 @@
         }
 
         const typeCode = resolveSelectedTypeCode();
-        const deptCode = resolveSelectedDeptCode();
         const defaultYear = resolveBudgetYearShort();
 
-        let prefix = deptCode;
+        let prefix = '';
         let seq = '0001';
         let year = defaultYear;
         let badgeHtml = '';
@@ -1276,9 +1275,9 @@
             hintHtml = `สูตร: DON${typeCode}${year}${seq} &rarr; ครุภัณฑ์รับบริจาค คุมด้วยรหัส IT อัตโนมัติ`;
             if (itBadge) itBadge.style.background = '#0284c7';
         } else {
-            prefix = deptCode;
-            badgeHtml = `<i class="bi bi-magic"></i> รหัสอัตโนมัติ (${prefix}${typeCode}${year})`;
-            hintHtml = `🔗 <strong>สูตรใหม่:</strong> [${prefix}][${typeCode}][${year}][${seq}] &rarr; ${prefix}${typeCode}${year}${seq}`;
+            prefix = '';
+            badgeHtml = `<i class="bi bi-magic"></i> รหัสอัตโนมัติ (${typeCode}${year})`;
+            hintHtml = `🔗 <strong>สูตรใหม่:</strong> [${typeCode}][${year}][${seq}] &rarr; ${typeCode}${year}${seq} &bull; <em>ปริ้นสติ๊กเกอร์ครั้งเดียว ย้ายแผนกไม่ต้องปริ้นใหม่</em>`;
             if (itBadge) itBadge.style.background = '#0d9488';
         }
 
@@ -1304,18 +1303,19 @@
 
     function fetchNextItCodeFromServer(prefix, typeCode, year) {
         if (isManualTagOverride && currentPrefixMode === 'custom') return;
-        const deptId = document.getElementById('department_id')?.value || '';
         const typeId = document.getElementById('device_type_id')?.value || '';
         const bYear = document.getElementById('budget_year')?.value || '';
+        const assetCode = document.getElementById('asset_code')?.value || '';
         const ownership = document.getElementById('ownership_type')?.value || '{{ $asset->ownership_type ?: "owned" }}';
 
         const params = new URLSearchParams({
-            department_id: deptId,
-            department_code: prefix,
+            prefix: prefix,
+            prefix_mode: currentPrefixMode,
             device_type_id: typeId,
             device_type_code: typeCode,
             ownership_type: currentPrefixMode === 'rent' ? 'rented' : (currentPrefixMode === 'don' ? 'donated' : ownership),
             budget_year: bYear,
+            asset_code: assetCode,
             exclude_id: '{{ $asset->id }}'
         });
 
@@ -1329,7 +1329,7 @@
                         itInput.value = data.it_code;
                     }
                     if (itHint) {
-                        itHint.innerHTML = `🔗 <strong>รหัสคุม IT อัตโนมัติ:</strong> <span style="font-family: monospace; font-weight: 700;">${data.it_code}</span> (สูตร: [แผนก][ประเภท][ปี][ลำดับ])`;
+                        itHint.innerHTML = `🔗 <strong>รหัสคุม IT อัตโนมัติ:</strong> <span style="font-family: monospace; font-weight: 700;">${data.it_code}</span> (สูตร: [ประเภท][ปีงบ][ลำดับ] &bull; ปริ้นครั้งเดียว ไม่ผูกแผนก)`;
                     }
                 }
             })
@@ -1372,12 +1372,12 @@
             });
         } else {
             isManualTagOverride = false;
-            currentPrefixMode = 'dept';
+            currentPrefixMode = 'auto';
             if (icon) icon.className = 'bi bi-pencil';
             if (label) label.textContent = 'แก้ไขเอง';
             document.querySelectorAll('#prefixButtonGroup .btn-prefix-pill').forEach(btn => {
                 const radio = btn.querySelector('input');
-                if (radio && radio.value === 'dept') {
+                if (radio && radio.value === 'auto') {
                     btn.classList.add('active');
                     radio.checked = true;
                 } else {
@@ -1443,7 +1443,7 @@
                 noAssetCheckbox.checked = true;
                 toggleNoAssetCode(noAssetCheckbox);
             }
-        } else if (mode === 'dept') {
+        } else if (mode === 'auto') {
             if (ownershipSelect && (ownershipSelect.value === 'rented' || ownershipSelect.value === 'donated')) {
                 ownershipSelect.value = 'owned';
                 if (typeof toggleRentalBox === 'function') toggleRentalBox('owned');
@@ -1458,14 +1458,7 @@
     }
 
     function handleDepartmentChange(selectElem) {
-        const code = resolveSelectedDeptCode();
-        const display = document.getElementById('deptCodeDisplay');
-        if (display) {
-            display.textContent = code;
-        }
-        if (currentPrefixMode === 'dept') {
-            updateSmartBoundItTag();
-        }
+        // แผนกเปลี่ยน ไม่ต้องคำนวณรหัส IT Tag ใหม่ เพื่อให้ปริ้นสติ๊กเกอร์ครั้งเดียว ย้ายตำแหน่งได้โดยไม่ต้องปริ้นใหม่
     }
 
     function toggleNoAssetCode(checkbox) {
