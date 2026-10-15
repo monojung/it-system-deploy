@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.7.0'),
+    'version' => env('APP_VERSION', '2.10.0'),
     'release_name' => 'Thung Hua Chang IT Service Platform (Redesigned Random IT Code, Dual-Scan Barcode & Streamlined Label Suite)',
     'release_date' => '2026-10-15',
-    'build' => '20261015.2',
+    'build' => '20261015.3',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,7 +39,7 @@ return [
     |
     */
     'changelog' => [
-        '2.7.0' => [
+        '2.10.0' => [
             'date' => '2026-10-15',
             'badge' => 'Redesigned IT Code & Dual-Scan Barcode Suite',
             'badge_color' => '#0f766e',
@@ -53,7 +53,7 @@ return [
                 'คำสั่งแปลงรหัสย้อนหลังอัตโนมัติ: มี Artisan Command assets:regenerate-it-codes ปรับปรุงรหัสครุภัณฑ์เดิมทั้งหมดในฐานข้อมูลเป็นรูปแบบใหม่เรียบร้อยแล้ว',
             ],
         ],
-        '2.6.4' => [
+        '2.9.1' => [
             'date' => '2026-10-15',
             'badge' => 'Smart Auto-Updating IT Tag & XX Year Fallback',
             'badge_color' => '#0d9488',
@@ -65,7 +65,7 @@ return [
                 'ซิงค์ฐานข้อมูลครุภัณฑ์เดิม 208 รายการ: รายการที่ยังไม่มีปีงบประมาณได้รับการปรับเป็น [ประเภท]XX[ลำดับ] อย่างเป็นระเบียบและไม่มีรายการซ้ำซ้อน 100%',
             ],
         ],
-        '2.6.3' => [
+        '2.9.0' => [
             'date' => '2026-10-09',
             'badge' => 'Major UI/UX Suite: 100% Cross-Platform Mobile & Tablet Responsive Modernization',
             'badge_color' => '#0d9488',
@@ -81,7 +81,7 @@ return [
                 'การเลื่อนตารางข้อมูลด้วยระบบสัมผัส (Touch Momentum Table Scrolling): ปรับปรุง .table-responsive ให้รองรับ -webkit-overflow-scrolling: touch พร้อมแถบเลื่อนที่บางลงและลื่นไหล รองรับการปัดดูข้อมูลสเปคและรายการครุภัณฑ์ขนาดใหญ่ได้อย่างไร้รอยต่อ',
             ],
         ],
-        '2.6.2' => [
+        '2.8.0' => [
             'date' => '2026-10-02',
             'badge' => 'Production Gold Release: Agent Lifecycle Suite (Updater & Uninstaller), Machine Purge & Cross-Module Linkages',
             'badge_color' => '#10b981',
@@ -91,13 +91,13 @@ return [
                 'ระบบถอนการติดตั้ง Agent ประจำเครื่อง (Standalone & Remote Uninstaller): สร้างสคริปต์ uninstall_thc_agent.bat ที่มีความสามารถปิดโพรเซสที่ทำงานอยู่, ถอน Registry Startup (HKCU/HKLM), ลบ Scheduled Tasks, ลบทางลัดบน Desktop/Startup และล้างโฟลเดอร์โปรแกรมใน C:\ProgramData\THC-IT-Agent และ LocalAppData อย่างหมดจด 100%',
                 'ปุ่มลบเครื่องที่ติดตั้ง Agent ออกจากระบบ (Delete Agent Machine): ออกแบบและพัฒนาปุ่มลบเครื่องในแท็บ Agent Fleet ทั้งแบบรายเครื่องและแบบเลือกหลายเครื่องพร้อมกัน (Batch Delete) ลบประวัติสแกนฮาร์ดแวร์ล่าสุด, ยกเลิกคิวคำสั่งค้างท่อ, และล้างสถานะออนไลน์ออกจาก Cache/Registry ทันที โดยปลอดภัยและไม่กระทบต่อข้อมูลครุภัณฑ์ในระบบคลัง',
                 'คำสั่งถอนการติดตั้งระยะไกล (Remote Uninstall Command): เสริมตัวเลือกใน Modal ลบเครื่อง ให้ระบบสามารถส่งคำสั่ง \'uninstall\' ผ่าน API ไปยัง Agent บนเครื่องลูกข่าย เพื่อให้ตัวโปรแกรม Agent ปิดตัวเองและถอนการติดตั้งอัตโนมัติ',
-                'อัปเกรด Native C# System Tray Agent เป็น v2.6.2: รองรับคำสั่ง \'update\' และ \'uninstall\' จากระยะไกล พร้อมเพิ่มเมนูคลิกขวาใน System Tray สำหรับผู้ใช้งานหรือช่าง ให้สามารถกดตรวจสอบและอัปเดตเวอร์ชัน หรือสั่งถอนการติดตั้งได้โดยตรง',
+                'อัปเกรด Native C# System Tray Agent เป็น v2.8.0: รองรับคำสั่ง \'update\' และ \'uninstall\' จากระยะไกล พร้อมเพิ่มเมนูคลิกขวาใน System Tray สำหรับผู้ใช้งานหรือช่าง ให้สามารถกดตรวจสอบและอัปเดตเวอร์ชัน หรือสั่งถอนการติดตั้งได้โดยตรง',
                 'เชื่อมโยงความสัมพันธ์ข้ามระบบ (Cross-Module Integration): บูรณาการฟอร์มลงทะเบียนครุภัณฑ์ใหม่จากผลสแกนฮาร์ดแวร์ (createAssetModal) ให้รองรับการเลือกแหล่งเงินที่ใช้ซื้อ (Budget Sources เช่น เงิน UC, เงินบำรุง), วิธีการได้มา (Acquisition Methods เช่น จัดซื้อจัดจ้าง, รับบริจาค), และสิทธิ์การครอบครอง (Ownership Type เช่น เป็นของโรงพยาบาล, เครื่องเช่า/เช่าใช้)',
                 'ปรับปรุงสถาปัตยกรรม Route & สิทธิ์ RBAC 3 ระดับ: จัดลำดับ Static Routes ใน HardwareAudit ให้ทำงานก่อน Wildcard Routes เพื่อป้องกัน Route Collision และจำกัดสิทธิ์โมดูลความปลอดภัยสูงเฉพาะ Super Admin อย่างเคร่งครัด',
                 'จัดระเบียบประวัติเวอร์ชันระบบให้ต่อเนื่องสมบูรณ์: เติมเต็มบันทึกประวัติการเปลี่ยนแปลง (Changelogs) เวอร์ชัน 2.5.4 และ 2.5.3 ที่ขาดหายไป ให้บันทึกประวัติระบบมีความต่อเนื่องและสมบูรณ์สูงสุดสำหรับใช้งานจริงในระดับองค์กร',
             ],
         ],
-        '2.6.1' => [
+        '2.7.0' => [
             'date' => '2026-10-02',
             'badge' => 'Major Feature: Budget Sources, Acquisition Methods & Leased IT Fleet / Printer Management',
             'badge_color' => '#0284c7',

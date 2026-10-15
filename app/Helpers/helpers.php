@@ -113,7 +113,7 @@ if (!function_exists('app_version')) {
      */
     function app_version(): string
     {
-        return (string) setting('app_version', config('version.version', '2.6.3'));
+        return (string) setting('app_version', config('version.version', '2.10.0'));
     }
 }
 

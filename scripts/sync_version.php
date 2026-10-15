@@ -19,7 +19,7 @@ if (!file_exists($versionConfigFile)) {
 
 // 1. Read existing config
 $configContent = file_get_contents($versionConfigFile);
-$currentVersion = '2.6.3';
+$currentVersion = '2.10.0';
 if (preg_match("/'version'\s*=>\s*env\(['\"]APP_VERSION['\"],\s*['\"]([^'\"]+)['\"]\)/", $configContent, $m)) {
     $currentVersion = $m[1];
 } elseif (preg_match("/'version'\s*=>\s*['\"]([^'\"]+)['\"]/", $configContent, $m)) {
