@@ -206,7 +206,7 @@ class SystemUpdateService
 
         try {
             // Proactively clear any stale Git locks before checking remote updates
-            $this->clearGitLocks();
+            $clearedLocks = $this->clearGitLocks() ?: [];
 
             // Ensure remote points to the deploy repository
             $remoteName = $this->ensureUpdateRemote();
@@ -394,7 +394,7 @@ class SystemUpdateService
                 'remote_release_date' => $remoteReleaseDate,
                 'remote_release_name' => $remoteReleaseName,
                 'has_newer_version' => $hasNewerVersion,
-                'cleared_locks_count' => count($clearedLocks),
+                'cleared_locks_count' => (isset($clearedLocks) && is_countable($clearedLocks)) ? count($clearedLocks) : 0,
                 'last_checked_at' => now()->toDateTimeString(),
             ];
 
