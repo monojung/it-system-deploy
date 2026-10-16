@@ -57,6 +57,55 @@ class HardwareAuditController extends Controller
     }
 
     /**
+     * Live Heartbeat Registration (Active Standby Tracking)
+     */
+    protected function registerMachineHeartbeat($hardwareId, $hostname, $mac, $ip, $clientVersion = '2.10.0', $mode = 'tray_agent')
+    {
+        $nowIso = now()->toIso8601String();
+        $onlineTtl = now()->addSeconds(35);
+        if (!empty($hardwareId)) {
+            Cache::put('agent_online:hwid:' . strtoupper(trim($hardwareId)), $nowIso, $onlineTtl);
+        }
+        if (!empty($hostname)) {
+            Cache::put('agent_online:host:' . strtoupper(trim($hostname)), $nowIso, $onlineTtl);
+            $shortHost = explode('.', $hostname)[0];
+            if ($shortHost !== $hostname) {
+                Cache::put('agent_online:host:' . strtoupper(trim($shortHost)), $nowIso, $onlineTtl);
+            }
+        }
+        if (!empty($ip)) {
+            Cache::put('agent_online:ip:' . trim($ip), $nowIso, $onlineTtl);
+        }
+        if (!empty($mac)) {
+            Cache::put('agent_online:mac:' . strtoupper(trim($mac)), $nowIso, $onlineTtl);
+        }
+
+        // Track active online agents list
+        $agentKey = strtoupper(trim($hardwareId ?: $hostname ?: $ip));
+        if (!empty($agentKey)) {
+            try {
+                $registry = Cache::get('agent_online_registry', []);
+                if (!is_array($registry)) $registry = [];
+                $registry[$agentKey] = [
+                    'hwid' => $hardwareId,
+                    'hostname' => $hostname,
+                    'ip' => $ip,
+                    'mac' => $mac,
+                    'mode' => $mode,
+                    'version' => $clientVersion,
+                    'last_seen' => $nowIso,
+                    'expires_at' => now()->addSeconds(35)->timestamp,
+                ];
+                $nowTs = now()->timestamp;
+                $registry = array_filter($registry, function ($a) use ($nowTs) {
+                    return isset($a['expires_at']) && $a['expires_at'] > $nowTs;
+                });
+                Cache::put('agent_online_registry', $registry, now()->addMinutes(5));
+            } catch (\Throwable $e) {}
+        }
+    }
+
+    /**
      * API Endpoint: Receive hardware specs submission from client-side PowerShell Agent (POST)
      * Or provide service health/status information when accessed via browser or health checks (GET)
      * Publicly accessible by client agent (CSRF-exempt)
@@ -174,57 +223,104 @@ class HardwareAuditController extends Controller
             $serial = '';
         }
 
-        // Try Auto-matching with existing Asset in it_assets table
+        $rawHostname = trim((string)$request->input('hostname', ''));
+        $cleanMac = trim((string)$request->input('mac_address', ''));
+
+        // -------------------------------------------------------------------------
+        // ON-DEMAND PULL POLICY: Only ingest telemetry if authorized by an Admin command!
+        // When client PCs boot up, the installed agent will NOT submit audit records on its own.
+        // Machines in Standby mode only register their live presence in the online registry.
+        // -------------------------------------------------------------------------
+        $commandId = $request->input('command_id');
+        $authorizedCommand = null;
+
+        if (!empty($commandId)) {
+            $authorizedCommand = AgentCommand::where('id', $commandId)
+                ->where('command', 'scan')
+                ->whereIn('status', ['pending', 'processing'])
+                ->first();
+        }
+
+        // Fallback: check if there is an active scan command for this specific machine dispatched within the last 90 seconds
+        if (!$authorizedCommand && (!empty($hardwareId) || !empty($rawHostname))) {
+            $authorizedCommand = AgentCommand::where('command', 'scan')
+                ->whereIn('status', ['pending', 'processing'])
+                ->where('created_at', '>=', now()->subSeconds(90))
+                ->where(function ($q) use ($hardwareId, $rawHostname) {
+                    if (!empty($hardwareId)) {
+                        $q->where('target_hardware_id', $hardwareId);
+                    }
+                    if (!empty($rawHostname)) {
+                        if (!empty($hardwareId)) {
+                            $q->orWhere('target_hostname', $rawHostname);
+                        } else {
+                            $q->where('target_hostname', $rawHostname);
+                        }
+                    }
+                })
+                ->latest('id')
+                ->first();
+        }
+
+        // If not authorized by an Admin command (e.g. bootup scan from already-installed agent):
+        // Register machine heartbeat so Admin sees it 🟢 Online (Standby) in Agent Fleet,
+        // but DO NOT create/update any HardwareAudit record and DO NOT touch any Asset!
+        if (!$authorizedCommand) {
+            $this->registerMachineHeartbeat(
+                $hardwareId,
+                $rawHostname,
+                $cleanMac,
+                $ip,
+                $request->input('client_agent_version', '2.10.0')
+            );
+
+            return response()->json([
+                'success' => true,
+                'mode' => 'standby',
+                'is_online' => true,
+                'hostname' => $rawHostname,
+                'message' => 'เครื่องออนไลน์สแตนด์บายเรียบร้อย (ระบบเปิดโหมด On-Demand Pull: ข้อมูลสเปกจะถูกบันทึกเมื่อแอดมินกดสั่งดึงข้อมูลเท่านั้น)',
+                'poll_interval_sec' => 5,
+                'server_time' => now()->toIso8601String(),
+            ], 200, ['Content-Type' => 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
+        }
+
+        // Locate existing audit record for this machine in the current fiscal year
+        $auditQuery = HardwareAudit::where('fiscal_year', $fiscalYear);
+        if (!empty($hardwareId)) {
+            $auditQuery->where('hardware_id', $hardwareId);
+        } elseif (!empty($serial)) {
+            $auditQuery->where('serial_number', $serial);
+        } else {
+            $auditQuery->where('hostname', $rawHostname);
+        }
+
+        $audit = $auditQuery->first();
+        if (!$audit) {
+            $audit = new HardwareAudit();
+            $audit->fiscal_year = $fiscalYear;
+        }
+
+        // -------------------------------------------------------------------------
+        // STRICT 1:1 LINKING POLICY: NO AUTO-MATCHING HEURISTICS!
+        // The system NEVER auto-links telemetry to assets by serial, MAC, or hostname substring.
+        // It must be the ADMIN ONLY who clicks to link 1:1.
+        // -------------------------------------------------------------------------
         $matchedAsset = null;
         $matchedBy = null;
 
-        // 0. Explicit Match by Asset Code or Asset ID if passed by client
-        if ($request->filled('asset_code')) {
-            $matchedAsset = Asset::where('asset_code', trim((string)$request->input('asset_code')))->first();
+        // An audit is only associated with an asset if:
+        // 1) Explicitly targeted to an asset by Admin in the scan command ($authorizedCommand->target_asset_id), OR
+        // 2) The existing audit record was already reviewed and linked to an asset by an Admin ($audit->asset_id).
+        if ($authorizedCommand && !empty($authorizedCommand->target_asset_id)) {
+            $matchedAsset = Asset::find($authorizedCommand->target_asset_id);
             if ($matchedAsset) {
-                $matchedBy = 'asset_code';
+                $matchedBy = 'admin_command';
             }
-        }
-        if (!$matchedAsset && $request->filled('asset_id')) {
-            $matchedAsset = Asset::find($request->input('asset_id'));
+        } elseif ($audit && !empty($audit->asset_id)) {
+            $matchedAsset = Asset::find($audit->asset_id);
             if ($matchedAsset) {
-                $matchedBy = 'asset_id';
-            }
-        }
-
-        // 1. Highest Priority: Match by HardwareID (Physical SMBIOS / Motherboard UUID)
-        if (!$matchedAsset && !empty($hardwareId)) {
-            $matchedAsset = Asset::where('hardware_id', $hardwareId)->first();
-            if ($matchedAsset) {
-                $matchedBy = 'hardware_id';
-            }
-        }
-
-        // 2. Secondary: Match by Serial Number
-        if (!$matchedAsset && !empty($serial)) {
-            $matchedAsset = Asset::where('serial_number', $serial)->first();
-            if ($matchedAsset) {
-                $matchedBy = 'serial_number';
-            }
-        }
-
-        // 3. Fallback: Match by MAC Address
-        if (!$matchedAsset && !empty($request->input('mac_address'))) {
-            $mac = trim($request->input('mac_address'));
-            $matchedAsset = Asset::where('mac_address', $mac)->first();
-            if ($matchedAsset) {
-                $matchedBy = 'mac_address';
-            }
-        }
-
-        // 4. Fallback: Match by Hostname / Asset Code
-        if (!$matchedAsset && !empty($request->input('hostname'))) {
-            $hostname = trim($request->input('hostname'));
-            $matchedAsset = Asset::where('name', 'like', "%{$hostname}%")
-                ->orWhere('asset_code', 'like', "%{$hostname}%")
-                ->first();
-            if ($matchedAsset) {
-                $matchedBy = 'hostname';
+                $matchedBy = 'existing_verified_link';
             }
         }
 
@@ -253,22 +349,6 @@ class HardwareAuditController extends Controller
                     ];
                 }
             }
-        }
-
-        // Locate existing audit record for this machine in the current fiscal year
-        $auditQuery = HardwareAudit::where('fiscal_year', $fiscalYear);
-        if (!empty($hardwareId)) {
-            $auditQuery->where('hardware_id', $hardwareId);
-        } elseif (!empty($serial)) {
-            $auditQuery->where('serial_number', $serial);
-        } else {
-            $auditQuery->where('hostname', $request->input('hostname'));
-        }
-
-        $audit = $auditQuery->first();
-        if (!$audit) {
-            $audit = new HardwareAudit();
-            $audit->fiscal_year = $fiscalYear;
         }
 
         // Sanitize UTF-8 on all textual incoming fields to guarantee 100% Thai fidelity
@@ -424,9 +504,12 @@ class HardwareAuditController extends Controller
             }
         }
 
+        // Keep machine online in registry
+        $this->registerMachineHeartbeat($hardwareId, $hostname, $macAddress, $ip, $clientVersion);
+
         return response()->json([
             'success' => true,
-            'message' => 'ส่งรายงานสเปคคอมพิวเตอร์เข้าสู่ระบบเรียบร้อยแล้ว (สถานะ: รอแอดมินตรวจสอบและอนุมัติ)',
+            'message' => 'ส่งรายงานสเปคคอมพิวเตอร์เข้าสู่ระบบเรียบร้อยแล้ว (สถานะ: รอแอดมินตรวจสอบและเชื่อมโยงครุภัณฑ์ 1:1)',
             'audit_id' => $audit->id,
             'fiscal_year' => $fiscalYear,
             'hardware_id' => $hardwareId ?: null,
@@ -463,48 +546,7 @@ class HardwareAuditController extends Controller
         }
 
         // Live Heartbeat Registration (Active Standby Tracking)
-        $nowIso = now()->toIso8601String();
-        $onlineTtl = now()->addSeconds(35);
-        if (!empty($hardwareId)) {
-            Cache::put('agent_online:hwid:' . strtoupper(trim($hardwareId)), $nowIso, $onlineTtl);
-        }
-        if (!empty($hostname)) {
-            Cache::put('agent_online:host:' . strtoupper(trim($hostname)), $nowIso, $onlineTtl);
-            $shortHost = explode('.', $hostname)[0];
-            if ($shortHost !== $hostname) {
-                Cache::put('agent_online:host:' . strtoupper(trim($shortHost)), $nowIso, $onlineTtl);
-            }
-        }
-        if (!empty($ip)) {
-            Cache::put('agent_online:ip:' . trim($ip), $nowIso, $onlineTtl);
-        }
-        if (!empty($mac)) {
-            Cache::put('agent_online:mac:' . strtoupper(trim($mac)), $nowIso, $onlineTtl);
-        }
-
-        // Track active online agents list
-        $agentKey = strtoupper(trim($hardwareId ?: $hostname ?: $ip));
-        if (!empty($agentKey)) {
-            try {
-                $registry = Cache::get('agent_online_registry', []);
-                if (!is_array($registry)) $registry = [];
-                $registry[$agentKey] = [
-                    'hwid' => $hardwareId,
-                    'hostname' => $hostname,
-                    'ip' => $ip,
-                    'mac' => $mac,
-                    'mode' => $request->input('mode', 'tray_agent'),
-                    'version' => $clientVersion,
-                    'last_seen' => $nowIso,
-                    'expires_at' => now()->addSeconds(35)->timestamp,
-                ];
-                $nowTs = now()->timestamp;
-                $registry = array_filter($registry, function ($a) use ($nowTs) {
-                    return isset($a['expires_at']) && $a['expires_at'] > $nowTs;
-                });
-                Cache::put('agent_online_registry', $registry, now()->addMinutes(5));
-            } catch (\Throwable $e) {}
-        }
+        $this->registerMachineHeartbeat($hardwareId, $hostname, $mac, $ip, $clientVersion, $request->input('mode', 'tray_agent'));
 
         // 1. Check for direct command targeted to this machine
         $cmd = null;
@@ -1169,6 +1211,12 @@ class HardwareAuditController extends Controller
             }
         }
 
+        // Enforce strict 1:1 binding: detach this asset from any other audit in this fiscal year
+        HardwareAudit::where('fiscal_year', $audit->fiscal_year)
+            ->where('asset_id', $asset->id)
+            ->where('id', '!=', $audit->id)
+            ->update(['asset_id' => null]);
+
         // Link audit record to asset
         $audit->asset_id = $asset->id;
 
@@ -1226,14 +1274,14 @@ class HardwareAuditController extends Controller
         $audit->status = 'approved';
         $audit->reviewed_by = $user->id;
         $audit->reviewed_at = now();
-        $audit->review_notes = 'เชื่อมโยงเข้ากับครุภัณฑ์เดิม: ' . $asset->asset_code . ($request->filled('notes') ? ' (' . $request->notes . ')' : '');
+        $audit->review_notes = 'เชื่อมโยงเข้ากับครุภัณฑ์เดิม (1:1): ' . $asset->asset_code . ($request->filled('notes') ? ' (' . $request->notes . ')' : '');
         $audit->save();
 
         // Audit Log
         AuditLog::record(
             'update',
             'hardware_audits',
-            "เชื่อมโยงผลตรวจสเปคเครื่อง {$audit->hostname} (HWID: {$audit->hardware_id}) เข้ากับครุภัณฑ์ {$asset->asset_code} ({$asset->name})",
+            "เชื่อมโยงผลตรวจสเปคเครื่อง {$audit->hostname} (HWID: {$audit->hardware_id}) เข้ากับครุภัณฑ์ {$asset->asset_code} ({$asset->name}) แบบ 1:1",
             $audit,
             null,
             null,
@@ -1244,7 +1292,7 @@ class HardwareAuditController extends Controller
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "เชื่อมโยงเครื่อง '{$audit->hostname}' เข้ากับครุภัณฑ์ '{$asset->asset_code}' เรียบร้อยแล้ว",
+                'message' => "เชื่อมโยงเครื่อง '{$audit->hostname}' เข้ากับครุภัณฑ์ '{$asset->asset_code}' สำเร็จแบบ 1:1",
                 'asset' => [
                     'id' => $asset->id,
                     'asset_code' => $asset->asset_code,
@@ -1254,7 +1302,53 @@ class HardwareAuditController extends Controller
             ]);
         }
 
-        return back()->with('success', "เชื่อมโยงเครื่อง '{$audit->hostname}' เข้ากับครุภัณฑ์ '{$asset->asset_code}' สำเร็จและอัปเดตสเปคเรียบร้อยแล้ว");
+        return back()->with('success', "เชื่อมโยงเครื่อง '{$audit->hostname}' เข้ากับครุภัณฑ์ '{$asset->asset_code}' สำเร็จแบบ 1:1 และอัปเดตสเปคเรียบร้อยแล้ว");
+    }
+
+    /**
+     * Admin Action: Unlink an audit record from an Asset (Reset to 1:1 Pending Linkage)
+     */
+    public function unlinkAsset(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!$user || (!$user->isAdmin() && !$user->isTechnician())) {
+            abort(403, 'เฉพาะเจ้าหน้าที่ไอทีหรือแอดมินเท่านั้นที่มีสิทธิ์ยกเลิกการเชื่อมโยงครุภัณฑ์');
+        }
+
+        $audit = HardwareAudit::findOrFail($id);
+        $oldAsset = $audit->asset;
+
+        if ($oldAsset) {
+            if ($audit->hardware_id && $oldAsset->hardware_id === $audit->hardware_id) {
+                $oldAsset->hardware_id = null;
+                $oldAsset->save();
+            }
+        }
+
+        $audit->asset_id = null;
+        $audit->status = 'pending';
+        $audit->review_notes = 'ปลดการเชื่อมโยงครุภัณฑ์เดิม เพื่อรอเชื่อมโยงใหม่แบบ 1:1 โดยแอดมิน';
+        $audit->save();
+
+        AuditLog::record(
+            'unlink_asset',
+            'hardware_audits',
+            "ยกเลิกการเชื่อมโยงครุภัณฑ์ของเครื่อง {$audit->hostname} (Audit #{$audit->id})",
+            $audit,
+            null,
+            null,
+            $request,
+            $user
+        );
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'ยกเลิกการเชื่อมโยงครุภัณฑ์เรียบร้อยแล้ว สถานะกลับสู่รอเชื่อมโยง 1:1 โดยแอดมิน',
+            ]);
+        }
+
+        return back()->with('success', 'ยกเลิกการเชื่อมโยงครุภัณฑ์เรียบร้อยแล้ว สถานะกลับสู่รอเชื่อมโยง 1:1 โดยแอดมิน');
     }
 
     /**

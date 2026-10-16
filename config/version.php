@@ -11,9 +11,9 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.10.0'),
+    'version' => env('APP_VERSION', '2.10.1'),
     'release_name' => 'Thung Hua Chang IT Service Platform (Redesigned Random IT Code, Dual-Scan Barcode & Streamlined Label Suite)',
-    'release_date' => '2026-10-15',
+    'release_date' => '2026-10-16',
     'build' => '20261015.3',
     'environment' => env('APP_ENV', 'production'),
 

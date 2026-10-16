@@ -487,10 +487,10 @@
                                         @if($audit->status === 'pending')
                                             @if(!$audit->asset_id)
                                                 <button type="button" class="btn btn-sm" onclick="openLinkAssetModal({{ json_encode($audit) }})" 
-                                                        title="ค้นหาและเชื่อมโยงผลตรวจสเปคเข้ากับครุภัณฑ์เดิมที่มีในระบบ" 
-                                                        style="background: #0d9488; color: #ffffff; font-size: 11.5px; padding: 4px 8px; border-radius: 7px; font-weight: 600; border: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 3px rgba(13,148,136,0.25); flex-shrink: 0;">
+                                                        title="ค้นหาและเชื่อมโยงผลตรวจสเปคเข้ากับครุภัณฑ์เดิมที่มีในระบบ (1:1 เครื่อง โดยแอดมินเท่านั้น)" 
+                                                        style="background: #0d9488; color: #ffffff; font-size: 11.5px; padding: 4px 8px; border-radius: 7px; font-weight: 700; border: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 3px rgba(13,148,136,0.25); flex-shrink: 0;">
                                                     <i class="bi bi-link-45deg"></i>
-                                                    <span>เชื่อมโยง</span>
+                                                    <span>ผูกครุภัณฑ์ (1:1)</span>
                                                 </button>
                                                 <button type="button" class="btn btn-sm" onclick="openCreateAssetModal({{ json_encode($audit) }})" 
                                                         title="ลงทะเบียนและเพิ่มเป็นครุภัณฑ์ใหม่ลงระบบคลังทันที" 
@@ -503,6 +503,11 @@
                                                         title="อนุมัติและอัปเดตสเปคลงครุภัณฑ์ทันที" style="font-size: 11.5px; padding: 4px 9px; border-radius: 7px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; box-shadow: 0 1px 3px rgba(16,185,129,0.3);">
                                                     <i class="bi bi-check-lg"></i>
                                                     <span>อนุมัติ</span>
+                                                </button>
+                                                <button type="button" class="btn btn-sm" onclick="unlinkSingleAudit({{ $audit->id }}, '{{ addslashes($audit->hostname ?: '-') }}')"
+                                                        title="ปลดการผูกครุภัณฑ์ เพื่อผูกใหม่ 1:1" 
+                                                        style="background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; font-size: 11px; padding: 3px 6px; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 2px;">
+                                                    <i class="bi bi-link-45deg"></i> ปลดผูก
                                                 </button>
                                             @endif
                                         @endif
@@ -529,6 +534,13 @@
                                                 title="เปรียบเทียบสเปคเดิม vs สเปคใหม่ (Diff)" style="width: 29px; height: 29px; padding: 0; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                             <i class="bi bi-arrow-left-right" style="font-size: 12px;"></i>
                                         </button>
+                                        @if($audit->status !== 'pending')
+                                        <button type="button" class="btn btn-sm" onclick="unlinkSingleAudit({{ $audit->id }}, '{{ addslashes($audit->hostname ?: '-') }}')" 
+                                                title="ปลดการผูกครุภัณฑ์ของเครื่องนี้ เพื่อผูกใหม่ 1:1" 
+                                                style="width: 29px; height: 29px; padding: 0; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; background: #fff1f2; border: 1px solid #fecdd3; color: #e11d48;">
+                                            <i class="bi bi-slash-circle" style="font-size: 12px;"></i>
+                                        </button>
+                                        @endif
                                         @endif
 
                                         <!-- ACTION BUTTON: Reject (Icon) -->
@@ -2950,6 +2962,65 @@
             } else {
                 alert('เกิดข้อผิดพลาด: ' + err.message);
             }
+        });
+    }
+
+    function unlinkSingleAudit(auditId, hostname) {
+        const confirmMsg = `ต้องการยกเลิกการผูกครุภัณฑ์ของเครื่อง "${hostname}" หรือไม่?\n\n(สถานะจะกลับสู่รอเชื่อมโยง 1:1 โดยแอดมิน เพื่อความถูกต้องแม่นยำ)`;
+        if (window.Swal) {
+            Swal.fire({
+                title: 'ปลดการผูกครุภัณฑ์?',
+                text: `ต้องการยกเลิกการผูกครุภัณฑ์ของเครื่อง "${hostname}" หรือไม่? สถานะจะกลับสู่รอเชื่อมโยง 1:1 โดยแอดมิน`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e11d48',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<i class="bi bi-link-45deg me-1"></i> ยืนยันปลดการผูก',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeUnlink(auditId);
+                }
+            });
+        } else {
+            if (confirm(confirmMsg)) {
+                executeUnlink(auditId);
+            }
+        }
+    }
+
+    function executeUnlink(auditId) {
+        fetch("{{ url('/hardware-audits') }}/" + auditId + "/unlink-asset", {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'ปลดการเชื่อมโยงเรียบร้อย',
+                        text: data.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => location.reload());
+                } else {
+                    alert(data.message);
+                    location.reload();
+                }
+            } else {
+                alert(data.message || 'เกิดข้อผิดพลาดในการปลดการผูก');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
         });
     }
 

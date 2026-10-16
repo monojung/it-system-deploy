@@ -318,6 +318,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::get('/hardware-audits/{id}/inspect', [HardwareAuditController::class, 'inspect'])->name('hardware-audits.inspect')->where('id', '[0-9]+');
         Route::post('/hardware-audits/{id}/approve', [HardwareAuditController::class, 'approve'])->name('hardware-audits.approve')->where('id', '[0-9]+');
         Route::post('/hardware-audits/{id}/link-asset', [HardwareAuditController::class, 'linkAsset'])->name('hardware-audits.link-asset')->where('id', '[0-9]+');
+        Route::post('/hardware-audits/{id}/unlink-asset', [HardwareAuditController::class, 'unlinkAsset'])->name('hardware-audits.unlink-asset')->where('id', '[0-9]+');
         Route::post('/hardware-audits/{id}/create-asset', [HardwareAuditController::class, 'createAssetFromAudit'])->name('hardware-audits.create-asset')->where('id', '[0-9]+');
         Route::post('/hardware-audits/{id}/reject', [HardwareAuditController::class, 'reject'])->name('hardware-audits.reject')->where('id', '[0-9]+');
         Route::delete('/hardware-audits/{id}', [HardwareAuditController::class, 'destroy'])->name('hardware-audits.destroy')->where('id', '[0-9]+');
