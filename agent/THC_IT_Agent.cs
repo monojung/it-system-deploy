@@ -38,9 +38,32 @@ namespace ThcItAgent
             catch { }
         }
 
+        public static void LogDebug(string msg)
+        {
+            try
+            {
+                string dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string path = Path.Combine(dir, "agent_debug.log");
+                File.AppendAllText(path, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " [" + Process.GetCurrentProcess().Id + "] " + msg + "\r\n");
+            }
+            catch { }
+        }
+
         [STAThread]
         static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                LogDebug("UNHANDLED DOMAIN EXCEPTION: " + (e.ExceptionObject != null ? e.ExceptionObject.ToString() : "null"));
+            };
+
+            Application.ThreadException += (s, e) =>
+            {
+                LogDebug("APPLICATION THREAD EXCEPTION: " + (e.Exception != null ? e.Exception.ToString() : "null"));
+            };
+
+            LogDebug("Main started, args: " + (args != null ? string.Join(" ", args) : "null"));
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -195,11 +218,13 @@ namespace ThcItAgent
             // If starting after update, retry acquiring mutex for up to 9 seconds while old process finishes exiting.
             bool createdNew = false;
             int maxAttempts = (!string.IsNullOrEmpty(updatedFrom) || waitPid > 0) ? 30 : 1;
+            LogDebug("Acquiring mutex, maxAttempts: " + maxAttempts);
             for (int attempt = 0; attempt < maxAttempts; attempt++)
             {
                 try
                 {
                     _mutex = new Mutex(true, AppGuid, out createdNew);
+                    LogDebug("Mutex attempt " + attempt + ", createdNew: " + createdNew);
                     if (createdNew) break;
 
                     if (_mutex != null)
@@ -211,10 +236,14 @@ namespace ThcItAgent
                 catch (AbandonedMutexException)
                 {
                     // The previous instance exited and abandoned the mutex. We now own it!
+                    LogDebug("AbandonedMutexException caught! Mutex acquired.");
                     createdNew = true;
                     break;
                 }
-                catch { }
+                catch (Exception mEx)
+                {
+                    LogDebug("Mutex exception: " + mEx.Message);
+                }
 
                 if (attempt < maxAttempts - 1)
                 {
@@ -224,6 +253,7 @@ namespace ThcItAgent
 
             if (!createdNew)
             {
+                LogDebug("Mutex createdNew is false! Exiting process.");
                 if (!isSilent)
                 {
                     MessageBox.Show(
@@ -235,7 +265,9 @@ namespace ThcItAgent
                 return;
             }
 
+            LogDebug("Mutex acquired. Calling Application.Run(TrayContext).");
             Application.Run(new TrayContext(updatedFrom));
+            LogDebug("Application.Run returned. Releasing mutex and exiting Main.");
 
             // Release mutex on normal exit
             try { _mutex.ReleaseMutex(); } catch { }
@@ -1032,10 +1064,15 @@ namespace ThcItAgent
 
         private void SetStatus(bool online, bool busy, string message)
         {
+            Program.LogDebug("SetStatus called: online=" + online + ", busy=" + busy + ", msg=" + message);
             _isOnline = online;
             _isBusy = busy;
 
-            if (_notifyIcon == null) return;
+            if (_notifyIcon == null)
+            {
+                Program.LogDebug("SetStatus: _notifyIcon is null!");
+                return;
+            }
 
             Icon targetIcon = _iconOffline;
             string iconState = "ออฟไลน์";
@@ -1057,12 +1094,17 @@ namespace ThcItAgent
                 string notifyText = "THC IT Agent: " + iconState;
                 _notifyIcon.Text = notifyText.Length > 63 ? notifyText.Substring(0, 63) : notifyText;
                 _statusMenuItem.Text = (online ? (busy ? "🟡 " : "🟢 ") : "🔴 ") + "สถานะ: " + iconState;
+                Program.LogDebug("SetStatus: UI updated successfully");
             }
-            catch { }
+            catch (Exception uiEx)
+            {
+                Program.LogDebug("SetStatus: UI update exception: " + uiEx.Message);
+            }
         }
 
         private void WorkerLoop()
         {
+            Program.LogDebug("WorkerLoop entered");
             Thread.Sleep(1000);
             var js = new JavaScriptSerializer();
 
@@ -1969,6 +2011,7 @@ namespace ThcItAgent
 
         private void ExitApp()
         {
+            Program.LogDebug("ExitApp called!");
             _isRunning = false;
             if (_notifyIcon != null)
             {
