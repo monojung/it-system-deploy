@@ -5,23 +5,22 @@
 @section('page_subtitle', 'ศูนย์มอนิเตอร์ฮาร์ดแวร์ ตรวจจับสเปคอัตโนมัติจาก Agent และประเมินมาตรฐาน ICT ภาครัฐ พ.ศ. ' . $fiscalYear)
 
 @section('topbar-actions')
-<div style="display: flex; gap: 8px; align-items: center;">
-    <button type="button" class="topbar-btn" onclick="triggerScanAllConfirm()" 
-            title="ส่งคำสั่งไปยัง Agent ทุกเครื่องให้ทำการสแกนสเปคใหม่เดี๋ยวนี้ (Remote Scan All)" 
-            style="background: linear-gradient(135deg, #0284c7 0%, #0f766e 100%); color: #ffffff; border: none; font-weight: 700; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35); display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; cursor: pointer;">
-        <i class="bi bi-broadcast-pin" style="color: #38bdf8; font-size: 15px;"></i>
-        <span>สั่งสแกนทุกเครื่อง</span>
-        <span class="badge" style="background: rgba(255,255,255,0.25); color: #ffffff; font-size: 11px; padding: 2px 7px; border-radius: 99px;">
-            {{ $agentInstalledCount ?? 0 }} เครื่อง
+<div class="ha-topbar-actions">
+    <button type="button" class="topbar-btn ha-topbar-btn-scan" onclick="triggerScanAllConfirm()" 
+            title="ส่งคำสั่งไปยัง Agent ทุกเครื่องให้ทำการสแกนสเปคใหม่เดี๋ยวนี้ (Remote Scan All)">
+        <i class="bi bi-broadcast-pin text-info"></i>
+        <span class="d-none d-sm-inline">สั่งสแกนทุกเครื่อง</span>
+        <span class="badge d-none d-md-inline" style="background: rgba(255,255,255,0.25); color: #ffffff; font-size: 11px; padding: 2px 7px; border-radius: 99px;">
+            {{ $agentInstalledCount ?? 0 }}
         </span>
     </button>
     <a href="{{ route('hardware-audits.print-report', ['fiscal_year' => $fiscalYear]) }}" target="_blank" class="topbar-btn" title="พิมพ์รายงานสรุปประจำปีงบประมาณ A4">
         <i class="bi bi-printer text-primary"></i>
-        <span>พิมพ์รายงาน A4</span>
+        <span class="d-none d-sm-inline">พิมพ์รายงาน A4</span>
     </a>
     <a href="{{ route('hardware-audits.export-csv', ['fiscal_year' => $fiscalYear]) }}" class="topbar-btn" title="ส่งออกไฟล์ข้อมูล Excel/CSV">
         <i class="bi bi-file-earmark-excel text-success"></i>
-        <span>ส่งออก CSV</span>
+        <span class="d-none d-sm-inline">ส่งออก CSV</span>
     </a>
 </div>
 @endsection
@@ -29,68 +28,59 @@
 @section('content')
 <div class="content-container">
 
-    <!-- PAGE HEADER BANNER -->
-    <div class="card" style="background: linear-gradient(135deg, #0f766e 0%, #0369a1 100%); border: none; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(15, 118, 110, 0.35); color: #ffffff; overflow: hidden; position: relative;">
+    <!-- PAGE HEADER BANNER (RESPONSIVE) -->
+    <div class="card ha-hero-banner">
         <!-- Background Pattern Deco -->
-        <div style="position: absolute; right: -20px; top: -30px; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%); pointer-events: none;"></div>
-        <div style="position: absolute; right: 140px; bottom: -40px; width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%); pointer-events: none;"></div>
+        <div class="ha-hero-blob-1"></div>
+        <div class="ha-hero-blob-2"></div>
 
-        <div style="padding: 24px 28px; position: relative; z-index: 1;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-                <div style="display: flex; align-items: center; gap: 16px;">
-                    <div style="width: 54px; height: 54px; border-radius: 14px; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 4px 14px rgba(0,0,0,0.12);">
+        <div class="ha-hero-content">
+            <div class="ha-hero-inner">
+                <div class="ha-hero-title-area">
+                    <div class="ha-hero-icon">
                         <i class="bi bi-cpu-fill"></i>
                     </div>
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                            <h1 style="font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.3px; color: #ffffff;">ติดตามสเปค & ตรวจนับคอมพิวเตอร์ประจำปีงบประมาณ</h1>
-                            <span style="background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.3); font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px;">
+                    <div class="ha-hero-text">
+                        <div class="ha-hero-title-row">
+                            <h1 class="ha-hero-title">ติดตามสเปค & ตรวจนับคอมพิวเตอร์ประจำปี</h1>
+                            <span class="ha-hero-fy-badge">
                                 พ.ศ. {{ $fiscalYear }}
                             </span>
                         </div>
-                        <p style="font-size: 13.5px; opacity: 0.92; margin: 5px 0 0 0; font-weight: 400;">
+                        <p class="ha-hero-desc">
                             ศูนย์มอนิเตอร์ฮาร์ดแวร์อัตโนมัติ ตรวจสอบความถูกต้องของสเปคเครื่องจริงจาก Agent ประจำเครื่อง และประเมินความสอดคล้องตามเกณฑ์กระทรวงดีอี (MDES)
                         </p>
                     </div>
                 </div>
 
                 <!-- Right Action Bar: Scan All Agent Button, Download Standalone Agent & Fiscal Year Form Selector -->
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <div class="ha-hero-actions">
                     
                     <!-- Download Standalone Agent .exe Hero Button -->
-                    <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-sm"
-                       style="background: #ffffff; color: #0284c7; font-weight: 700; padding: 7px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); text-decoration: none; transition: all 0.2s; font-size: 12.5px;"
-                       onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 14px rgba(0,0,0,0.16)'"
-                       onmouseout="this.style.transform='none'; this.style.boxShadow='0 3px 10px rgba(0,0,0,0.1)'"
-                       title="ดาวน์โหลดโปรแกรม THC IT Agent (Standalone .exe 68 KB พร้อม Setup Wizard ติดตั้งง่าย มี System Tray Icon บอกสถานะ Online/Offline)">
-                        <i class="bi bi-download text-primary" style="font-size: 14px;"></i>
+                    <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-sm ha-hero-btn-download"
+                       title="ดาวน์โหลดโปรแกรม THC IT Agent (Standalone .exe 68 KB พร้อม Setup Wizard ติดตั้งง่าย มี System Tray Icon)">
+                        <i class="bi bi-download text-primary"></i>
                         <span>โหลด Agent (.exe)</span>
-                        <span class="badge" style="background: #16a34a; color: #ffffff; font-size: 10px; padding: 2px 5px; border-radius: 5px;">
-                            v2.11.0
-                        </span>
+                        <span class="badge bg-success text-white">v2.11.0</span>
                     </a>
 
                     <!-- Pull All Agent Telemetry Hero Button (On-Demand) -->
-                    <button type="button" class="btn btn-sm" onclick="triggerScanAllConfirm()" 
-                            style="background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); border: 1.5px solid rgba(255,255,255,0.4); color: #ffffff; font-weight: 700; padding: 7px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); transition: all 0.2s; cursor: pointer; font-size: 12.5px;"
-                            onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='translateY(-1px)'" 
-                            onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='none'"
+                    <button type="button" class="btn btn-sm ha-hero-btn-scan" onclick="triggerScanAllConfirm()" 
                             title="ส่งสัญญาณ Remote Scan ไปยัง Agent ทุกเครื่องเพื่อดึงสเปกฮาร์ดแวร์ล่าสุด">
-                        <i class="bi bi-cloud-arrow-down-fill text-warning" style="font-size: 15px;"></i>
-                        <span>ดึงข้อมูลทุกเครื่อง (Agent)</span>
-                        <span style="background: #ffffff; color: #0f766e; font-size: 11px; padding: 2px 7px; border-radius: 99px; font-weight: 800;">
+                        <i class="bi bi-cloud-arrow-down-fill text-warning"></i>
+                        <span>ดึงข้อมูลทุกเครื่อง</span>
+                        <span class="ha-hero-count-pill">
                             {{ $agentInstalledCount ?? 0 }} เครื่อง
                         </span>
                     </button>
 
                     <!-- Fiscal Year Form Selector -->
-                    <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 10px; padding: 6px 12px; display: flex; align-items: center; gap: 6px;">
-                        <form method="GET" action="{{ route('hardware-audits.index') }}" id="fiscalYearForm" style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                    <div class="ha-hero-fy-box">
+                        <form method="GET" action="{{ route('hardware-audits.index') }}" id="fiscalYearForm">
                             <input type="hidden" name="tab" value="{{ $tab }}">
-                            <i class="bi bi-calendar-check" style="font-size: 14px; opacity: 0.9;"></i>
-                            <label for="fiscal_year" style="font-size: 12.5px; font-weight: 600; white-space: nowrap; margin: 0;">ปีงบ:</label>
-                            <select name="fiscal_year" id="fiscal_year" class="form-select form-select-sm" onchange="document.getElementById('fiscalYearForm').submit()" 
-                                    style="font-weight: 700; width: 105px; border-radius: 6px; border: none; background: #ffffff; color: #0f766e; font-size: 12.5px; padding: 3px 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+                            <i class="bi bi-calendar-check text-white opacity-75"></i>
+                            <label for="fiscal_year">ปีงบ:</label>
+                            <select name="fiscal_year" id="fiscal_year" class="form-select form-select-sm" onchange="document.getElementById('fiscalYearForm').submit()">
                                 @foreach($availableFiscalYears as $fy)
                                     <option value="{{ $fy }}" {{ $fiscalYear == $fy ? 'selected' : '' }}>พ.ศ. {{ $fy }}</option>
                                 @endforeach
@@ -102,42 +92,42 @@
         </div>
     </div>
 
-    <!-- 5 TOP KPI STATISTICS CARDS -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <!-- 5 TOP KPI STATISTICS CARDS (RESPONSIVE GRID) -->
+    <div class="ha-stat-grid">
         
         <!-- CARD 1: Total Fleet -->
-        <div class="card stat-card" style="border-radius: 14px; border: 1px solid #e2e8f0; padding: 18px; margin-bottom: 0; background: #ffffff; box-shadow: var(--shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <div style="font-size: 12.5px; font-weight: 600; color: #64748b;">เป้าหมายสำรวจทั้งหมด</div>
-                    <div style="font-size: 26px; font-weight: 800; color: #0f172a; margin-top: 4px; line-height: 1;">
-                        {{ number_format($totalFleet) }} <span style="font-size: 13px; font-weight: 500; color: #64748b;">เครื่อง</span>
+        <div class="card stat-card ha-stat-card" style="border: 1px solid #e2e8f0; background: #ffffff;">
+            <div class="ha-stat-inner">
+                <div class="ha-stat-info">
+                    <div class="ha-stat-label" style="color: #64748b;">เป้าหมายสำรวจทั้งหมด</div>
+                    <div class="ha-stat-value" style="color: #0f172a;">
+                        {{ number_format($totalFleet) }} <span class="ha-stat-unit">เครื่อง</span>
                     </div>
                 </div>
-                <div style="width: 44px; height: 44px; border-radius: 12px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                <div class="ha-stat-icon" style="background: #e0f2fe; color: #0284c7;">
                     <i class="bi bi-pc-display"></i>
                 </div>
             </div>
-            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 10px; display: flex; align-items: center; gap: 4px;">
+            <div class="ha-stat-footer" style="color: #94a3b8;">
                 <i class="bi bi-building me-1"></i> คอมพิวเตอร์สถานะปกติใน รพ.
             </div>
         </div>
 
         <!-- CARD 2: Audited This FY -->
-        <div class="card stat-card" style="border-radius: 14px; border: 1px solid #bbf7d0; padding: 18px; margin-bottom: 0; background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); box-shadow: var(--shadow-sm);">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <div style="font-size: 12.5px; font-weight: 600; color: #166534;">ตรวจนับ/อัปเดตสเปคแล้ว</div>
-                    <div style="font-size: 26px; font-weight: 800; color: #15803d; margin-top: 4px; line-height: 1;">
+        <div class="card stat-card ha-stat-card" style="border: 1px solid #bbf7d0; background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);">
+            <div class="ha-stat-inner">
+                <div class="ha-stat-info">
+                    <div class="ha-stat-label" style="color: #166534;">ตรวจนับ/อัปเดตสเปคแล้ว</div>
+                    <div class="ha-stat-value" style="color: #15803d;">
                         {{ number_format($auditedCount) }} 
-                        <span style="font-size: 13px; font-weight: 700; color: #166534;">({{ $auditedPercentage }}%)</span>
+                        <span class="ha-stat-percentage" style="color: #166534;">({{ $auditedPercentage }}%)</span>
                     </div>
                 </div>
-                <div style="width: 44px; height: 44px; border-radius: 12px; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                <div class="ha-stat-icon" style="background: #dcfce7; color: #16a34a;">
                     <i class="bi bi-shield-check"></i>
                 </div>
             </div>
-            <div style="margin-top: 10px;">
+            <div class="ha-stat-progress-wrap">
                 <div class="progress" style="height: 6px; background: #d1fae5; border-radius: 99px; overflow: hidden;">
                     <div class="progress-bar bg-success" role="progressbar" style="width: {{ min(100, $auditedPercentage) }}%; border-radius: 99px;"></div>
                 </div>
@@ -145,20 +135,20 @@
         </div>
 
         <!-- CARD 3: Pending Submissions -->
-        <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'pending', 'status' => 'pending']) }}" style="text-decoration: none; color: inherit;">
-            <div class="card stat-card" style="border-radius: 14px; border: 1px solid {{ $pendingCount > 0 ? '#fde047' : '#e2e8f0' }}; padding: 18px; margin-bottom: 0; background: {{ $pendingCount > 0 ? 'linear-gradient(180deg, #ffffff 0%, #fefce8 100%)' : '#ffffff' }}; box-shadow: var(--shadow-sm); cursor: pointer; transition: transform 0.2s ease;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <div style="font-size: 12.5px; font-weight: 600; color: #854d0e;">รอแอดมินกดอนุมัติ</div>
-                        <div style="font-size: 26px; font-weight: 800; color: #ca8a04; margin-top: 4px; line-height: 1;">
-                            {{ number_format($pendingCount) }} <span style="font-size: 13px; font-weight: 500; color: #854d0e;">รายการ</span>
+        <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'pending', 'status' => 'pending']) }}" style="text-decoration: none; color: inherit; display: block;">
+            <div class="card stat-card ha-stat-card" style="border: 1px solid {{ $pendingCount > 0 ? '#fde047' : '#e2e8f0' }}; background: {{ $pendingCount > 0 ? 'linear-gradient(180deg, #ffffff 0%, #fefce8 100%)' : '#ffffff' }}; cursor: pointer;">
+                <div class="ha-stat-inner">
+                    <div class="ha-stat-info">
+                        <div class="ha-stat-label" style="color: #854d0e;">รอแอดมินกดอนุมัติ</div>
+                        <div class="ha-stat-value" style="color: #ca8a04;">
+                            {{ number_format($pendingCount) }} <span class="ha-stat-unit" style="color: #854d0e;">รายการ</span>
                         </div>
                     </div>
-                    <div style="width: 44px; height: 44px; border-radius: 12px; background: #fef9c3; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                    <div class="ha-stat-icon" style="background: #fef9c3; color: #ca8a04;">
                         <i class="bi bi-clock-history"></i>
                     </div>
                 </div>
-                <div style="font-size: 11.5px; color: #a16207; margin-top: 10px; display: flex; align-items: center; justify-content: space-between;">
+                <div class="ha-stat-footer" style="color: #a16207; display: flex; align-items: center; justify-content: space-between;">
                     <span>สแกนเข้ามาแล้ว รอยืนยัน</span>
                     <i class="bi bi-arrow-right-short" style="font-size: 16px;"></i>
                 </div>
@@ -166,64 +156,66 @@
         </a>
 
         <!-- CARD 4: Remaining Not Audited -->
-        <div class="card stat-card" style="border-radius: 14px; border: 1px solid #e2e8f0; padding: 18px; margin-bottom: 0; background: #ffffff; box-shadow: var(--shadow-sm);">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <div style="font-size: 12.5px; font-weight: 600; color: #64748b;">คงเหลือยังไม่ได้สำรวจ</div>
-                    <div style="font-size: 26px; font-weight: 800; color: #334155; margin-top: 4px; line-height: 1;">
-                        {{ number_format($notAuditedCount) }} <span style="font-size: 13px; font-weight: 500; color: #64748b;">เครื่อง</span>
+        <div class="card stat-card ha-stat-card" style="border: 1px solid #e2e8f0; background: #ffffff;">
+            <div class="ha-stat-inner">
+                <div class="ha-stat-info">
+                    <div class="ha-stat-label" style="color: #64748b;">คงเหลือยังไม่ได้สำรวจ</div>
+                    <div class="ha-stat-value" style="color: #334155;">
+                        {{ number_format($notAuditedCount) }} <span class="ha-stat-unit">เครื่อง</span>
                     </div>
                 </div>
-                <div style="width: 44px; height: 44px; border-radius: 12px; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                <div class="ha-stat-icon" style="background: #f1f5f9; color: #475569;">
                     <i class="bi bi-hourglass-split"></i>
                 </div>
             </div>
-            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 10px; display: flex; align-items: center; gap: 4px;">
+            <div class="ha-stat-footer" style="color: #94a3b8;">
                 <i class="bi bi-tools me-1"></i> ต้องส่ง Agent หรือเดินสำรวจ
             </div>
         </div>
 
         <!-- CARD 5: MDES Upgrade Warnings -->
-        <div class="card stat-card" style="border-radius: 14px; border: 1px solid #fecaca; padding: 18px; margin-bottom: 0; background: linear-gradient(180deg, #ffffff 0%, #fff5f5 100%); box-shadow: var(--shadow-sm);">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <div style="font-size: 12.5px; font-weight: 600; color: #991b1b;">เตือนสเปคต่ำกว่าเกณฑ์ ICT</div>
-                    <div style="font-size: 26px; font-weight: 800; color: #dc2626; margin-top: 4px; line-height: 1;">
-                        {{ number_format($mdesWarningCount) }} <span style="font-size: 13px; font-weight: 500; color: #991b1b;">เครื่อง</span>
+        <div class="card stat-card ha-stat-card ha-stat-card-warning" style="border: 1px solid #fecaca; background: linear-gradient(180deg, #ffffff 0%, #fff5f5 100%);">
+            <div class="ha-stat-inner">
+                <div class="ha-stat-info">
+                    <div class="ha-stat-label" style="color: #991b1b;">เตือนสเปคต่ำกว่าเกณฑ์ ICT</div>
+                    <div class="ha-stat-value" style="color: #dc2626;">
+                        {{ number_format($mdesWarningCount) }} <span class="ha-stat-unit" style="color: #991b1b;">เครื่อง</span>
                     </div>
                 </div>
-                <div style="width: 44px; height: 44px; border-radius: 12px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                <div class="ha-stat-icon" style="background: #fee2e2; color: #dc2626;">
                     <i class="bi bi-exclamation-triangle"></i>
                 </div>
             </div>
-            <div style="font-size: 11.5px; color: #ef4444; margin-top: 10px; display: flex; align-items: center; gap: 4px;">
+            <div class="ha-stat-footer" style="color: #ef4444;">
                 <i class="bi bi-info-circle me-1"></i> RAM &lt; 8GB / ไดรฟ์ HDD / Win 7
             </div>
         </div>
     </div>
 
     <!-- MAIN INTERACTIVE SECTION WITH MODERN TABS -->
-    <div class="card" style="border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 30px;">
+    <div class="card ha-main-card" style="border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 30px;">
         
-        <!-- MODERN TAB BAR -->
-        <div style="display: flex; border-bottom: 1px solid #e2e8f0; background: #f8fafc; overflow-x: auto; padding: 6px 12px 0 12px; gap: 6px;">
+        <!-- MODERN TAB BAR (RESPONSIVE TOUCH SCROLL) -->
+        <div class="ha-tabs-bar">
             {{-- TAB 1: PENDING QUEUE --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'pending']) }}" 
                class="tab-nav-btn {{ $tab === 'pending' ? 'active' : '' }}"
-               style="padding: 12px 18px; font-size: 13.5px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; border-radius: 10px 10px 0 0; border: 1px solid {{ $tab === 'pending' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'pending' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'pending' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'pending' ? '#0f766e' : '#64748b' }}; transition: all 0.15s;">
+               style="border: 1px solid {{ $tab === 'pending' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'pending' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'pending' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'pending' ? '#0f766e' : '#64748b' }};">
                 <i class="bi bi-inbox-fill" style="color: {{ $tab === 'pending' ? '#0f766e' : '#94a3b8' }};"></i>
-                <span>คิวรอตรวจสอบและอนุมัติ</span>
+                <span class="d-none d-md-inline">คิวรอตรวจสอบและอนุมัติ</span>
+                <span class="d-inline d-md-none">รออนุมัติ</span>
                 @if($pendingCount > 0)
-                    <span style="background: #f59e0b; color: #ffffff; font-size: 11px; padding: 2px 7px; border-radius: 99px; font-weight: 700;">{{ $pendingCount }}</span>
+                    <span class="badge" style="background: #f59e0b; color: #ffffff; font-size: 11px; padding: 2px 7px; border-radius: 99px; font-weight: 700;">{{ $pendingCount }}</span>
                 @endif
             </a>
 
             {{-- TAB 2: AGENT FLEET --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'agents']) }}" 
                class="tab-nav-btn {{ $tab === 'agents' ? 'active' : '' }}"
-               style="padding: 12px 18px; font-size: 13.5px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; border-radius: 10px 10px 0 0; border: 1px solid {{ $tab === 'agents' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'agents' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'agents' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'agents' ? '#0f766e' : '#64748b' }}; transition: all 0.15s;">
+               style="border: 1px solid {{ $tab === 'agents' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'agents' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'agents' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'agents' ? '#0f766e' : '#64748b' }};">
                 <i class="bi bi-display-fill" style="color: {{ $tab === 'agents' ? '#0f766e' : '#94a3b8' }};"></i>
-                <span>เครื่องที่ติดตั้ง Agent</span>
+                <span class="d-none d-md-inline">เครื่องที่ติดตั้ง Agent</span>
+                <span class="d-inline d-md-none">Agent Fleet</span>
                 <span class="badge" style="background: {{ $agentOnlineCount > 0 ? '#10b981' : '#64748b' }}; color: #ffffff; font-size: 11px; padding: 2px 7px; border-radius: 99px; font-weight: 700;">
                     <span id="tabAgentOnlineCount">{{ $agentOnlineCount }}</span>/{{ $agentTotalCount }}
                 </span>
@@ -232,47 +224,50 @@
             {{-- TAB 3: DEPARTMENT TRACKER --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'departments']) }}" 
                class="tab-nav-btn {{ $tab === 'departments' ? 'active' : '' }}"
-               style="padding: 12px 18px; font-size: 13.5px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; border-radius: 10px 10px 0 0; border: 1px solid {{ $tab === 'departments' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'departments' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'departments' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'departments' ? '#0f766e' : '#64748b' }}; transition: all 0.15s;">
+               style="border: 1px solid {{ $tab === 'departments' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'departments' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'departments' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'departments' ? '#0f766e' : '#64748b' }};">
                 <i class="bi bi-diagram-3-fill" style="color: {{ $tab === 'departments' ? '#0f766e' : '#94a3b8' }};"></i>
-                <span>ติดตามความคืบหน้ารายแผนก</span>
-                <span class="badge bg-light text-dark border" style="font-size: 11px;">{{ count($departments) }} แผนก</span>
+                <span class="d-none d-md-inline">ติดตามความคืบหน้ารายแผนก</span>
+                <span class="d-inline d-md-none">รายแผนก</span>
+                <span class="badge bg-light text-dark border d-none d-sm-inline" style="font-size: 11px;">{{ count($departments) }} แผนก</span>
             </a>
 
-            {{-- TAB 3: ANNUAL REPORT & CHARTS --}}
+            {{-- TAB 4: ANNUAL REPORT & CHARTS --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'report']) }}" 
                class="tab-nav-btn {{ $tab === 'report' ? 'active' : '' }}"
-               style="padding: 12px 18px; font-size: 13.5px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; border-radius: 10px 10px 0 0; border: 1px solid {{ $tab === 'report' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'report' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'report' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'report' ? '#0f766e' : '#64748b' }}; transition: all 0.15s;">
+               style="border: 1px solid {{ $tab === 'report' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'report' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'report' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'report' ? '#0f766e' : '#64748b' }};">
                 <i class="bi bi-bar-chart-line-fill" style="color: {{ $tab === 'report' ? '#0f766e' : '#94a3b8' }};"></i>
-                <span>รายงานสถิติ & วิเคราะห์สเปค (Charts)</span>
+                <span class="d-none d-md-inline">รายงานสถิติ & วิเคราะห์สเปค (Charts)</span>
+                <span class="d-inline d-md-none">สถิติ & กราฟ</span>
             </a>
 
-            {{-- TAB 4: AGENT DEPLOYMENT HUB --}}
+            {{-- TAB 5: AGENT DEPLOYMENT HUB --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'deploy']) }}" 
                class="tab-nav-btn {{ $tab === 'deploy' ? 'active' : '' }}"
-               style="padding: 12px 18px; font-size: 13.5px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; border-radius: 10px 10px 0 0; border: 1px solid {{ $tab === 'deploy' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'deploy' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'deploy' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'deploy' ? '#0f766e' : '#64748b' }}; transition: all 0.15s;">
+               style="border: 1px solid {{ $tab === 'deploy' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'deploy' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'deploy' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'deploy' ? '#0f766e' : '#64748b' }};">
                 <i class="bi bi-terminal-fill" style="color: {{ $tab === 'deploy' ? '#0f766e' : '#94a3b8' }};"></i>
-                <span>ตัวติดตั้ง Agent & การกระจายสคริปต์</span>
+                <span class="d-none d-md-inline">ตัวติดตั้ง Agent & การกระจายสคริปต์</span>
+                <span class="d-inline d-md-none">ตัวติดตั้ง Agent</span>
             </a>
         </div>
 
-        <!-- TAB CONTENT 1: PENDING QUEUE -->
+        <!-- TAB CONTENT 1: PENDING QUEUE (RESPONSIVE) -->
         @if($tab === 'pending')
-        <div style="padding: 22px;">
+        <div class="ha-tab-pane" style="padding: 22px;">
             
             <!-- Filter & Batch Action Toolbar -->
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;">
-                <form method="GET" action="{{ route('hardware-audits.index') }}" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin: 0;">
+            <div class="ha-filter-toolbar">
+                <form method="GET" action="{{ route('hardware-audits.index') }}" class="ha-filter-form">
                     <input type="hidden" name="fiscal_year" value="{{ $fiscalYear }}">
                     <input type="hidden" name="tab" value="pending">
                     
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex: 1 1 auto;">
-                        <div style="position: relative; min-width: 220px; max-width: 300px; flex: 1;">
+                    <div class="ha-filter-inputs">
+                        <div class="ha-search-box">
                             <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
                             <input type="text" name="search" class="form-control form-control-sm" placeholder="ค้นหา Hostname, S/N, IP, CPU..." 
-                                   value="{{ request('search') }}" style="padding-left: 32px; border-radius: 8px; height: 36px; font-size: 13px;">
+                                   value="{{ request('search') }}" style="padding-left: 32px; border-radius: 8px; height: 38px; font-size: 13px;">
                         </div>
 
-                        <select name="status" class="form-select form-select-sm" style="width: auto; min-width: 175px; border-radius: 8px; height: 36px; font-size: 13px;">
+                        <select name="status" class="form-select form-select-sm ha-status-select" style="border-radius: 8px; height: 38px; font-size: 13px;">
                             <option value="pending" {{ request('status', 'pending') === 'pending' ? 'selected' : '' }}>⏳ รอตรวจสอบ ({{ $pendingCount }})</option>
                             <option value="unlinked" {{ request('status') === 'unlinked' ? 'selected' : '' }}>🆕 เครื่องใหม่ยังไม่ผูก ({{ $unlinkedCount }})</option>
                             <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>✓ อนุมัติแล้ว ({{ $approvedCount }})</option>
@@ -280,25 +275,27 @@
                             <option value="" {{ request('status') === '' ? 'selected' : '' }}>📋 ทุกสถานะ</option>
                         </select>
 
-                        <button type="submit" class="btn btn-primary btn-sm" style="height: 36px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-                            <i class="bi bi-funnel"></i> คัดกรอง
-                        </button>
+                        <div class="ha-filter-btn-group">
+                            <button type="submit" class="btn btn-primary btn-sm" style="height: 38px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                                <i class="bi bi-funnel"></i> คัดกรอง
+                            </button>
 
-                        @if(request('search') || (request('status') && request('status') !== 'pending'))
-                            <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'pending']) }}" class="btn btn-outline-secondary btn-sm" style="height: 36px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
-                                <i class="bi bi-x-circle"></i> ล้าง
-                            </a>
-                        @endif
+                            @if(request('search') || (request('status') && request('status') !== 'pending'))
+                                <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'pending']) }}" class="btn btn-outline-secondary btn-sm" style="height: 38px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="bi bi-x-circle"></i> ล้าง
+                                </a>
+                            @endif
+                        </div>
                     </div>
 
                     {{-- Batch Actions Trigger --}}
                     @if(request('status', 'pending') === 'pending' && $audits->count() > 0)
-                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-success btn-sm" onclick="submitBatchApproval()" style="height: 36px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
+                    <div class="ha-batch-actions">
+                        <button type="button" class="btn btn-success btn-sm" onclick="submitBatchApproval()" style="height: 38px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
                             <i class="bi bi-check2-all" style="font-size: 15px;"></i> 
                             <span>อนุมัติที่เลือก (Batch)</span>
                         </button>
-                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="submitBatchDelete()" style="height: 36px; padding: 0 12px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="submitBatchDelete()" style="height: 38px; padding: 0 12px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
                             <i class="bi bi-trash" style="font-size: 14px;"></i> 
                             <span>ลบที่เลือก</span>
                         </button>
@@ -310,8 +307,8 @@
             <!-- Table of Submissions -->
             <form id="batchApproveForm" method="POST" action="{{ route('hardware-audits.batch-approve') }}">
                 @csrf
-                <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-                    <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                <div class="table-responsive ha-responsive-table-wrapper" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                    <table class="table table-hover align-middle mb-0 ha-responsive-table ha-pending-table" style="font-size: 13px;">
                         <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 700;">
                             <tr>
                                 <th style="width: 38px; text-align: center;">
@@ -333,15 +330,15 @@
                             @php
                                 $isUnderMdes = $audit->isUnderMdesStandard();
                             @endphp
-                            <tr style="{{ $audit->status === 'pending' ? 'background: #ffffff;' : 'background: #fbfcfe;' }}">
-                                <td style="text-align: center;">
+                            <tr class="ha-audit-row" style="{{ $audit->status === 'pending' ? 'background: #ffffff;' : 'background: #fbfcfe;' }}">
+                                <td class="ha-col-select" style="text-align: center;">
                                     @if($audit->status === 'pending')
                                         <input type="checkbox" name="audit_ids[]" value="{{ $audit->id }}" class="audit-select-chk" style="cursor: pointer;">
                                     @else
                                         <i class="bi bi-dash text-muted"></i>
                                     @endif
                                 </td>
-                                <td style="color: #64748b; font-size: 12px; white-space: nowrap;" id="agent-status-cell-{{ $audit->id }}">
+                                <td class="ha-col-telemetry" style="color: #64748b; font-size: 12px; white-space: nowrap;" id="agent-status-cell-{{ $audit->id }}">
                                     <div id="telemetry-badge-{{ $audit->id }}">
                                         {!! $audit->agent_telemetry_badge !!}
                                     </div>
@@ -349,7 +346,7 @@
                                         <i class="bi bi-clock me-1 text-muted"></i>{{ $audit->updated_at ? $audit->updated_at->format('d/m/Y H:i น.') : '-' }}
                                     </div>
                                 </td>
-                                <td>
+                                <td class="ha-col-hostname">
                                     <div style="display: flex; align-items: center; gap: 6px;">
                                         <span style="width: 8px; height: 8px; border-radius: 50%; background: {{ $audit->status === 'approved' ? '#10b981' : ($audit->status === 'rejected' ? '#94a3b8' : '#f59e0b') }}; display: inline-block;"></span>
                                         <strong style="color: #0f172a; font-size: 13.5px; font-family: monospace;">{{ $audit->hostname ?: '-' }}</strong>
@@ -365,7 +362,7 @@
                                 </td>
 
                                 {{-- Brand & Model Column --}}
-                                <td>
+                                <td class="ha-col-model">
                                     @if($audit->brand || $audit->model)
                                         <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
                                             <span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 11px; font-weight: 700;">
@@ -382,7 +379,7 @@
                                 </td>
 
                                 {{-- HardwareID & Serial Number Column --}}
-                                <td>
+                                <td class="ha-col-hwid">
                                     @if($audit->hardware_id)
                                         <div style="margin-bottom: 3px;">
                                             <span class="badge" style="background: #fdf4ff; color: #a21caf; border: 1px solid #f0abfc; font-size: 10px; font-weight: 700; font-family: monospace;" title="HardwareID: {{ $audit->hardware_id }}">
@@ -396,7 +393,7 @@
                                 </td>
 
                                 {{-- Matched Asset Column --}}
-                                <td>
+                                <td class="ha-col-asset">
                                     @if($audit->asset)
                                         <div>
                                             <a href="{{ route('assets.show', $audit->asset_id) }}" target="_blank" style="font-weight: 700; color: #0f766e; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
@@ -431,7 +428,7 @@
                                 </td>
 
                                 {{-- Scanned Specs Formatted --}}
-                                <td>
+                                <td class="ha-col-specs">
                                     <div style="font-weight: 700; color: #0f172a; font-size: 12.5px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
                                         <i class="bi bi-cpu text-primary"></i>
                                         <span>{{ $audit->cpu_model ?: '-' }}</span>
@@ -458,7 +455,7 @@
                                 </td>
 
                                 {{-- Diff Status --}}
-                                <td style="text-align: center;">
+                                <td class="ha-col-diff" style="text-align: center;">
                                     @if($audit->hasDiff())
                                         <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" style="font-size: 11px; font-weight: 600;">
                                             <i class="bi bi-arrow-left-right me-1"></i> {{ $audit->diff_count }} จุดเปลี่ยน
@@ -476,12 +473,12 @@
                                     @endif
                                 </td>
 
-                                <td style="text-align: center;">
+                                <td class="ha-col-status" style="text-align: center;">
                                     {!! $audit->status_badge !!}
                                 </td>
 
-                                <td style="text-align: right; white-space: nowrap; width: 310px; min-width: 310px;">
-                                    <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end; flex-wrap: nowrap;">
+                                <td class="ha-col-actions" style="text-align: right;">
+                                    <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
                                         
                                         <!-- ACTION BUTTONS: Approve / Reject / Link (Only for pending) -->
                                         @if($audit->status === 'pending')
@@ -588,15 +585,15 @@
         </div>
         @endif
 
-        <!-- TAB CONTENT: AGENT FLEET (รายการเครื่องที่ติดตั้ง Agent ทั้งหมด & สั่งดึงสเปก) -->
+        <!-- TAB CONTENT: AGENT FLEET (RESPONSIVE) -->
         @if($tab === 'agents')
-        <div style="padding: 22px;">
+        <div class="ha-tab-pane" style="padding: 22px;">
             <!-- Header Summary & Quick Controls -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+            <div class="ha-fleet-header">
                 <div>
                     <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
                         <i class="bi bi-display-fill text-primary"></i> 
-                        <span>รายการเครื่องที่ติดตั้ง Agent ทั้งหมด (Agent Fleet)</span>
+                        <span>รายการเครื่องที่ติดตั้ง Agent (Agent Fleet)</span>
                         <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 8px;">
                             {{ $agentTotalCount }} เครื่อง
                         </span>
@@ -606,65 +603,90 @@
                     </p>
                 </div>
 
-                <!-- Live Status Indicators -->
-                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 6px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: #065f46;">
+                <!-- Live Status & Version Indicators -->
+                <div class="ha-fleet-indicators">
+                    <div class="ha-indicator-pill" style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46;">
                         <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2px rgba(16,185,129,0.3);"></span>
                         <span>ออนไลน์:</span>
-                        <strong id="fleetOnlineCountDisplay">{{ $agentOnlineCount }}</strong> เครื่อง
+                        <strong id="fleetOnlineCountDisplay">{{ $agentOnlineCount }}</strong>
                     </div>
-                    <div style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: #475569;">
+                    <div class="ha-indicator-pill" style="background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569;">
                         <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span>
                         <span>ออฟไลน์:</span>
-                        <strong>{{ $agentOfflineCount }}</strong> เครื่อง
+                        <strong>{{ $agentOfflineCount }}</strong>
                     </div>
+                    <div class="ha-indicator-pill" style="background: #f0fdf4; border: 1px solid #86efac; color: #166534;">
+                        <i class="bi bi-shield-check text-success"></i>
+                        <span>v2.11.0 ล่าสุด:</span>
+                        <strong>{{ $agentLatestCount ?? 0 }}</strong>
+                    </div>
+                    @if(($agentOutdatedCount ?? 0) > 0)
+                    <div class="ha-indicator-pill" style="background: #fffbeb; border: 1px solid #fcd34d; color: #b45309; font-weight: 700;">
+                        <i class="bi bi-arrow-repeat text-warning"></i>
+                        <span>เวอร์ชันเก่า:</span>
+                        <strong>{{ $agentOutdatedCount }}</strong> เครื่อง
+                    </div>
+                    @endif
                 </div>
             </div>
 
             <!-- Toolbar: Search, Filter, Multi-select Action -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 12px;">
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div class="ha-fleet-toolbar">
+                <div class="ha-fleet-toolbar-left">
                     <!-- Live Search Input -->
-                    <div style="position: relative; width: 280px;">
+                    <div class="ha-fleet-search-box">
                         <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
                         <input type="text" id="fleetSearchInput" onkeyup="filterFleetRows()" placeholder="ค้นหา Hostname, IP, MAC, ครุภัณฑ์..." 
                                class="form-control form-control-sm" style="padding-left: 32px; border-radius: 8px; height: 38px; font-size: 13px;">
                     </div>
 
                     <!-- Filter Buttons -->
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" class="btn btn-outline-secondary active" id="fleetFilterAll" onclick="setFleetFilter('all')" style="height: 38px; font-weight: 600;">
+                    <div class="btn-group btn-group-sm ha-fleet-filter-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary active" id="fleetFilterAll" onclick="setFleetFilter('all')">
                             ทั้งหมด ({{ $agentTotalCount }})
                         </button>
-                        <button type="button" class="btn btn-outline-success" id="fleetFilterOnline" onclick="setFleetFilter('online')" style="height: 38px; font-weight: 600;">
+                        <button type="button" class="btn btn-outline-success" id="fleetFilterOnline" onclick="setFleetFilter('online')">
                             🟢 ออนไลน์ ({{ $agentOnlineCount }})
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" id="fleetFilterOffline" onclick="setFleetFilter('offline')" style="height: 38px; font-weight: 600;">
+                        <button type="button" class="btn btn-outline-secondary" id="fleetFilterOffline" onclick="setFleetFilter('offline')">
                             ⚪ ออฟไลน์ ({{ $agentOfflineCount }})
                         </button>
+                        @if(($agentOutdatedCount ?? 0) > 0)
+                        <button type="button" class="btn btn-outline-warning" id="fleetFilterOutdated" onclick="setFleetFilter('outdated')" style="font-weight: 700; color: #b45309;">
+                            🟠 ต้องอัปเดต ({{ $agentOutdatedCount }})
+                        </button>
+                        @endif
                     </div>
                 </div>
 
                 <!-- Batch Actions for Fleet -->
-                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <div class="ha-fleet-actions">
+                    @if(($agentOutdatedCount ?? 0) > 0)
+                    <button type="button" onclick="triggerUpdateAllOutdatedFleet()" class="btn btn-warning btn-sm"
+                            style="height: 38px; padding: 0 14px; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; border: none; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);">
+                        <i class="bi bi-cloud-arrow-up-fill" style="font-size: 15px;"></i>
+                        <span>สั่งอัปเดตเครื่องเก่าทั้งหมด ({{ $agentOutdatedCount }})</span>
+                    </button>
+                    @endif
+
                     <button type="button" id="btnSelectedFleetScan" onclick="triggerSelectedFleetScan()" class="btn btn-primary btn-sm" disabled
-                            style="height: 38px; padding: 0 16px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(15, 118, 110, 0.25);">
+                            style="height: 38px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(15, 118, 110, 0.25);">
                         <i class="bi bi-cloud-arrow-down-fill" style="font-size: 15px;"></i>
-                        <span>ดึงข้อมูลสเปกเครื่องที่เลือก</span>
+                        <span>ดึงข้อมูลที่เลือก</span>
                         <span id="selectedFleetBadge" class="badge bg-white text-primary" style="font-size: 11px; padding: 2px 7px; border-radius: 99px;">0</span>
                     </button>
 
                     <button type="button" id="btnSelectedFleetUpdate" onclick="triggerSelectedFleetUpdate()" class="btn btn-outline-info btn-sm" disabled
-                            style="height: 38px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
+                            style="height: 38px; padding: 0 12px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
                         <i class="bi bi-arrow-repeat" style="font-size: 15px;"></i>
                         <span>อัปเดต Agent</span>
                         <span id="selectedFleetUpdateBadge" class="badge bg-info text-white" style="font-size: 11px; padding: 2px 7px; border-radius: 99px;">0</span>
                     </button>
 
                     <button type="button" id="btnSelectedFleetDelete" onclick="deleteSelectedFleetMachines()" class="btn btn-outline-danger btn-sm" disabled
-                            style="height: 38px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
+                            style="height: 38px; padding: 0 12px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
                         <i class="bi bi-trash3-fill" style="font-size: 15px;"></i>
-                        <span>ลบเครื่องที่เลือก</span>
+                        <span>ลบเครื่อง</span>
                         <span id="selectedFleetDeleteBadge" class="badge bg-danger text-white" style="font-size: 11px; padding: 2px 7px; border-radius: 99px;">0</span>
                     </button>
 
@@ -672,7 +694,8 @@
                     <button type="button" onclick="triggerAllOnlineFleetScan()" class="btn btn-outline-success btn-sm"
                             style="height: 38px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
                         <i class="bi bi-broadcast" style="font-size: 15px;"></i>
-                        <span>ดึงข้อมูลทุกเครื่องที่ออนไลน์ ({{ $agentOnlineCount }})</span>
+                        <span class="d-none d-lg-inline">ดึงข้อมูลเครื่องออนไลน์ทั้งหมด ({{ $agentOnlineCount }})</span>
+                        <span class="d-inline d-lg-none">ดึงออนไลน์ ({{ $agentOnlineCount }})</span>
                     </button>
                     @endif
 
@@ -682,10 +705,10 @@
                 </div>
             </div>
 
-            <!-- Fleet Table -->
+            <!-- Fleet Table (Responsive Card Transform) -->
             @if(count($agentFleet) > 0)
-            <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
-                <table class="table table-hover align-middle mb-0" id="fleetTable" style="font-size: 13px;">
+            <div class="table-responsive ha-responsive-table-wrapper" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+                <table class="table table-hover align-middle mb-0 ha-responsive-table ha-fleet-table" id="fleetTable" style="font-size: 13px;">
                     <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 700;">
                         <tr>
                             <th style="width: 38px; text-align: center;">
@@ -695,14 +718,17 @@
                             <th style="min-width: 190px;">ชื่อเครื่อง & เครือข่าย</th>
                             <th style="min-width: 180px;">ครุภัณฑ์ & แผนก</th>
                             <th style="min-width: 230px;">สเปกปัจจุบันที่ตรวจพบ</th>
-                            <th style="width: 130px; text-align: right;">ดึงข้อมูลสเปก</th>
+                            <th style="width: 130px; text-align: right;">จัดการ / ดึงสเปก</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($agentFleet as $agent)
-                        <tr class="fleet-row" data-online="{{ $agent['is_online'] ? 'true' : 'false' }}" data-search="{{ strtolower($agent['hostname'] . ' ' . $agent['ip_address'] . ' ' . $agent['mac_address'] . ' ' . $agent['hardware_id'] . ' ' . ($agent['asset_code'] ?? '') . ' ' . ($agent['asset_name'] ?? '') . ' ' . ($agent['department_name'] ?? '') . ' ' . ($agent['cpu_model'] ?? '')) }}">
+                        @php
+                            $isFleetLatest = (!empty($agent['client_version']) && strpos($agent['client_version'], '2.11.0') === 0);
+                        @endphp
+                        <tr class="fleet-row" data-online="{{ $agent['is_online'] ? 'true' : 'false' }}" data-outdated="{{ $isFleetLatest ? 'false' : 'true' }}" data-version="{{ $agent['client_version'] ?? '' }}" data-search="{{ strtolower($agent['hostname'] . ' ' . $agent['ip_address'] . ' ' . $agent['mac_address'] . ' ' . $agent['hardware_id'] . ' ' . ($agent['asset_code'] ?? '') . ' ' . ($agent['asset_name'] ?? '') . ' ' . ($agent['department_name'] ?? '') . ' ' . ($agent['cpu_model'] ?? '') . ' ' . ($agent['client_version'] ?? '')) }}">
                             <!-- Checkbox -->
-                            <td style="text-align: center;">
+                            <td class="ha-col-select" style="text-align: center;">
                                 <input type="checkbox" class="fleet-item-chk" 
                                        value="{{ $agent['key'] }}"
                                        data-hostname="{{ $agent['hostname'] }}"
@@ -714,26 +740,38 @@
                                        style="cursor: pointer;">
                             </td>
 
-                            <!-- Connection Status -->
-                            <td>
-                                @if($agent['is_online'])
-                                    <span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-size: 11.5px; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
-                                        <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 2px rgba(22,163,74,0.3);"></span>
-                                        <span>ออนไลน์</span>
-                                    </span>
-                                @else
-                                    <span class="badge" style="background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; font-size: 11.5px; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
-                                        <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #94a3b8;"></span>
-                                        <span>ออฟไลน์</span>
-                                    </span>
-                                @endif
-                                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
-                                    {{ $agent['last_seen'] }}
+                            <!-- Connection Status & Version -->
+                            <td class="ha-col-status">
+                                <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                                    @if($agent['is_online'])
+                                        <span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-size: 11px; padding: 3px 7px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                                            <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 2px rgba(22,163,74,0.3);"></span>
+                                            <span>ออนไลน์</span>
+                                        </span>
+                                    @else
+                                        <span class="badge" style="background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; font-size: 11px; padding: 3px 7px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                                            <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #94a3b8;"></span>
+                                            <span>ออฟไลน์</span>
+                                        </span>
+                                    @endif
+
+                                    @if($isFleetLatest)
+                                        <span class="badge" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 10px; padding: 2px 5px; border-radius: 4px;">
+                                            v{{ $agent['client_version'] }} (ล่าสุด)
+                                        </span>
+                                    @else
+                                        <span class="badge" style="background: #fffbeb; color: #b45309; border: 1px solid #fcd34d; font-size: 10px; padding: 2px 5px; border-radius: 4px;" title="เวอร์ชันเก่า ต้องอัปเดตเป็น v2.11.0">
+                                            v{{ $agent['client_version'] }} (เก่า)
+                                        </span>
+                                    @endif
+                                </div>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">
+                                    <i class="bi bi-clock me-1"></i>{{ $agent['last_seen'] }}
                                 </div>
                             </td>
 
                             <!-- Hostname & Network -->
-                            <td>
+                            <td class="ha-col-hostname">
                                 <div style="font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
                                     <i class="bi bi-display text-primary" style="font-size: 14px;"></i>
                                     <span>{{ $agent['hostname'] }}</span>
@@ -744,16 +782,15 @@
                                         &bull; MAC: <code>{{ $agent['mac_address'] }}</code>
                                     @endif
                                 </div>
-                                <div style="font-size: 11px; color: #94a3b8; margin-top: 1px;">
-                                    Agent v{{ $agent['client_version'] }}
-                                    @if(!empty($agent['hardware_id']))
-                                        &bull; HWID: <code>{{ Str::limit($agent['hardware_id'], 14) }}</code>
-                                    @endif
+                                @if(!empty($agent['hardware_id']))
+                                <div style="font-size: 10.5px; color: #94a3b8; margin-top: 1px;">
+                                    HWID: <code>{{ Str::limit($agent['hardware_id'], 14) }}</code>
                                 </div>
+                                @endif
                             </td>
 
                             <!-- Matched Asset & Dept -->
-                            <td>
+                            <td class="ha-col-asset">
                                 @if(!empty($agent['asset_code']))
                                     <div style="font-weight: 600; color: #0369a1; display: flex; align-items: center; gap: 5px;">
                                         <i class="bi bi-upc-scan"></i>
@@ -776,7 +813,7 @@
                             </td>
 
                             <!-- Specs -->
-                            <td>
+                            <td class="ha-col-specs">
                                 <div style="font-weight: 600; color: #1e293b; font-size: 12.5px;">
                                     <i class="bi bi-cpu text-info me-1"></i> {{ Str::limit($agent['cpu_model'], 38) }}
                                 </div>
@@ -790,8 +827,8 @@
                             </td>
 
                             <!-- Actions -->
-                            <td style="text-align: right;">
-                                <div style="display: flex; justify-content: flex-end; gap: 5px; align-items: center;">
+                            <td class="ha-col-actions" style="text-align: right;">
+                                <div style="display: flex; justify-content: flex-end; gap: 5px; align-items: center; flex-wrap: wrap;">
                                     <button type="button" class="btn btn-outline-primary btn-sm" 
                                             onclick="triggerSingleFleetScan('{{ addslashes($agent['hostname']) }}', '{{ addslashes($agent['hardware_id']) }}', '{{ $agent['audit_id'] ?? '' }}', '{{ $agent['asset_id'] ?? '' }}')"
                                             title="ส่งคำสั่งดึงข้อมูลสเปกของเครื่องนี้เดี๋ยวนี้"
@@ -845,27 +882,27 @@
 
         <!-- TAB CONTENT 3: DEPARTMENT TRACKER -->
         @if($tab === 'departments')
-        <div style="padding: 22px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <div class="ha-tab-pane" style="padding: 22px;">
+            <div class="ha-section-header">
                 <div>
-                    <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">
+                    <h3 class="ha-section-title">
                         <i class="bi bi-diagram-3-fill text-primary me-1"></i> ติดตามความคืบหน้าการตรวจนับแยกตามแผนก/หน่วยงาน
                     </h3>
-                    <p style="font-size: 12.5px; color: #64748b; margin: 3px 0 0 0;">
+                    <p class="ha-section-desc">
                         ปีงบประมาณ พ.ศ. {{ $fiscalYear }} &bull; เป้าหมายการตรวจนับครุภัณฑ์คอมพิวเตอร์ให้ครบ 100% ทั่วทั้งโรงพยาบาล
                     </p>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="deptFilterInput" onkeyup="filterDeptCards()" placeholder="ค้นหาชื่อแผนก..." class="form-control form-control-sm" style="width: 220px; border-radius: 8px;">
+                <div class="ha-section-search">
+                    <input type="text" id="deptFilterInput" onkeyup="filterDeptCards()" placeholder="ค้นหาชื่อแผนก..." class="form-control form-control-sm" style="width: 100%; min-width: 200px; max-width: 260px; border-radius: 8px;">
                 </div>
             </div>
 
-            <div id="deptCardsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+            <div id="deptCardsGrid" class="ha-dept-grid">
                 @foreach($departments as $dept)
                 <div class="dept-card" data-name="{{ strtolower($dept->name) }}" style="background: #ffffff; border: 1px solid {{ $dept->percentage == 100 ? '#86efac' : ($dept->percentage > 0 ? '#cbd5e1' : '#e2e8f0') }}; border-radius: 14px; padding: 18px; box-shadow: var(--shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 38px; height: 38px; border-radius: 10px; background: {{ $dept->percentage == 100 ? '#dcfce7' : '#e0f2fe' }}; color: {{ $dept->percentage == 100 ? '#16a34a' : '#0284c7' }}; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                            <div style="width: 38px; height: 38px; border-radius: 10px; background: {{ $dept->percentage == 100 ? '#dcfce7' : '#e0f2fe' }}; color: {{ $dept->percentage == 100 ? '#16a34a' : '#0284c7' }}; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
                                 <i class="bi {{ $dept->percentage == 100 ? 'bi-check-circle-fill' : 'bi-building' }}"></i>
                             </div>
                             <div>
@@ -873,7 +910,7 @@
                                 <span style="font-size: 11.5px; color: #64748b;">รหัสแผนก: THC-D{{ $dept->id }}</span>
                             </div>
                         </div>
-                        <span style="font-size: 13px; font-weight: 800; color: {{ $dept->percentage == 100 ? '#16a34a' : ($dept->percentage > 0 ? '#0284c7' : '#94a3b8') }}; background: {{ $dept->percentage == 100 ? '#f0fdf4' : '#f8fafc' }}; border: 1px solid {{ $dept->percentage == 100 ? '#bbf7d0' : '#e2e8f0' }}; padding: 3px 9px; border-radius: 8px;">
+                        <span style="font-size: 13px; font-weight: 800; color: {{ $dept->percentage == 100 ? '#16a34a' : ($dept->percentage > 0 ? '#0284c7' : '#94a3b8') }}; background: {{ $dept->percentage == 100 ? '#f0fdf4' : '#f8fafc' }}; border: 1px solid {{ $dept->percentage == 100 ? '#bbf7d0' : '#e2e8f0' }}; padding: 3px 9px; border-radius: 8px; flex-shrink: 0;">
                             {{ $dept->percentage }}%
                         </span>
                     </div>
@@ -882,7 +919,7 @@
                         <div class="progress-bar {{ $dept->percentage == 100 ? 'bg-success' : 'bg-primary' }}" style="width: {{ $dept->percentage }}%; border-radius: 99px;"></div>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 8px; flex-wrap: wrap; gap: 4px;">
                         <span>สำรวจแล้ว: <strong style="color: #166534;">{{ $dept->audited_assets }}</strong> / {{ $dept->total_assets }} เครื่อง</span>
                         <span>คงเหลือ: <strong style="color: {{ $dept->pending_assets > 0 ? '#dc2626' : '#166534' }};">{{ $dept->pending_assets }}</strong> เครื่อง</span>
                     </div>
@@ -892,38 +929,39 @@
         </div>
         @endif
 
-        <!-- TAB CONTENT 3: ANNUAL REPORT ANALYTICS & CHARTS -->
+        <!-- TAB CONTENT 4: ANNUAL REPORT ANALYTICS & CHARTS -->
         @if($tab === 'report')
-        <div style="padding: 22px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; flex-wrap: wrap; gap: 12px;">
+        <div class="ha-tab-pane" style="padding: 22px;">
+            <div class="ha-section-header">
                 <div>
-                    <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a;">สรุปภาพรวมและวิเคราะห์สเปคคอมพิวเตอร์ประจำปีงบประมาณ พ.ศ. {{ $fiscalYear }}</h3>
-                    <div style="font-size: 13px; color: #64748b; margin-top: 2px;">
+                    <h3 class="ha-section-title">สรุปภาพรวมและวิเคราะห์สเปคคอมพิวเตอร์ประจำปีงบประมาณ พ.ศ. {{ $fiscalYear }}</h3>
+                    <div class="ha-section-desc">
                         ข้อมูลวิเคราะห์เชิงลึกสำหรับประกอบการวางแผนจัดซื้อ จัดหาทดแทน และปรับปรุงฮาร์ดแวร์ โรงพยาบาลทุ่งหัวช้าง
                     </div>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <a href="{{ route('hardware-audits.print-report', ['fiscal_year' => $fiscalYear]) }}" target="_blank" class="btn btn-primary btn-sm" style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px;">
-                        <i class="bi bi-printer"></i> พิมพ์รายงานสรุป A4 ฉบับทางการ
+                <div class="ha-section-actions">
+                    <a href="{{ route('hardware-audits.print-report', ['fiscal_year' => $fiscalYear]) }}" target="_blank" class="btn btn-primary btn-sm" style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; box-shadow: 0 2px 6px rgba(15, 118, 110, 0.25);">
+                        <i class="bi bi-printer"></i>
+                        <span>พิมพ์รายงานสรุป A4 ฉบับทางการ</span>
                     </a>
                 </div>
             </div>
 
             <!-- Executive Summary Cards -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; border-left: 4px solid #0d9488; box-shadow: var(--shadow-sm);">
+            <div class="ha-report-summary-grid">
+                <div class="ha-report-summary-card" style="border-left: 4px solid #0d9488;">
                     <div style="font-size: 12.5px; color: #64748b; font-weight: 600;">ความคืบหน้าการตรวจนับภาพรวม</div>
                     <div style="font-size: 22px; font-weight: 800; color: #0f766e; margin-top: 4px;">{{ $auditedCount }} / {{ $totalFleet }} เครื่อง ({{ $auditedPercentage }}%)</div>
                     <div style="font-size: 11.5px; color: #94a3b8; margin-top: 4px;">เสร็จสิ้นตามเกณฑ์ประจำปี</div>
                 </div>
 
-                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; border-left: 4px solid #ef4444; box-shadow: var(--shadow-sm);">
+                <div class="ha-report-summary-card" style="border-left: 4px solid #ef4444;">
                     <div style="font-size: 12.5px; color: #64748b; font-weight: 600;">เครื่องที่ควรเสนอของบปรับปรุง (MDES)</div>
                     <div style="font-size: 22px; font-weight: 800; color: #dc2626; margin-top: 4px;">{{ $mdesWarningCount }} เครื่อง</div>
                     <div style="font-size: 11.5px; color: #ef4444; margin-top: 4px;">RAM &lt; 8GB / ใช้ฮาร์ดดิสก์จานหมุน</div>
                 </div>
 
-                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; border-left: 4px solid #f59e0b; box-shadow: var(--shadow-sm);">
+                <div class="ha-report-summary-card" style="border-left: 4px solid #f59e0b;">
                     <div style="font-size: 12.5px; color: #64748b; font-weight: 600;">อายุการใช้งานเกิน 5 ปี (ควรจำหน่าย/ทดแทน)</div>
                     <div style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;">{{ $agedOver5YearsCount }} เครื่อง</div>
                     <div style="font-size: 11.5px; color: #b45309; margin-top: 4px;">อิงตามวันที่จัดซื้อในระบบคลัง</div>
@@ -931,11 +969,11 @@
             </div>
 
             <!-- CHARTS GRID -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 24px;">
+            <div class="ha-charts-grid">
                 
                 {{-- Chart 1: RAM Distribution --}}
-                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: var(--shadow-sm);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div class="ha-chart-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px;">
                         <h4 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 6px;">
                             <i class="bi bi-memory text-primary"></i> สัดส่วนขนาด RAM ประจำเครื่อง
                         </h4>
@@ -955,8 +993,8 @@
                 </div>
 
                 {{-- Chart 2: OS Distribution --}}
-                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: var(--shadow-sm);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div class="ha-chart-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px;">
                         <h4 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 6px;">
                             <i class="bi bi-windows text-info"></i> สัดส่วนระบบปฏิบัติการ (OS)
                         </h4>
@@ -975,8 +1013,8 @@
                 </div>
 
                 {{-- Chart 3: Storage Type Distribution --}}
-                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: var(--shadow-sm);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div class="ha-chart-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px;">
                         <h4 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 6px;">
                             <i class="bi bi-hdd-fill text-warning"></i> สัดส่วนประเภท Storage (SSD vs HDD)
                         </h4>
@@ -1065,15 +1103,15 @@
 
                 <!-- Single Official Installation Method: Setup Wizard -->
                 <div style="margin-bottom: 24px;">
-                    <div style="background: #ffffff; border: 2px solid #22c55e; border-radius: 18px; padding: 26px; box-shadow: 0 10px 30px -4px rgba(34, 197, 94, 0.15); position: relative;">
-                        <div style="position: absolute; right: 0; top: 0; background: #16a34a; color: #ffffff; font-size: 11.5px; font-weight: 800; padding: 5px 18px; border-radius: 0 0 0 14px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <div class="ha-wizard-card">
+                        <div class="ha-official-badge">
                             ★ ช่องทางการติดตั้งทางการ (Official Setup Wizard)
                         </div>
-                        <div style="display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap;">
-                            <div style="width: 54px; height: 54px; border-radius: 14px; background: #ecfdf5; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);">
+                        <div class="ha-wizard-inner">
+                            <div class="ha-wizard-icon">
                                 <i class="bi bi-window-desktop"></i>
                             </div>
-                            <div style="flex: 1; min-width: 280px;">
+                            <div class="ha-wizard-body">
                                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                     <h4 style="font-size: 18px; font-weight: 800; color: #15803d; margin: 0;">
                                         ติดตั้งผ่านตัวช่วย Setup Wizard ในตัวโปรแกรม (THC_IT_Agent.exe)
@@ -1085,39 +1123,39 @@
                                 </p>
 
                                 <!-- Big Download Button -->
-                                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 22px;">
-                                    <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-success" style="font-weight: 800; font-size: 14px; padding: 12px 28px; border-radius: 12px; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 4px 16px rgba(22, 163, 74, 0.35); background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border: none;">
+                                <div class="ha-wizard-download-row">
+                                    <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-success ha-wizard-btn-download">
                                         <i class="bi bi-download" style="font-size: 18px;"></i> 
                                         <span>ดาวน์โหลด THC_IT_Agent.exe (68 KB)</span>
                                     </a>
-                                    <code style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 10px 14px; border-radius: 10px; font-size: 12px; color: #475569;" title="คำสั่งรันติดตั้งแบบเงียบสำหรับผู้ดูแลระบบ">
+                                    <code class="ha-wizard-silent-cmd" title="คำสั่งรันติดตั้งแบบเงียบสำหรับผู้ดูแลระบบ">
                                         THC_IT_Agent.exe /install /silent
                                     </code>
                                 </div>
 
                                 <!-- 3 Step Visual Guide -->
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px;">
-                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+                                <div class="ha-wizard-steps">
+                                    <div class="ha-wizard-step-item">
                                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                                            <span style="width: 24px; height: 24px; border-radius: 50%; background: #16a34a; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;">1</span>
+                                            <span style="width: 24px; height: 24px; border-radius: 50%; background: #16a34a; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0;">1</span>
                                             <strong style="font-size: 13px; color: #0f172a;">ดาวน์โหลดและเปิดไฟล์</strong>
                                         </div>
                                         <p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.5;">
                                             วางไฟล์ <code>THC_IT_Agent.exe</code> บนเครื่องลูกข่ายแล้วดับเบิลคลิกเปิดไฟล์
                                         </p>
                                     </div>
-                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+                                    <div class="ha-wizard-step-item">
                                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                                            <span style="width: 24px; height: 24px; border-radius: 50%; background: #16a34a; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;">2</span>
+                                            <span style="width: 24px; height: 24px; border-radius: 50%; background: #16a34a; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0;">2</span>
                                             <strong style="font-size: 13px; color: #0f172a;">กดปุ่มใน Setup Wizard</strong>
                                         </div>
                                         <p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.5;">
                                             หน้าต่างตัวช่วยติดตั้งจะแสดงผล ให้คลิกปุ่ม <strong>"🚀 ติดตั้งลงในเครื่องทันที"</strong>
                                         </p>
                                     </div>
-                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+                                    <div class="ha-wizard-step-item">
                                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                                            <span style="width: 24px; height: 24px; border-radius: 50%; background: #16a34a; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;">3</span>
+                                            <span style="width: 24px; height: 24px; border-radius: 50%; background: #16a34a; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0;">3</span>
                                             <strong style="font-size: 13px; color: #0f172a;">พร้อมใช้งานทันที</strong>
                                         </div>
                                         <p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.5;">
@@ -1798,6 +1836,11 @@
 </div>
 
 <style>
+/* ========================================================================= */
+/* HARDWARE AUDITS RESPONSIVE DESIGN SYSTEM (ALL SCREEN SIZES)               */
+/* Desktop (>=1200px), Laptop (992-1199px), Tablet (768-991px), Mobile (<768px) */
+/* ========================================================================= */
+
 @keyframes modalScaleIn {
     from { transform: scale(0.96); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
@@ -1807,31 +1850,903 @@
     70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(2, 132, 199, 0); }
     100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
 }
-.stat-card:hover {
+
+/* 1. TOPBAR ACTIONS */
+.ha-topbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.ha-topbar-btn-scan {
+    background: linear-gradient(135deg, #0f766e 0%, #0369a1 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 6px rgba(15, 118, 110, 0.3) !important;
+}
+
+/* 2. HERO BANNER */
+.ha-hero-banner {
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 45%, #047857 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    box-shadow: 0 10px 30px -5px rgba(6, 78, 59, 0.35);
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+}
+.ha-hero-blob-1 {
+    position: absolute;
+    right: -40px;
+    top: -40px;
+    width: 260px;
+    height: 260px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.ha-hero-blob-2 {
+    position: absolute;
+    left: 20%;
+    bottom: -60px;
+    width: 220px;
+    height: 220px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.ha-hero-content {
+    padding: 24px 28px;
+    position: relative;
+    z-index: 2;
+}
+.ha-hero-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+.ha-hero-title-area {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 280px;
+}
+.ha-hero-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: #ffffff;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+.ha-hero-text {
+    flex: 1;
+    min-width: 200px;
+}
+.ha-hero-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.ha-hero-title {
+    margin: 0;
+    font-size: 21px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.3px;
+    line-height: 1.25;
+}
+.ha-hero-fy-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 99px;
+    white-space: nowrap;
+}
+.ha-hero-desc {
+    font-size: 13px;
+    opacity: 0.9;
+    margin: 4px 0 0 0;
+    line-height: 1.5;
+    max-width: 720px;
+}
+.ha-hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.ha-hero-btn-download {
+    background: #ffffff !important;
+    color: #065f46 !important;
+    font-weight: 700 !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 9px 16px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+    white-space: nowrap !important;
+}
+.ha-hero-btn-download:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2) !important;
+}
+.ha-hero-fy-box {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.ha-hero-fy-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+/* 3. 5 TOP KPI STATISTIC CARDS */
+.ha-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+}
+.ha-stat-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 16px 18px;
+    border: 1px solid #e2e8f0;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.ha-stat-card:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md) !important;
+    box-shadow: var(--shadow-md);
+}
+.ha-stat-card-total { border-left: 4px solid #0d9488; }
+.ha-stat-card-audited { border-left: 4px solid #10b981; }
+.ha-stat-card-pending { border-left: 4px solid #f59e0b; }
+.ha-stat-card-online { border-left: 4px solid #06b6d4; }
+.ha-stat-card-warning { border-left: 4px solid #ef4444; }
+
+.ha-stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+.ha-stat-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    line-height: 1.35;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.ha-stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.ha-stat-value {
+    font-size: 25px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-top: 2px;
+}
+.ha-stat-subtext {
+    font-size: 11.5px;
+    color: #94a3b8;
+    margin-top: 6px;
+}
+
+/* 4. MODERN TABS BAR */
+.ha-tabs-bar {
+    display: flex;
+    gap: 6px;
+    padding: 12px 18px 0 18px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.ha-tabs-bar::-webkit-scrollbar {
+    display: none;
 }
 .tab-nav-btn {
-    flex-shrink: 0 !important;
+    padding: 12px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 12px 12px 0 0;
+    transition: all 0.15s ease;
     white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    min-height: 44px;
 }
 .tab-nav-btn:hover {
     color: #0f766e !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+}
+.tab-nav-btn.active {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-bottom: 2px solid #ffffff !important;
+    margin-bottom: -1px;
+    color: #0f766e !important;
+    font-weight: 700 !important;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.03);
 }
 
-/* Hardware Audits View Mobile & Tablet Enhancements */
-@media (max-width: 992px) {
+/* 5. TAB 1: PENDING QUEUE TOOLBAR */
+.ha-filter-toolbar {
+    margin-bottom: 18px;
+}
+.ha-filter-form {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.ha-filter-inputs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    flex: 1;
+}
+.ha-search-box {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+    max-width: 320px;
+}
+.ha-status-select {
+    width: auto;
+    min-width: 175px;
+}
+.ha-filter-btn-group {
+    display: inline-flex;
+    gap: 6px;
+}
+.ha-batch-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* 6. TAB 2: AGENT FLEET TOOLBAR */
+.ha-fleet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.ha-fleet-indicators {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.ha-indicator-pill {
+    padding: 5px 12px;
+    border-radius: 99px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.ha-fleet-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.ha-fleet-toolbar-left {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1;
+}
+.ha-fleet-search-box {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+    max-width: 320px;
+}
+.ha-fleet-filter-group {
+    flex-shrink: 0;
+}
+.ha-fleet-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* 7. SECTION HEADERS FOR TAB 3, 4, 5 */
+.ha-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.ha-section-title {
+    font-size: 16.5px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+.ha-section-desc {
+    font-size: 12.5px;
+    color: #64748b;
+    margin: 3px 0 0 0;
+}
+.ha-section-search {
+    flex-shrink: 0;
+}
+.ha-section-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* 8. TAB 3: DEPARTMENTS GRID */
+.ha-dept-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+/* 9. TAB 4: REPORTS & CHARTS */
+.ha-report-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.ha-report-summary-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+}
+.ha-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+.ha-chart-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+/* 10. TAB 5: SETUP WIZARD & DOCUMENTATION */
+.ha-wizard-card {
+    background: #ffffff;
+    border: 2px solid #22c55e;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 10px 30px -4px rgba(34, 197, 94, 0.15);
+    position: relative;
+}
+.ha-official-badge {
+    position: absolute;
+    right: 0;
+    top: 0;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 800;
+    padding: 5px 18px;
+    border-radius: 0 0 0 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.ha-wizard-inner {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+.ha-wizard-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #ecfdf5;
+    color: #16a34a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
+}
+.ha-wizard-body {
+    flex: 1;
+    min-width: 260px;
+}
+.ha-wizard-download-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+.ha-wizard-btn-download {
+    font-weight: 800;
+    font-size: 14px;
+    padding: 12px 24px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 16px rgba(22, 163, 74, 0.35);
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+    border: none;
+}
+.ha-wizard-silent-cmd {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    color: #475569;
+    word-break: break-all;
+}
+.ha-wizard-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+.ha-wizard-step-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+/* ========================================================================= */
+/* RESPONSIVE MEDIA QUERIES                                                  */
+/* ========================================================================= */
+
+/* LAPTOP / SMALL DESKTOP (992px to 1199px) */
+@media (max-width: 1199px) {
+    .ha-stat-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* TABLET (768px to 991px) */
+@media (max-width: 991px) {
+    .ha-stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .ha-stat-card:last-child {
+        grid-column: span 2;
+    }
     .custom-modal-dialog {
-        width: 96% !important;
-        max-width: 96% !important;
+        width: 95% !important;
+        max-width: 95% !important;
     }
 }
 
+/* MOBILE (<768px) - COMPLETE PHONE ADAPTATION */
 @media (max-width: 768px) {
-    .tab-nav-btn {
-        padding: 10px 14px !important;
-        font-size: 12.5px !important;
+    .content-container {
+        padding: 10px 10px 24px 10px !important;
     }
+
+    /* Topbar */
+    .ha-topbar-actions {
+        gap: 6px;
+    }
+    .ha-topbar-actions .topbar-btn {
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+    }
+
+    /* Hero Banner Mobile */
+    .ha-hero-banner {
+        border-radius: 16px;
+        margin-bottom: 16px;
+    }
+    .ha-hero-content {
+        padding: 16px 14px;
+    }
+    .ha-hero-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+    .ha-hero-title-area {
+        width: 100%;
+        gap: 12px;
+    }
+    .ha-hero-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 22px;
+        border-radius: 12px;
+    }
+    .ha-hero-title {
+        font-size: 17px;
+    }
+    .ha-hero-desc {
+        font-size: 12px;
+        margin-top: 3px;
+    }
+    .ha-hero-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .ha-hero-btn-download {
+        width: 100%;
+        justify-content: center;
+        padding: 10px 14px !important;
+        font-size: 13px !important;
+    }
+    .ha-hero-fy-box {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .ha-hero-fy-form {
+        flex: 1;
+        justify-content: flex-end;
+    }
+
+    /* KPI Stat Grid Mobile */
+    .ha-stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .ha-stat-card {
+        padding: 12px 14px;
+        border-radius: 12px;
+    }
+    .ha-stat-label {
+        font-size: 11px;
+    }
+    .ha-stat-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+    }
+    .ha-stat-value {
+        font-size: 21px;
+    }
+    .ha-stat-subtext {
+        font-size: 10.5px;
+        margin-top: 4px;
+    }
+
+    /* Tabs Bar Mobile */
+    .ha-tabs-bar {
+        padding: 8px 10px 0 10px;
+        gap: 4px;
+    }
+    .tab-nav-btn {
+        padding: 10px 12px !important;
+        font-size: 12px !important;
+        min-height: 40px !important;
+    }
+
+    /* Tab Panes */
+    .ha-tab-pane {
+        padding: 14px 10px !important;
+    }
+
+    /* Tab 1 Toolbar Mobile */
+    .ha-filter-inputs {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .ha-search-box {
+        max-width: 100%;
+        min-width: 100%;
+        width: 100%;
+    }
+    .ha-status-select {
+        width: 100%;
+        min-width: 100%;
+    }
+    .ha-filter-btn-group {
+        width: 100%;
+    }
+    .ha-filter-btn-group > button,
+    .ha-filter-btn-group > a {
+        flex: 1;
+        justify-content: center;
+    }
+    .ha-batch-actions {
+        width: 100%;
+        margin-top: 8px;
+    }
+    .ha-batch-actions > button {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* Tab 2 Fleet Toolbar Mobile */
+    .ha-fleet-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .ha-fleet-indicators {
+        width: 100%;
+    }
+    .ha-indicator-pill {
+        flex: 1;
+        justify-content: center;
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+    .ha-fleet-toolbar-left {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .ha-fleet-search-box {
+        max-width: 100%;
+        min-width: 100%;
+        width: 100%;
+    }
+    .ha-fleet-filter-group {
+        display: flex;
+        width: 100%;
+        overflow-x: auto;
+    }
+    .ha-fleet-filter-group > button {
+        flex: 1;
+        white-space: nowrap;
+        font-size: 11.5px;
+        padding: 6px 8px;
+    }
+    .ha-fleet-actions {
+        width: 100%;
+    }
+    .ha-fleet-actions > button,
+    .ha-fleet-actions > a {
+        flex: 1;
+        justify-content: center;
+        font-size: 12px;
+    }
+
+    /* ===================================================================== */
+    /* TABLE-TO-CARD MOBILE TRANSFORMATION                                    */
+    /* Converts wide tables into readable, touch-friendly cards on mobile      */
+    /* ===================================================================== */
+    .ha-responsive-table-wrapper {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+    .ha-responsive-table {
+        display: block !important;
+        width: 100% !important;
+        background: transparent !important;
+        border: none !important;
+    }
+    .ha-responsive-table thead {
+        display: none !important; /* Hide rigid table headers */
+    }
+    .ha-responsive-table tbody {
+        display: block !important;
+        width: 100% !important;
+    }
+    .ha-responsive-table tbody tr {
+        display: block !important;
+        background: #ffffff !important;
+        border: 1.5px solid #e2e8f0 !important;
+        border-radius: 14px !important;
+        padding: 14px 14px !important;
+        margin-bottom: 12px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+        position: relative !important;
+    }
+    .ha-responsive-table tbody tr:hover {
+        border-color: #cbd5e1 !important;
+    }
+    .ha-responsive-table tbody td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: flex-start !important;
+        padding: 6px 0 !important;
+        border: none !important;
+        border-bottom: 1px dashed #f1f5f9 !important;
+        font-size: 12.5px !important;
+        text-align: right !important;
+        gap: 10px !important;
+        min-height: auto !important;
+    }
+    .ha-responsive-table tbody td::before {
+        font-weight: 700 !important;
+        color: #64748b !important;
+        font-size: 11.5px !important;
+        text-align: left !important;
+        flex-shrink: 0 !important;
+        margin-top: 2px !important;
+    }
+
+    /* Tab 1 (Pending) Column Labels */
+    .ha-pending-table tbody td.ha-col-select {
+        justify-content: flex-start !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        padding-bottom: 8px !important;
+        margin-bottom: 4px !important;
+    }
+    .ha-pending-table tbody td.ha-col-select::before {
+        content: "เลือกรายการนี้" !important;
+        margin-left: 8px !important;
+        order: 2 !important;
+    }
+    .ha-pending-table tbody td.ha-col-telemetry::before { content: "สถานะรับข้อมูล:"; }
+    .ha-pending-table tbody td.ha-col-hostname::before { content: "ชื่อเครื่อง / IP:"; }
+    .ha-pending-table tbody td.ha-col-model::before { content: "ยี่ห้อ / รุ่น:"; }
+    .ha-pending-table tbody td.ha-col-hwid::before { content: "Hardware ID:"; }
+    .ha-pending-table tbody td.ha-col-asset::before { content: "ครุภัณฑ์ & แผนก:"; }
+    .ha-pending-table tbody td.ha-col-specs::before { content: "สเปคที่อ่านได้:"; }
+    .ha-pending-table tbody td.ha-col-diff::before { content: "ผลเทียบสเปค:"; }
+    .ha-pending-table tbody td.ha-col-status::before { content: "สถานะตรวจนับ:"; }
+    .ha-pending-table tbody td.ha-col-actions {
+        border-bottom: none !important;
+        padding-top: 10px !important;
+        margin-top: 4px !important;
+        justify-content: flex-end !important;
+        width: 100% !important;
+    }
+    .ha-pending-table tbody td.ha-col-actions::before {
+        display: none !important;
+    }
+    .ha-pending-table tbody td.ha-col-actions > div {
+        width: 100% !important;
+        justify-content: flex-end !important;
+    }
+
+    /* Tab 2 (Fleet) Column Labels */
+    .ha-fleet-table tbody td.ha-col-select {
+        justify-content: flex-start !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        padding-bottom: 8px !important;
+        margin-bottom: 4px !important;
+    }
+    .ha-fleet-table tbody td.ha-col-select::before {
+        content: "เลือกเครื่องนี้" !important;
+        margin-left: 8px !important;
+        order: 2 !important;
+    }
+    .ha-fleet-table tbody td.ha-col-status::before { content: "สถานะการเชื่อมต่อ:"; }
+    .ha-fleet-table tbody td.ha-col-hostname::before { content: "ชื่อเครื่อง & เครือข่าย:"; }
+    .ha-fleet-table tbody td.ha-col-asset::before { content: "ครุภัณฑ์ & แผนก:"; }
+    .ha-fleet-table tbody td.ha-col-specs::before { content: "สเปคปัจจุบัน:"; }
+    .ha-fleet-table tbody td.ha-col-actions {
+        border-bottom: none !important;
+        padding-top: 10px !important;
+        margin-top: 4px !important;
+        justify-content: flex-end !important;
+        width: 100% !important;
+    }
+    .ha-fleet-table tbody td.ha-col-actions::before {
+        display: none !important;
+    }
+    .ha-fleet-table tbody td.ha-col-actions > div {
+        width: 100% !important;
+        justify-content: flex-end !important;
+    }
+
+    /* Tab 3 Department Grid Mobile */
+    .ha-dept-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    /* Tab 4 Reports Mobile */
+    .ha-report-summary-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .ha-charts-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    /* Tab 5 Deployment Hub Mobile */
+    .ha-wizard-card {
+        padding: 16px;
+        border-radius: 14px;
+    }
+    .ha-official-badge {
+        position: static;
+        display: inline-block;
+        margin-bottom: 12px;
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+    .ha-wizard-inner {
+        gap: 12px;
+    }
+    .ha-wizard-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 22px;
+        border-radius: 12px;
+    }
+    .ha-wizard-body {
+        min-width: 100%;
+    }
+    .ha-wizard-btn-download {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 16px !important;
+        font-size: 13.5px !important;
+    }
+    .ha-wizard-silent-cmd {
+        width: 100%;
+        text-align: center;
+    }
+    .ha-wizard-steps {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    /* Custom Modals Mobile */
     .custom-modal-backdrop {
         padding: 8px !important;
     }
@@ -1839,6 +2754,7 @@
         border-radius: 14px !important;
         max-height: calc(100dvh - 16px) !important;
         max-height: calc(100vh - 16px) !important;
+        width: 100% !important;
         margin: 6px auto !important;
     }
     #agentInspectionModalContent,
