@@ -24,6 +24,20 @@ namespace ThcItAgent
         private const string AppGuid = "THC-IT-Agent-f91aa586-7788-9900-thung-hua-chang";
         private static Mutex _mutex;
 
+        public static void ReleaseAppMutex()
+        {
+            try
+            {
+                if (_mutex != null)
+                {
+                    _mutex.ReleaseMutex();
+                    _mutex.Close();
+                    _mutex = null;
+                }
+            }
+            catch { }
+        }
+
         [STAThread]
         static void Main(string[] args)
         {
@@ -54,18 +68,58 @@ namespace ThcItAgent
             bool isSilent = false;
             string updatedFrom = null;
             string customServer = null;
+            int waitPid = 0;
 
             if (args != null)
             {
                 for (int i = 0; i < args.Length; i++)
                 {
-                    string a = args[i].ToLowerInvariant().Trim('-', '/');
-                    if (a == "install" || a == "setup") isInstall = true;
-                    else if (a == "uninstall" || a == "remove") isUninstall = true;
-                    else if (a == "silent" || a == "quiet" || a == "s" || a == "q") isSilent = true;
-                    else if ((a == "updated-from" || a == "update-post") && i + 1 < args.Length) updatedFrom = args[++i];
-                    else if ((a == "server" || a == "url") && i + 1 < args.Length) customServer = args[++i];
+                    string a = args[i].Trim();
+                    string key = a.TrimStart('-', '/').ToLowerInvariant();
+
+                    if (key == "install" || key == "setup") isInstall = true;
+                    else if (key == "uninstall" || key == "remove") isUninstall = true;
+                    else if (key == "silent" || key == "quiet" || key == "s" || key == "q") isSilent = true;
+                    else if (key == "updated-from" || key == "update-post")
+                    {
+                        if (i + 1 < args.Length && !args[i + 1].StartsWith("/") && !args[i + 1].StartsWith("-"))
+                        {
+                            updatedFrom = args[++i];
+                        }
+                        else
+                        {
+                            updatedFrom = "auto";
+                        }
+                    }
+                    else if (key == "wait-pid" || key == "waitpid")
+                    {
+                        if (i + 1 < args.Length) int.TryParse(args[++i], out waitPid);
+                    }
+                    else if (key == "server" || key == "url")
+                    {
+                        if (i + 1 < args.Length) customServer = args[++i];
+                    }
                 }
+            }
+
+            // Post-update mode runs strictly silently
+            if (!string.IsNullOrEmpty(updatedFrom))
+            {
+                isSilent = true;
+            }
+
+            // If a previous instance PID was passed to wait for, wait for it to exit
+            if (waitPid > 0)
+            {
+                try
+                {
+                    var oldP = Process.GetProcessById(waitPid);
+                    if (oldP != null && !oldP.HasExited)
+                    {
+                        oldP.WaitForExit(8000);
+                    }
+                }
+                catch { }
             }
 
             // Command-line Uninstallation
@@ -119,7 +173,7 @@ namespace ThcItAgent
             string stdExe = InstallerHelper.GetStandardExePath();
             bool isStandardLocation = curExe.Equals(stdExe, StringComparison.OrdinalIgnoreCase);
 
-            if (!isStandardLocation && !isSilent)
+            if (!isStandardLocation && !isSilent && string.IsNullOrEmpty(updatedFrom))
             {
                 using (var wizard = new SetupWizardForm(curExe, stdExe))
                 {
@@ -137,9 +191,37 @@ namespace ThcItAgent
                 }
             }
 
-            // Allow only one instance per user session
-            bool createdNew;
-            _mutex = new Mutex(true, AppGuid, out createdNew);
+            // Allow only one instance per user session.
+            // If starting after update, retry acquiring mutex for up to 9 seconds while old process finishes exiting.
+            bool createdNew = false;
+            int maxAttempts = (!string.IsNullOrEmpty(updatedFrom) || waitPid > 0) ? 30 : 1;
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                try
+                {
+                    _mutex = new Mutex(true, AppGuid, out createdNew);
+                    if (createdNew) break;
+
+                    if (_mutex != null)
+                    {
+                        try { _mutex.Close(); } catch { }
+                        _mutex = null;
+                    }
+                }
+                catch (AbandonedMutexException)
+                {
+                    // The previous instance exited and abandoned the mutex. We now own it!
+                    createdNew = true;
+                    break;
+                }
+                catch { }
+
+                if (attempt < maxAttempts - 1)
+                {
+                    Thread.Sleep(300);
+                }
+            }
+
             if (!createdNew)
             {
                 if (!isSilent)
@@ -878,7 +960,10 @@ namespace ThcItAgent
             // Check & Update Version
             var updateItem = new ToolStripMenuItem("🔄 ตรวจสอบและอัปเดต Agent ล่าสุด (Update Agent)", null, (s, e) =>
             {
-                ExecuteSelfUpdate(false);
+                new Thread(() =>
+                {
+                    ExecuteSelfUpdate(false, null);
+                }) { IsBackground = true }.Start();
             });
             _contextMenu.Items.Add(updateItem);
 
@@ -936,7 +1021,10 @@ namespace ThcItAgent
             {
                 try
                 {
-                    _notifyIcon.ShowBalloonTip(4000, "อัปเดต THC IT Agent สำเร็จ", "อัปเดตเป็นเวอร์ชัน " + Program.CurrentVersion + " เรียบร้อยแล้ว (อัปเกรดจาก " + updatedFrom + ")", ToolTipIcon.Info);
+                    string msg = updatedFrom.Equals("auto", StringComparison.OrdinalIgnoreCase)
+                        ? ("อัปเดตเป็นเวอร์ชัน " + Program.CurrentVersion + " เรียบร้อยแล้ว")
+                        : ("อัปเดตเป็นเวอร์ชัน " + Program.CurrentVersion + " เรียบร้อยแล้ว (อัปเกรดจาก " + updatedFrom + ")");
+                    _notifyIcon.ShowBalloonTip(4000, "อัปเดต THC IT Agent สำเร็จ", msg, ToolTipIcon.Info);
                 }
                 catch { }
             }
@@ -1052,7 +1140,13 @@ namespace ThcItAgent
                                 AcknowledgeCommandComplete(commandId, "รับคำสั่งอัปเดตสำเร็จ กำลังดำเนินการอัปเดตบน " + _cachedSpecs.Hostname);
                                 _notifyIcon.ShowBalloonTip(3000, "อัปเดต THC IT Agent", "ระบบส่วนกลางสั่งอัปเดตเวอร์ชัน Agent ล่าสุด...", ToolTipIcon.Info);
 
-                                ExecuteSelfUpdate(true);
+                                Dictionary<string, object> cmdParams = null;
+                                if (resp != null && resp.ContainsKey("parameters") && resp["parameters"] is Dictionary<string, object>)
+                                {
+                                    cmdParams = resp["parameters"] as Dictionary<string, object>;
+                                }
+
+                                ExecuteSelfUpdate(true, cmdParams);
                             }
                         }
                         else if (hasCommand && command.Equals("uninstall", StringComparison.OrdinalIgnoreCase))
@@ -1520,7 +1614,7 @@ namespace ThcItAgent
             form.ShowDialog();
         }
 
-        private void ExecuteSelfUpdate(bool isRemote)
+        private void ExecuteSelfUpdate(bool isRemote, Dictionary<string, object> cmdParams = null)
         {
             try
             {
@@ -1531,8 +1625,21 @@ namespace ThcItAgent
 
                 string primary = _config.ServerUrl.TrimEnd('/');
                 string manifestUrl = primary + "/agent/manifest.json";
+                if (cmdParams != null && cmdParams.ContainsKey("manifest_url") && cmdParams["manifest_url"] != null)
+                {
+                    string m = cmdParams["manifest_url"].ToString().Trim();
+                    if (!string.IsNullOrEmpty(m)) manifestUrl = m;
+                }
+
                 string expectedSha256 = null;
+                if (cmdParams != null && cmdParams.ContainsKey("sha256") && cmdParams["sha256"] != null)
+                {
+                    string s = cmdParams["sha256"].ToString().Trim();
+                    if (!string.IsNullOrEmpty(s)) expectedSha256 = s;
+                }
+
                 string remoteVersion = null;
+                string manifestDownloadUrl = null;
 
                 // 1. Fetch manifest for version check and hash validation
                 try
@@ -1548,16 +1655,30 @@ namespace ThcItAgent
                         var dict = js.Deserialize<Dictionary<string, object>>(json);
                         if (dict != null)
                         {
-                            if (dict.ContainsKey("version")) remoteVersion = dict["version"] as string;
-                            if (dict.ContainsKey("files"))
+                            if (dict.ContainsKey("version") && dict["version"] != null)
                             {
-                                var files = dict["files"] as Dictionary<string, object>;
-                                if (files != null && files.ContainsKey("executable"))
+                                remoteVersion = dict["version"].ToString();
+                            }
+                            if (dict.ContainsKey("download_url") && dict["download_url"] != null)
+                            {
+                                manifestDownloadUrl = dict["download_url"].ToString();
+                            }
+                            if (string.IsNullOrEmpty(expectedSha256))
+                            {
+                                if (dict.ContainsKey("sha256") && dict["sha256"] != null)
                                 {
-                                    var exeInfo = files["executable"] as Dictionary<string, object>;
-                                    if (exeInfo != null && exeInfo.ContainsKey("sha256"))
+                                    expectedSha256 = dict["sha256"].ToString();
+                                }
+                                else if (dict.ContainsKey("files"))
+                                {
+                                    var files = dict["files"] as Dictionary<string, object>;
+                                    if (files != null && files.ContainsKey("executable"))
                                     {
-                                        expectedSha256 = exeInfo["sha256"] as string;
+                                        var exeInfo = files["executable"] as Dictionary<string, object>;
+                                        if (exeInfo != null && exeInfo.ContainsKey("sha256") && exeInfo["sha256"] != null)
+                                        {
+                                            expectedSha256 = exeInfo["sha256"].ToString();
+                                        }
                                     }
                                 }
                             }
@@ -1566,7 +1687,7 @@ namespace ThcItAgent
                 }
                 catch { }
 
-                // 2. Interactive confirmation
+                // 2. Interactive confirmation (if triggered by user from tray menu)
                 if (!isRemote)
                 {
                     string prompt = "ต้องการตรวจสอบและอัปเดตโปรแกรม THC IT Agent เป็นเวอร์ชันล่าสุดจากเซิร์ฟเวอร์หรือไม่?\n\n" +
@@ -1586,7 +1707,34 @@ namespace ThcItAgent
                 SetStatus(true, true, "กำลังดาวน์โหลดไฟล์ Agent เวอร์ชันล่าสุด...");
 
                 var urlsToTry = new List<string>();
-                urlsToTry.Add(primary + "/agent/THC_IT_Agent.exe");
+
+                // A. Direct URL from central command parameters
+                if (cmdParams != null && cmdParams.ContainsKey("download_url") && cmdParams["download_url"] != null)
+                {
+                    string d = cmdParams["download_url"].ToString().Trim();
+                    if (!string.IsNullOrEmpty(d) && !urlsToTry.Contains(d)) urlsToTry.Add(d);
+                }
+
+                // B. Direct URL from manifest.json
+                if (!string.IsNullOrEmpty(manifestDownloadUrl))
+                {
+                    string d = manifestDownloadUrl.Trim();
+                    if (d.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || d.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!urlsToTry.Contains(d)) urlsToTry.Add(d);
+                    }
+                    else
+                    {
+                        string combined = primary + (d.StartsWith("/") ? d : "/" + d);
+                        if (!urlsToTry.Contains(combined)) urlsToTry.Add(combined);
+                    }
+                }
+
+                // C. Primary server default path
+                string defPrimary = primary + "/agent/THC_IT_Agent.exe";
+                if (!urlsToTry.Contains(defPrimary)) urlsToTry.Add(defPrimary);
+
+                // D. Candidate fallback URLs
                 foreach (string cand in AppConfig.CandidateUrls)
                 {
                     string u = cand.TrimEnd('/') + "/agent/THC_IT_Agent.exe";
@@ -1599,7 +1747,7 @@ namespace ThcItAgent
                     try
                     {
                         var req = (HttpWebRequest)WebRequest.Create(url);
-                        req.Timeout = 15000;
+                        req.Timeout = 20000;
                         req.UserAgent = "THC-Hospital-IT-Agent-Updater/" + Program.CurrentVersion;
                         using (var resp = (HttpWebResponse)req.GetResponse())
                         using (var stream = resp.GetResponseStream())
@@ -1646,46 +1794,99 @@ namespace ThcItAgent
                     if (!string.IsNullOrEmpty(actualSha) && !actualSha.Equals(expectedSha256.Trim(), StringComparison.OrdinalIgnoreCase))
                     {
                         if (File.Exists(newExe)) try { File.Delete(newExe); } catch { }
-                        throw new Exception("ตรวจสอบความถูกต้องล้มเหลว: SHA-256 ไม่ตรงกับ Manifest");
+                        throw new Exception("ตรวจสอบความถูกต้องล้มเหลว: SHA-256 ไม่ตรงกับ Manifest (Expected: " + expectedSha256 + ", Got: " + actualSha + ")");
                     }
                 }
 
-                // 4. In-Process Atomic Binary Swap
-                if (File.Exists(oldExe)) try { File.Delete(oldExe); } catch { }
-                File.Move(currentExe, oldExe);
-                File.Move(newExe, currentExe);
+                // 4. In-Process Atomic Binary Swap or Fallback Helper Script
+                int currentPid = Process.GetCurrentProcess().Id;
+                string childArgs = "/update-post \"" + Program.CurrentVersion + "\" /wait-pid " + currentPid + " /silent";
+                bool inProcessSwapOk = false;
 
-                // 5. Spawn new process with Automatic Rollback on failure
                 try
                 {
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = currentExe,
-                        WorkingDirectory = currentDir,
-                        UseShellExecute = true,
-                        Arguments = "/update-post " + Program.CurrentVersion
-                    });
+                    if (File.Exists(oldExe)) try { File.Delete(oldExe); } catch { }
+                    File.Move(currentExe, oldExe);
+                    File.Move(newExe, currentExe);
+                    inProcessSwapOk = true;
                 }
-                catch (Exception startEx)
+                catch
                 {
-                    // Rollback immediately if spawn failed
-                    try
-                    {
-                        if (File.Exists(currentExe)) File.Delete(currentExe);
-                        if (File.Exists(oldExe)) File.Move(oldExe, currentExe);
-                    }
-                    catch { }
-                    throw new Exception("ไม่สามารถเริ่มโปรเซสเวอร์ชันใหม่ได้ (Rollback กลับสู่เวอร์ชันเดิมแล้ว): " + startEx.Message);
+                    inProcessSwapOk = false;
                 }
 
-                // Clean exit
+                if (inProcessSwapOk)
+                {
+                    // Spawn new process
+                    try
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = currentExe,
+                            WorkingDirectory = currentDir,
+                            UseShellExecute = true,
+                            Arguments = childArgs
+                        });
+                    }
+                    catch (Exception startEx)
+                    {
+                        // Rollback immediately if spawn failed
+                        try
+                        {
+                            if (File.Exists(currentExe)) File.Delete(currentExe);
+                            if (File.Exists(oldExe)) File.Move(oldExe, currentExe);
+                        }
+                        catch { }
+                        throw new Exception("ไม่สามารถเริ่มโปรเซสเวอร์ชันใหม่ได้ (Rollback สำเร็จ): " + startEx.Message);
+                    }
+                }
+                else
+                {
+                    // Fallback: File locking prevented direct rename. Use helper batch script to perform swap after process exits
+                    string batScript = Path.Combine(currentDir, "update_handoff_" + currentPid + ".bat");
+                    string batContent =
+                        "@echo off\r\n" +
+                        "chcp 65001 >nul\r\n" +
+                        ":WAIT_PID\r\n" +
+                        "taskkill /f /pid " + currentPid + " >nul 2>&1\r\n" +
+                        "timeout /t 1 /nobreak >nul\r\n" +
+                        "tasklist /fi \"PID eq " + currentPid + "\" 2>nul | findstr /i \"" + currentPid + "\" >nul\r\n" +
+                        "if not errorlevel 1 goto WAIT_PID\r\n" +
+                        "if exist \"" + oldExe + "\" del /f /q \"" + oldExe + "\" >nul 2>&1\r\n" +
+                        "if exist \"" + currentExe + "\" move /y \"" + currentExe + "\" \"" + oldExe + "\" >nul 2>&1\r\n" +
+                        "move /y \"" + newExe + "\" \"" + currentExe + "\" >nul 2>&1\r\n" +
+                        "start \"\" \"" + currentExe + "\" /update-post \"" + Program.CurrentVersion + "\" /silent\r\n" +
+                        "del /f /q \"%~f0\" >nul 2>&1\r\n";
+
+                    File.WriteAllText(batScript, batContent, Encoding.Default);
+
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = "/c \"" + batScript + "\"",
+                        WorkingDirectory = currentDir,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        UseShellExecute = false
+                    });
+                }
+
+                // 5. Clean Exit & Mutex Release Handover
+                // Crucial: Release Mutex and exit immediately so child process gets Mutex ownership and stays alive!
+                Program.ReleaseAppMutex();
+
                 _isRunning = false;
                 if (_notifyIcon != null)
                 {
-                    _notifyIcon.Visible = false;
-                    _notifyIcon.Dispose();
+                    try
+                    {
+                        _notifyIcon.Visible = false;
+                        _notifyIcon.Dispose();
+                    }
+                    catch { }
                 }
-                Application.Exit();
+
+                Environment.Exit(0);
             }
             catch (Exception ex)
             {

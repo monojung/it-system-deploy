@@ -2531,6 +2531,12 @@ class HardwareAuditController extends Controller
         $hardwareId = strtoupper(trim((string)$request->input('hardware_id', $request->input('hwid', ''))));
         $batchItems = $request->input('machines', $request->input('targets', []));
 
+        $agentExe = public_path('agent/THC_IT_Agent.exe');
+        if (!file_exists($agentExe)) {
+            $agentExe = base_path('agent/THC_IT_Agent.exe');
+        }
+        $agentSha = file_exists($agentExe) ? strtoupper(hash_file('sha256', $agentExe)) : '1857427CA8E8F3FDB5B1805229B091E10357BA452CA217D1B22F611F7A8C179C';
+
         if (!empty($batchItems) && is_array($batchItems)) {
             $count = 0;
             $batchId = 'UPDATE-' . date('Ymd-His') . '-' . Str::random(4);
@@ -2550,7 +2556,7 @@ class HardwareAuditController extends Controller
                             'target_version' => '2.11.0',
                             'download_url' => url('/agent/THC_IT_Agent.exe'),
                             'manifest_url' => url('/agent/manifest.json'),
-                            'sha256' => '1857427CA8E8F3FDB5B1805229B091E10357BA452CA217D1B22F611F7A8C179C',
+                            'sha256' => $agentSha,
                         ],
                     ]);
                     $count++;
@@ -2580,7 +2586,7 @@ class HardwareAuditController extends Controller
                 'target_version' => '2.11.0',
                 'download_url' => url('/agent/THC_IT_Agent.exe'),
                 'manifest_url' => url('/agent/manifest.json'),
-                'sha256' => '1857427CA8E8F3FDB5B1805229B091E10357BA452CA217D1B22F611F7A8C179C',
+                'sha256' => $agentSha,
             ],
         ]);
 

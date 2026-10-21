@@ -1,4 +1,4 @@
-# ==============================================================================
+﻿# ==============================================================================
 # update.ps1
 # Thung Hua Chang Hospital - THC IT Agent Enterprise Updater
 # Version: 2.11.0 (Atomic Binary Replacement & Validation Engine)
@@ -96,7 +96,7 @@ Log-Message "ดาวน์โหลดเวอร์ชันใหม่ส�
 
 # Stop current process
 Get-Process -Name "THC_IT_Agent" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-Start-Sleep -Milliseconds 600
+Start-Sleep -Milliseconds 1500
 
 # Atomic replacement
 if (Test-Path $oldExe) { Remove-Item -Force $oldExe -ErrorAction SilentlyContinue }
@@ -105,7 +105,7 @@ Move-Item -Path $newExe -Destination $targetExe -Force
 
 # Start new version
 Log-Message "เริ่มทำงานเวอร์ชันใหม่..." "INFO" Green
-Start-Process -FilePath $targetExe -WorkingDirectory $InstallDir
+Start-Process -FilePath $targetExe -WorkingDirectory $InstallDir -ArgumentList "/update-post /silent"
 
 if (-not $Silent) {
     Write-Host ''

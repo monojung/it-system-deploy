@@ -17,6 +17,7 @@ if not "%~1"=="" if "%IS_SILENT%"=="0" set "SERVER_URL=%~1"
 if "%IS_SILENT%"=="0" (
     echo ==========================================================================
     echo   โรงพยาบาลทุ่งหัวช้าง - ระบบติดตั้ง THC IT Agent v2.11.0 (Production)
+    echo   THC Hardware Audit Agent - Enterprise System Tray Service
     echo   เชื่อมต่อเซิร์ฟเวอร์แบบ Real-time รายงานสเปก ปลอดภัย ไม่ติด Blocklist
     echo ==========================================================================
     echo.
