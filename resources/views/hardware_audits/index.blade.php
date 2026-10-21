@@ -62,11 +62,11 @@
                        style="background: #ffffff; color: #0284c7; font-weight: 700; padding: 7px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); text-decoration: none; transition: all 0.2s; font-size: 12.5px;"
                        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 14px rgba(0,0,0,0.16)'"
                        onmouseout="this.style.transform='none'; this.style.boxShadow='0 3px 10px rgba(0,0,0,0.1)'"
-                       title="ดาวน์โหลดโปรแกรม THC IT Agent (Standalone .exe 46 KB รันได้ทันที มี System Tray Icon บอกสถานะ Online/Offline)">
+                       title="ดาวน์โหลดโปรแกรม THC IT Agent (Standalone .exe 68 KB พร้อม Setup Wizard ติดตั้งง่าย มี System Tray Icon บอกสถานะ Online/Offline)">
                         <i class="bi bi-download text-primary" style="font-size: 14px;"></i>
                         <span>โหลด Agent (.exe)</span>
                         <span class="badge" style="background: #16a34a; color: #ffffff; font-size: 10px; padding: 2px 5px; border-radius: 5px;">
-                            v2.9.0
+                            v2.11.0
                         </span>
                     </a>
 
@@ -1017,177 +1017,184 @@
                     </div>
                 </div>
 
-                <!-- 3 Steps Visual Flow -->
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0 24px 0;">
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; text-align: center;">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #0f766e; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto;">1</div>
-                        <div style="font-weight: 700; font-size: 13px; color: #0f172a;">ดาวน์โหลดโปรแกรม Standalone</div>
-                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">ดาวน์โหลด THC_IT_Agent.exe ขนาด 46 KB แล้วเปิดได้ทันที</div>
-                    </div>
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; text-align: center;">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #0284c7; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto;">2</div>
-                        <div style="font-weight: 700; font-size: 13px; color: #0f172a;">สแตนด์บายในถาดระบบ</div>
-                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">ไอคอน 🟢 ข้างนาฬิกา พร้อมส่งสเปกเมื่อแอดมินสั่งดึง</div>
-                    </div>
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; text-align: center;">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto;">3</div>
-                        <div style="font-weight: 700; font-size: 13px; color: #0f172a;">ดึงข้อมูลสเปกเข้าคลัง</div>
-                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">ข้อมูลเข้าคิวรอแอดมินยืนยันอัปเดตลงคลัง</div>
-                    </div>
-                </div>
-
-                <!-- Focused Standalone Agent Deployment Section -->
-                <div style="margin-bottom: 24px;">
-                    
-                    {{-- Method 1: Standalone .EXE System Tray Agent (SOLE OFFICIAL METHOD) --}}
-                    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 60%, #ecfdf5 100%); border: 2px solid #22c55e; border-radius: 18px; padding: 26px; box-shadow: 0 10px 30px -5px rgba(34, 197, 94, 0.22); position: relative; overflow: hidden;">
-                        <div style="position: absolute; right: 0; top: 0; background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; font-size: 11.5px; font-weight: 800; padding: 6px 18px; border-radius: 0 0 0 14px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(0,0,0,0.12);">
-                            ★ วิธีทางการแนะนำสูงสุด (Official Standard)
-                        </div>
-
-                        <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 18px; flex-wrap: wrap;">
-                            <div style="width: 52px; height: 52px; border-radius: 14px; background: #ffffff; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2); flex-shrink: 0;">
-                                <i class="bi bi-window-desktop"></i>
-                            </div>
-                            <div style="flex: 1; min-width: 260px;">
-                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                    <h4 style="font-size: 18px; font-weight: 800; color: #15803d; margin: 0;">
-                                        วิธีที่ 1: โปรแกรม Standalone (.exe)
-                                    </h4>
-                                    <span class="badge" style="background: #16a34a; color: #ffffff; font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: 6px;">
-                                        v2.9.0 Production
-                                    </span>
-                                    <span class="badge" style="background: #ffffff; color: #166534; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; border: 1px solid #bbf7d0;">
-                                        ขนาด 46 KB
-                                    </span>
-                                </div>
-                                <div style="font-size: 13px; color: #166534; font-weight: 600; margin-top: 4px;">
-                                    THC_IT_Agent.exe &bull; รันได้ทันที ไม่ต้องติดตั้ง ไม่ต้องมีสิทธิ์ Admin
-                                </div>
-                            </div>
-                        </div>
-
-                        <p style="font-size: 13.5px; color: #1e3a1f; line-height: 1.6; margin: 0 0 18px 0;">
-                            โปรแกรมตรวจสอบฮาร์ดแวร์ประจำเครื่องลูกข่าย พัฒนาด้วย Native C# .NET Framework เป็นไฟล์ Standalone ไฟล์เดียว โหลดแล้วดับเบิลคลิกเปิดใช้งานได้ทันที มีไอคอน 🟢 <strong>System Tray</strong> ข้างนาฬิกา แสดงสถานะ Online/Offline เชื่อมต่อกับระบบ IT แบบ Real-time <strong>สแตนด์บายกินทรัพยากรเครื่องน้อยมาก และจะไม่ส่งข้อมูลใดๆ จนกว่าแอดมินส่วนกลางจะกดสั่งดึงข้อมูล</strong>
-                        </p>
-
-                        <!-- 4 Highlights Grid -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px;">
-                            <div style="background: rgba(255,255,255,0.85); border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 14px;">
-                                <div style="font-weight: 700; font-size: 12.5px; color: #15803d; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                    <i class="bi bi-broadcast text-success"></i> สถานะ Real-time Live
-                                </div>
-                                <div style="font-size: 11.5px; color: #374151; line-height: 1.4;">
-                                    ไอคอนข้างนาฬิกาบอกสถานะ Online ทันที แอดมินมองเห็นจากหน้าเว็บส่วนกลาง
-                                </div>
-                            </div>
-
-                            <div style="background: rgba(255,255,255,0.85); border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 14px;">
-                                <div style="font-weight: 700; font-size: 12.5px; color: #15803d; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                    <i class="bi bi-shield-check text-success"></i> ไม่โดน Antivirus บล็อก
-                                </div>
-                                <div style="font-size: 11.5px; color: #374151; line-height: 1.4;">
-                                    คอมไพล์เป็นไบนารี .NET แท้ ปลอดภัย 100% ไม่เสี่ยงโดนบล็อกเหมือนสคริปต์
-                                </div>
-                            </div>
-
-                            <div style="background: rgba(255,255,255,0.85); border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 14px;">
-                                <div style="font-weight: 700; font-size: 12.5px; color: #15803d; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                    <i class="bi bi-lightning-charge-fill text-warning"></i> สแกนลึกระดับ WMI/BIOS
-                                </div>
-                                <div style="font-size: 11.5px; color: #374151; line-height: 1.4;">
-                                    อ่าน S/N เมนบอร์ด, CPU, บัส RAM, ชนิด SSD NVMe และ MAC Address ครบถ้วน
-                                </div>
-                            </div>
-
-                            <div style="background: rgba(255,255,255,0.85); border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 14px;">
-                                <div style="font-weight: 700; font-size: 12.5px; color: #15803d; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                    <i class="bi bi-arrow-repeat text-primary"></i> Auto-Discovery Failover
-                                </div>
-                                <div style="font-size: 11.5px; color: #374151; line-height: 1.4;">
-                                    สลับเส้นทางเชื่อมต่อ MOPH HTTPS / IP LAN ภายในอัตโนมัติหากเครือข่ายเปลี่ยน
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Main Action Bar -->
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; background: #ffffff; border: 1.5px solid #86efac; border-radius: 12px; padding: 14px 18px;">
-                            <div>
-                                <div style="font-weight: 800; font-size: 13.5px; color: #0f172a;">
-                                    พร้อมใช้งานทันทีบนระบบปฏิบัติการ Windows ทุกรุ่น
-                                </div>
-                                <div style="font-size: 12px; color: #64748b;">
-                                    รองรับ Windows 7, 8, 8.1, 10, 11 และ Windows Server (ต้องการ .NET Framework 4.0 ขึ้นไป ซึ่งมีติดมากับ Windows ทุกเครื่อง)
-                                </div>
-                            </div>
-                            <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-success" style="font-weight: 800; font-size: 14px; padding: 12px 24px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35); flex-shrink: 0;">
-                                <i class="bi bi-download" style="font-size: 18px;"></i> ดาวน์โหลด THC_IT_Agent.exe (v2.9.0 • 46 KB)
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Agent Lifecycle Management Tools: Updater & Uninstaller --}}
-                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-top: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                <!-- Security Compliance & MISP Whitelist Verification Banner -->
+                <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%); border: 1.5px solid #86efac; border-radius: 16px; padding: 20px 24px; margin: 18px 0 24px 0; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef2f2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                                <i class="bi bi-tools"></i>
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: #16a34a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 3px 8px rgba(22, 163, 74, 0.3);">
+                                <i class="bi bi-shield-check"></i>
                             </div>
                             <div>
-                                <h4 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 0;">
-                                    เครื่องมือจัดการและดูแลรักษา Agent ประจำเครื่อง (Agent Lifecycle Tools)
+                                <h4 style="font-size: 16px; font-weight: 800; color: #14532d; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <span>THC IT Agent v2.11.0 (Hardened Enterprise Standalone)</span>
+                                    <span class="badge" style="background: #22c55e; color: #ffffff; font-size: 11px; padding: 3px 8px; border-radius: 6px;">ปลอดภัย 100%</span>
                                 </h4>
-                                <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">
-                                    สคริปต์สำหรับอัปเดตเวอร์ชัน Agent อัตโนมัติ และสคริปต์ถอนการติดตั้ง Agent ออกจากเครื่องลูกข่ายอย่างหมดจด
+                                <p style="font-size: 12.5px; color: #166534; margin: 2px 0 0 0;">
+                                    ปรับแต่ง Heartbeat 60s พร้อมสุ่มเวลา (Jitter) ป้องกันการจัดกลุ่มเป็น C2/Botnet Beacon รองรับ Hot-Swap In-Process
                                 </p>
                             </div>
                         </div>
-                        <span class="badge" style="background: #eff6ff; color: #2563eb; font-weight: 700; font-size: 11.5px; padding: 5px 12px; border-radius: 8px; border: 1px solid #bfdbfe;">
-                            <i class="bi bi-shield-check me-1"></i> Agent v2.9.0 Production Standalone
-                        </span>
+                        <a href="{{ url('/agent/manifest.json') }}" target="_blank" class="btn btn-sm btn-outline-success" style="border-radius: 8px; font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; background: #ffffff;">
+                            <i class="bi bi-filetype-json"></i> ตรวจสอบ Manifest JSON
+                        </a>
                     </div>
 
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
-                            {{-- Tool 1: Updater --}}
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-                                <div>
-                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                                        <i class="bi bi-arrow-repeat text-info" style="font-size: 18px;"></i>
-                                        <strong style="font-size: 13.5px; color: #0f172a;">ตัวอัปเดต Agent อัตโนมัติ (Auto-Updater)</strong>
-                                    </div>
-                                    <p style="font-size: 12px; color: #475569; line-height: 1.5; margin: 6px 0 12px 0;">
-                                        ดาวน์โหลดไฟล์ <code>update_thc_agent.bat</code> นำไปรันบนเครื่องลูกข่ายเพื่ออัปเดตเป็นเวอร์ชันล่าสุดโดยคงการตั้งค่าเดิมไว้
-                                    </p>
-                                </div>
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <a href="{{ asset('agent/update_thc_agent.bat') }}" download class="btn btn-outline-info btn-sm" style="font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 5px;">
-                                        <i class="bi bi-download"></i> ดาวน์โหลด update_thc_agent.bat
-                                    </a>
-                                </div>
+                    <!-- Hash & Security Attribute Table -->
+                    <div style="background: #ffffff; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px 16px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <strong style="color: #0f172a; min-width: 90px;"><i class="bi bi-key-fill text-success"></i> SHA-256 Hash:</strong>
+                                <code id="agentSha256Code" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; color: #047857; font-weight: 700; word-break: break-all;">1857427CA8E8F3FDB5B1805229B091E10357BA452CA217D1B22F611F7A8C179C</code>
                             </div>
-
-                            {{-- Tool 2: Uninstaller --}}
-                            <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-                                <div>
-                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                                        <i class="bi bi-trash3 text-danger" style="font-size: 18px;"></i>
-                                        <strong style="font-size: 13.5px; color: #9f1239;">ตัวถอนการติดตั้ง Agent (Uninstaller)</strong>
-                                    </div>
-                                    <p style="font-size: 12px; color: #881337; line-height: 1.5; margin: 6px 0 12px 0;">
-                                        สคริปต์ <code>uninstall_thc_agent.bat</code> สำหรับปิดโพรเซส ลบ Startup ลบ Scheduled Tasks และลบไฟล์ติดตั้งในเครื่องออกทั้งหมด
-                                    </p>
-                                </div>
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <a href="{{ asset('agent/uninstall_thc_agent.bat') }}" download class="btn btn-danger btn-sm" style="font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 5px;">
-                                        <i class="bi bi-download"></i> ดาวน์โหลด uninstall_thc_agent.bat
-                                    </a>
-                                </div>
+                            <button type="button" class="btn btn-sm btn-light border" onclick="copyInstallerCmd('1857427CA8E8F3FDB5B1805229B091E10357BA452CA217D1B22F611F7A8C179C', 'คัดลอก SHA-256 เรียบร้อยแล้ว')" style="font-size: 11px; padding: 2px 8px; border-radius: 6px;">
+                                <i class="bi bi-clipboard me-1"></i> คัดลอก Hash
+                            </button>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; border-top: 1px dashed #e2e8f0; padding-top: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <strong style="color: #0f172a; min-width: 90px;"><i class="bi bi-fingerprint text-primary"></i> MD5 Hash:</strong>
+                                <code style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px 6px; border-radius: 5px; font-size: 11px; color: #475569;">773E736CAE85383298F0070CFA7D27F3</code>
+                            </div>
+                            <div style="display: flex; gap: 14px; color: #64748b; font-size: 11.5px;">
+                                <span><i class="bi bi-clock-history me-1"></i> Heartbeat: <strong>60s (±10s Jitter)</strong></span>
+                                <span><i class="bi bi-file-earmark-binary me-1"></i> ขนาด: <strong>68 KB (.NET 4.0 Standalone)</strong></span>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {{-- Official System Documentation & PDF Manuals (v2.8.0) --}}
+                <!-- Single Official Installation Method: Setup Wizard -->
+                <div style="margin-bottom: 24px;">
+                    <div style="background: #ffffff; border: 2px solid #22c55e; border-radius: 18px; padding: 26px; box-shadow: 0 10px 30px -4px rgba(34, 197, 94, 0.15); position: relative;">
+                        <div style="position: absolute; right: 0; top: 0; background: #16a34a; color: #ffffff; font-size: 11.5px; font-weight: 800; padding: 5px 18px; border-radius: 0 0 0 14px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ★ ช่องทางการติดตั้งทางการ (Official Setup Wizard)
+                        </div>
+                        <div style="display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap;">
+                            <div style="width: 54px; height: 54px; border-radius: 14px; background: #ecfdf5; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);">
+                                <i class="bi bi-window-desktop"></i>
+                            </div>
+                            <div style="flex: 1; min-width: 280px;">
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <h4 style="font-size: 18px; font-weight: 800; color: #15803d; margin: 0;">
+                                        ติดตั้งผ่านตัวช่วย Setup Wizard ในตัวโปรแกรม (THC_IT_Agent.exe)
+                                    </h4>
+                                    <span class="badge" style="background: #16a34a; color: #ffffff; font-size: 11.5px; padding: 4px 9px; border-radius: 6px;">v2.11.0 Standalone</span>
+                                </div>
+                                <p style="font-size: 13.5px; color: #334155; line-height: 1.6; margin: 8px 0 18px 0;">
+                                    โปรแกรมขนาดเล็ก (68 KB) ไม่ต้องติดตั้ง Dependency เพิ่มเติม พร้อมตัวช่วยติดตั้ง <strong>Setup Wizard ในตัว</strong> เพียงเปิดโปรแกรมขึ้นมาแล้วคลิกปุ่มติดตั้งเพียงคลิกเดียว ระบบจะทำการตั้งค่าและรันใน System Tray ทันที
+                                </p>
+
+                                <!-- Big Download Button -->
+                                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 22px;">
+                                    <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-success" style="font-weight: 800; font-size: 14px; padding: 12px 28px; border-radius: 12px; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 4px 16px rgba(22, 163, 74, 0.35); background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border: none;">
+                                        <i class="bi bi-download" style="font-size: 18px;"></i> 
+                                        <span>ดาวน์โหลด THC_IT_Agent.exe (68 KB)</span>
+                                    </a>
+                                    <code style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 10px 14px; border-radius: 10px; font-size: 12px; color: #475569;" title="คำสั่งรันติดตั้งแบบเงียบสำหรับผู้ดูแลระบบ">
+                                        THC_IT_Agent.exe /install /silent
+                                    </code>
+                                </div>
+
+                                <!-- 3 Step Visual Guide -->
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                            <span style="width: 24px; height: 24px; border-radius: 50%; background: #16a34a; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;">1</span>
+                                            <strong style="font-size: 13px; color: #0f172a;">ดาวน์โหลดและเปิดไฟล์</strong>
+                                        </div>
+                                        <p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.5;">
+                                            วางไฟล์ <code>THC_IT_Agent.exe</code> บนเครื่องลูกข่ายแล้วดับเบิลคลิกเปิดไฟล์
+                                        </p>
+                                    </div>
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                            <span style="width: 24px; height: 24px; border-radius: 50%; background: #16a34a; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;">2</span>
+                                            <strong style="font-size: 13px; color: #0f172a;">กดปุ่มใน Setup Wizard</strong>
+                                        </div>
+                                        <p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.5;">
+                                            หน้าต่างตัวช่วยติดตั้งจะแสดงผล ให้คลิกปุ่ม <strong>"🚀 ติดตั้งลงในเครื่องทันที"</strong>
+                                        </p>
+                                    </div>
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                            <span style="width: 24px; height: 24px; border-radius: 50%; background: #16a34a; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;">3</span>
+                                            <strong style="font-size: 13px; color: #0f172a;">พร้อมใช้งานทันที</strong>
+                                        </div>
+                                        <p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.5;">
+                                            โปรแกรมจะถูกติดตั้งที่ <code>C:\ProgramData\THC-IT-Agent</code> และเริ่มทำงานใน System Tray อัตโนมัติ
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Features & Instructions Accordion/Box -->
+                                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px 16px; font-size: 12.5px; color: #166534; display: flex; flex-direction: column; gap: 6px;">
+                                    <div>
+                                        <i class="bi bi-lightning-charge-fill text-warning me-1"></i>
+                                        <strong>โหมดพกพา (Portable Mode):</strong> หากต้องการสำรวจสเปกครั้งเดียวโดยไม่ติดตั้งลงเครื่อง ให้กดปุ่ม <em>"⚡ รันสำรวจสเปกทันที (ไม่ติดตั้ง)"</em> ในหน้าต่าง Setup Wizard
+                                    </div>
+                                    <div style="border-top: 1px dashed #86efac; padding-top: 6px;">
+                                        <i class="bi bi-trash3-fill text-danger me-1"></i>
+                                        <strong>การถอนการติดตั้งอย่างหมดจด (Clean Uninstall):</strong> ถอนการติดตั้งผ่าน Windows <strong>Settings > Apps > Installed apps</strong> (ค้นหา <code>THC IT Agent</code> แล้วกด <code>Uninstall</code>) หรือดับเบิลคลิกเปิดตัวโปรแกรมแล้วเลือกปุ่ม <em>"🗑️ ถอนการติดตั้ง"</em> หรือรันคำสั่ง <code>THC_IT_Agent.exe /uninstall</code>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Central Remote Update Management Card --}}
+                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-top: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                                <i class="bi bi-broadcast"></i>
+                            </div>
+                            <div>
+                                <h4 style="font-size: 15.5px; font-weight: 800; color: #0f172a; margin: 0;">
+                                    สั่งอัปเดตจากส่วนกลาง (Central Remote Update)
+                                </h4>
+                                <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">
+                                    ฝ่ายไอทีสามารถสั่งอัปเดตเครื่องลูกข่ายทั้งหมดได้โดยไม่ต้องไปหน้าเครื่อง ผ่านระบบ Atomic Binary Hot-Swap
+                                </p>
+                            </div>
+                        </div>
+                        <span class="badge" style="background: #ecfdf5; color: #059669; font-weight: 700; font-size: 11.5px; padding: 5px 12px; border-radius: 8px; border: 1px solid #a7f3d0;">
+                            <i class="bi bi-shield-check me-1"></i> In-Process Atomic Hot-Swap
+                        </span>
+                    </div>
+
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                        <div>
+                            <div style="font-weight: 700; font-size: 13.5px; color: #1e293b; margin-bottom: 4px;">
+                                สถานะเวอร์ชันของเครื่องในโรงพยาบาล:
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 12.5px;">
+                                <span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; padding: 4px 9px;">
+                                    🟢 เวอร์ชันล่าสุด: {{ $agentLatestCount }} เครื่อง
+                                </span>
+                                @if($agentOutdatedCount > 0)
+                                <span class="badge" style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 4px 9px; font-weight: 700;">
+                                    🟠 เวอร์ชันเก่า (ต้องอัปเดต): {{ $agentOutdatedCount }} เครื่อง
+                                </span>
+                                @else
+                                <span class="badge" style="background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; padding: 4px 9px;">
+                                    ✓ ทุกเครื่องเป็นเวอร์ชันล่าสุดแล้ว
+                                </span>
+                                @endif
+                            </div>
+                        </div>
+                        <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'agents']) }}" class="btn btn-primary" style="font-weight: 700; font-size: 13px; border-radius: 10px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-arrow-repeat"></i>
+                            <span>ไปที่หน้า Agent Fleet เพื่อสั่งอัปเดต</span>
+                            @if($agentOutdatedCount > 0)
+                            <span class="badge bg-warning text-dark" style="font-size: 11px; padding: 2px 6px;">{{ $agentOutdatedCount }}</span>
+                            @endif
+                        </a>
+                    </div>
+                </div>
+
+                    {{-- Official System Documentation & PDF Manuals (v2.11.0) --}}
                     <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-top: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
                         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
                             <div style="display: flex; align-items: center; gap: 10px;">
@@ -1199,7 +1206,7 @@
                                         คู่มือการใช้งานระบบฉบับทางการ (Official System Documentation - PDF)
                                     </h4>
                                     <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">
-                                        เอกสารคู่มือการใช้งานฉบับสมบูรณ์พร้อมภาพประกอบและแผนผังเชิงเทคนิค (เวอร์ชัน {{ app_version() }} Production)
+                                        เอกสารคู่มือการใช้งานฉบับสมบูรณ์พร้อมภาพประกอบและแผนผังเชิงเทคนิค (เวอร์ชัน v{{ $latestAgentVersion ?? '2.11.0' }} Production)
                                     </p>
                                 </div>
                             </div>
@@ -3416,13 +3423,14 @@
 
     function setFleetFilter(status) {
         currentFleetFilter = status;
-        ['fleetFilterAll', 'fleetFilterOnline', 'fleetFilterOffline'].forEach(id => {
+        ['fleetFilterAll', 'fleetFilterOnline', 'fleetFilterOffline', 'fleetFilterOutdated'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.classList.remove('active');
         });
         if (status === 'all') document.getElementById('fleetFilterAll')?.classList.add('active');
         if (status === 'online') document.getElementById('fleetFilterOnline')?.classList.add('active');
         if (status === 'offline') document.getElementById('fleetFilterOffline')?.classList.add('active');
+        if (status === 'outdated') document.getElementById('fleetFilterOutdated')?.classList.add('active');
         filterFleetRows();
     }
 
@@ -3432,11 +3440,13 @@
 
         rows.forEach(row => {
             const isOnline = row.getAttribute('data-online') === 'true';
+            const isOutdated = row.getAttribute('data-outdated') === 'true';
             const searchData = row.getAttribute('data-search') || '';
 
             let matchesFilter = true;
             if (currentFleetFilter === 'online' && !isOnline) matchesFilter = false;
             if (currentFleetFilter === 'offline' && isOnline) matchesFilter = false;
+            if (currentFleetFilter === 'outdated' && !isOutdated) matchesFilter = false;
 
             let matchesSearch = true;
             if (query && !searchData.includes(query)) matchesSearch = false;
@@ -3770,6 +3780,69 @@
         }));
 
         triggerFleetUpdateExecution(targets);
+    }
+
+    // Central Remote Update: Update All Outdated Machines in Fleet
+    function triggerUpdateAllOutdatedFleet() {
+        const outdatedRows = document.querySelectorAll('.fleet-row[data-outdated="true"]');
+        if (outdatedRows.length === 0) {
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'ข้อมูลเป็นปัจจุบันแล้ว',
+                    text: 'ทุกเครื่องในระบบติดตั้ง Agent เวอร์ชันล่าสุด (v{{ $latestAgentVersion ?? '2.11.0' }}) เรียบร้อยแล้ว',
+                    confirmButtonColor: '#0f766e'
+                });
+            } else {
+                alert('ทุกเครื่องเป็นเวอร์ชันล่าสุดแล้ว');
+            }
+            return;
+        }
+
+        const targets = [];
+        outdatedRows.forEach(row => {
+            const chk = row.querySelector('.fleet-item-chk');
+            if (chk) {
+                const hn = chk.getAttribute('data-hostname');
+                const hw = chk.getAttribute('data-hwid');
+                if (hn || hw) {
+                    targets.push({
+                        hostname: hn,
+                        hardware_id: hw
+                    });
+                }
+            }
+        });
+
+        if (targets.length === 0) return;
+
+        if (window.Swal) {
+            Swal.fire({
+                title: `สั่งอัปเดตเครื่องเวอร์ชันเก่าทั้งหมด (${targets.length} เครื่อง)?`,
+                html: `
+                    <div style="text-align: left; font-size: 13.5px; color: #475569; line-height: 1.6;">
+                        <p>ระบบจะส่งสัญญาณคำสั่ง Remote Update ไปยัง <b>${targets.length} เครื่อง</b> ที่กำลังใช้งาน Agent เวอร์ชันเก่า</p>
+                        <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 10px 14px; color: #166534; font-size: 12.5px;">
+                            <i class="bi bi-shield-check text-success me-1"></i> เครื่องลูกข่ายจะดาวน์โหลดไบนารี <b>v{{ $latestAgentVersion ?? '2.11.0' }}</b>, ตรวจสอบ SHA-256 และทำการ Hot-Swap ให้อัตโนมัติทันที
+                        </div>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-arrow-repeat me-1"></i> ยืนยันสั่งอัปเดตทั้งหมด',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#64748b'
+            }).then(res => {
+                if (res.isConfirmed) {
+                    dispatchAgentUpdateApi(targets);
+                }
+            });
+        } else {
+            if (confirm(`สั่งอัปเดตเครื่องเวอร์ชันเก่าทั้งหมด (${targets.length} เครื่อง)?`)) {
+                dispatchAgentUpdateApi(targets);
+            }
+        }
     }
 
     function triggerFleetUpdateExecution(targets) {

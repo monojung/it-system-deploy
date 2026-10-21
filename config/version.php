@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.10.1'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Redesigned Random IT Code, Dual-Scan Barcode & Streamlined Label Suite)',
-    'release_date' => '2026-10-16',
-    'build' => '20261015.3',
+    'version' => env('APP_VERSION', '2.11.0'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Hardened Native Standalone Agent v2.11.0, Central Remote Update & Setup Wizard Suite)',
+    'release_date' => '2026-10-21',
+    'build' => '20261021.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,20 @@ return [
     |
     */
     'changelog' => [
+        '2.11.0' => [
+            'date' => '2026-10-21',
+            'badge' => 'Native Standalone Agent v2.11.0 & Central Remote Update Engine',
+            'badge_color' => '#16a34a',
+            'title' => 'อัปเกรด Agent เป็นเวอร์ชัน 2.11.0 Standalone: ติดตั้งผ่าน Setup Wizard ในตัวโปรแกรม EXE เดียว ไม่ต้องพึ่งพาสคริปต์ภายนอก, ปรับ Heartbeat เป็น 60s พร้อมสุ่มเวลา (Jitter) ป้องกัน MISP/CDB Blocklist, ระบบ Atomic In-Process Swap ป้องกัน Antivirus ตรวจจับ, และระบบสั่งอัปเดตจากส่วนกลาง (Central Remote Update) พร้อมตรวจจับเครื่องที่ใช้เวอร์ชันเก่า',
+            'highlights' => [
+                'Native C# Standalone Setup Wizard: รวมตัวช่วยติดตั้งกราฟิก WinForms Setup Wizard เข้าในตัวไฟล์ THC_IT_Agent.exe โดยตรง ผู้ใช้งานทั่วไปสามารถดับเบิลคลิกแล้วกด "ติดตั้งลงในเครื่องทันที" ได้ในคลิกเดียว',
+                'ถอนสคริปต์ติดตั้งภายนอกที่ไม่จำเป็น: รวมการติดตั้งเป็นช่องทางมาตรฐานเดียวผ่าน Setup Wizard เพื่อความสะดวก ปลอดภัย และไม่สร้างไฟล์แปลกปลอมในระบบ',
+                'ระบบตรวจสอบความปลอดภัยขั้นสูง (MISP / Wazuh CDB Compliant): ปรับ Heartbeat เริ่มต้นเป็น 60 วินาที พร้อมเพิ่มสุ่มช่วงเวลา (Random Jitter ±10 วินาที) ทำลายจังหวะ Fixed C2 Signature และตัดการทำงานของ Dropper ใน Temp 100%',
+                'ระบบสั่งอัปเดตจากส่วนกลาง (Central Remote Update): ตรวจจับเครื่องลูกข่ายที่ยังคงใช้ Agent เวอร์ชันเก่าแบบอัตโนมัติ พร้อมปุ่มคำสั่ง "🚀 สั่งอัปเดตเครื่องที่ใช้เวอร์ชันเก่าทั้งหมด" บนแดชบอร์ด Fleet Management',
+                'การตรวจสอบความถูกต้องก่อนอัปเดต (Cryptographic Hash Validation): ตรวจสอบ PE Header และค่า SHA-256 จาก /agent/manifest.json ก่อนสลับไฟล์ พร้อมระบบ Automatic Rollback หากเกิดข้อผิดพลาด',
+                'ลงทะเบียนใน Windows Programs & Features: รองรับการถอนการติดตั้งผ่าน Windows Settings / Control Panel (appwiz.cpl) และส่งสัญญาณ Farewell Beacon แจ้งปลดสถานะออนไลน์มายังเซิร์ฟเวอร์ก่อนปิดการทำงาน',
+            ],
+        ],
         '2.10.0' => [
             'date' => '2026-10-15',
             'badge' => 'Redesigned IT Code & Dual-Scan Barcode Suite',

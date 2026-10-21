@@ -72,6 +72,37 @@ Route::match(['get', 'post'], '/hardware-audit/agent-ping', [HardwareAuditContro
 Route::post('/api/hardware-audit/agent-command/{id}/complete', [HardwareAuditController::class, 'completeCommand'])->name('hardware-audit.agent-command.complete');
 Route::post('/hardware-audit/agent-command/{id}/complete', [HardwareAuditController::class, 'completeCommand']);
 
+// Public Agent Version & Hash Manifest (for secure hash verification & automated updates)
+Route::get('/agent/manifest.json', function () {
+    $exePath = public_path('agent/THC_IT_Agent.exe');
+    if (!file_exists($exePath)) {
+        $exePath = base_path('agent/THC_IT_Agent.exe');
+    }
+    $sha256 = file_exists($exePath) ? hash_file('sha256', $exePath) : '';
+    $md5 = file_exists($exePath) ? hash_file('md5', $exePath) : '';
+    $size = file_exists($exePath) ? filesize($exePath) : 0;
+
+    return response()->json([
+        'version' => '2.11.0',
+        'app_name' => 'THC IT Agent',
+        'organization' => 'Thung Hua Chang Hospital (รพ.ทุ่งหัวช้าง)',
+        'sha256' => strtoupper($sha256),
+        'md5' => strtoupper($md5),
+        'size_bytes' => $size,
+        'heartbeat_interval_sec' => 60,
+        'download_url' => url('/agent/THC_IT_Agent.exe'),
+        'installer_url' => url('/agent/install_thc_agent.bat'),
+        'powershell_url' => url('/agent/install.ps1'),
+        'server_url' => url('/'),
+        'submit_url' => url('/api/hardware-audit/submit'),
+        'ping_url' => url('/api/hardware-audit/agent-command'),
+        'published_at' => file_exists($exePath) ? date('Y-m-d H:i:s', filemtime($exePath)) : date('Y-m-d H:i:s'),
+    ], 200, [
+        'Access-Control-Allow-Origin' => '*',
+        'Cache-Control' => 'no-cache, must-revalidate',
+    ]);
+})->name('agent.manifest');
+
 // Public Client Scripts & Agents Endpoints (Serve PowerShell & Batch files with text/plain for irm / download)
 Route::get('/agent/{filename}', function ($filename) {
     $filename = basename($filename);

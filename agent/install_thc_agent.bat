@@ -1,84 +1,68 @@
 @echo off
 chcp 65001 >nul
-title ติดตั้ง THC Hardware Audit Agent Standalone - โรงพยาบาลทุ่งหัวช้าง
+title ติดตั้ง THC IT Agent v2.11.0 - โรงพยาบาลทุ่งหัวช้าง
 color 0b
 
-echo ==========================================================================
-echo   ติดตั้งโปรแกรม THC Hardware Audit Agent v2.8.0 (Production Release)
-echo   รูปแบบ System Tray Icon เชื่อมต่อเซิร์ฟเวอร์แบบ Real-time พร้อม Auto-Updater
-echo   โรงพยาบาลทุ่งหัวช้าง (Thung Hua Chang Hospital IT Platform)
-echo ==========================================================================
-echo.
+set "IS_SILENT=0"
+if /i "%~1"=="/silent" set "IS_SILENT=1"
+if /i "%~1"=="/quiet" set "IS_SILENT=1"
+if /i "%~1"=="-Silent" set "IS_SILENT=1"
+if /i "%~2"=="/silent" set "IS_SILENT=1"
+if /i "%~2"=="/quiet" set "IS_SILENT=1"
 
 set "INSTALL_DIR=C:\ProgramData\THC-IT-Agent"
 set "SERVER_URL=https://thchospital.moph.go.th/it-system"
-if not "%~1"=="" set "SERVER_URL=%~1"
+if not "%~1"=="" if "%IS_SILENT%"=="0" set "SERVER_URL=%~1"
 
-if not exist "%INSTALL_DIR%" (
-    mkdir "%INSTALL_DIR%" 2>nul
+if "%IS_SILENT%"=="0" (
+    echo ==========================================================================
+    echo   โรงพยาบาลทุ่งหัวช้าง - ระบบติดตั้ง THC IT Agent v2.11.0 (Production)
+    echo   เชื่อมต่อเซิร์ฟเวอร์แบบ Real-time รายงานสเปก ปลอดภัย ไม่ติด Blocklist
+    echo ==========================================================================
+    echo.
+    echo เซิร์ฟเวอร์เป้าหมาย: %SERVER_URL%
+    echo ตำแหน่งติดตั้ง:      %INSTALL_DIR%
+    echo.
 )
 
-echo [1/4] กำลังบันทึกการตั้งค่าเซิร์ฟเวอร์ (%SERVER_URL%)...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$cfg = @{ ServerUrl = '%SERVER_URL%'; HeartbeatIntervalSec = 4; AutoStart = $true } | ConvertTo-Json; [IO.File]::WriteAllText('%INSTALL_DIR%\config.json', $cfg, [Text.Encoding]::UTF8)" 2>nul
+:: ตรวจสอบสคริปต์ install.ps1 ในโฟลเดอร์เดียวกัน
+if exist "%~dp0install.ps1" (
+    if "%IS_SILENT%"=="1" (
+        powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1" -ServerUrl "%SERVER_URL%" -InstallDir "%INSTALL_DIR%" -Silent
+    ) else (
+        powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1" -ServerUrl "%SERVER_URL%" -InstallDir "%INSTALL_DIR%"
+    )
+    goto :COMPLETED
+)
 
-echo [2/4] กำลังเตรียมไฟล์ Agent และสคริปต์บริหารจัดการ (%INSTALL_DIR%)...
-:: ปิดโพรเซส Agent เดิมที่อาจค้างอยู่เพื่อป้องกัน File Lock
+:: กรณีรันเดี่ยวๆ ไม่มี install.ps1 ให้ดำเนินการติดตั้งแบบ Native Batch
+if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%" 2>nul
+
+if "%IS_SILENT%"=="0" echo [1/3] กำลังบันทึกการตั้งค่าระบบ (Heartbeat 60s)...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$cfg = @{ ServerUrl = '%SERVER_URL%'; HeartbeatIntervalSec = 60; AutoStart = $true } | ConvertTo-Json; [IO.File]::WriteAllText('%INSTALL_DIR%\config.json', $cfg, [Text.Encoding]::UTF8)" 2>nul
+
+if "%IS_SILENT%"=="0" echo [2/3] กำลังเตรียมไฟล์โปรแกรม Agent...
 taskkill /f /im THC_IT_Agent.exe 2>nul
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*thc_audit_agent.ps1*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" 2>nul
 
 if exist "%~dp0THC_IT_Agent.exe" (
     copy /y "%~dp0THC_IT_Agent.exe" "%INSTALL_DIR%\THC_IT_Agent.exe" >nul
 ) else (
-    echo       กำลังดาวน์โหลดโปรแกรม Agent (.exe) ล่าสุดจากเซิร์ฟเวอร์...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor [Net.SecurityProtocolType]::Tls; [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; $urls = @('%SERVER_URL%/agent/THC_IT_Agent.exe', 'https://thchospital.moph.go.th/it-system/agent/THC_IT_Agent.exe', 'http://thchospital.moph.go.th/it-system/agent/THC_IT_Agent.exe', 'http://192.168.2.89:8000/agent/THC_IT_Agent.exe', 'http://192.168.2.89/it-system/agent/THC_IT_Agent.exe', 'http://192.168.2.10/it-system/agent/THC_IT_Agent.exe', 'http://127.0.0.1:8000/agent/THC_IT_Agent.exe', 'http://localhost:8000/agent/THC_IT_Agent.exe'); foreach ($u in $urls) { try { $wc = New-Object Net.WebClient; $wc.DownloadFile($u, '%INSTALL_DIR%\THC_IT_Agent.exe'); break } catch {} }" 2>nul
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor [Net.SecurityProtocolType]::Tls; (New-Object Net.WebClient).DownloadFile('%SERVER_URL%/agent/THC_IT_Agent.exe', '%INSTALL_DIR%\THC_IT_Agent.exe')" 2>nul
 )
 
-if not exist "%INSTALL_DIR%\THC_IT_Agent.exe" (
-    echo [ผิดพลาด] ไม่สามารถค้นหาหรือดาวน์โหลดไฟล์ THC_IT_Agent.exe ได้
-    echo กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต/เครือข่ายโรงพยาบาล หรือติดต่อฝ่ายไอที
+if exist "%~dp0uninstall_thc_agent.bat" copy /y "%~dp0uninstall_thc_agent.bat" "%INSTALL_DIR%\uninstall.bat" >nul
+if exist "%~dp0update_thc_agent.bat" copy /y "%~dp0update_thc_agent.bat" "%INSTALL_DIR%\update.bat" >nul
+
+if "%IS_SILENT%"=="0" echo [3/3] ตั้งค่าเริ่มทำงานอัตโนมัติพร้อม Windows...
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "THC_IT_Agent" /t REG_SZ /d "\"%INSTALL_DIR%\THC_IT_Agent.exe\"" /f >nul 2>nul
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\THC IT Agent.lnk'); $s.TargetPath = '%INSTALL_DIR%\THC_IT_Agent.exe'; $s.Description = 'THC IT Agent - รพ.ทุ่งหัวช้าง'; $s.Save(); $s2 = $ws.CreateShortcut([Environment]::GetFolderPath('Startup') + '\THC IT Agent.lnk'); $s2.TargetPath = '%INSTALL_DIR%\THC_IT_Agent.exe'; $s2.Save();" 2>nul
+
+start "" "%INSTALL_DIR%\THC_IT_Agent.exe"
+
+:COMPLETED
+if "%IS_SILENT%"=="0" (
     echo.
     echo กดปุ่มใดๆ เพื่อปิดหน้าต่างนี้...
     pause >nul
-    exit /b 1
 )
-
-:: เตรียมสคริปต์ ถอนการติดตั้ง (uninstall.bat) และ อัปเดต (update.bat) ประจำเครื่อง
-if exist "%~dp0uninstall_thc_agent.bat" (
-    copy /y "%~dp0uninstall_thc_agent.bat" "%INSTALL_DIR%\uninstall.bat" >nul
-) else (
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor [Net.SecurityProtocolType]::Tls; [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; (New-Object Net.WebClient).DownloadFile('%SERVER_URL%/agent/uninstall_thc_agent.bat', '%INSTALL_DIR%\uninstall.bat')" 2>nul
-)
-
-if exist "%~dp0update_thc_agent.bat" (
-    copy /y "%~dp0update_thc_agent.bat" "%INSTALL_DIR%\update.bat" >nul
-) else (
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor [Net.SecurityProtocolType]::Tls; [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; (New-Object Net.WebClient).DownloadFile('%SERVER_URL%/agent/update_thc_agent.bat', '%INSTALL_DIR%\update.bat')" 2>nul
-)
-
-if exist "%~dp0thc_audit_agent.ps1" (
-    copy /y "%~dp0thc_audit_agent.ps1" "%INSTALL_DIR%\thc_audit_agent.ps1" >nul
-)
-
-echo [3/4] กำลังตั้งค่าให้เริ่มทำงานอัตโนมัติเมื่อเปิดเครื่อง (Windows Startup)...
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "THC_IT_Agent" /t REG_SZ /d "\"%INSTALL_DIR%\THC_IT_Agent.exe\"" /f >nul 2>nul
-
-:: สร้างทางลัดบน Desktop และ Startup
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\THC IT Agent.lnk'); $s.TargetPath = '%INSTALL_DIR%\THC_IT_Agent.exe'; $s.Description = 'THC IT Agent - รพ.ทุ่งหัวช้าง'; $s.Save(); $s2 = $ws.CreateShortcut([Environment]::GetFolderPath('Startup') + '\THC IT Agent.lnk'); $s2.TargetPath = '%INSTALL_DIR%\THC_IT_Agent.exe'; $s2.Save();" 2>nul
-
-echo [4/4] กำลังเปิดโปรแกรม THC IT Agent และส่งสเปกแรกเริ่ม...
-start "" "%INSTALL_DIR%\THC_IT_Agent.exe"
-
-echo.
-echo ==========================================================================
-echo   ติดตั้ง THC IT Agent v2.8.0 เรียบร้อยแล้ว!
-echo   - โปรแกรมจะทำงานที่ System Tray (มุมขวาล่างข้างนาฬิกา)
-echo   - ไอคอน 🟢 เขียว = ออนไลน์พร้อมรับคำสั่ง (สแตนด์บาย)
-echo   - ไอคอน 🟡 เหลือง = กำลังดึง/ส่งสเปกเครื่องตามคำสั่งไอที
-echo   - รองรับคำสั่งอัปเดตเวอร์ชันและถอนการติดตั้งอัตโนมัติจากส่วนกลาง
-echo   - สคริปต์ถอนการติดตั้งฉุกเฉินประจำเครื่อง: %INSTALL_DIR%\uninstall.bat
-echo   - เซิร์ฟเวอร์เป้าหมาย: %SERVER_URL%
-echo ==========================================================================
-echo.
-
-echo กดปุ่มใดๆ เพื่อปิดหน้าต่างนี้...
-pause >nul

@@ -2,7 +2,7 @@
 # thc_audit_agent.ps1
 # Thung Hua Chang Hospital - Client Hardware Audit Agent
 # Embedded PowerShell Agent to collect physical hardware specs & transmit to IT Server
-# Version: 2.8.0 (Robust Multi-Tier Polling Engine & Auto-Healing Client Daemon)
+# Version: 2.11.0 (Robust Multi-Tier Polling Engine & Auto-Healing Client Daemon)
 # ==============================================================================
 
 [CmdletBinding()]
@@ -75,7 +75,7 @@ function Invoke-SafeApiRequest {
         $req = [System.Net.HttpWebRequest]::Create($Uri)
         $req.Method = $Method.ToUpper()
         $req.Accept = "application/json"
-        $req.UserAgent = "THC-Audit-Agent/2.8.0 (Windows NT; PowerShell)"
+        $req.UserAgent = "THC-Hospital-Audit-Agent/2.11.0 (Windows NT; PowerShell; Thung Hua Chang Hospital)"
         $req.Timeout = $TimeoutSec * 1000
         $req.KeepAlive = $false
         $req.ServicePoint.Expect100Continue = $false
@@ -105,7 +105,7 @@ function Invoke-SafeApiRequest {
     try {
         $wc = New-Object System.Net.WebClient
         $wc.Headers.Add("Accept", "application/json")
-        $wc.Headers.Add("User-Agent", "THC-Audit-Agent/2.8.0")
+        $wc.Headers.Add("User-Agent", "THC-Hospital-Audit-Agent/2.11.0 (Windows NT; PowerShell)")
         $wc.Encoding = [System.Text.Encoding]::UTF8
         if ($Method.ToUpper() -eq 'POST' -and -not [string]::IsNullOrEmpty($Body)) {
             $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
@@ -137,7 +137,7 @@ function Invoke-SafeApiRequest {
 
     # Method 4: Invoke-RestMethod fallback
     try {
-        $headers = @{ "Accept" = "application/json"; "User-Agent" = "THC-Audit-Agent/2.8.0" }
+        $headers = @{ "Accept" = "application/json"; "User-Agent" = "THC-Hospital-Audit-Agent/2.11.0 (Windows NT; PowerShell)" }
         if ($Method.ToUpper() -eq 'POST' -and -not [string]::IsNullOrEmpty($Body)) {
             $headers["Content-Type"] = "application/json; charset=utf-8"
             $respObj = Invoke-RestMethod -Uri $Uri -Method Post -Body $Body -Headers $headers -ContentType 'application/json; charset=utf-8' -TimeoutSec $TimeoutSec
@@ -195,7 +195,7 @@ function Invoke-HardwareAudit {
         Write-Host ''
         Write-Host '==========================================================================' -ForegroundColor Cyan
         Write-Host '   โรงพยาบาลทุ่งหัวช้าง - ระบบตรวจนับและติดตามสเปคคอมพิวเตอร์ประจำปี' -ForegroundColor Yellow
-        Write-Host '   THUNG HUA CHANG HOSPITAL - CLIENT HARDWARE AUDIT AGENT v2.8.0' -ForegroundColor Gray
+        Write-Host '   THUNG HUA CHANG HOSPITAL - CLIENT HARDWARE AUDIT AGENT v2.11.0' -ForegroundColor Gray
         Write-Host '==========================================================================' -ForegroundColor Cyan
         Write-Host 'กำลังตรวจสอบข้อมูลฮาร์ดแวร์จริงของเครื่อง กรุณารอสักครู่...' -ForegroundColor White
     }
@@ -584,7 +584,8 @@ if ($Background) {
                 }
             }
         } catch {}
-        Start-Sleep -Seconds 30
+        $sleepInterval = Get-Random -Minimum 45 -Maximum 75
+        Start-Sleep -Seconds $sleepInterval
     }
 
 } elseif ($PollOnce) {

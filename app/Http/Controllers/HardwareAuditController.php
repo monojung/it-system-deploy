@@ -122,7 +122,7 @@ class HardwareAuditController extends Controller
                 'service' => 'THC Client Hardware Audit Telemetry API',
                 'hospital' => 'โรงพยาบาลทุ่งหัวช้าง (Thung Hua Chang Hospital)',
                 'endpoint' => url('/api/hardware-audit/submit'),
-                'version' => '2.8.0',
+                'version' => '2.11.0',
                 'current_fiscal_year' => $fiscalYear,
                 'supported_methods' => ['POST', 'GET'],
                 'payload_format' => 'application/json',
@@ -538,11 +538,52 @@ class HardwareAuditController extends Controller
         $hardwareId = strtoupper(trim((string)$request->input('hardware_id', $request->input('hwid', ''))));
         $hostname = trim((string)$request->input('hostname', ''));
         $mac = strtoupper(trim((string)$request->input('mac_address', '')));
-        $clientVersion = trim((string)$request->input('client_version', $request->input('agent_version', '2.8.0')));
+        $clientVersion = trim((string)$request->input('client_version', $request->input('agent_version', '2.11.0')));
         $ip = $request->ip() ?: $request->input('ip_address');
 
         if (preg_match('/^[0F-]{36}$/i', $hardwareId) || preg_match('/Default string|To be filled by O\.E\.M\.|None/i', $hardwareId)) {
             $hardwareId = '';
+        }
+
+        // Handle Farewell / Uninstalled Beacon from Client Agent
+        if ($request->input('action') === 'uninstalled') {
+            if (!empty($hardwareId)) {
+                Cache::forget('agent_online:hwid:' . strtoupper(trim($hardwareId)));
+            }
+            if (!empty($hostname)) {
+                Cache::forget('agent_online:host:' . strtoupper(trim($hostname)));
+                $shortHost = explode('.', $hostname)[0];
+                if ($shortHost !== $hostname) {
+                    Cache::forget('agent_online:host:' . strtoupper(trim($shortHost)));
+                }
+            }
+            if (!empty($ip)) {
+                Cache::forget('agent_online:ip:' . trim($ip));
+            }
+            try {
+                $registry = Cache::get('agent_online_registry', []);
+                if (is_array($registry)) {
+                    $agentKey = strtoupper(trim($hardwareId ?: $hostname ?: $ip));
+                    unset($registry[$agentKey]);
+                    Cache::put('agent_online_registry', $registry, now()->addMinutes(5));
+                }
+            } catch (\Throwable $e) {}
+
+            // Complete any pending uninstall command
+            AgentCommand::where(function ($q) use ($hardwareId, $hostname) {
+                if (!empty($hardwareId)) $q->where('target_hardware_id', $hardwareId);
+                if (!empty($hostname)) $q->orWhere('target_hostname', $hostname);
+            })->where('command', 'uninstall')->update([
+                'status' => 'completed',
+                'result_summary' => 'ถอนการติดตั้งเสร็จสมบูรณ์จากเครื่องลูกข่ายแล้ว (' . ($request->input('reason', 'local')) . ')'
+            ]);
+
+            AuditLog::record('uninstall', 'hardware_audits', "เครื่อง [{$hostname}] ถอนการติดตั้ง Agent แล้ว (" . ($request->input('reason', 'local')) . ")", null);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'บันทึกการถอนการติดตั้งสำเร็จ'
+            ], 200, ['Content-Type' => 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
         }
 
         // Live Heartbeat Registration (Active Standby Tracking)
@@ -866,6 +907,9 @@ class HardwareAuditController extends Controller
         $agentOnlineCount = count(array_filter($agentFleet, fn($a) => !empty($a['is_online'])));
         $agentOfflineCount = max(0, $agentTotalCount - $agentOnlineCount);
         $agentInstalledCount = $agentTotalCount;
+        $agentLatestCount = count(array_filter($agentFleet, fn($a) => !empty($a['is_latest_version'])));
+        $agentOutdatedCount = count(array_filter($agentFleet, fn($a) => !empty($a['is_outdated'])));
+        $latestAgentVersion = '2.11.0';
 
         return view('hardware_audits.index', compact(
             'fiscalYear',
@@ -894,7 +938,10 @@ class HardwareAuditController extends Controller
             'agentFleet',
             'agentTotalCount',
             'agentOnlineCount',
-            'agentOfflineCount'
+            'agentOfflineCount',
+            'agentLatestCount',
+            'agentOutdatedCount',
+            'latestAgentVersion'
         ));
     }
 
@@ -2008,6 +2055,10 @@ class HardwareAuditController extends Controller
                 $isOnline = true;
             }
 
+            $clientVer = $audit->client_agent_version ?: ($regInfo['version'] ?? '2.5.6');
+            $isLatest = (strpos($clientVer, '2.11.0') === 0);
+            $isOutdated = !$isLatest;
+
             $fleet[$key] = [
                 'key' => $key,
                 'audit_id' => $audit->id,
@@ -2016,7 +2067,9 @@ class HardwareAuditController extends Controller
                 'hardware_id' => $audit->hardware_id ?: ($regInfo['hwid'] ?? ''),
                 'ip_address' => $audit->ip_address ?: ($regInfo['ip'] ?? ''),
                 'mac_address' => $audit->mac_address ?: ($regInfo['mac'] ?? ''),
-                'client_version' => $audit->client_agent_version ?: ($regInfo['version'] ?? '2.5.6'),
+                'client_version' => $clientVer,
+                'is_latest_version' => $isLatest,
+                'is_outdated' => $isOutdated,
                 'is_online' => $isOnline,
                 'last_seen' => $isOnline ? 'กำลังออนไลน์ (เมื่อสักครู่)' : ($audit->created_at ? $audit->created_at->diffForHumans() : '-'),
                 'last_seen_raw' => $audit->created_at ? $audit->created_at->toIso8601String() : null,
@@ -2036,6 +2089,10 @@ class HardwareAuditController extends Controller
         // 2. Add online agents currently active in Cache that might not have an audit record yet
         foreach ($registry as $rKey => $reg) {
             $uKey = strtoupper(trim($rKey));
+            $clientVer = $reg['version'] ?? '2.5.6';
+            $isLatest = (strpos($clientVer, '2.11.0') === 0);
+            $isOutdated = !$isLatest;
+
             if (!isset($fleet[$uKey])) {
                 $fleet[$uKey] = [
                     'key' => $uKey,
@@ -2045,7 +2102,9 @@ class HardwareAuditController extends Controller
                     'hardware_id' => $reg['hwid'] ?? '',
                     'ip_address' => $reg['ip'] ?? '',
                     'mac_address' => $reg['mac'] ?? '',
-                    'client_version' => $reg['version'] ?? '2.5.6',
+                    'client_version' => $clientVer,
+                    'is_latest_version' => $isLatest,
+                    'is_outdated' => $isOutdated,
                     'is_online' => true,
                     'last_seen' => 'กำลังออนไลน์ (เมื่อสักครู่)',
                     'last_seen_raw' => $reg['last_seen'] ?? now()->toIso8601String(),
@@ -2488,8 +2547,10 @@ class HardwareAuditController extends Controller
                         'status' => 'pending',
                         'requested_by' => $user->id,
                         'parameters' => [
-                            'target_version' => '2.8.0',
+                            'target_version' => '2.11.0',
                             'download_url' => url('/agent/THC_IT_Agent.exe'),
+                            'manifest_url' => url('/agent/manifest.json'),
+                            'sha256' => '1857427CA8E8F3FDB5B1805229B091E10357BA452CA217D1B22F611F7A8C179C',
                         ],
                     ]);
                     $count++;
@@ -2497,7 +2558,7 @@ class HardwareAuditController extends Controller
             }
             return response()->json([
                 'success' => true,
-                'message' => "ส่งคำสั่งอัปเดต Agent v2.8.0 ไปยัง {$count} เครื่องเรียบร้อยแล้ว (รอเครื่องลูกข่ายดึงคำสั่ง)",
+                'message' => "ส่งคำสั่งอัปเดต Agent v2.11.0 ไปยัง {$count} เครื่องเรียบร้อยแล้ว (รอเครื่องลูกข่ายดึงคำสั่ง)",
                 'count' => $count,
                 'queued_count' => $count,
                 'batch_id' => $batchId,
@@ -2516,14 +2577,16 @@ class HardwareAuditController extends Controller
             'status' => 'pending',
             'requested_by' => $user->id,
             'parameters' => [
-                'target_version' => '2.8.0',
+                'target_version' => '2.11.0',
                 'download_url' => url('/agent/THC_IT_Agent.exe'),
+                'manifest_url' => url('/agent/manifest.json'),
+                'sha256' => '1857427CA8E8F3FDB5B1805229B091E10357BA452CA217D1B22F611F7A8C179C',
             ],
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => "ส่งคำสั่งอัปเดต Agent v2.8.0 ไปยังเครื่อง {$hostname} เรียบร้อยแล้ว",
+            'message' => "ส่งคำสั่งอัปเดต Agent v2.11.0 ไปยังเครื่อง {$hostname} เรียบร้อยแล้ว",
             'command_id' => $cmd->id,
         ]);
     }

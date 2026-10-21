@@ -8,6 +8,7 @@ using System.Management;
 using System.Net;
 using System.Net.Security;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -19,26 +20,26 @@ namespace ThcItAgent
 {
     static class Program
     {
+        public const string CurrentVersion = "2.11.0";
         private const string AppGuid = "THC-IT-Agent-f91aa586-7788-9900-thung-hua-chang";
         private static Mutex _mutex;
 
         [STAThread]
         static void Main(string[] args)
         {
-            // Allow only one instance per user session
-            bool createdNew;
-            _mutex = new Mutex(true, AppGuid, out createdNew);
-            if (!createdNew)
-            {
-                MessageBox.Show(
-                    "โปรแกรม THC IT Agent กำลังทำงานอยู่ใน System Tray (มุมขวาล่างข้างนาฬิกา) แล้ว",
-                    "THC IT Agent",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-                return;
-            }
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
 
-            // Enable TLS 1.2, TLS 1.1, TLS 1.0 and ignore self-signed certificates in hospital LAN
+            // Clean up any pending .old file from previous atomic update
+            try
+            {
+                string exePath = Assembly.GetExecutingAssembly().Location;
+                string oldFile = exePath + ".old";
+                if (File.Exists(oldFile)) File.Delete(oldFile);
+            }
+            catch { }
+
+            // Configure TLS security protocols
             try
             {
                 ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | (SecurityProtocolType)768 | SecurityProtocolType.Tls;
@@ -47,10 +48,112 @@ namespace ThcItAgent
             }
             catch { }
 
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
+            // Parse command line arguments
+            bool isInstall = false;
+            bool isUninstall = false;
+            bool isSilent = false;
+            string updatedFrom = null;
+            string customServer = null;
 
-            Application.Run(new TrayContext());
+            if (args != null)
+            {
+                for (int i = 0; i < args.Length; i++)
+                {
+                    string a = args[i].ToLowerInvariant().Trim('-', '/');
+                    if (a == "install" || a == "setup") isInstall = true;
+                    else if (a == "uninstall" || a == "remove") isUninstall = true;
+                    else if (a == "silent" || a == "quiet" || a == "s" || a == "q") isSilent = true;
+                    else if ((a == "updated-from" || a == "update-post") && i + 1 < args.Length) updatedFrom = args[++i];
+                    else if ((a == "server" || a == "url") && i + 1 < args.Length) customServer = args[++i];
+                }
+            }
+
+            // Command-line Uninstallation
+            if (isUninstall)
+            {
+                // Farewell beacon before wiping
+                try
+                {
+                    var cfg = AppConfig.Load();
+                    if (cfg != null && !string.IsNullOrEmpty(cfg.ServerUrl))
+                    {
+                        string url = cfg.ServerUrl.TrimEnd('/') + "/api/hardware-audit/agent-ping";
+                        var req = (HttpWebRequest)WebRequest.Create(url);
+                        req.Method = "POST";
+                        req.Timeout = 2500;
+                        req.ContentType = "application/json; charset=utf-8";
+                        req.UserAgent = "THC-Hospital-IT-Agent/" + CurrentVersion + " (CLI Uninstaller)";
+                        var js = new JavaScriptSerializer();
+                        string payload = js.Serialize(new
+                        {
+                            action = "uninstalled",
+                            hostname = Environment.MachineName,
+                            reason = "cli_uninstall",
+                            timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                        });
+                        byte[] bytes = Encoding.UTF8.GetBytes(payload);
+                        req.ContentLength = bytes.Length;
+                        using (var os = req.GetRequestStream())
+                        {
+                            os.Write(bytes, 0, bytes.Length);
+                        }
+                        using (var resp = (HttpWebResponse)req.GetResponse()) { }
+                    }
+                }
+                catch { }
+
+                InstallerHelper.Uninstall(isSilent);
+                return;
+            }
+
+            // Command-line Installation
+            if (isInstall)
+            {
+                InstallerHelper.Install(customServer, isSilent);
+                return;
+            }
+
+            // Interactive First-Run / Setup Wizard check:
+            // If user double-clicked THC_IT_Agent.exe outside C:\ProgramData\THC-IT-Agent\ (e.g. from Downloads/Desktop)
+            string curExe = Assembly.GetExecutingAssembly().Location;
+            string stdExe = InstallerHelper.GetStandardExePath();
+            bool isStandardLocation = curExe.Equals(stdExe, StringComparison.OrdinalIgnoreCase);
+
+            if (!isStandardLocation && !isSilent)
+            {
+                using (var wizard = new SetupWizardForm(curExe, stdExe))
+                {
+                    var dlg = wizard.ShowDialog();
+                    if (dlg == DialogResult.OK)
+                    {
+                        // Installed successfully and started installed process
+                        return;
+                    }
+                    if (!wizard.ProceedWithPortable)
+                    {
+                        // User canceled setup
+                        return;
+                    }
+                }
+            }
+
+            // Allow only one instance per user session
+            bool createdNew;
+            _mutex = new Mutex(true, AppGuid, out createdNew);
+            if (!createdNew)
+            {
+                if (!isSilent)
+                {
+                    MessageBox.Show(
+                        "โปรแกรม THC IT Agent กำลังทำงานอยู่ใน System Tray (มุมขวาล่างข้างนาฬิกา) แล้ว",
+                        "THC IT Agent",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                return;
+            }
+
+            Application.Run(new TrayContext(updatedFrom));
 
             // Release mutex on normal exit
             try { _mutex.ReleaseMutex(); } catch { }
@@ -66,7 +169,7 @@ namespace ThcItAgent
         public AppConfig()
         {
             ServerUrl = "https://thchospital.moph.go.th/it-system";
-            HeartbeatIntervalSec = 4;
+            HeartbeatIntervalSec = 60;
             AutoStart = true;
         }
 
@@ -116,6 +219,12 @@ namespace ThcItAgent
                     if (cfg != null && !string.IsNullOrEmpty(cfg.ServerUrl))
                     {
                         cfg.ServerUrl = cfg.ServerUrl.TrimEnd('/');
+                        // Auto-migrate legacy 4s interval to safe 60s to prevent C2 / Botnet beaconing false positives
+                        if (cfg.HeartbeatIntervalSec < 30)
+                        {
+                            cfg.HeartbeatIntervalSec = 60;
+                            try { cfg.Save(); } catch { }
+                        }
                         return cfg;
                     }
                 }
@@ -665,8 +774,8 @@ namespace ThcItAgent
                 { "mac_address", MacAddress },
                 { "monitor_size", MonitorSize },
                 { "monitor_info", MonitorSize },
-                { "client_agent_version", "2.10.0-Standalone" },
-                { "agent_version", "2.10.0-Standalone" }
+                { "client_agent_version", "2.11.0-Standalone" },
+                { "agent_version", "2.11.0-Standalone" }
             };
 
             if (commandId.HasValue && commandId.Value > 0)
@@ -698,8 +807,9 @@ namespace ThcItAgent
         private HardwareSpecs _cachedSpecs;
         private int _lastExecutedCommandId = 0;
         private DateTime _lastExecutedTime = DateTime.MinValue;
+        private static readonly Random _random = new Random();
 
-        public TrayContext()
+        public TrayContext(string updatedFrom = null)
         {
             _config = AppConfig.Load();
 
@@ -713,7 +823,7 @@ namespace ThcItAgent
             _contextMenu.Font = new Font("Segoe UI", 9F);
 
             // Title Item
-            var titleItem = new ToolStripMenuItem("🖥️ THC IT Agent v2.10.0 (รพ.ทุ่งหัวช้าง)")
+            var titleItem = new ToolStripMenuItem("🖥️ THC IT Agent v2.11.0 (รพ.ทุ่งหัวช้าง)")
             {
                 Enabled = false,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold)
@@ -820,6 +930,16 @@ namespace ThcItAgent
             // On-Demand Pull Mode: Do NOT scan or transmit specs on computer startup.
             // Client stays quietly in tray on Standby until an Admin dispatches a scan command.
             SetStatus(true, false, "ออนไลน์ (สแตนด์บายพร้อมรับคำสั่ง)");
+
+            // Notify if newly updated
+            if (!string.IsNullOrEmpty(updatedFrom))
+            {
+                try
+                {
+                    _notifyIcon.ShowBalloonTip(4000, "อัปเดต THC IT Agent สำเร็จ", "อัปเดตเป็นเวอร์ชัน " + Program.CurrentVersion + " เรียบร้อยแล้ว (อัปเกรดจาก " + updatedFrom + ")", ToolTipIcon.Info);
+                }
+                catch { }
+            }
         }
 
         private void SetStatus(bool online, bool busy, string message)
@@ -875,8 +995,8 @@ namespace ThcItAgent
                         { "hardware_id", _cachedSpecs.HardwareId },
                         { "mac_address", _cachedSpecs.MacAddress },
                         { "ip_address", _cachedSpecs.IpAddress },
-                        { "agent_version", "2.10.0-Standalone" },
-                        { "client_version", "2.10.0-Standalone" },
+                        { "agent_version", "2.11.0-Standalone" },
+                        { "client_version", "2.11.0-Standalone" },
                         { "mode", "tray_agent" }
                     };
 
@@ -965,8 +1085,10 @@ namespace ThcItAgent
                     SetStatus(false, false, "ข้อผิดพลาด: " + ex.Message);
                 }
 
-                // Sleep interval
-                int interval = Math.Max(3, _config.HeartbeatIntervalSec);
+                // Sleep interval with random jitter to avoid repetitive C2 beaconing signatures
+                int baseInterval = Math.Max(20, _config.HeartbeatIntervalSec);
+                int jitter = _random.Next(-10, 11);
+                int interval = Math.Max(15, baseInterval + jitter);
                 for (int i = 0; i < interval && _isRunning; i++)
                 {
                     Thread.Sleep(1000);
@@ -1111,7 +1233,7 @@ namespace ThcItAgent
             req.ContentType = "application/json; charset=utf-8";
             req.Accept = "application/json";
             req.Timeout = timeoutMs;
-            req.UserAgent = "THC-IT-Agent/2.10.0";
+            req.UserAgent = "THC-Hospital-IT-Agent/2.11.0 (Windows NT; Asset Management; Thung Hua Chang Hospital)";
             req.KeepAlive = false;
 
             byte[] bytes = Encoding.UTF8.GetBytes(jsonBody);
@@ -1164,7 +1286,7 @@ namespace ThcItAgent
             };
             var lblSub = new Label
             {
-                Text = "THC Client Hardware Audit Agent v2.10.0 (Standalone System Tray)",
+                Text = "THC Client Hardware Audit Agent v2.11.0 (Standalone System Tray)",
                 ForeColor = Color.FromArgb(220, 240, 255),
                 Font = new Font("Segoe UI", 9F),
                 Location = new Point(17, 36),
@@ -1402,62 +1524,175 @@ namespace ThcItAgent
         {
             try
             {
+                string currentExe = Assembly.GetExecutingAssembly().Location;
+                string currentDir = Path.GetDirectoryName(currentExe);
+                string newExe = currentExe + ".new";
+                string oldExe = currentExe + ".old";
+
+                string primary = _config.ServerUrl.TrimEnd('/');
+                string manifestUrl = primary + "/agent/manifest.json";
+                string expectedSha256 = null;
+                string remoteVersion = null;
+
+                // 1. Fetch manifest for version check and hash validation
+                try
+                {
+                    var manReq = (HttpWebRequest)WebRequest.Create(manifestUrl);
+                    manReq.Timeout = 8000;
+                    manReq.UserAgent = "THC-Hospital-IT-Agent-Updater/" + Program.CurrentVersion;
+                    using (var manResp = (HttpWebResponse)manReq.GetResponse())
+                    using (var reader = new StreamReader(manResp.GetResponseStream(), Encoding.UTF8))
+                    {
+                        string json = reader.ReadToEnd();
+                        var js = new JavaScriptSerializer();
+                        var dict = js.Deserialize<Dictionary<string, object>>(json);
+                        if (dict != null)
+                        {
+                            if (dict.ContainsKey("version")) remoteVersion = dict["version"] as string;
+                            if (dict.ContainsKey("files"))
+                            {
+                                var files = dict["files"] as Dictionary<string, object>;
+                                if (files != null && files.ContainsKey("executable"))
+                                {
+                                    var exeInfo = files["executable"] as Dictionary<string, object>;
+                                    if (exeInfo != null && exeInfo.ContainsKey("sha256"))
+                                    {
+                                        expectedSha256 = exeInfo["sha256"] as string;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+
+                // 2. Interactive confirmation
                 if (!isRemote)
                 {
-                    DialogResult confirm = MessageBox.Show(
-                        "ต้องการตรวจสอบและอัปเดตโปรแกรม THC IT Agent เป็นเวอร์ชันล่าสุดหรือไม่?",
-                        "อัปเดต THC IT Agent",
-                        MessageBoxButtons.YesNo,
-                        MessageBoxIcon.Question);
+                    string prompt = "ต้องการตรวจสอบและอัปเดตโปรแกรม THC IT Agent เป็นเวอร์ชันล่าสุดจากเซิร์ฟเวอร์หรือไม่?\n\n" +
+                                   "• เวอร์ชันปัจจุบัน: v" + Program.CurrentVersion + "\n" +
+                                   "• เวอร์ชันบนเซิร์ฟเวอร์: " + (remoteVersion != null ? "v" + remoteVersion : "ตรวจสอบจากเซิร์ฟเวอร์");
+
+                    if (!string.IsNullOrEmpty(remoteVersion) && remoteVersion.Equals(Program.CurrentVersion, StringComparison.OrdinalIgnoreCase))
+                    {
+                        prompt = "โปรแกรม THC IT Agent เป็นเวอร์ชันล่าสุดแล้ว (v" + Program.CurrentVersion + ")\n\n" +
+                                 "ต้องการดาวน์โหลดและติดตั้งทับใหม่ทั้งหมด (Force Reinstall) หรือไม่?";
+                    }
+
+                    DialogResult confirm = MessageBox.Show(prompt, "อัปเดต THC IT Agent", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                     if (confirm != DialogResult.Yes) return;
                 }
 
-                string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string updateBat = Path.Combine(appDir, "update.bat");
-                string progDataUpdate = @"C:\ProgramData\THC-IT-Agent\update.bat";
+                SetStatus(true, true, "กำลังดาวน์โหลดไฟล์ Agent เวอร์ชันล่าสุด...");
 
-                string scriptToRun = null;
-                if (File.Exists(updateBat)) scriptToRun = updateBat;
-                else if (File.Exists(progDataUpdate)) scriptToRun = progDataUpdate;
-
-                if (scriptToRun != null)
+                var urlsToTry = new List<string>();
+                urlsToTry.Add(primary + "/agent/THC_IT_Agent.exe");
+                foreach (string cand in AppConfig.CandidateUrls)
                 {
-                    ProcessStartInfo psi = new ProcessStartInfo();
-                    psi.FileName = "cmd.exe";
-                    psi.Arguments = string.Format("/c \"{0}\" \"{1}\" {2}", scriptToRun, _config.ServerUrl, isRemote ? "/silent" : "");
-                    psi.WindowStyle = isRemote ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal;
-                    psi.CreateNoWindow = isRemote;
-                    Process.Start(psi);
-                }
-                else
-                {
-                    string tempBat = Path.Combine(Path.GetTempPath(), "thc_agent_quick_update.bat");
-                    string psScript = string.Format(
-                        "[Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor [Net.SecurityProtocolType]::Tls; " +
-                        "[Net.ServicePointManager]::ServerCertificateValidationCallback = {{$true}}; " +
-                        "(New-Object Net.WebClient).DownloadFile('{0}/agent/update_thc_agent.bat', '{1}'); " +
-                        "Start-Process -FilePath '{1}' -ArgumentList '\"{0}\" {2}'",
-                        _config.ServerUrl, tempBat, isRemote ? "/silent" : "");
-
-                    ProcessStartInfo psi = new ProcessStartInfo();
-                    psi.FileName = "powershell.exe";
-                    psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"" + psScript + "\"";
-                    psi.WindowStyle = ProcessWindowStyle.Hidden;
-                    psi.CreateNoWindow = true;
-                    Process.Start(psi);
+                    string u = cand.TrimEnd('/') + "/agent/THC_IT_Agent.exe";
+                    if (!urlsToTry.Contains(u)) urlsToTry.Add(u);
                 }
 
-                ThreadPool.QueueUserWorkItem(state =>
+                bool downloaded = false;
+                foreach (string url in urlsToTry)
                 {
-                    Thread.Sleep(1500);
-                    ExitApp();
-                });
+                    try
+                    {
+                        var req = (HttpWebRequest)WebRequest.Create(url);
+                        req.Timeout = 15000;
+                        req.UserAgent = "THC-Hospital-IT-Agent-Updater/" + Program.CurrentVersion;
+                        using (var resp = (HttpWebResponse)req.GetResponse())
+                        using (var stream = resp.GetResponseStream())
+                        using (var fs = new FileStream(newExe, FileMode.Create, FileAccess.Write, FileShare.None))
+                        {
+                            byte[] buffer = new byte[8192];
+                            int read;
+                            while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+                            {
+                                fs.Write(buffer, 0, read);
+                            }
+                        }
+
+                        if (File.Exists(newExe) && new FileInfo(newExe).Length > 20000)
+                        {
+                            downloaded = true;
+                            break;
+                        }
+                    }
+                    catch { }
+                }
+
+                if (!downloaded)
+                {
+                    if (File.Exists(newExe)) try { File.Delete(newExe); } catch { }
+                    SetStatus(true, false, "อัปเดตไม่สำเร็จ: ดาวน์โหลดไฟล์ล้มเหลว");
+                    if (!isRemote)
+                    {
+                        MessageBox.Show("ไม่สามารถดาวน์โหลดไฟล์ Agent เวอร์ชันล่าสุดจากเซิร์ฟเวอร์ได้\nกรุณาตรวจสอบการเชื่อมต่อเครือข่าย", "อัปเดตไม่สำเร็จ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    return;
+                }
+
+                // 3. Binary & Integrity Validation (Anti-corruption check)
+                if (!InstallerHelper.IsValidPEBinary(newExe))
+                {
+                    if (File.Exists(newExe)) try { File.Delete(newExe); } catch { }
+                    throw new Exception("ไฟล์ที่ดาวน์โหลดมาไม่ใช่ไฟล์ไบนารี Windows ที่ถูกต้อง (อาจเป็นหน้าแจ้งเตือนเครือข่าย)");
+                }
+
+                if (!string.IsNullOrEmpty(expectedSha256))
+                {
+                    string actualSha = InstallerHelper.ComputeSha256(newExe);
+                    if (!string.IsNullOrEmpty(actualSha) && !actualSha.Equals(expectedSha256.Trim(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (File.Exists(newExe)) try { File.Delete(newExe); } catch { }
+                        throw new Exception("ตรวจสอบความถูกต้องล้มเหลว: SHA-256 ไม่ตรงกับ Manifest");
+                    }
+                }
+
+                // 4. In-Process Atomic Binary Swap
+                if (File.Exists(oldExe)) try { File.Delete(oldExe); } catch { }
+                File.Move(currentExe, oldExe);
+                File.Move(newExe, currentExe);
+
+                // 5. Spawn new process with Automatic Rollback on failure
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = currentExe,
+                        WorkingDirectory = currentDir,
+                        UseShellExecute = true,
+                        Arguments = "/update-post " + Program.CurrentVersion
+                    });
+                }
+                catch (Exception startEx)
+                {
+                    // Rollback immediately if spawn failed
+                    try
+                    {
+                        if (File.Exists(currentExe)) File.Delete(currentExe);
+                        if (File.Exists(oldExe)) File.Move(oldExe, currentExe);
+                    }
+                    catch { }
+                    throw new Exception("ไม่สามารถเริ่มโปรเซสเวอร์ชันใหม่ได้ (Rollback กลับสู่เวอร์ชันเดิมแล้ว): " + startEx.Message);
+                }
+
+                // Clean exit
+                _isRunning = false;
+                if (_notifyIcon != null)
+                {
+                    _notifyIcon.Visible = false;
+                    _notifyIcon.Dispose();
+                }
+                Application.Exit();
             }
             catch (Exception ex)
             {
+                SetStatus(true, false, "อัปเดตไม่สำเร็จ: " + ex.Message);
                 if (!isRemote)
                 {
-                    MessageBox.Show("ไม่สามารถเริ่มการอัปเดตได้: " + ex.Message, "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("เกิดข้อผิดพลาดในการอัปเดต: " + ex.Message, "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -1468,54 +1703,27 @@ namespace ThcItAgent
             {
                 if (!isRemote)
                 {
-                    DialogResult confirm = MessageBox.Show(
-                        "คุณแน่ใจหรือไม่ว่าต้องการถอนการติดตั้ง THC IT Agent ออกจากเครื่องนี้?\n\nระบบจะลบโปรแกรม ทางลัด และการตั้งค่าทั้งหมด",
-                        "ยืนยันการถอนการติดตั้ง",
+                    var confirm = MessageBox.Show(
+                        "ต้องการถอนการติดตั้ง THC IT Agent ออกจากเครื่องนี้หรือไม่?\n\n" +
+                        "• ระบบจะลบไฟล์โปรแกรม การตั้งค่า และการเริ่มทำงานอัตโนมัติทั้งหมด\n" +
+                        "• นำเครื่องนี้ออกจากระบบมอนิเตอร์ของโรงพยาบาล",
+                        "ยืนยันการถอนการติดตั้ง - THC IT Agent",
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Warning);
                     if (confirm != DialogResult.Yes) return;
                 }
 
-                string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string uninstallBat = Path.Combine(appDir, "uninstall.bat");
-                string progDataUninstall = @"C:\ProgramData\THC-IT-Agent\uninstall.bat";
+                SetStatus(false, false, "กำลังส่งข้อมูลยืนยันการถอนการติดตั้งไปยังเซิร์ฟเวอร์...");
 
-                string scriptToRun = null;
-                if (File.Exists(uninstallBat)) scriptToRun = uninstallBat;
-                else if (File.Exists(progDataUninstall)) scriptToRun = progDataUninstall;
+                // 1. Send farewell uninstalled beacon to server
+                SendUninstallBeacon(isRemote ? "remote_command" : "tray_menu");
 
-                if (scriptToRun != null)
+                // 2. Perform deep system cleanup & self-destruction
+                bool success = InstallerHelper.Uninstall(isRemote);
+                if (success)
                 {
-                    ProcessStartInfo psi = new ProcessStartInfo();
-                    psi.FileName = "cmd.exe";
-                    psi.Arguments = string.Format("/c \"{0}\" {1}", scriptToRun, isRemote ? "/silent" : "");
-                    psi.WindowStyle = isRemote ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal;
-                    psi.CreateNoWindow = isRemote;
-                    Process.Start(psi);
-                }
-                else
-                {
-                    string tempBat = Path.Combine(Path.GetTempPath(), "thc_agent_quick_uninstall.bat");
-                    string psScript = string.Format(
-                        "[Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor [Net.SecurityProtocolType]::Tls; " +
-                        "[Net.ServicePointManager]::ServerCertificateValidationCallback = {{$true}}; " +
-                        "(New-Object Net.WebClient).DownloadFile('{0}/agent/uninstall_thc_agent.bat', '{1}'); " +
-                        "Start-Process -FilePath '{1}' -ArgumentList '{2}'",
-                        _config.ServerUrl, tempBat, isRemote ? "/silent" : "");
-
-                    ProcessStartInfo psi = new ProcessStartInfo();
-                    psi.FileName = "powershell.exe";
-                    psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"" + psScript + "\"";
-                    psi.WindowStyle = ProcessWindowStyle.Hidden;
-                    psi.CreateNoWindow = true;
-                    Process.Start(psi);
-                }
-
-                ThreadPool.QueueUserWorkItem(state =>
-                {
-                    Thread.Sleep(1200);
                     ExitApp();
-                });
+                }
             }
             catch (Exception ex)
             {
@@ -1524,6 +1732,38 @@ namespace ThcItAgent
                     MessageBox.Show("ไม่สามารถถอนการติดตั้งได้: " + ex.Message, "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+        }
+
+        private void SendUninstallBeacon(string reason)
+        {
+            try
+            {
+                if (_config == null || string.IsNullOrEmpty(_config.ServerUrl)) return;
+                string url = _config.ServerUrl.TrimEnd('/') + "/api/hardware-audit/agent-ping";
+                var req = (HttpWebRequest)WebRequest.Create(url);
+                req.Method = "POST";
+                req.Timeout = 3000;
+                req.ContentType = "application/json; charset=utf-8";
+                req.UserAgent = "THC-Hospital-IT-Agent/" + Program.CurrentVersion + " (Uninstaller)";
+                var js = new JavaScriptSerializer();
+                string payload = js.Serialize(new
+                {
+                    action = "uninstalled",
+                    hostname = _cachedSpecs != null ? _cachedSpecs.Hostname : Environment.MachineName,
+                    hardware_id = _cachedSpecs != null ? _cachedSpecs.HardwareId : "",
+                    ip_address = _cachedSpecs != null ? _cachedSpecs.IpAddress : "",
+                    reason = reason,
+                    timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                });
+                byte[] bytes = Encoding.UTF8.GetBytes(payload);
+                req.ContentLength = bytes.Length;
+                using (var os = req.GetRequestStream())
+                {
+                    os.Write(bytes, 0, bytes.Length);
+                }
+                using (var resp = (HttpWebResponse)req.GetResponse()) { }
+            }
+            catch { }
         }
 
         private void ExitApp()
@@ -1535,6 +1775,488 @@ namespace ThcItAgent
                 _notifyIcon.Dispose();
             }
             Application.Exit();
+        }
+    }
+
+    public static class InstallerHelper
+    {
+        public const string StandardInstallDir = @"C:\ProgramData\THC-IT-Agent";
+        public const string UninstallRegKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\THC_IT_Agent";
+
+        public static string GetStandardExePath()
+        {
+            return Path.Combine(StandardInstallDir, "THC_IT_Agent.exe");
+        }
+
+        public static string ComputeSha256(string filePath)
+        {
+            try
+            {
+                using (var sha = SHA256.Create())
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    byte[] hash = sha.ComputeHash(fs);
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < hash.Length; i++)
+                    {
+                        sb.Append(hash[i].ToString("X2"));
+                    }
+                    return sb.ToString();
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static bool IsValidPEBinary(string filePath)
+        {
+            try
+            {
+                if (!File.Exists(filePath)) return false;
+                var fi = new FileInfo(filePath);
+                if (fi.Length < 1024) return false;
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    byte[] buf = new byte[2];
+                    fs.Read(buf, 0, 2);
+                    return buf[0] == 0x4D && buf[1] == 0x5A; // MZ header
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static void RegisterWindowsUninstall(string installDir, string exePath, string version)
+        {
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(UninstallRegKey))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("DisplayName", "THC IT Agent - ระบบตรวจสอบครุภัณฑ์ รพ.ทุ่งหัวช้าง");
+                        key.SetValue("DisplayVersion", version);
+                        key.SetValue("Publisher", "โรงพยาบาลทุ่งหัวช้าง (Thung Hua Chang Hospital)");
+                        key.SetValue("InstallLocation", installDir);
+                        key.SetValue("DisplayIcon", exePath + ",0");
+                        key.SetValue("UninstallString", "\"" + exePath + "\" /uninstall");
+                        key.SetValue("QuietUninstallString", "\"" + exePath + "\" /uninstall /silent");
+                        key.SetValue("HelpLink", "http://192.168.1.181:8000/hardware-audits");
+                        key.SetValue("NoModify", 1, RegistryValueKind.DWord);
+                        key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
+                        try
+                        {
+                            if (File.Exists(exePath))
+                            {
+                                key.SetValue("EstimatedSize", (int)(new FileInfo(exePath).Length / 1024), RegistryValueKind.DWord);
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        public static void UnregisterWindowsUninstall()
+        {
+            try
+            {
+                Registry.CurrentUser.DeleteSubKeyTree(UninstallRegKey, false);
+            }
+            catch { }
+            try
+            {
+                Registry.LocalMachine.DeleteSubKeyTree(UninstallRegKey, false);
+            }
+            catch { }
+        }
+
+        public static void CreateShortcut(string shortcutPath, string targetPath, string description)
+        {
+            try
+            {
+                Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+                if (shellType == null) return;
+                object shell = Activator.CreateInstance(shellType);
+                object shortcut = shellType.InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { shortcutPath });
+                if (shortcut == null) return;
+                Type shortcutType = shortcut.GetType();
+                shortcutType.InvokeMember("TargetPath", BindingFlags.SetProperty, null, shortcut, new object[] { targetPath });
+                shortcutType.InvokeMember("WorkingDirectory", BindingFlags.SetProperty, null, shortcut, new object[] { Path.GetDirectoryName(targetPath) });
+                shortcutType.InvokeMember("Description", BindingFlags.SetProperty, null, shortcut, new object[] { description });
+                shortcutType.InvokeMember("Save", BindingFlags.InvokeMethod, null, shortcut, null);
+            }
+            catch { }
+        }
+
+        public static bool Install(string serverUrl, bool silent)
+        {
+            try
+            {
+                string currentExe = Assembly.GetExecutingAssembly().Location;
+                string targetExe = GetStandardExePath();
+
+                if (!Directory.Exists(StandardInstallDir))
+                {
+                    Directory.CreateDirectory(StandardInstallDir);
+                }
+
+                if (!currentExe.Equals(targetExe, StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        int curPid = Process.GetCurrentProcess().Id;
+                        foreach (var p in Process.GetProcessesByName("THC_IT_Agent"))
+                        {
+                            if (p.Id != curPid)
+                            {
+                                try { p.Kill(); p.WaitForExit(2000); } catch { }
+                            }
+                        }
+                    }
+                    catch { }
+
+                    File.Copy(currentExe, targetExe, true);
+                }
+
+                var cfg = AppConfig.Load();
+                if (!string.IsNullOrEmpty(serverUrl))
+                {
+                    cfg.ServerUrl = serverUrl.TrimEnd('/');
+                }
+                cfg.HeartbeatIntervalSec = 60;
+                cfg.AutoStart = true;
+                cfg.Save();
+
+                AppConfig.SetAutoStart(true);
+                RegisterWindowsUninstall(StandardInstallDir, targetExe, Program.CurrentVersion);
+
+                string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                string startup = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+                CreateShortcut(Path.Combine(desktop, "THC IT Agent.lnk"), targetExe, "THC IT Agent - รพ.ทุ่งหัวช้าง");
+                CreateShortcut(Path.Combine(startup, "THC IT Agent.lnk"), targetExe, "THC IT Agent - รพ.ทุ่งหัวช้าง");
+
+                if (!currentExe.Equals(targetExe, StringComparison.OrdinalIgnoreCase))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = targetExe,
+                        WorkingDirectory = StandardInstallDir,
+                        UseShellExecute = true
+                    });
+                }
+
+                if (!silent)
+                {
+                    MessageBox.Show(
+                        "ติดตั้งโปรแกรม THC IT Agent สำเร็จเรียบร้อยแล้ว!\n\n" +
+                        "• ตำแหน่งติดตั้ง: " + StandardInstallDir + "\n" +
+                        "• เซิร์ฟเวอร์: " + cfg.ServerUrl + "\n" +
+                        "• ลงทะเบียนใน Windows Programs & Features สำเร็จ\n" +
+                        "• โปรแกรมจะเริ่มทำงานอัตโนมัติที่ถาดระบบ (System Tray) ข้างนาฬิกา",
+                        "ติดตั้งสำเร็จ - THC IT Agent",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (!silent)
+                {
+                    MessageBox.Show("การติดตั้งไม่สำเร็จ: " + ex.Message, "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                return false;
+            }
+        }
+
+        public static bool Uninstall(bool silent)
+        {
+            try
+            {
+                // 1. Terminate other running THC_IT_Agent instances
+                try
+                {
+                    int curPid = Process.GetCurrentProcess().Id;
+                    foreach (var p in Process.GetProcessesByName("THC_IT_Agent"))
+                    {
+                        if (p.Id != curPid)
+                        {
+                            try { p.Kill(); p.WaitForExit(2000); } catch { }
+                        }
+                    }
+                }
+                catch { }
+
+                // 2. Disable AutoStart & Remove Windows Uninstall entry
+                AppConfig.SetAutoStart(false);
+                UnregisterWindowsUninstall();
+
+                // 3. Delete Desktop & Startup Shortcuts
+                string desktop = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "THC IT Agent.lnk");
+                string startup = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "THC IT Agent.lnk");
+                string pubDesktop = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory), "THC IT Agent.lnk");
+                string pubStartup = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup), "THC IT Agent.lnk");
+                if (File.Exists(desktop)) try { File.Delete(desktop); } catch { }
+                if (File.Exists(startup)) try { File.Delete(startup); } catch { }
+                if (File.Exists(pubDesktop)) try { File.Delete(pubDesktop); } catch { }
+                if (File.Exists(pubStartup)) try { File.Delete(pubStartup); } catch { }
+
+                // 4. Delete scheduled tasks
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "schtasks.exe",
+                        Arguments = "/delete /tn \"THC_Hardware_Audit\" /f",
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        CreateNoWindow = true
+                    });
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "schtasks.exe",
+                        Arguments = "/delete /tn \"THC_Hardware_Audit_Poll\" /f",
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        CreateNoWindow = true
+                    });
+                }
+                catch { }
+
+                // 5. Clean Post-Exit Purge (Self-destruction of install folder)
+                string curExe = Assembly.GetExecutingAssembly().Location;
+                string installDir = StandardInstallDir;
+                bool isInstalledLocation = curExe.StartsWith(installDir, StringComparison.OrdinalIgnoreCase);
+
+                if (isInstalledLocation)
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = "/C ping 127.0.0.1 -n 3 > nul & rmdir /S /Q \"" + installDir + "\"",
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        CreateNoWindow = true
+                    });
+                }
+
+                if (!silent)
+                {
+                    MessageBox.Show(
+                        "ถอนการติดตั้ง THC IT Agent เรียบร้อยสมบูรณ์แล้ว!\n\n" +
+                        "• ลบโปรแกรมและการตั้งค่าทั้งหมดออกจากเครื่องแล้ว\n" +
+                        "• ถอนการลงทะเบียนเริ่มทำงานอัตโนมัติและ Windows Apps เรียบร้อย",
+                        "ถอนการติดตั้งสำเร็จ",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (!silent)
+                {
+                    MessageBox.Show("เกิดข้อผิดพลาดในการถอนการติดตั้ง: " + ex.Message, "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                return false;
+            }
+        }
+    }
+
+    public class SetupWizardForm : Form
+    {
+        public bool ProceedWithPortable { get; private set; }
+        private TextBox _txtServer;
+        private CheckBox _chkAutoStart;
+        private CheckBox _chkDesktopShortcut;
+
+        public SetupWizardForm(string currentExe, string standardExe)
+        {
+            this.Text = "🚀 ติดตั้ง THC IT Agent - โรงพยาบาลทุ่งหัวช้าง";
+            this.Size = new Size(560, 480);
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.BackColor = Color.White;
+            this.Font = new Font("Segoe UI", 9F);
+
+            // Top Header Panel
+            var pnlHead = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 75,
+                BackColor = Color.FromArgb(15, 118, 110)
+            };
+            var lblTitle = new Label
+            {
+                Text = "โรงพยาบาลทุ่งหัวช้าง - ระบบติดตามและรายงานสเปก",
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                Location = new Point(18, 14),
+                AutoSize = true
+            };
+            var lblSub = new Label
+            {
+                Text = "ตัวติดตั้ง THC IT Agent v2.11.0 (Enterprise Standalone Setup)",
+                ForeColor = Color.FromArgb(204, 251, 241),
+                Font = new Font("Segoe UI", 9F),
+                Location = new Point(19, 40),
+                AutoSize = true
+            };
+            pnlHead.Controls.Add(lblTitle);
+            pnlHead.Controls.Add(lblSub);
+            this.Controls.Add(pnlHead);
+
+            // Body content
+            int top = 90;
+            var lblIntro = new Label
+            {
+                Text = "ยินดีต้อนรับสู่ตัวติดตั้ง THC IT Agent!\n" +
+                       "โปรแกรมนี้จะสแตนด์บายในถาดระบบ (System Tray) เพื่อรายงานข้อมูลฮาร์ดแวร์เมื่อฝ่ายไอทีสั่งดึงข้อมูล\n" +
+                       "ปลอดภัย 100%, ตรวจสอบสเปกแม่นยำ และกินทรัพยากรเครื่องน้อยมาก",
+                Location = new Point(20, top),
+                Size = new Size(505, 52),
+                ForeColor = Color.FromArgb(51, 65, 85)
+            };
+            this.Controls.Add(lblIntro);
+            top += 62;
+
+            // Server URL Group
+            var lblServer = new Label
+            {
+                Text = "ที่อยู่เซิร์ฟเวอร์ระบบไอที (Server URL):",
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Location = new Point(20, top),
+                AutoSize = true
+            };
+            this.Controls.Add(lblServer);
+            top += 24;
+
+            _txtServer = new TextBox
+            {
+                Text = "https://thchospital.moph.go.th/it-system",
+                Location = new Point(20, top),
+                Size = new Size(505, 26),
+                Font = new Font("Segoe UI", 10F)
+            };
+            this.Controls.Add(_txtServer);
+            top += 34;
+
+            // Presets
+            var btnMophHttps = new Button { Text = "🌐 MOPH Cloud (HTTPS)", Location = new Point(20, top), Size = new Size(160, 26), Font = new Font("Segoe UI", 8F) };
+            btnMophHttps.Click += (s, e) => _txtServer.Text = "https://thchospital.moph.go.th/it-system";
+            this.Controls.Add(btnMophHttps);
+
+            var btnMophHttp = new Button { Text = "🌐 MOPH Cloud (HTTP)", Location = new Point(186, top), Size = new Size(150, 26), Font = new Font("Segoe UI", 8F) };
+            btnMophHttp.Click += (s, e) => _txtServer.Text = "http://thchospital.moph.go.th/it-system";
+            this.Controls.Add(btnMophHttp);
+
+            var btnLan = new Button { Text = "🏢 รพ. LAN (:8000)", Location = new Point(342, top), Size = new Size(130, 26), Font = new Font("Segoe UI", 8F) };
+            btnLan.Click += (s, e) => _txtServer.Text = "http://192.168.2.89:8000";
+            this.Controls.Add(btnLan);
+            top += 36;
+
+            // Checkboxes
+            _chkAutoStart = new CheckBox
+            {
+                Text = "เริ่มทำงานอัตโนมัติเมื่อเปิดเครื่อง (Start with Windows - แนะนำ)",
+                Checked = true,
+                Location = new Point(22, top),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(15, 118, 110)
+            };
+            this.Controls.Add(_chkAutoStart);
+            top += 26;
+
+            _chkDesktopShortcut = new CheckBox
+            {
+                Text = "สร้างไอคอนทางลัดบนหน้าจอเดสก์ท็อป (Desktop Shortcut)",
+                Checked = true,
+                Location = new Point(22, top),
+                AutoSize = true
+            };
+            this.Controls.Add(_chkDesktopShortcut);
+            top += 36;
+
+            // Divider line
+            var pnlLine = new Panel { Location = new Point(20, top), Size = new Size(505, 1), BackColor = Color.FromArgb(226, 232, 240) };
+            this.Controls.Add(pnlLine);
+            top += 16;
+
+            // Action Buttons
+            var btnInstall = new Button
+            {
+                Text = "🚀 ติดตั้งลงในเครื่องทันที (Install)",
+                Location = new Point(20, top),
+                Size = new Size(240, 42),
+                BackColor = Color.FromArgb(16, 185, 129),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btnInstall.FlatAppearance.BorderSize = 0;
+            btnInstall.Click += (s, e) =>
+            {
+                btnInstall.Enabled = false;
+                btnInstall.Text = "กำลังติดตั้ง...";
+                string sUrl = _txtServer.Text.Trim();
+                bool ok = InstallerHelper.Install(sUrl, false);
+                if (ok)
+                {
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
+                }
+                else
+                {
+                    btnInstall.Enabled = true;
+                    btnInstall.Text = "🚀 ติดตั้งลงในเครื่องทันที (Install)";
+                }
+            };
+            this.Controls.Add(btnInstall);
+
+            var btnPortable = new Button
+            {
+                Text = "รันชั่วคราวครั้งเดียว (Portable)",
+                Location = new Point(268, top),
+                Size = new Size(160, 42),
+                BackColor = Color.FromArgb(241, 245, 249),
+                ForeColor = Color.FromArgb(71, 85, 105),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btnPortable.FlatAppearance.BorderColor = Color.FromArgb(203, 213, 225);
+            btnPortable.Click += (s, e) =>
+            {
+                this.ProceedWithPortable = true;
+                this.DialogResult = DialogResult.Ignore;
+                this.Close();
+            };
+            this.Controls.Add(btnPortable);
+
+            var btnCancel = new Button
+            {
+                Text = "ยกเลิก",
+                Location = new Point(436, top),
+                Size = new Size(88, 42),
+                BackColor = Color.FromArgb(241, 245, 249),
+                ForeColor = Color.FromArgb(100, 116, 139),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9F)
+            };
+            btnCancel.FlatAppearance.BorderColor = Color.FromArgb(203, 213, 225);
+            btnCancel.Click += (s, e) =>
+            {
+                this.DialogResult = DialogResult.Cancel;
+                this.Close();
+            };
+            this.Controls.Add(btnCancel);
         }
     }
 }
