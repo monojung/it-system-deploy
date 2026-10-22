@@ -6,6 +6,13 @@
 
 @section('topbar-actions')
 <div class="ha-topbar-actions">
+    <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'map3d']) }}" 
+       class="topbar-btn ha-topbar-btn-map" 
+       title="เปิดแผนผัง 3 มิติแสดงตำแหน่งคอมพิวเตอร์และสถานะการตรวจนับแต่ละแผนก (3D Department Map Diagram)">
+        <i class="bi bi-box-fill text-warning"></i>
+        <span class="d-none d-sm-inline">แผนผัง 3D แต่ละแผนก</span>
+        <span class="badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; font-size: 10px; padding: 2px 6px; border-radius: 99px;">3D</span>
+    </a>
     <button type="button" class="topbar-btn ha-topbar-btn-scan" onclick="triggerScanAllConfirm()" 
             title="ส่งคำสั่งไปยัง Agent ทุกเครื่องให้ทำการสแกนสเปคใหม่เดี๋ยวนี้ (Remote Scan All)">
         <i class="bi bi-broadcast-pin text-info"></i>
@@ -55,7 +62,15 @@
 
                 <!-- Right Action Bar: Scan All Agent Button, Download Standalone Agent & Fiscal Year Form Selector -->
                 <div class="ha-hero-actions">
-                    
+                    <!-- 3D Map Hero Button -->
+                    <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'map3d']) }}" 
+                       class="btn btn-sm ha-hero-btn-map"
+                       title="เปิดแผนผัง 3 มิติแสดงสถานะคอมพิวเตอร์ประจำแต่ละแผนก (3D Department Map Diagram)">
+                        <i class="bi bi-box-fill text-warning"></i>
+                        <span>แผนผัง 3D แผนก</span>
+                        <span class="badge bg-warning text-dark">3D</span>
+                    </a>
+
                     <!-- Download Standalone Agent .exe Hero Button -->
                     <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-sm ha-hero-btn-download"
                        title="ดาวน์โหลดโปรแกรม THC IT Agent (Standalone .exe 68 KB พร้อม Setup Wizard ติดตั้งง่าย มี System Tray Icon)">
@@ -192,6 +207,123 @@
         </div>
     </div>
 
+    <!-- HARDWARE AUDIT COMMAND & TOOLKIT HUB (ศูนย์รวมเครื่องมือไอทีครบวงจร) -->
+    <div class="card ha-toolkit-card">
+        <div class="ha-toolkit-header">
+            <div class="ha-toolkit-title-group">
+                <div class="ha-toolkit-icon">
+                    <i class="bi bi-tools"></i>
+                </div>
+                <div>
+                    <h3 class="ha-toolkit-heading">
+                        ศูนย์รวมเครื่องมือ & คำสั่งระบบติดตามสเปคคอมพิวเตอร์ (IT Command Center)
+                    </h3>
+                    <p class="ha-toolkit-sub">
+                        รวมเครื่องมือสั่งการระยะไกล ตรวจจับสเปคฮาร์ดแวร์ แผนผัง 3 มิติ และการส่งออกข้อมูลสำหรับฝ่ายไอที
+                    </p>
+                </div>
+            </div>
+            <div class="ha-toolkit-header-badges">
+                <span class="ha-badge-pill bg-light border text-dark">
+                    <i class="bi bi-hdd-network text-primary me-1"></i> รวม <strong>{{ $totalFleet }}</strong> เครื่อง
+                </span>
+                <span class="ha-badge-pill bg-success-subtle border border-success-subtle text-success">
+                    <i class="bi bi-circle-fill text-success me-1" style="font-size: 8px;"></i> ออนไลน์ <strong id="toolkitOnlineBadge">{{ $agentOnlineCount }}</strong> เครื่อง
+                </span>
+            </div>
+        </div>
+
+        <div class="ha-toolkit-body">
+            <!-- Group 1: Remote Operations -->
+            <div class="ha-tool-group">
+                <div class="ha-tool-group-label">
+                    <i class="bi bi-broadcast-pin text-info me-1"></i> คำสั่งระยะไกล (Remote Commands)
+                </div>
+                <div class="ha-tool-group-buttons">
+                    <button type="button" class="btn btn-sm ha-tool-btn ha-tool-btn-primary" onclick="triggerScanAllConfirm()" 
+                            title="ส่งสัญญาณ Remote Scan ไปยัง Agent ทุกเครื่องเพื่อดึงสเปกฮาร์ดแวร์ล่าสุด">
+                        <i class="bi bi-cloud-arrow-down-fill text-warning"></i>
+                        <span>สั่งสแกนทุกเครื่อง</span>
+                        <span class="ha-tool-pill">{{ $agentInstalledCount ?? 0 }}</span>
+                    </button>
+
+                    <button type="button" class="btn btn-sm ha-tool-btn ha-tool-btn-success" onclick="triggerAllOnlineFleetScan()"
+                            title="ส่งคำสั่งดึงข้อมูลเฉพาะเครื่องที่กำลังออนไลน์ขณะนี้">
+                        <i class="bi bi-broadcast text-success"></i>
+                        <span>ดึงเครื่องออนไลน์</span>
+                        <span class="ha-tool-pill bg-success text-white">{{ $agentOnlineCount ?? 0 }}</span>
+                    </button>
+
+                    @if(($agentOutdatedCount ?? 0) > 0)
+                    <button type="button" class="btn btn-sm ha-tool-btn ha-tool-btn-warning" onclick="triggerUpdateAllOutdatedFleet()"
+                            title="ส่งคำสั่งอัปเดต Agent เครื่องเก่าทั้งหมดเป็นเวอร์ชัน v2.11.0 อัตโนมัติ">
+                        <i class="bi bi-arrow-repeat text-white"></i>
+                        <span>อัปเดตเครื่องเก่า</span>
+                        <span class="ha-tool-pill bg-warning text-dark">{{ $agentOutdatedCount }}</span>
+                    </button>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Group 2: Visualization & 3D Diagram -->
+            <div class="ha-tool-group">
+                <div class="ha-tool-group-label">
+                    <i class="bi bi-box-fill text-warning me-1"></i> แผนผัง & ผังองค์กร (Diagrams)
+                </div>
+                <div class="ha-tool-group-buttons">
+                    <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'map3d']) }}" 
+                       class="btn btn-sm ha-tool-btn ha-tool-btn-map {{ $tab === 'map3d' ? 'active' : '' }}"
+                       title="เปิดแผนผัง 3 มิติแสดงตำแหน่งคอมพิวเตอร์และสถานะการตรวจนับแต่ละแผนก (3D Department Map Diagram)">
+                        <i class="bi bi-box-fill text-warning"></i>
+                        <span>แผนผัง 3D แต่ละแผนก</span>
+                        <span class="ha-tool-pill bg-warning text-dark">3D</span>
+                    </a>
+
+                    <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'departments']) }}" 
+                       class="btn btn-sm ha-tool-btn ha-tool-btn-secondary {{ $tab === 'departments' ? 'active' : '' }}"
+                       title="ติดตามความคืบหน้าการสำรวจแยกตามแผนก/หน่วยงาน">
+                        <i class="bi bi-diagram-3-fill text-primary"></i>
+                        <span>ติดตามรายแผนก</span>
+                        <span class="ha-tool-pill">{{ count($departments) }}</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Group 3: Downloads, Reports & Integrations -->
+            <div class="ha-tool-group">
+                <div class="ha-tool-group-label">
+                    <i class="bi bi-printer-fill text-secondary me-1"></i> รายงาน & ติดตั้ง (Reports & Deploy)
+                </div>
+                <div class="ha-tool-group-buttons">
+                    <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-sm ha-tool-btn ha-tool-btn-download"
+                       title="ดาวน์โหลดโปรแกรม Standalone Agent v2.11.0 (68 KB มี Setup Wizard ในตัว)">
+                        <i class="bi bi-download text-primary"></i>
+                        <span>โหลด Agent (.exe)</span>
+                        <span class="ha-tool-pill bg-primary text-white">v2.11.0</span>
+                    </a>
+
+                    <a href="{{ route('hardware-audits.print-report', ['fiscal_year' => $fiscalYear]) }}" target="_blank" 
+                       class="btn btn-sm ha-tool-btn ha-tool-btn-secondary" title="พิมพ์รายงานสรุปผลการสำรวจประจำปี A4">
+                        <i class="bi bi-printer text-primary"></i>
+                        <span>พิมพ์รายงาน A4</span>
+                    </a>
+
+                    <a href="{{ route('hardware-audits.export-csv', ['fiscal_year' => $fiscalYear]) }}" 
+                       class="btn btn-sm ha-tool-btn ha-tool-btn-secondary" title="ส่งออกข้อมูลผลการตรวจนับเป็นไฟล์ Excel/CSV">
+                        <i class="bi bi-file-earmark-excel text-success"></i>
+                        <span>ส่งออก CSV</span>
+                    </a>
+
+                    <a href="{{ url('/api/hardware-audit/submit') }}" target="_blank" 
+                       class="btn btn-sm ha-tool-btn ha-tool-btn-api" title="ตรวจสอบสถานะ Telemetry API & Webhook Service">
+                        <i class="bi bi-activity text-info"></i>
+                        <span>สถานะ API</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MAIN INTERACTIVE SECTION WITH MODERN TABS -->
     <div class="card ha-main-card" style="border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 30px;">
         
@@ -221,7 +353,19 @@
                 </span>
             </a>
 
-            {{-- TAB 3: DEPARTMENT TRACKER --}}
+            {{-- TAB 3: 3D DEPARTMENT MAP DIAGRAM --}}
+            <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'map3d']) }}" 
+               class="tab-nav-btn {{ $tab === 'map3d' ? 'active' : '' }}"
+               style="border: 1px solid {{ $tab === 'map3d' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'map3d' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'map3d' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'map3d' ? '#0f766e' : '#64748b' }};">
+                <i class="bi bi-box-fill" style="color: {{ $tab === 'map3d' ? '#0f766e' : '#f59e0b' }};"></i>
+                <span class="d-none d-md-inline">แผนผัง 3D แต่ละแผนก</span>
+                <span class="d-inline d-md-none">ผัง 3D</span>
+                <span class="badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; font-size: 10px; padding: 2px 7px; border-radius: 99px; font-weight: 700;">
+                    3D Interactive
+                </span>
+            </a>
+
+            {{-- TAB 4: DEPARTMENT TRACKER --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'departments']) }}" 
                class="tab-nav-btn {{ $tab === 'departments' ? 'active' : '' }}"
                style="border: 1px solid {{ $tab === 'departments' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'departments' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'departments' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'departments' ? '#0f766e' : '#64748b' }};">
@@ -231,7 +375,7 @@
                 <span class="badge bg-light text-dark border d-none d-sm-inline" style="font-size: 11px;">{{ count($departments) }} แผนก</span>
             </a>
 
-            {{-- TAB 4: ANNUAL REPORT & CHARTS --}}
+            {{-- TAB 5: ANNUAL REPORT & CHARTS --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'report']) }}" 
                class="tab-nav-btn {{ $tab === 'report' ? 'active' : '' }}"
                style="border: 1px solid {{ $tab === 'report' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'report' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'report' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'report' ? '#0f766e' : '#64748b' }};">
@@ -240,7 +384,7 @@
                 <span class="d-inline d-md-none">สถิติ & กราฟ</span>
             </a>
 
-            {{-- TAB 5: AGENT DEPLOYMENT HUB --}}
+            {{-- TAB 6: AGENT DEPLOYMENT HUB --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'deploy']) }}" 
                class="tab-nav-btn {{ $tab === 'deploy' ? 'active' : '' }}"
                style="border: 1px solid {{ $tab === 'deploy' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'deploy' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'deploy' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'deploy' ? '#0f766e' : '#64748b' }};">
@@ -880,7 +1024,268 @@
         </div>
         @endif
 
-        <!-- TAB CONTENT 3: DEPARTMENT TRACKER -->
+        <!-- TAB CONTENT 3: 3D DEPARTMENT MAP DIAGRAM (แผนผัง 3D แต่ละแผนก) -->
+        @if($tab === 'map3d')
+        <div class="ha-tab-pane ha-map3d-pane" style="padding: 20px;">
+            <!-- 3D DIAGRAM CONTROLS & NAVIGATION HEADER -->
+            <div class="ha-map3d-header">
+                <div class="ha-map3d-header-left">
+                    <div class="ha-map3d-badge-live">
+                        <span class="ha-live-beacon"></span>
+                        <span>ระบบแผนผัง 3 มิติประจำแผนก (3D Interactive Department Map Diagram)</span>
+                    </div>
+                    <h2 class="ha-map3d-title">
+                        <i class="bi bi-box-fill text-warning me-2"></i> แผนผังจำลอง 3 มิติ ตรวจติดตามคอมพิวเตอร์รายแผนก
+                    </h2>
+                    <p class="ha-map3d-subtitle">
+                        โรงพยาบาลทุ่งหัวช้าง &bull; จำลองผังอาคาร ห้องปฏิบัติงาน และตำแหน่งเครื่องคอมพิวเตอร์ พร้อมสถานะการตรวจนับสเปกและ Agent ออนไลน์
+                    </p>
+                </div>
+                <div class="ha-map3d-header-right">
+                    <!-- Switch to Department List View -->
+                    <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'departments']) }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 8px; font-weight: 600;">
+                        <i class="bi bi-list-ul me-1"></i> ดูตารางสรุปรายแผนก
+                    </a>
+                    <!-- Quick Scan Department Button -->
+                    <button type="button" class="btn btn-sm btn-primary" onclick="THC_3D.scanCurrentView()" style="border-radius: 8px; font-weight: 700; background: linear-gradient(135deg, #0f766e 0%, #0369a1 100%); border: none; box-shadow: 0 2px 6px rgba(15, 118, 110, 0.3);">
+                        <i class="bi bi-cloud-arrow-down-fill me-1"></i> สั่งดึงสเปกอาคารที่กำลังดู (<span id="btnHeaderScanCount">0</span>)
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3D TOOLBAR & FILTER DECK -->
+            <div class="ha-map3d-toolbar">
+                <div class="ha-map3d-toolbar-row">
+                    <!-- Building Selector Buttons -->
+                    <div class="ha-map3d-bld-group" id="map3dBuildingSelector">
+                        <button type="button" class="btn btn-sm ha-bld-btn active" data-bld="all" onclick="THC_3D.setBuilding('all')">
+                            <i class="bi bi-buildings-fill"></i> ทุกอาคาร
+                        </button>
+                        <button type="button" class="btn btn-sm ha-bld-btn" data-bld="opd" onclick="THC_3D.setBuilding('opd')">
+                            <i class="bi bi-hospital-fill text-info"></i> อาคารผู้ป่วยนอก (OPD)
+                        </button>
+                        <button type="button" class="btn btn-sm ha-bld-btn" data-bld="ipd" onclick="THC_3D.setBuilding('ipd')">
+                            <i class="bi bi-heart-pulse-fill text-danger"></i> อาคารผู้ป่วยใน (IPD)
+                        </button>
+                        <button type="button" class="btn btn-sm ha-bld-btn" data-bld="admin" onclick="THC_3D.setBuilding('admin')">
+                            <i class="bi bi-bank2 text-warning"></i> อาคารอำนวยการ
+                        </button>
+                        <button type="button" class="btn btn-sm ha-bld-btn" data-bld="rehab" onclick="THC_3D.setBuilding('rehab')">
+                            <i class="bi bi-activity text-success"></i> อาคารฟื้นฟู
+                        </button>
+                        <button type="button" class="btn btn-sm ha-bld-btn" data-bld="other" onclick="THC_3D.setBuilding('other')">
+                            <i class="bi bi-grid-1x2-fill text-secondary"></i> อื่นๆ / ส่วนกลาง
+                        </button>
+                    </div>
+
+                    <!-- Floor Selector -->
+                    <div class="ha-map3d-floor-group" id="map3dFloorSelector">
+                        <span class="ha-floor-label">ชั้น:</span>
+                        <button type="button" class="btn btn-sm ha-floor-btn active" data-floor="all" onclick="THC_3D.setFloor('all')">ทุกชั้น</button>
+                        <button type="button" class="btn btn-sm ha-floor-btn" data-floor="1" onclick="THC_3D.setFloor(1)">ชั้น 1</button>
+                        <button type="button" class="btn btn-sm ha-floor-btn" data-floor="2" onclick="THC_3D.setFloor(2)">ชั้น 2</button>
+                    </div>
+                </div>
+
+                <div class="ha-map3d-toolbar-row ha-map3d-controls-row">
+                    <!-- Search Input -->
+                    <div class="ha-map3d-search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="map3dSearchInput" placeholder="ค้นหา Hostname, IP, เลขครุภัณฑ์, ผู้ครอบครอง..." oninput="THC_3D.searchDevices(this.value)">
+                        <button type="button" class="ha-search-clear" onclick="THC_3D.clearSearch()" title="ล้างการค้นหา">&times;</button>
+                    </div>
+
+                    <!-- Status Filter Pills -->
+                    <div class="ha-map3d-status-filters">
+                        <button type="button" class="ha-status-filter-btn active" data-status="all" onclick="THC_3D.setStatusFilter('all')">
+                            ทั้งหมด (<span id="countFilterAll">0</span>)
+                        </button>
+                        <button type="button" class="ha-status-filter-btn ha-filter-audited" data-status="audited" onclick="THC_3D.setStatusFilter('audited')">
+                            🟢 ตรวจแล้ว (<span id="countFilterAudited">0</span>)
+                        </button>
+                        <button type="button" class="ha-status-filter-btn ha-filter-online" data-status="online" onclick="THC_3D.setStatusFilter('online')">
+                            🔵 ออนไลน์ (<span id="countFilterOnline">0</span>)
+                        </button>
+                        <button type="button" class="ha-status-filter-btn ha-filter-pending" data-status="pending" onclick="THC_3D.setStatusFilter('pending')">
+                            🟡 รอตรวจ/ยังไม่ตรวจ (<span id="countFilterPending">0</span>)
+                        </button>
+                        <button type="button" class="ha-status-filter-btn ha-filter-warning" data-status="warning" onclick="THC_3D.setStatusFilter('warning')">
+                            ⚠️ ตกเกณฑ์ ICT (<span id="countFilterWarning">0</span>)
+                        </button>
+                    </div>
+
+                    <!-- 3D Camera Controls Toolbar -->
+                    <div class="ha-map3d-camera-deck">
+                        <!-- Projection Modes -->
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-dark active" id="btnModeIso" onclick="THC_3D.setViewMode('iso')" title="มุมมองไอโซเมตริก 3 มิติ">
+                                <i class="bi bi-box"></i> 3D Iso
+                            </button>
+                            <button type="button" class="btn btn-dark" id="btnModePerspective" onclick="THC_3D.setViewMode('perspective')" title="มุมมองเฉียง 3 มิติ (หมุนรอบทิศ)">
+                                <i class="bi bi-compass"></i> 3D Persp
+                            </button>
+                            <button type="button" class="btn btn-dark" id="btnModeTopdown" onclick="THC_3D.setViewMode('topdown')" title="มุมมองผังแบนราบ 2 มิติ (Top-Down)">
+                                <i class="bi bi-layers"></i> 2D Plan
+                            </button>
+                        </div>
+
+                        <!-- Rotation -->
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-dark" onclick="THC_3D.rotateLeft()" title="หมุนซ้าย 45°">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                            <button type="button" class="btn btn-dark" onclick="THC_3D.rotateRight()" title="หมุนขวา 45°">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+
+                        <!-- Zoom -->
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-dark" onclick="THC_3D.zoomIn()" title="ซูมเข้า">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                            <button type="button" class="btn btn-dark" onclick="THC_3D.zoomOut()" title="ซูมออก">
+                                <i class="bi bi-dash-lg"></i>
+                            </button>
+                            <button type="button" class="btn btn-dark" onclick="THC_3D.resetView()" title="รีเซ็ตมุมมองเดิม">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                        </div>
+
+                        <!-- Design Mode Toggle (ออกแบบไว้รอ) -->
+                        <button type="button" class="btn btn-sm btn-outline-warning ha-btn-design-mode" id="btnToggleDesignMode" onclick="THC_3D.toggleDesignMode()" title="เปิดโหมดปรับแต่งจัดวางตำแหน่งห้องและอุปกรณ์ (ออกแบบไว้รอสำหรับผังจริง)">
+                            <i class="bi bi-pencil-square"></i>
+                            <span class="d-none d-xl-inline">โหมดจัดวางผัง</span>
+                        </button>
+
+                        <!-- Fullscreen Toggle -->
+                        <button type="button" class="btn btn-sm btn-dark" onclick="THC_3D.toggleFullscreen()" title="ขยายเต็มหน้าจอ">
+                            <i class="bi bi-arrows-fullscreen"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Design Mode Helper Banner (Visible only in Design Mode) -->
+                <div id="map3dDesignModeBanner" class="ha-design-mode-banner" style="display: none;">
+                    <div class="ha-design-banner-left">
+                        <i class="bi bi-pencil-fill text-warning me-2"></i>
+                        <strong>กำลังเปิดใช้งานโหมดออกแบบจัดวางตำแหน่งผัง (Design & Layout Mode)</strong>
+                        <span class="ms-2 opacity-75 d-none d-md-inline">&bull; ท่านสามารถลากย้ายตำแหน่งห้อง (Drag Room) เพื่อจัดเรียงแผนผังอาคารให้ตรงกับสถานที่จริง</span>
+                    </div>
+                    <div class="ha-design-banner-right">
+                        <button type="button" class="btn btn-sm btn-success" onclick="THC_3D.saveLayout()" style="border-radius: 6px; font-weight: 700;">
+                            <i class="bi bi-check2-circle me-1"></i> บันทึกตำแหน่งผัง
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-light" onclick="THC_3D.resetLayoutDefaults()" style="border-radius: 6px;">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> คืนค่าเริ่มต้น
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="THC_3D.toggleDesignMode()" style="border-radius: 6px;">
+                            ปิดโหมด
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3D VIEWPORT CANVAS STAGE -->
+            <div class="ha-map3d-viewport-wrapper" id="map3dViewportWrapper">
+                
+                <!-- HUD Top-Left: Selected Building / Room Overview Card -->
+                <div class="ha-hud-card ha-hud-top-left" id="hudTopLeft">
+                    <div class="ha-hud-title" id="hudBuildingTitle">อาคารผู้ป่วยนอก (OPD)</div>
+                    <div class="ha-hud-sub" id="hudBuildingSub">แสดงทุกแผนกในอาคาร</div>
+                    <div class="ha-hud-stats-row">
+                        <div class="ha-hud-stat">
+                            <span class="ha-hud-stat-val" id="hudStatDepts">0</span>
+                            <span class="ha-hud-stat-lbl">แผนก</span>
+                        </div>
+                        <div class="ha-hud-stat">
+                            <span class="ha-hud-stat-val" id="hudStatDevices">0</span>
+                            <span class="ha-hud-stat-lbl">เครื่อง</span>
+                        </div>
+                        <div class="ha-hud-stat">
+                            <span class="ha-hud-stat-val text-success" id="hudStatAudited">0%</span>
+                            <span class="ha-hud-stat-lbl">ตรวจแล้ว</span>
+                        </div>
+                        <div class="ha-hud-stat">
+                            <span class="ha-hud-stat-val text-info" id="hudStatOnline">0</span>
+                            <span class="ha-hud-stat-lbl">ออนไลน์</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HUD Top-Right: Quick Department Action Trigger -->
+                <div class="ha-hud-card ha-hud-top-right" id="hudTopRight">
+                    <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">คำสั่งด่วนในผัง 3D</div>
+                    <div style="display: flex; gap: 6px; margin-top: 6px;">
+                        <button type="button" class="btn btn-sm btn-outline-info ha-hud-btn" onclick="THC_3D.scanCurrentView()" title="ส่งคำสั่งสแกนดึงสเปกเครื่องทั้งหมดในมุมมองนี้">
+                            <i class="bi bi-cloud-arrow-down-fill"></i> สแกนทั้งหมด (<span id="hudScanCount">0</span>)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-warning ha-hud-btn" onclick="THC_3D.updateCurrentView()" title="สั่งอัปเดต Agent เครื่องเก่าในมุมมองนี้">
+                            <i class="bi bi-arrow-repeat"></i> อัปเดต Agent
+                        </button>
+                    </div>
+                </div>
+
+                <!-- HUD Bottom-Left: Color & Symbol Legend -->
+                <div class="ha-hud-card ha-hud-bottom-left">
+                    <div style="font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 5px;">สัญลักษณ์สถานะในผัง 3D:</div>
+                    <div class="ha-legend-grid">
+                        <div class="ha-legend-item"><span class="ha-legend-dot bg-success"></span> ตรวจนับแล้ว</div>
+                        <div class="ha-legend-item"><span class="ha-legend-dot bg-info ha-dot-pulse"></span> Agent ออนไลน์</div>
+                        <div class="ha-legend-item"><span class="ha-legend-dot bg-warning"></span> รออนุมัติ/ยังไม่ตรวจ</div>
+                        <div class="ha-legend-item"><span class="ha-legend-dot bg-danger"></span> ยังไม่สำรวจ</div>
+                        <div class="ha-legend-item"><span class="ha-legend-dot bg-orange">⚠️</span> ตกเกณฑ์ ICT</div>
+                    </div>
+                </div>
+
+                <!-- HUD Bottom-Right: View Coordinates & Hint -->
+                <div class="ha-hud-card ha-hud-bottom-right">
+                    <div style="font-size: 11px; color: #94a3b8;">
+                        <i class="bi bi-mouse me-1"></i> ลากเมาส์หมุนมุมมอง &bull; Scroll เพื่อซูม &bull; ดับเบิลคลิกเพื่อเข้าห้อง
+                    </div>
+                    <div style="font-size: 10px; color: #64748b; margin-top: 2px;" id="hudCameraInfo">
+                        มุมหมุน: 45° &bull; มุมเอียง: 60° &bull; ซูม: 100%
+                    </div>
+                </div>
+
+                <!-- 3D INTERACTIVE SVG / CANVAS STAGE -->
+                <div class="ha-map3d-stage" id="map3dStage">
+                    <div class="ha-map3d-world" id="map3dWorld">
+                        <!-- Holographic Floor Grid -->
+                        <div class="ha-map3d-grid-layer" id="map3dGridLayer"></div>
+                        <!-- Departments & Rooms Container -->
+                        <div class="ha-map3d-rooms-container" id="map3dRoomsContainer"></div>
+                        <!-- Radar / Beacon Effect Overlay -->
+                        <div class="ha-map3d-beacon-layer" id="map3dBeaconLayer"></div>
+                    </div>
+                </div>
+
+                <!-- 3D FLOATING TOOLTIP FOR HOVER -->
+                <div id="map3dTooltip" class="ha-map3d-tooltip" style="display: none;"></div>
+
+                <!-- 3D SIDE DRAWER (DEVICE & DEPARTMENT INSPECTOR) -->
+                <div id="map3dDrawer" class="ha-map3d-drawer" style="display: none;">
+                    <div class="ha-drawer-header">
+                        <div class="ha-drawer-title-row">
+                            <span class="ha-drawer-badge" id="drawerBadge">คอมพิวเตอร์</span>
+                            <button type="button" class="ha-drawer-close" onclick="THC_3D.closeDrawer()">&times;</button>
+                        </div>
+                        <h3 class="ha-drawer-hostname" id="drawerHostname">-</h3>
+                        <div class="ha-drawer-ip" id="drawerIp">-</div>
+                    </div>
+                    <div class="ha-drawer-body" id="drawerBody">
+                        <!-- Dynamic specs & actions injected by JS -->
+                    </div>
+                    <div class="ha-drawer-footer" id="drawerFooter">
+                        <!-- Dynamic action buttons injected by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        @endif
+
+        <!-- TAB CONTENT 4: DEPARTMENT TRACKER -->
         @if($tab === 'departments')
         <div class="ha-tab-pane" style="padding: 22px;">
             <div class="ha-section-header">
@@ -922,6 +1327,17 @@
                     <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 8px; flex-wrap: wrap; gap: 4px;">
                         <span>สำรวจแล้ว: <strong style="color: #166534;">{{ $dept->audited_assets }}</strong> / {{ $dept->total_assets }} เครื่อง</span>
                         <span>คงเหลือ: <strong style="color: {{ $dept->pending_assets > 0 ? '#dc2626' : '#166534' }};">{{ $dept->pending_assets }}</strong> เครื่อง</span>
+                    </div>
+
+                    <!-- 3D Map View Shortcut Button -->
+                    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #f1f5f9; display: flex; justify-content: flex-end;">
+                        <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'map3d']) }}#dept-{{ $dept->id }}" 
+                           class="btn btn-sm btn-outline-warning" 
+                           onclick="localStorage.setItem('thc_3d_target_dept', {{ $dept->id }})"
+                           title="เปิดดูตำแหน่งเครื่องและสถานะของแผนกนี้บนแผนผัง 3D"
+                           style="border-radius: 6px; font-size: 11.5px; padding: 3px 9px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; color: #b45309; border-color: #fcd34d; background: #fffbeb;">
+                            <i class="bi bi-box-fill text-warning"></i> ดูบนแผนผัง 3D
+                        </a>
                     </div>
                 </div>
                 @endforeach
@@ -1858,12 +2274,752 @@
     gap: 8px;
     flex-wrap: wrap;
 }
-.ha-topbar-btn-scan {
+.ha-topbar-btn-map {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+    color: #f59e0b !important;
+    border: 1px solid rgba(245, 158, 11, 0.4) !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2) !important;
+}
+.ha-topbar-btn-map:hover {
+    background: linear-gradient(135deg, #273549 0%, #1a2234 100%) !important;
+    color: #fbbf24 !important;
+    border-color: #f59e0b !important;
+    transform: translateY(-1px);
+}
+.ha-hero-btn-map {
+    background: rgba(15, 23, 42, 0.45) !important;
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(245, 158, 11, 0.5) !important;
+    color: #fef08a !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 6px 14px !important;
+    border-radius: 9px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+    transition: all 0.2s ease !important;
+}
+.ha-hero-btn-map:hover {
+    background: rgba(15, 23, 42, 0.7) !important;
+    color: #ffffff !important;
+    border-color: #f59e0b !important;
+    transform: translateY(-1px);
+}
+
+/* 1.5 IT COMMAND & TOOLKIT HUB */
+.ha-toolkit-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    margin-bottom: 22px;
+    box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05);
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
+}
+.ha-toolkit-card:hover {
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.08);
+}
+.ha-toolkit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 20px;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    border-bottom: 1px solid #edf2f7;
+}
+.ha-toolkit-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.ha-toolkit-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+    color: #0284c7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+.ha-toolkit-heading {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.2px;
+}
+.ha-toolkit-sub {
+    font-size: 12px;
+    color: #64748b;
+    margin: 2px 0 0 0;
+}
+.ha-toolkit-header-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.ha-badge-pill {
+    font-size: 11.5px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-weight: 600;
+}
+.ha-toolkit-body {
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+    gap: 16px;
+    background: #ffffff;
+}
+.ha-tool-group {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ha-tool-group-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+}
+.ha-tool-group-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.ha-tool-btn {
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+    text-decoration: none !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+}
+.ha-tool-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+}
+.ha-tool-btn-primary {
     background: linear-gradient(135deg, #0f766e 0%, #0369a1 100%) !important;
     color: #ffffff !important;
     border: none !important;
-    font-weight: 700 !important;
-    box-shadow: 0 2px 6px rgba(15, 118, 110, 0.3) !important;
+    box-shadow: 0 2px 6px rgba(15, 118, 110, 0.25) !important;
+}
+.ha-tool-btn-primary:hover {
+    background: linear-gradient(135deg, #115e59 0%, #0284c7 100%) !important;
+    color: #ffffff !important;
+}
+.ha-tool-btn-success {
+    background: #f0fdf4 !important;
+    border-color: #86efac !important;
+    color: #166534 !important;
+}
+.ha-tool-btn-success:hover {
+    background: #dcfce7 !important;
+    border-color: #4ade80 !important;
+}
+.ha-tool-btn-warning {
+    background: #fffbeb !important;
+    border-color: #fcd34d !important;
+    color: #b45309 !important;
+}
+.ha-tool-btn-map {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+    color: #fef08a !important;
+    border: 1px solid rgba(245, 158, 11, 0.4) !important;
+}
+.ha-tool-btn-map:hover, .ha-tool-btn-map.active {
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%) !important;
+    border-color: #f59e0b !important;
+    color: #fde047 !important;
+}
+.ha-tool-pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 99px;
+    background: #f1f5f9;
+    color: #475569;
+    margin-left: 2px;
+}
+
+/* 3D DEPARTMENT MAP DIAGRAM SYSTEM */
+.ha-map3d-pane {
+    background: #ffffff;
+}
+.ha-map3d-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+.ha-map3d-badge-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #0f766e;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 3px 10px;
+    border-radius: 99px;
+    margin-bottom: 4px;
+}
+.ha-live-beacon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+    animation: pulseBeacon 1.5s infinite;
+}
+@keyframes pulseBeacon {
+    0% { transform: scale(0.9); opacity: 0.8; }
+    50% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.8; }
+}
+.ha-map3d-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+}
+.ha-map3d-subtitle {
+    font-size: 12.5px;
+    color: #64748b;
+    margin: 2px 0 0 0;
+}
+.ha-map3d-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.ha-map3d-toolbar {
+    background: #0f172a;
+    border-radius: 14px 14px 0 0;
+    padding: 14px 16px;
+    border: 1px solid #1e293b;
+    border-bottom: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.ha-map3d-toolbar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.ha-map3d-bld-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.ha-bld-btn {
+    background: #1e293b;
+    color: #cbd5e1;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+}
+.ha-bld-btn:hover, .ha-bld-btn.active {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: #38bdf8;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+.ha-map3d-floor-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #1e293b;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+}
+.ha-floor-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    margin-right: 4px;
+}
+.ha-floor-btn {
+    background: transparent;
+    color: #94a3b8;
+    border: none;
+    font-size: 11.5px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-weight: 600;
+    transition: all 0.15s;
+}
+.ha-floor-btn:hover, .ha-floor-btn.active {
+    background: #0f766e;
+    color: #ffffff;
+}
+.ha-map3d-search-box {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+    max-width: 320px;
+}
+.ha-map3d-search-box i {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    font-size: 12px;
+}
+.ha-map3d-search-box input {
+    width: 100%;
+    height: 34px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding-left: 28px;
+    padding-right: 26px;
+    color: #ffffff;
+    font-size: 12.5px;
+}
+.ha-map3d-search-box input:focus {
+    outline: none;
+    border-color: #38bdf8;
+    background: #0f172a;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+}
+.ha-search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+.ha-map3d-status-filters {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.ha-status-filter-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.ha-status-filter-btn:hover, .ha-status-filter-btn.active {
+    background: #334155;
+    color: #ffffff;
+    border-color: #64748b;
+}
+.ha-status-filter-btn.ha-filter-audited.active {
+    background: #064e3b;
+    border-color: #059669;
+    color: #34d399;
+}
+.ha-status-filter-btn.ha-filter-online.active {
+    background: #082f49;
+    border-color: #0284c7;
+    color: #38bdf8;
+}
+.ha-status-filter-btn.ha-filter-pending.active {
+    background: #451a03;
+    border-color: #d97706;
+    color: #fbbf24;
+}
+.ha-status-filter-btn.ha-filter-warning.active {
+    background: #450a0a;
+    border-color: #dc2626;
+    color: #f87171;
+}
+.ha-map3d-camera-deck {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.ha-map3d-camera-deck .btn-dark {
+    background: #1e293b;
+    border-color: #334155;
+    color: #cbd5e1;
+    font-size: 11.5px;
+}
+.ha-map3d-camera-deck .btn-dark:hover, .ha-map3d-camera-deck .btn-dark.active {
+    background: #0284c7;
+    border-color: #38bdf8;
+    color: #ffffff;
+}
+.ha-btn-design-mode {
+    font-size: 11.5px;
+    font-weight: 600;
+    border-radius: 6px;
+}
+.ha-btn-design-mode.active {
+    background: #f59e0b !important;
+    color: #000000 !important;
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5) !important;
+}
+.ha-design-mode-banner {
+    background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #ffffff;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    animation: pulseGlow 3s infinite;
+}
+.ha-map3d-viewport-wrapper {
+    position: relative;
+    height: 640px;
+    background: radial-gradient(circle at 50% 35%, #0d1a38 0%, #060b18 100%);
+    border: 1px solid #1e293b;
+    border-radius: 0 0 14px 14px;
+    overflow: hidden;
+    user-select: none;
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.6);
+}
+.ha-map3d-stage {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1200px;
+}
+.ha-map3d-stage:active {
+    cursor: grabbing;
+}
+.ha-map3d-world {
+    position: relative;
+    width: 1400px;
+    height: 1000px;
+    transform-style: preserve-3d;
+    transition: transform 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+.ha-map3d-grid-layer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(to right, rgba(56, 189, 248, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(56, 189, 248, 0.08) 1px, transparent 1px);
+    background-size: 50px 50px;
+    border: 1px solid rgba(56, 189, 248, 0.15);
+    border-radius: 20px;
+    box-shadow: 0 0 40px rgba(14, 165, 233, 0.08);
+    pointer-events: none;
+}
+.ha-map3d-rooms-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+}
+/* 3D Room Box */
+.ha-3d-room {
+    position: absolute;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(8px);
+    border: 2px solid rgba(56, 189, 248, 0.4);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(56, 189, 248, 0.1);
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    cursor: pointer;
+    transform-style: preserve-3d;
+    overflow: hidden;
+}
+.ha-3d-room:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 14px 36px rgba(14, 165, 233, 0.35), inset 0 0 25px rgba(56, 189, 248, 0.25);
+    transform: translateZ(12px);
+}
+.ha-3d-room.focused {
+    border-color: #f59e0b;
+    box-shadow: 0 16px 42px rgba(245, 158, 11, 0.45), inset 0 0 30px rgba(245, 158, 11, 0.2);
+    transform: translateZ(20px);
+}
+.ha-3d-room-header {
+    padding: 8px 12px;
+    background: rgba(30, 41, 59, 0.85);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.ha-3d-room-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+}
+.ha-3d-room-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 99px;
+    background: #0284c7;
+    color: #ffffff;
+}
+.ha-3d-room-body {
+    position: relative;
+    width: 100%;
+    height: calc(100% - 34px);
+    padding: 10px;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 18px 18px;
+}
+/* 3D Workstation Node */
+.ha-3d-device {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.95);
+    border: 1.5px solid #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 15px;
+    color: #e2e8f0;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transform-style: preserve-3d;
+}
+.ha-3d-device:hover {
+    transform: translateZ(16px) scale(1.25);
+    border-color: #ffffff;
+    box-shadow: 0 8px 20px rgba(255, 255, 255, 0.35);
+    z-index: 50;
+}
+.ha-3d-device.status-audited {
+    border-color: #10b981;
+    color: #34d399;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+.ha-3d-device.status-online {
+    border-color: #38bdf8;
+    color: #38bdf8;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.7);
+    animation: nodePulse 2s infinite;
+}
+.ha-3d-device.status-pending {
+    border-color: #f59e0b;
+    color: #fbbf24;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+.ha-3d-device.status-not-audited {
+    border-color: #ef4444;
+    color: #f87171;
+}
+.ha-3d-device.status-warning {
+    border-color: #ea580c;
+    color: #fb923c;
+}
+@keyframes nodePulse {
+    0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
+    70% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+}
+/* HUD Cards */
+.ha-hud-card {
+    position: absolute;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: #ffffff;
+    z-index: 20;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.ha-hud-top-left { top: 14px; left: 14px; max-width: 290px; }
+.ha-hud-top-right { top: 14px; right: 14px; }
+.ha-hud-bottom-left { bottom: 14px; left: 14px; }
+.ha-hud-bottom-right { bottom: 14px; right: 14px; text-align: right; }
+.ha-hud-title { font-size: 13.5px; font-weight: 800; color: #f8fafc; }
+.ha-hud-sub { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+.ha-hud-stats-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 6px;
+}
+.ha-hud-stat { display: flex; flex-direction: column; }
+.ha-hud-stat-val { font-size: 14px; font-weight: 800; }
+.ha-hud-stat-lbl { font-size: 10px; color: #94a3b8; }
+.ha-hud-btn {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+    font-size: 11.5px;
+    font-weight: 600;
+    border-radius: 7px;
+}
+.ha-legend-grid {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: #cbd5e1;
+}
+.ha-legend-item { display: flex; align-items: center; gap: 4px; }
+.ha-legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+/* Floating Tooltip */
+.ha-map3d-tooltip {
+    position: absolute;
+    z-index: 100;
+    pointer-events: none;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid #38bdf8;
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: #ffffff;
+    font-size: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    transform: translate(-50%, -120%);
+    transition: opacity 0.15s ease;
+    min-width: 220px;
+}
+/* Side Drawer */
+.ha-map3d-drawer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 360px;
+    max-width: 90vw;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(16px);
+    border-left: 1px solid rgba(56, 189, 248, 0.3);
+    z-index: 30;
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    animation: slideInRight 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+@keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+.ha-drawer-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(30, 41, 59, 0.5);
+}
+.ha-drawer-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.ha-drawer-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: #0284c7;
+    color: #ffffff;
+    text-transform: uppercase;
+}
+.ha-drawer-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+.ha-drawer-close:hover { color: #ffffff; }
+.ha-drawer-hostname { font-size: 17px; font-weight: 800; color: #ffffff; margin: 0; }
+.ha-drawer-ip { font-size: 12px; color: #38bdf8; font-family: monospace; }
+.ha-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    font-size: 12.5px;
+    color: #cbd5e1;
+}
+.ha-drawer-spec-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+.ha-drawer-spec-lbl { color: #94a3b8; }
+.ha-drawer-spec-val { color: #f8fafc; font-weight: 600; text-align: right; }
+.ha-drawer-footer {
+    padding: 14px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.8);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+@keyframes radarPing {
+    0% { transform: scale(0.2); opacity: 1; }
+    100% { transform: scale(1.6); opacity: 0; }
 }
 
 /* 2. HERO BANNER */
@@ -4922,9 +6078,1014 @@
         .catch(() => {});
     }
 
+    /* =========================================================================
+     * THC 3D INTERACTIVE DEPARTMENT MAP DIAGRAM ENGINE
+     * Zero-dependency pure CSS3D + Canvas/SVG system for hospital intranet
+     * ========================================================================= */
+    window.map3dData = @json($map3dData ?? null);
+
+    const THC_3D = {
+        data: null,
+        currentBuilding: 'all',
+        currentFloor: 'all',
+        currentStatusFilter: 'all',
+        searchQuery: '',
+        viewMode: 'iso', // 'iso', 'perspective', 'topdown'
+        rotX: 58,
+        rotZ: 42,
+        zoom: 100,
+        panX: 0,
+        panY: 0,
+        isMouseDown: false,
+        startX: 0,
+        startY: 0,
+        dragTargetRoom: null,
+        roomDragStartX: 0,
+        roomDragStartY: 0,
+        roomInitialLeft: 0,
+        roomInitialTop: 0,
+        designMode: false,
+        customLayout: {},
+        selectedDeviceId: null,
+
+        init: function(data) {
+            this.data = data;
+            const stage = document.getElementById('map3dStage');
+            if (!stage || !this.data) return;
+
+            // Load saved layout from localStorage if exists
+            try {
+                const saved = localStorage.getItem('thc_floorplan_layout_custom');
+                if (saved) {
+                    this.customLayout = JSON.parse(saved);
+                }
+            } catch (e) {
+                this.customLayout = {};
+            }
+
+            // Bind mouse & touch drag events
+            this.bindEvents(stage);
+
+            // Check if user came from department card with target dept
+            let targetDeptId = null;
+            try {
+                targetDeptId = localStorage.getItem('thc_3d_target_dept');
+                if (targetDeptId) {
+                    localStorage.removeItem('thc_3d_target_dept');
+                }
+            } catch (e) {}
+
+            if (!targetDeptId && window.location.hash && window.location.hash.startsWith('#dept-')) {
+                targetDeptId = window.location.hash.replace('#dept-', '');
+            }
+
+            if (targetDeptId && this.data.departments) {
+                const targetDept = this.data.departments.find(d => String(d.id) === String(targetDeptId));
+                if (targetDept) {
+                    this.currentBuilding = targetDept.building_id || 'all';
+                    this.currentFloor = targetDept.floor || 'all';
+                    this.syncBuildingButtons();
+                    this.syncFloorButtons();
+                }
+            }
+
+            this.render();
+
+            if (targetDeptId) {
+                setTimeout(() => {
+                    this.focusDepartment(targetDeptId);
+                }, 400);
+            }
+        },
+
+        bindEvents: function(stage) {
+            const world = document.getElementById('map3dWorld');
+            if (!stage || !world) return;
+
+            // Prevent default drag
+            stage.addEventListener('dragstart', (e) => e.preventDefault());
+
+            // Mouse down
+            stage.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.ha-3d-device') || e.target.closest('.ha-drawer-close') || e.target.closest('button') || e.target.closest('input')) {
+                    return;
+                }
+
+                // If in design mode and clicked a room
+                if (this.designMode) {
+                    const roomEl = e.target.closest('.ha-3d-room');
+                    if (roomEl) {
+                        this.dragTargetRoom = roomEl;
+                        this.roomDragStartX = e.clientX;
+                        this.roomDragStartY = e.clientY;
+                        this.roomInitialLeft = parseFloat(roomEl.style.left) || 0;
+                        this.roomInitialTop = parseFloat(roomEl.style.top) || 0;
+                        e.stopPropagation();
+                        return;
+                    }
+                }
+
+                this.isMouseDown = true;
+                this.startX = e.clientX;
+                this.startY = e.clientY;
+            });
+
+            // Mouse move
+            window.addEventListener('mousemove', (e) => {
+                // Room dragging in design mode
+                if (this.designMode && this.dragTargetRoom) {
+                    const scaleFactor = Math.max(0.2, this.zoom / 100);
+                    const deltaX = (e.clientX - this.roomDragStartX) / scaleFactor;
+                    const deltaY = (e.clientY - this.roomDragStartY) / scaleFactor;
+
+                    // Snap to 10px grid
+                    const newLeft = Math.round((this.roomInitialLeft + deltaX) / 10) * 10;
+                    const newTop = Math.round((this.roomInitialTop + deltaY) / 10) * 10;
+
+                    this.dragTargetRoom.style.left = `${newLeft}px`;
+                    this.dragTargetRoom.style.top = `${newTop}px`;
+
+                    const roomId = this.dragTargetRoom.getAttribute('data-room-id');
+                    if (roomId) {
+                        this.customLayout[roomId] = { left: newLeft, top: newTop };
+                    }
+                    return;
+                }
+
+                if (!this.isMouseDown) return;
+
+                const deltaX = e.clientX - this.startX;
+                const deltaY = e.clientY - this.startY;
+                this.startX = e.clientX;
+                this.startY = e.clientY;
+
+                if (e.shiftKey || e.button === 2 || this.viewMode === 'topdown' || this.viewMode === 'iso') {
+                    // Pan
+                    this.panX += deltaX;
+                    this.panY += deltaY;
+                } else {
+                    // Orbit / Rotate
+                    this.rotZ += deltaX * 0.45;
+                    this.rotX = Math.max(15, Math.min(85, this.rotX - deltaY * 0.35));
+                }
+
+                this.updateCamera();
+            });
+
+            // Mouse up
+            window.addEventListener('mouseup', () => {
+                this.isMouseDown = false;
+                this.dragTargetRoom = null;
+            });
+
+            // Wheel zoom
+            stage.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomFactor = e.deltaY < 0 ? 10 : -10;
+                this.zoom = Math.max(35, Math.min(220, this.zoom + zoomFactor));
+                this.updateCamera();
+            }, { passive: false });
+
+            // Touch events for mobile/tablet
+            let touchStartX = 0;
+            let touchStartY = 0;
+            stage.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                    this.isMouseDown = true;
+                    this.startX = touchStartX;
+                    this.startY = touchStartY;
+                }
+            }, { passive: true });
+
+            stage.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && this.isMouseDown) {
+                    const deltaX = e.touches[0].clientX - this.startX;
+                    const deltaY = e.touches[0].clientY - this.startY;
+                    this.startX = e.touches[0].clientX;
+                    this.startY = e.touches[0].clientY;
+
+                    if (this.viewMode === 'topdown' || this.viewMode === 'iso') {
+                        this.panX += deltaX;
+                        this.panY += deltaY;
+                    } else {
+                        this.rotZ += deltaX * 0.5;
+                        this.rotX = Math.max(15, Math.min(85, this.rotX - deltaY * 0.4));
+                    }
+                    this.updateCamera();
+                }
+            }, { passive: true });
+
+            stage.addEventListener('touchend', () => {
+                this.isMouseDown = false;
+            });
+        },
+
+        updateCamera: function() {
+            const world = document.getElementById('map3dWorld');
+            if (!world) return;
+
+            let rx = this.rotX;
+            let rz = this.rotZ;
+
+            if (this.viewMode === 'topdown') {
+                rx = 0;
+                rz = 0;
+            } else if (this.viewMode === 'iso') {
+                rx = 58;
+                rz = 42;
+            }
+
+            const scale = this.zoom / 100;
+            world.style.transform = `translate(-50%, -50%) translate3d(${this.panX}px, ${this.panY}px, 0px) rotateX(${rx}deg) rotateZ(${rz}deg) scale(${scale})`;
+
+            const cameraInfo = document.getElementById('hudCameraInfo');
+            if (cameraInfo) {
+                cameraInfo.textContent = `มุมหมุน: ${Math.round(rz)}° • มุมเอียง: ${Math.round(rx)}° • ซูม: ${this.zoom}%`;
+            }
+        },
+
+        setViewMode: function(mode) {
+            this.viewMode = mode;
+            ['btnModeIso', 'btnModePerspective', 'btnModeTopdown'].forEach(id => {
+                const b = document.getElementById(id);
+                if (b) b.classList.remove('active');
+            });
+
+            if (mode === 'iso') {
+                const b = document.getElementById('btnModeIso');
+                if (b) b.classList.add('active');
+                this.rotX = 58;
+                this.rotZ = 42;
+            } else if (mode === 'perspective') {
+                const b = document.getElementById('btnModePerspective');
+                if (b) b.classList.add('active');
+                this.rotX = 55;
+                this.rotZ = 30;
+            } else if (mode === 'topdown') {
+                const b = document.getElementById('btnModeTopdown');
+                if (b) b.classList.add('active');
+                this.rotX = 0;
+                this.rotZ = 0;
+            }
+
+            this.updateCamera();
+        },
+
+        rotateLeft: function() {
+            this.viewMode = 'perspective';
+            this.syncViewModeButtons();
+            this.rotZ -= 45;
+            this.updateCamera();
+        },
+
+        rotateRight: function() {
+            this.viewMode = 'perspective';
+            this.syncViewModeButtons();
+            this.rotZ += 45;
+            this.updateCamera();
+        },
+
+        zoomIn: function() {
+            this.zoom = Math.min(220, this.zoom + 20);
+            this.updateCamera();
+        },
+
+        zoomOut: function() {
+            this.zoom = Math.max(35, this.zoom - 20);
+            this.updateCamera();
+        },
+
+        resetView: function() {
+            this.panX = 0;
+            this.panY = 0;
+            this.zoom = 100;
+            this.setViewMode('iso');
+        },
+
+        syncViewModeButtons: function() {
+            ['btnModeIso', 'btnModePerspective', 'btnModeTopdown'].forEach(id => {
+                const b = document.getElementById(id);
+                if (b) b.classList.remove('active');
+            });
+            const p = document.getElementById('btnModePerspective');
+            if (p) p.classList.add('active');
+        },
+
+        setBuilding: function(bldId) {
+            this.currentBuilding = bldId;
+            this.syncBuildingButtons();
+            this.render();
+        },
+
+        syncBuildingButtons: function() {
+            const container = document.getElementById('map3dBuildingSelector');
+            if (!container) return;
+            const buttons = container.querySelectorAll('.ha-bld-btn');
+            buttons.forEach(btn => {
+                if (btn.getAttribute('data-bld') === this.currentBuilding) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        },
+
+        setFloor: function(floor) {
+            this.currentFloor = floor;
+            this.syncFloorButtons();
+            this.render();
+        },
+
+        syncFloorButtons: function() {
+            const container = document.getElementById('map3dFloorSelector');
+            if (!container) return;
+            const buttons = container.querySelectorAll('.ha-floor-btn');
+            buttons.forEach(btn => {
+                const f = btn.getAttribute('data-floor');
+                if (String(f) === String(this.currentFloor)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        },
+
+        setStatusFilter: function(status) {
+            this.currentStatusFilter = status;
+            const filterContainer = document.querySelector('.ha-map3d-status-filters');
+            if (filterContainer) {
+                const btns = filterContainer.querySelectorAll('.ha-status-filter-btn');
+                btns.forEach(b => {
+                    if (b.getAttribute('data-status') === status) {
+                        b.classList.add('active');
+                    } else {
+                        b.classList.remove('active');
+                    }
+                });
+            }
+            this.applyStatusFilter();
+        },
+
+        applyStatusFilter: function() {
+            const status = this.currentStatusFilter;
+            const devices = document.querySelectorAll('.ha-3d-device');
+            devices.forEach(dev => {
+                let match = true;
+                if (status === 'audited') {
+                    match = dev.classList.contains('status-audited');
+                } else if (status === 'online') {
+                    match = dev.classList.contains('status-online');
+                } else if (status === 'pending') {
+                    match = dev.classList.contains('status-pending');
+                } else if (status === 'warning') {
+                    match = dev.classList.contains('status-warning');
+                }
+
+                if (match) {
+                    dev.style.opacity = '1';
+                    dev.style.filter = 'none';
+                } else {
+                    dev.style.opacity = '0.2';
+                    dev.style.filter = 'grayscale(80%)';
+                }
+            });
+        },
+
+        searchDevices: function(val) {
+            this.searchQuery = (val || '').trim().toLowerCase();
+            const query = this.searchQuery;
+            const devices = document.querySelectorAll('.ha-3d-device');
+            let firstMatch = null;
+
+            devices.forEach(dev => {
+                const searchStr = (dev.getAttribute('data-search') || '').toLowerCase();
+                if (!query || searchStr.includes(query)) {
+                    dev.style.opacity = '1';
+                    dev.style.filter = 'none';
+                    if (query) {
+                        dev.style.boxShadow = '0 0 16px #f59e0b';
+                        dev.style.borderColor = '#fbbf24';
+                        if (!firstMatch) firstMatch = dev;
+                    } else {
+                        dev.style.boxShadow = '';
+                        dev.style.borderColor = '';
+                    }
+                } else {
+                    dev.style.opacity = '0.15';
+                    dev.style.filter = 'grayscale(100%)';
+                    dev.style.boxShadow = '';
+                    dev.style.borderColor = '';
+                }
+            });
+
+            if (firstMatch) {
+                const roomEl = firstMatch.closest('.ha-3d-room');
+                if (roomEl) {
+                    this.showBeacon(roomEl, firstMatch);
+                }
+            } else {
+                const beaconLayer = document.getElementById('map3dBeaconLayer');
+                if (beaconLayer) beaconLayer.innerHTML = '';
+            }
+        },
+
+        clearSearch: function() {
+            const inp = document.getElementById('map3dSearchInput');
+            if (inp) inp.value = '';
+            this.searchDevices('');
+        },
+
+        render: function() {
+            const container = document.getElementById('map3dRoomsContainer');
+            if (!container || !this.data || !this.data.departments) return;
+
+            container.innerHTML = '';
+
+            // Filter departments by building and floor
+            const filteredDepts = this.data.departments.filter(dept => {
+                if (this.currentBuilding !== 'all' && dept.building_id !== this.currentBuilding) {
+                    return false;
+                }
+                if (this.currentFloor !== 'all' && String(dept.floor) !== String(this.currentFloor)) {
+                    return false;
+                }
+                return true;
+            });
+
+            // Update HUD counters
+            this.updateHUD(filteredDepts);
+
+            // Compute layout for rooms
+            const roomWidth = 240;
+            const gapX = 32;
+            const gapY = 32;
+            const cols = 5;
+
+            filteredDepts.forEach((dept, index) => {
+                const col = index % cols;
+                const row = Math.floor(index / cols);
+
+                const devCount = (dept.devices || []).length;
+                const rowsNeeded = Math.max(2, Math.ceil(devCount / 5));
+                const roomHeight = Math.max(160, 36 + rowsNeeded * 42 + 16);
+
+                let posX = 50 + col * (roomWidth + gapX);
+                let posY = 60 + row * (roomHeight + gapY);
+
+                // Check custom layout override
+                if (this.customLayout[dept.id]) {
+                    posX = this.customLayout[dept.id].left;
+                    posY = this.customLayout[dept.id].top;
+                }
+
+                const roomEl = document.createElement('div');
+                roomEl.className = 'ha-3d-room';
+                roomEl.id = `map3dRoom_${dept.id}`;
+                roomEl.setAttribute('data-room-id', dept.id);
+                roomEl.style.left = `${posX}px`;
+                roomEl.style.top = `${posY}px`;
+                roomEl.style.width = `${roomWidth}px`;
+                roomEl.style.height = `${roomHeight}px`;
+
+                // Header
+                const pctClass = dept.percentage === 100 ? 'bg-success' : (dept.percentage > 0 ? 'bg-primary' : 'bg-secondary');
+                const floorBadge = dept.floor ? `<span style="font-size: 9.5px; opacity: 0.75; margin-left: 4px;">(ช.${dept.floor})</span>` : '';
+
+                roomEl.innerHTML = `
+                    <div class="ha-3d-room-header">
+                        <div class="ha-3d-room-title" title="${dept.name}">
+                            ${dept.name} ${floorBadge}
+                        </div>
+                        <span class="ha-3d-room-badge ${pctClass}">
+                            ${dept.percentage}%
+                        </span>
+                    </div>
+                    <div class="ha-3d-room-body" id="roomBody_${dept.id}"></div>
+                `;
+
+                container.appendChild(roomEl);
+
+                // Render workstation nodes inside this room
+                const bodyEl = roomEl.querySelector(`#roomBody_${dept.id}`);
+                this.renderRoomDevices(bodyEl, dept);
+            });
+
+            this.updateCamera();
+            this.applyStatusFilter();
+        },
+
+        renderRoomDevices: function(bodyEl, dept) {
+            if (!bodyEl || !dept.devices) return;
+
+            const devices = dept.devices;
+            if (devices.length === 0) {
+                bodyEl.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 11px; color: #64748b; font-style: italic;"><i class="bi bi-inbox me-1"></i> ไม่มีคอมพิวเตอร์</div>`;
+                return;
+            }
+
+            const devCols = 5;
+            const nodeSize = 30;
+            const nodeGap = 10;
+            const padLeft = 14;
+            const padTop = 10;
+
+            devices.forEach((dev, idx) => {
+                const c = idx % devCols;
+                const r = Math.floor(idx / devCols);
+                const x = padLeft + c * (nodeSize + nodeGap);
+                const y = padTop + r * (nodeSize + nodeGap);
+
+                const devEl = document.createElement('div');
+                devEl.className = 'ha-3d-device';
+                devEl.id = `devNode_${dev.id}`;
+                devEl.setAttribute('data-dev-id', dev.id);
+                devEl.style.left = `${x}px`;
+                devEl.style.top = `${y}px`;
+
+                // Status classes
+                if (dev.is_audited) devEl.classList.add('status-audited');
+                else devEl.classList.add('status-pending');
+
+                if (dev.is_online) devEl.classList.add('status-online');
+                if (dev.is_mdes_warning) devEl.classList.add('status-warning');
+
+                // Icon
+                let iconClass = 'bi-display';
+                const dt = (dev.device_type || '').toUpperCase();
+                if (dt === 'NB' || dt.includes('NOTEBOOK') || dt.includes('LAPTOP')) {
+                    iconClass = 'bi-laptop';
+                } else if (dt === 'SERVER') {
+                    iconClass = 'bi-server';
+                }
+                devEl.innerHTML = `<i class="bi ${iconClass}"></i>`;
+
+                // Search attribute
+                const searchStr = `${dev.hostname} ${dev.ip_address} ${dev.asset_code} ${dev.custodian_name} ${dev.name} ${dept.name}`;
+                devEl.setAttribute('data-search', searchStr);
+
+                // Hover tooltip
+                devEl.addEventListener('mouseenter', (e) => {
+                    this.showTooltip(dev, dept, e);
+                });
+                devEl.addEventListener('mouseleave', () => {
+                    this.hideTooltip();
+                });
+
+                // Click device: open side drawer
+                devEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.openDrawer(dev, dept);
+                });
+
+                bodyEl.appendChild(devEl);
+            });
+        },
+
+        updateHUD: function(filteredDepts) {
+            let totalDevs = 0;
+            let auditedDevs = 0;
+            let onlineDevs = 0;
+            let warningDevs = 0;
+
+            filteredDepts.forEach(d => {
+                totalDevs += (d.total_devices || 0);
+                auditedDevs += (d.audited_devices || 0);
+                onlineDevs += (d.online_devices || 0);
+                (d.devices || []).forEach(item => {
+                    if (item.is_mdes_warning) warningDevs++;
+                });
+            });
+
+            const pct = totalDevs > 0 ? Math.round((auditedDevs / totalDevs) * 100) : 0;
+
+            // HUD building title
+            const bldObj = (this.data.buildings || []).find(b => b.id === this.currentBuilding);
+            const bldTitleEl = document.getElementById('hudBuildingTitle');
+            const bldSubEl = document.getElementById('hudBuildingSub');
+            if (bldTitleEl) {
+                bldTitleEl.textContent = bldObj ? bldObj.name : 'ภาพรวมทุกอาคาร';
+            }
+            if (bldSubEl) {
+                const floorStr = this.currentFloor === 'all' ? 'ทุกชั้น' : `ชั้น ${this.currentFloor}`;
+                bldSubEl.textContent = `โรงพยาบาลทุ่งหัวช้าง • ${floorStr}`;
+            }
+
+            // HUD Stats
+            const statDepts = document.getElementById('hudStatDepts');
+            const statDevs = document.getElementById('hudStatDevices');
+            const statAudited = document.getElementById('hudStatAudited');
+            const statOnline = document.getElementById('hudStatOnline');
+            const hudScanCount = document.getElementById('hudScanCount');
+            const btnHeaderScanCount = document.getElementById('btnHeaderScanCount');
+
+            if (statDepts) statDepts.textContent = filteredDepts.length;
+            if (statDevs) statDevs.textContent = totalDevs;
+            if (statAudited) statAudited.textContent = `${pct}%`;
+            if (statOnline) statOnline.textContent = onlineDevs;
+            if (hudScanCount) hudScanCount.textContent = totalDevs;
+            if (btnHeaderScanCount) btnHeaderScanCount.textContent = totalDevs;
+
+            // Filter pills counts
+            const cAll = document.getElementById('countFilterAll');
+            const cAudited = document.getElementById('countFilterAudited');
+            const cOnline = document.getElementById('countFilterOnline');
+            const cPending = document.getElementById('countFilterPending');
+            const cWarning = document.getElementById('countFilterWarning');
+
+            if (cAll) cAll.textContent = totalDevs;
+            if (cAudited) cAudited.textContent = auditedDevs;
+            if (cOnline) cOnline.textContent = onlineDevs;
+            if (cPending) cPending.textContent = Math.max(0, totalDevs - auditedDevs);
+            if (cWarning) cWarning.textContent = warningDevs;
+        },
+
+        showTooltip: function(dev, dept, event) {
+            const tt = document.getElementById('map3dTooltip');
+            if (!tt) return;
+
+            const auditBadge = dev.is_audited 
+                ? '<span class="badge bg-success" style="font-size: 10px;">ตรวจแล้ว พ.ศ. {{ $fiscalYear }}</span>' 
+                : '<span class="badge bg-warning text-dark" style="font-size: 10px;">รอตรวจ</span>';
+            const onlineBadge = dev.is_online 
+                ? '<span class="badge bg-info" style="font-size: 10px;">Agent ออนไลน์</span>' 
+                : '<span class="badge bg-secondary" style="font-size: 10px;">ออฟไลน์</span>';
+            const warningBadge = dev.is_mdes_warning 
+                ? '<div style="margin-top: 4px; font-size: 10.5px; color: #fb923c;"><i class="bi bi-exclamation-triangle-fill"></i> อุปกรณ์นี้ตกเกณฑ์มาตรฐาน ICT</div>' 
+                : '';
+
+            tt.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <strong style="color: #38bdf8; font-size: 13px;">${dev.hostname || dev.name}</strong>
+                    ${onlineBadge}
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px;">
+                    IP: <span style="color: #ffffff; font-family: monospace;">${dev.ip_address || '-'}</span> • แผนก: <span style="color: #cbd5e1;">${dept.name}</span>
+                </div>
+                <div style="font-size: 11px; color: #cbd5e1; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 4px;">
+                    <div>CPU: ${dev.cpu_model || '-'}</div>
+                    <div>RAM: ${dev.ram_capacity || '-'} • Storage: ${dev.storage_type || '-'}</div>
+                    <div>OS: ${dev.os_name || '-'}</div>
+                </div>
+                <div style="margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 10.5px; color: #94a3b8;">ผู้ครอง: ${dev.custodian_name || '-'}</span>
+                    ${auditBadge}
+                </div>
+                ${warningBadge}
+            `;
+
+            tt.style.display = 'block';
+
+            const wrapper = document.getElementById('map3dViewportWrapper');
+            if (wrapper) {
+                const rect = wrapper.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+                tt.style.left = `${mouseX}px`;
+                tt.style.top = `${mouseY}px`;
+            }
+        },
+
+        hideTooltip: function() {
+            const tt = document.getElementById('map3dTooltip');
+            if (tt) tt.style.display = 'none';
+        },
+
+        openDrawer: function(dev, dept) {
+            const drawer = document.getElementById('map3dDrawer');
+            if (!drawer) return;
+
+            this.selectedDeviceId = dev.id;
+
+            const badge = document.getElementById('drawerBadge');
+            const hostname = document.getElementById('drawerHostname');
+            const ip = document.getElementById('drawerIp');
+            const body = document.getElementById('drawerBody');
+            const footer = document.getElementById('drawerFooter');
+
+            if (badge) badge.textContent = dev.device_type || 'คอมพิวเตอร์';
+            if (hostname) hostname.textContent = dev.hostname || dev.name || 'ไม่ระบุชื่อเครื่อง';
+            if (ip) ip.textContent = `IP: ${dev.ip_address || '-'} • ครุภัณฑ์: ${dev.asset_code || '-'}`;
+
+            const auditStateHtml = dev.is_audited 
+                ? '<span class="badge bg-success" style="font-size: 11px;"><i class="bi bi-check-circle-fill me-1"></i> ตรวจนับสเปกแล้ว (ปีงบฯ {{ $fiscalYear }})</span>' 
+                : '<span class="badge bg-warning text-dark" style="font-size: 11px;"><i class="bi bi-clock-history me-1"></i> ยังไม่ได้รับการตรวจนับ</span>';
+
+            const onlineStateHtml = dev.is_online 
+                ? '<span class="badge bg-info" style="font-size: 11px;"><i class="bi bi-broadcast me-1"></i> Agent กำลังทำงาน (ออนไลน์)</span>' 
+                : '<span class="badge bg-secondary" style="font-size: 11px;"><i class="bi bi-moon me-1"></i> ปิดเครื่อง / ออฟไลน์</span>';
+
+            const warningBox = dev.is_mdes_warning 
+                ? `<div style="background: rgba(234, 88, 12, 0.15); border: 1px solid #ea580c; border-radius: 8px; padding: 10px; margin-bottom: 14px; font-size: 12px; color: #fdba74;">
+                    <i class="bi bi-exclamation-triangle-fill me-1 text-warning"></i>
+                    <strong>คำเตือนมาตรฐาน ICT:</strong> สเปกเครื่องนี้ต่ำกว่าเกณฑ์กระทรวง (RAM ต่ำกว่า 8GB หรือใช้ Hard Disk จานหมุน หรือ Windows 7)
+                   </div>`
+                : '';
+
+            if (body) {
+                body.innerHTML = `
+                    ${warningBox}
+                    <div style="margin-bottom: 14px; display: flex; gap: 6px; flex-wrap: wrap;">
+                        ${auditStateHtml}
+                        ${onlineStateHtml}
+                    </div>
+
+                    <div style="font-size: 12px; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
+                        รายละเอียดสเปกฮาร์ดแวร์
+                    </div>
+                    <table style="width: 100%; font-size: 12px; color: #cbd5e1; margin-bottom: 16px;">
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                            <td style="padding: 6px 0; color: #94a3b8; width: 35%;">CPU:</td>
+                            <td style="padding: 6px 0; font-weight: 600; color: #f8fafc;">${dev.cpu_model || '-'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                            <td style="padding: 6px 0; color: #94a3b8;">RAM:</td>
+                            <td style="padding: 6px 0; font-weight: 600; color: #f8fafc;">${dev.ram_capacity || '-'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                            <td style="padding: 6px 0; color: #94a3b8;">Storage:</td>
+                            <td style="padding: 6px 0; font-weight: 600; color: #f8fafc;">${dev.storage_type || '-'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                            <td style="padding: 6px 0; color: #94a3b8;">OS:</td>
+                            <td style="padding: 6px 0; font-weight: 600; color: #f8fafc;">${dev.os_name || '-'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                            <td style="padding: 6px 0; color: #94a3b8;">Agent Ver:</td>
+                            <td style="padding: 6px 0; font-family: monospace; color: #38bdf8;">${dev.client_version || 'v2.11.0'}</td>
+                        </tr>
+                    </table>
+
+                    <div style="font-size: 12px; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
+                        ข้อมูลการครอบครองและตำแหน่ง
+                    </div>
+                    <table style="width: 100%; font-size: 12px; color: #cbd5e1; margin-bottom: 16px;">
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                            <td style="padding: 6px 0; color: #94a3b8; width: 35%;">แผนก/หน่วยงาน:</td>
+                            <td style="padding: 6px 0; font-weight: 600; color: #f8fafc;">${dept.name} (ชั้น ${dept.floor || 1})</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                            <td style="padding: 6px 0; color: #94a3b8;">ผู้ครอบครอง:</td>
+                            <td style="padding: 6px 0; font-weight: 600; color: #f8fafc;">${dev.custodian_name || '-'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                            <td style="padding: 6px 0; color: #94a3b8;">จุดติดตั้ง:</td>
+                            <td style="padding: 6px 0; color: #f8fafc;">${dev.location_detail || '-'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                            <td style="padding: 6px 0; color: #94a3b8;">เลขครุภัณฑ์:</td>
+                            <td style="padding: 6px 0; font-family: monospace; color: #fbbf24;">${dev.asset_code || '-'}</td>
+                        </tr>
+                    </table>
+                `;
+            }
+
+            if (footer) {
+                footer.style.padding = '14px 20px';
+                footer.style.borderTop = '1px solid rgba(255,255,255,0.08)';
+                footer.style.background = 'rgba(30, 41, 59, 0.5)';
+                footer.style.display = 'flex';
+                footer.style.flexDirection = 'column';
+                footer.style.gap = '8px';
+
+                footer.innerHTML = `
+                    <button type="button" class="btn btn-primary btn-sm" onclick="THC_3D.scanSingleDevice('${dev.hostname}', '${dev.hardware_id || ''}', ${dev.id})" style="border-radius: 8px; font-weight: 700; background: linear-gradient(135deg, #0f766e 0%, #0369a1 100%); border: none;">
+                        <i class="bi bi-cloud-arrow-down-fill me-1"></i> ส่งคำสั่งดึงสเปกเครื่องนี้ทันที
+                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <a href="{{ url('/assets') }}/${dev.id}" target="_blank" class="btn btn-outline-light btn-sm w-100" style="border-radius: 8px; font-size: 11.5px;">
+                            <i class="bi bi-pencil-square me-1"></i> เปิดดูข้อมูลครุภัณฑ์
+                        </a>
+                    </div>
+                `;
+            }
+
+            drawer.style.display = 'flex';
+
+            // Pulse node on stage
+            const nodeEl = document.getElementById(`devNode_${dev.id}`);
+            if (nodeEl) {
+                nodeEl.style.boxShadow = '0 0 20px #38bdf8';
+                setTimeout(() => {
+                    nodeEl.style.boxShadow = '';
+                }, 3000);
+            }
+        },
+
+        closeDrawer: function() {
+            const drawer = document.getElementById('map3dDrawer');
+            if (drawer) drawer.style.display = 'none';
+            this.selectedDeviceId = null;
+        },
+
+        scanSingleDevice: function(hostname, hwid, assetId) {
+            if (!hostname && !hwid) {
+                alert('เครื่องนี้ไม่มี Hostname หรือ Hardware ID จึงไม่สามารถส่งคำสั่งสแกนได้');
+                return;
+            }
+            executeFleetScanBatch([{
+                hostname: hostname,
+                hardware_id: hwid,
+                asset_id: assetId
+            }]);
+        },
+
+        scanCurrentView: function() {
+            // Collect all devices currently displayed
+            const visibleRooms = document.querySelectorAll('.ha-3d-room');
+            const targets = [];
+            const seen = new Set();
+
+            visibleRooms.forEach(room => {
+                const devs = room.querySelectorAll('.ha-3d-device');
+                devs.forEach(dev => {
+                    if (dev.style.opacity === '0.2' || dev.style.opacity === '0.15') return; // filtered out
+                    const devId = dev.getAttribute('data-dev-id');
+                    // Find in data
+                    this.data.departments.forEach(dept => {
+                        (dept.devices || []).forEach(d => {
+                            if (String(d.id) === String(devId) && (d.hostname || d.hardware_id)) {
+                                const key = (d.hostname || '') + '_' + (d.hardware_id || '');
+                                if (!seen.has(key)) {
+                                    seen.add(key);
+                                    targets.push({
+                                        hostname: d.hostname,
+                                        hardware_id: d.hardware_id,
+                                        asset_id: d.id
+                                    });
+                                }
+                            }
+                        });
+                    });
+                });
+            });
+
+            if (targets.length === 0) {
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'ไม่พบคอมพิวเตอร์ในมุมมองนี้',
+                        text: 'กรุณาเลือกอาคารหรือแผนกที่มีเครื่องคอมพิวเตอร์ติดตั้งอยู่',
+                        confirmButtonColor: '#0f766e'
+                    });
+                } else {
+                    alert('ไม่พบคอมพิวเตอร์ในมุมมองนี้');
+                }
+                return;
+            }
+
+            if (window.Swal) {
+                Swal.fire({
+                    title: `สั่งสแกน ${targets.length} เครื่องในมุมมองนี้?`,
+                    text: 'ระบบจะส่งคำสั่งไปยัง Agent ของคอมพิวเตอร์ที่แสดงบนแผนผัง เพื่อดึงสเปกฮาร์ดแวร์ล่าสุด',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'ยืนยันสั่งสแกน',
+                    cancelButtonText: 'ยกเลิก',
+                    confirmButtonColor: '#0f766e'
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        executeFleetScanBatch(targets);
+                    }
+                });
+            } else {
+                if (confirm(`สั่งสแกน ${targets.length} เครื่องในมุมมองนี้?`)) {
+                    executeFleetScanBatch(targets);
+                }
+            }
+        },
+
+        updateCurrentView: function() {
+            triggerUpdateAllOutdatedFleet();
+        },
+
+        focusDepartment: function(deptId) {
+            const roomEl = document.getElementById(`map3dRoom_${deptId}`);
+            if (!roomEl) return;
+
+            // Highlight room
+            document.querySelectorAll('.ha-3d-room').forEach(r => r.classList.remove('focused'));
+            roomEl.classList.add('focused');
+
+            // Pan to center of this room
+            const roomLeft = parseFloat(roomEl.style.left) || 0;
+            const roomTop = parseFloat(roomEl.style.top) || 0;
+
+            this.panX = 700 - (roomLeft + 120);
+            this.panY = 500 - (roomTop + 80);
+            this.zoom = 120;
+            this.updateCamera();
+
+            this.showBeacon(roomEl);
+        },
+
+        showBeacon: function(roomEl, targetNode) {
+            const beaconLayer = document.getElementById('map3dBeaconLayer');
+            if (!beaconLayer) return;
+
+            const roomLeft = parseFloat(roomEl.style.left) || 0;
+            const roomTop = parseFloat(roomEl.style.top) || 0;
+
+            let bx = roomLeft + 120;
+            let by = roomTop + 80;
+
+            if (targetNode) {
+                const nodeLeft = parseFloat(targetNode.style.left) || 0;
+                const nodeTop = parseFloat(targetNode.style.top) || 0;
+                bx = roomLeft + nodeLeft + 15;
+                by = roomTop + nodeTop + 45;
+            }
+
+            beaconLayer.innerHTML = `
+                <div style="position: absolute; left: ${bx}px; top: ${by}px; width: 0; height: 0; pointer-events: none; transform: translateZ(25px);">
+                    <div style="position: absolute; width: 60px; height: 60px; margin-left: -30px; margin-top: -30px; border-radius: 50%; border: 3px solid #f59e0b; animation: radarPing 1.8s infinite; box-shadow: 0 0 15px #f59e0b;"></div>
+                    <div style="position: absolute; width: 120px; height: 120px; margin-left: -60px; margin-top: -60px; border-radius: 50%; border: 2px solid rgba(245, 158, 11, 0.6); animation: radarPing 1.8s infinite 0.6s;"></div>
+                </div>
+            `;
+        },
+
+        toggleDesignMode: function() {
+            this.designMode = !this.designMode;
+            const banner = document.getElementById('map3dDesignModeBanner');
+            const btn = document.getElementById('btnToggleDesignMode');
+
+            if (this.designMode) {
+                if (banner) banner.style.display = 'flex';
+                if (btn) btn.classList.add('active');
+                document.querySelectorAll('.ha-3d-room').forEach(r => {
+                    r.style.cursor = 'move';
+                    r.style.borderColor = '#f59e0b';
+                });
+            } else {
+                if (banner) banner.style.display = 'none';
+                if (btn) btn.classList.remove('active');
+                document.querySelectorAll('.ha-3d-room').forEach(r => {
+                    r.style.cursor = 'pointer';
+                    r.style.borderColor = '';
+                });
+            }
+        },
+
+        saveLayout: function() {
+            try {
+                localStorage.setItem('thc_floorplan_layout_custom', JSON.stringify(this.customLayout));
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'บันทึกตำแหน่งผังเรียบร้อยแล้ว',
+                        text: 'ตำแหน่งจัดวางห้องและแผนกจำลอง 3 มิติถูกบันทึกไว้ในเบราว์เซอร์แล้ว',
+                        confirmButtonColor: '#0f766e'
+                    });
+                } else {
+                    alert('บันทึกตำแหน่งผังเรียบร้อยแล้ว');
+                }
+            } catch (e) {
+                alert('เกิดข้อผิดพลาดในการบันทึกผัง');
+            }
+        },
+
+        resetLayoutDefaults: function() {
+            try {
+                localStorage.removeItem('thc_floorplan_layout_custom');
+                this.customLayout = {};
+                this.render();
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'คืนค่าเริ่มต้นสำเร็จ',
+                        text: 'รีเซ็ตผังกลับสู่ตำแหน่งมาตรฐานเรียบร้อย',
+                        confirmButtonColor: '#0f766e'
+                    });
+                }
+            } catch (e) {}
+        },
+
+        toggleFullscreen: function() {
+            const wrapper = document.getElementById('map3dViewportWrapper');
+            if (!wrapper) return;
+
+            if (!document.fullscreenElement) {
+                if (wrapper.requestFullscreen) {
+                    wrapper.requestFullscreen();
+                } else if (wrapper.webkitRequestFullscreen) {
+                    wrapper.webkitRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+    };
+
     document.addEventListener('DOMContentLoaded', function() {
         pollLiveAgentOnlineStatus();
         setInterval(pollLiveAgentOnlineStatus, 8000);
+
+        if (window.map3dData && document.getElementById('map3dStage')) {
+            THC_3D.init(window.map3dData);
+        }
     });
 </script>
 @endsection

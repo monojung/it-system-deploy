@@ -13,7 +13,7 @@ return [
 
     'version' => env('APP_VERSION', '2.11.0'),
     'release_name' => 'Thung Hua Chang IT Service Platform (Hardened Native Standalone Agent v2.11.0, Central Remote Update & Setup Wizard Suite)',
-    'release_date' => '2026-10-21',
+    'release_date' => '2026-10-22',
     'build' => '20261021.1',
     'environment' => env('APP_ENV', 'production'),
 

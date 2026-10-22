@@ -910,6 +910,7 @@ class HardwareAuditController extends Controller
         $agentLatestCount = count(array_filter($agentFleet, fn($a) => !empty($a['is_latest_version'])));
         $agentOutdatedCount = count(array_filter($agentFleet, fn($a) => !empty($a['is_outdated'])));
         $latestAgentVersion = '2.11.0';
+        $map3dData = $this->get3DMapData($fiscalYear, $agentFleet);
 
         return view('hardware_audits.index', compact(
             'fiscalYear',
@@ -941,7 +942,8 @@ class HardwareAuditController extends Controller
             'agentOfflineCount',
             'agentLatestCount',
             'agentOutdatedCount',
-            'latestAgentVersion'
+            'latestAgentVersion',
+            'map3dData'
         ));
     }
 
@@ -2134,6 +2136,253 @@ class HardwareAuditController extends Controller
         });
 
         return array_values($fleet);
+    }
+
+    /**
+     * Compile 3D Department Map Diagram data with buildings, floors, rooms, and devices
+     */
+    public function get3DMapData(int $fiscalYear, array $agentFleet): array
+    {
+        // 1. Index fleet for rapid O(1) lookup
+        $fleetByHwid = [];
+        $fleetByHost = [];
+        $fleetByAsset = [];
+        foreach ($agentFleet as $agent) {
+            if (!empty($agent['hardware_id'])) $fleetByHwid[strtoupper(trim($agent['hardware_id']))] = $agent;
+            if (!empty($agent['hostname'])) $fleetByHost[strtoupper(trim($agent['hostname']))] = $agent;
+            if (!empty($agent['asset_id'])) $fleetByAsset[(int)$agent['asset_id']] = $agent;
+        }
+
+        // 2. Fetch all active computers
+        $assets = Asset::with(['department', 'deviceType'])
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereHas('deviceType', function ($sub) {
+                    $sub->whereIn('code', ['PC', 'NB', 'AIO', 'SERVER'])
+                        ->orWhere('name', 'like', '%คอมพิวเตอร์%')
+                        ->orWhere('name', 'like', '%โน้ตบุ๊ก%')
+                        ->orWhere('name', 'like', '%Server%');
+                })->orWhereNull('device_type_id');
+            })->get();
+
+        $assetsByDept = [];
+        $unassignedAssets = [];
+        foreach ($assets as $asset) {
+            $deptId = $asset->department_id;
+            if ($deptId) {
+                if (!isset($assetsByDept[$deptId])) $assetsByDept[$deptId] = [];
+                $assetsByDept[$deptId][] = $asset;
+            } else {
+                $unassignedAssets[] = $asset;
+            }
+        }
+
+        // 3. Departments mapping
+        $depts = Department::where('is_active', true)->orderBy('name')->get();
+        $mappedDepts = [];
+
+        foreach ($depts as $d) {
+            $bRaw = $d->building ?: '';
+            $bId = 'other';
+            $bTitle = 'หน่วยงานอื่นๆ / แผนกทั่วไป';
+            $floor = 1;
+
+            if (mb_strpos($bRaw, 'ผู้ป่วยนอก') !== false || mb_strpos($d->name, 'OPD') !== false || mb_strpos($d->name, 'ER') !== false || mb_strpos($d->name, 'ฉุกเฉิน') !== false || mb_strpos($d->name, 'เภสัช') !== false || mb_strpos($d->name, 'LAB') !== false || mb_strpos($d->name, 'ชันสูตร') !== false || mb_strpos($d->name, 'รังสี') !== false || mb_strpos($d->name, 'ทันต') !== false || mb_strpos($d->name, 'เวชระเบียน') !== false) {
+                $bId = 'opd';
+                $bTitle = 'อาคารผู้ป่วยนอก (OPD)';
+                $floor = (mb_strpos($bRaw, '2') !== false || mb_strpos($d->name, 'ดิจิทัล') !== false || mb_strpos($d->name, 'การเงิน') !== false || mb_strpos($d->name, 'บัญชี') !== false) ? 2 : 1;
+            } elseif (mb_strpos($bRaw, 'ผู้ป่วยใน') !== false || mb_strpos($d->name, 'IPD') !== false || mb_strpos($d->name, 'ผู้ป่วยใน') !== false) {
+                $bId = 'ipd';
+                $bTitle = 'อาคารผู้ป่วยใน (IPD)';
+                $floor = mb_strpos($bRaw, '2') !== false ? 2 : 1;
+            } elseif (mb_strpos($bRaw, 'อำนวยการ') !== false || mb_strpos($d->name, 'บริหาร') !== false || mb_strpos($d->name, 'สารบรรณ') !== false || mb_strpos($d->name, 'พัสดุ') !== false) {
+                $bId = 'admin';
+                $bTitle = 'อาคารอำนวยการ / บริหาร';
+                $floor = mb_strpos($bRaw, '2') !== false ? 2 : 1;
+            } elseif (mb_strpos($bRaw, 'ฟื้นฟู') !== false || mb_strpos($d->name, 'กายภาพ') !== false) {
+                $bId = 'rehab';
+                $bTitle = 'อาคารฟื้นฟูสมรรถภาพ';
+                $floor = 1;
+            }
+
+            $deptAssets = $assetsByDept[$d->id] ?? [];
+            $devices = [];
+            $auditedCount = 0;
+            $onlineCount = 0;
+
+            foreach ($deptAssets as $idx => $a) {
+                $hwKey = strtoupper(trim((string)$a->hardware_id));
+                $hostKey = strtoupper(trim((string)$a->hostname));
+                $agent = $fleetByAsset[$a->id] ?? ($hwKey && isset($fleetByHwid[$hwKey]) ? $fleetByHwid[$hwKey] : ($hostKey && isset($fleetByHost[$hostKey]) ? $fleetByHost[$hostKey] : null));
+
+                $isOnline = $agent ? !empty($agent['is_online']) : false;
+                if ($isOnline) $onlineCount++;
+
+                $isAudited = ((int)$a->last_audited_fiscal_year === $fiscalYear);
+                if ($isAudited) $auditedCount++;
+
+                $ram = is_numeric($a->ram_capacity) ? (float)$a->ram_capacity : null;
+                $isMdesWarning = ($ram !== null && $ram < 8) || (stripos((string)$a->storage_type, 'HDD') !== false) || (stripos((string)$a->os_name, 'Windows 7') !== false);
+
+                $col = $idx % 4;
+                $row = floor($idx / 4);
+                $x = 15 + ($col * 24);
+                $y = 22 + ($row * 24);
+
+                $devices[] = [
+                    'id' => $a->id,
+                    'asset_code' => $a->asset_code ?: 'THC-A' . $a->id,
+                    'name' => $a->name ?: 'คอมพิวเตอร์',
+                    'hostname' => $a->hostname ?: ($agent['hostname'] ?? '-'),
+                    'ip_address' => $a->ip_address ?: ($agent['ip_address'] ?? '-'),
+                    'device_type' => $a->deviceType ? $a->deviceType->code : 'PC',
+                    'custodian_name' => $a->custodian_name ?: '-',
+                    'location_detail' => $a->location_detail ?: '',
+                    'cpu_model' => $a->cpu_model ?: '-',
+                    'ram_capacity' => $a->ram_capacity ? $a->ram_capacity . ' GB' : '-',
+                    'storage_type' => $a->storage_type ?: '-',
+                    'os_name' => $a->os_name ?: '-',
+                    'is_audited' => $isAudited,
+                    'is_online' => $isOnline,
+                    'is_mdes_warning' => $isMdesWarning,
+                    'audit_id' => $agent['audit_id'] ?? null,
+                    'client_version' => $agent['client_version'] ?? null,
+                    'x' => $x,
+                    'y' => $y
+                ];
+            }
+
+            $totalAssets = count($deptAssets);
+            $percentage = $totalAssets > 0 ? round(($auditedCount / $totalAssets) * 100) : 0;
+
+            $mappedDepts[] = [
+                'id' => $d->id,
+                'code' => $d->code ?: 'THC-D' . $d->id,
+                'name' => $d->name,
+                'building_id' => $bId,
+                'building_title' => $bTitle,
+                'floor' => $floor,
+                'total_devices' => $totalAssets,
+                'audited_devices' => $auditedCount,
+                'online_devices' => $onlineCount,
+                'pending_devices' => max(0, $totalAssets - $auditedCount),
+                'percentage' => $percentage,
+                'devices' => $devices
+            ];
+        }
+
+        // Add Unassigned / Floating zone if any assets are unassigned
+        $unassignedDevices = [];
+        $unassignedAudited = 0;
+        $unassignedOnline = 0;
+        foreach ($unassignedAssets as $idx => $a) {
+            $hwKey = strtoupper(trim((string)$a->hardware_id));
+            $hostKey = strtoupper(trim((string)$a->hostname));
+            $agent = $fleetByAsset[$a->id] ?? ($hwKey && isset($fleetByHwid[$hwKey]) ? $fleetByHwid[$hwKey] : ($hostKey && isset($fleetByHost[$hostKey]) ? $fleetByHost[$hostKey] : null));
+
+            $isOnline = $agent ? !empty($agent['is_online']) : false;
+            if ($isOnline) $unassignedOnline++;
+
+            $isAudited = ((int)$a->last_audited_fiscal_year === $fiscalYear);
+            if ($isAudited) $unassignedAudited++;
+
+            $ram = is_numeric($a->ram_capacity) ? (float)$a->ram_capacity : null;
+            $isMdesWarning = ($ram !== null && $ram < 8) || (stripos((string)$a->storage_type, 'HDD') !== false) || (stripos((string)$a->os_name, 'Windows 7') !== false);
+
+            $col = $idx % 4;
+            $row = floor($idx / 4);
+            $x = 15 + ($col * 24);
+            $y = 22 + ($row * 24);
+
+            $unassignedDevices[] = [
+                'id' => $a->id,
+                'asset_code' => $a->asset_code ?: 'THC-A' . $a->id,
+                'name' => $a->name ?: 'คอมพิวเตอร์',
+                'hostname' => $a->hostname ?: ($agent['hostname'] ?? '-'),
+                'ip_address' => $a->ip_address ?: ($agent['ip_address'] ?? '-'),
+                'device_type' => $a->deviceType ? $a->deviceType->code : 'PC',
+                'custodian_name' => $a->custodian_name ?: '-',
+                'location_detail' => $a->location_detail ?: '',
+                'cpu_model' => $a->cpu_model ?: '-',
+                'ram_capacity' => $a->ram_capacity ? $a->ram_capacity . ' GB' : '-',
+                'storage_type' => $a->storage_type ?: '-',
+                'os_name' => $a->os_name ?: '-',
+                'is_audited' => $isAudited,
+                'is_online' => $isOnline,
+                'is_mdes_warning' => $isMdesWarning,
+                'audit_id' => $agent['audit_id'] ?? null,
+                'client_version' => $agent['client_version'] ?? null,
+                'x' => $x,
+                'y' => $y
+            ];
+        }
+
+        if (count($unassignedDevices) > 0) {
+            $uTotal = count($unassignedDevices);
+            $mappedDepts[] = [
+                'id' => 0,
+                'code' => 'UNLINKED',
+                'name' => 'พื้นที่ส่วนกลาง / ยังไม่ได้ระบุแผนก (Unassigned)',
+                'building_id' => 'other',
+                'building_title' => 'พื้นที่ส่วนกลาง / รอระบุแผนก',
+                'floor' => 1,
+                'total_devices' => $uTotal,
+                'audited_devices' => $unassignedAudited,
+                'online_devices' => $unassignedOnline,
+                'pending_devices' => max(0, $uTotal - $unassignedAudited),
+                'percentage' => $uTotal > 0 ? round(($unassignedAudited / $uTotal) * 100) : 0,
+                'devices' => $unassignedDevices
+            ];
+        }
+
+        return [
+            'fiscal_year' => $fiscalYear,
+            'departments' => $mappedDepts,
+            'buildings' => [
+                [
+                    'id' => 'all',
+                    'name' => 'ทุกอาคาร (All Buildings Overview)',
+                    'short_name' => 'ทุกอาคาร',
+                    'icon' => 'bi-buildings-fill',
+                    'floors' => [1, 2]
+                ],
+                [
+                    'id' => 'opd',
+                    'name' => 'อาคารผู้ป่วยนอก (OPD Building)',
+                    'short_name' => 'อาคารผู้ป่วยนอก',
+                    'icon' => 'bi-hospital-fill',
+                    'floors' => [1, 2]
+                ],
+                [
+                    'id' => 'ipd',
+                    'name' => 'อาคารผู้ป่วยใน (IPD Building)',
+                    'short_name' => 'อาคารผู้ป่วยใน',
+                    'icon' => 'bi-heart-pulse-fill',
+                    'floors' => [1, 2]
+                ],
+                [
+                    'id' => 'admin',
+                    'name' => 'อาคารอำนวยการ / บริหาร (Admin Building)',
+                    'short_name' => 'อาคารอำนวยการ',
+                    'icon' => 'bi-bank2',
+                    'floors' => [1, 2]
+                ],
+                [
+                    'id' => 'rehab',
+                    'name' => 'อาคารฟื้นฟูสมรรถภาพ (Rehab Building)',
+                    'short_name' => 'อาคารฟื้นฟู',
+                    'icon' => 'bi-activity',
+                    'floors' => [1]
+                ],
+                [
+                    'id' => 'other',
+                    'name' => 'หน่วยงานอื่นๆ และพื้นที่ส่วนกลาง',
+                    'short_name' => 'หน่วยงานอื่นๆ',
+                    'icon' => 'bi-grid-1x2-fill',
+                    'floors' => [1]
+                ],
+            ]
+        ];
     }
 
     /**
