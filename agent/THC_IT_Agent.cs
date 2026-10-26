@@ -8,6 +8,7 @@ using System.Management;
 using System.Net;
 using System.Net.Security;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -89,6 +90,7 @@ namespace ThcItAgent
             bool isInstall = false;
             bool isUninstall = false;
             bool isSilent = false;
+            bool isDashboard = false;
             string updatedFrom = null;
             string customServer = null;
             int waitPid = 0;
@@ -102,6 +104,7 @@ namespace ThcItAgent
 
                     if (key == "install" || key == "setup") isInstall = true;
                     else if (key == "uninstall" || key == "remove") isUninstall = true;
+                    else if (key == "dashboard" || key == "ui" || key == "specs") isDashboard = true;
                     else if (key == "silent" || key == "quiet" || key == "s" || key == "q") isSilent = true;
                     else if (key == "updated-from" || key == "update-post")
                     {
@@ -240,6 +243,14 @@ namespace ThcItAgent
                         }
                     }
                 }
+            }
+
+            if (isDashboard)
+            {
+                var specs = HardwareSpecs.Collect();
+                var cfg = AppConfig.Load();
+                Application.Run(new DeviceDashboardForm(null, specs, cfg));
+                return;
             }
 
             // Allow only one instance per user session.
@@ -957,6 +968,9 @@ namespace ThcItAgent
         private bool _isBusy = false;
 
         private HardwareSpecs _cachedSpecs;
+        public HardwareSpecs CachedSpecs { get { return _cachedSpecs; } set { _cachedSpecs = value; } }
+        public AppConfig Config { get { return _config; } }
+
         private int _lastExecutedCommandId = 0;
         private DateTime _lastExecutedTime = DateTime.MinValue;
         private static readonly Random _random = new Random();
@@ -1400,14 +1414,14 @@ namespace ThcItAgent
             return null;
         }
 
-        private string HttpPostRaw(string url, string jsonBody, int timeoutMs)
+        public static string HttpPostRaw(string url, string jsonBody, int timeoutMs)
         {
             var req = (HttpWebRequest)WebRequest.Create(url);
             req.Method = "POST";
             req.ContentType = "application/json; charset=utf-8";
             req.Accept = "application/json";
             req.Timeout = timeoutMs;
-            req.UserAgent = "THC-Hospital-IT-Agent/2.11.0 (Windows NT; Asset Management; Thung Hua Chang Hospital)";
+            req.UserAgent = "THC-Hospital-IT-Agent/" + Program.CurrentVersion + " (Windows NT; Asset Management; Thung Hua Chang Hospital)";
             req.KeepAlive = false;
 
             byte[] bytes = Encoding.UTF8.GetBytes(jsonBody);
@@ -1425,134 +1439,48 @@ namespace ThcItAgent
             }
         }
 
-        private void ShowDeviceSpecs()
+        private static DeviceDashboardForm _activeDashboardForm = null;
+
+        public void ShowDeviceSpecs()
         {
-            if (_cachedSpecs == null)
+            try
             {
-                _cachedSpecs = HardwareSpecs.Collect();
+                if (_activeDashboardForm != null && !_activeDashboardForm.IsDisposed)
+                {
+                    if (_activeDashboardForm.WindowState == FormWindowState.Minimized)
+                        _activeDashboardForm.WindowState = FormWindowState.Normal;
+                    _activeDashboardForm.BringToFront();
+                    _activeDashboardForm.Activate();
+                    return;
+                }
+
+                if (_cachedSpecs == null)
+                {
+                    _cachedSpecs = HardwareSpecs.Collect();
+                }
+
+                _activeDashboardForm = new DeviceDashboardForm(this, _cachedSpecs, _config);
+                _activeDashboardForm.Show();
             }
-
-            var form = new Form
+            catch (Exception ex)
             {
-                Text = "💻 ข้อมูลสเปกเครื่อง - THC IT Agent",
-                Size = new Size(580, 520),
-                StartPosition = FormStartPosition.CenterScreen,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                MaximizeBox = false,
-                MinimizeBox = false,
-                ShowInTaskbar = true,
-                BackColor = Color.White
-            };
-
-            var pnlHeader = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 65,
-                BackColor = Color.FromArgb(41, 128, 185)
-            };
-            var lblTitle = new Label
-            {
-                Text = "โรงพยาบาลทุ่งหัวช้าง - ระบบตรวจเช็คทรัพย์สินไอที",
-                ForeColor = Color.White,
-                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
-                Location = new Point(16, 12),
-                AutoSize = true
-            };
-            var lblSub = new Label
-            {
-                Text = "THC Client Hardware Audit Agent v2.11.0 (Standalone System Tray)",
-                ForeColor = Color.FromArgb(220, 240, 255),
-                Font = new Font("Segoe UI", 9F),
-                Location = new Point(17, 36),
-                AutoSize = true
-            };
-            pnlHeader.Controls.Add(lblTitle);
-            pnlHeader.Controls.Add(lblSub);
-            form.Controls.Add(pnlHeader);
-
-            var list = new ListView
-            {
-                Location = new Point(16, 80),
-                Size = new Size(532, 340),
-                View = View.Details,
-                FullRowSelect = true,
-                GridLines = true,
-                Font = new Font("Segoe UI", 9F)
-            };
-            list.Columns.Add("รายการฮาร์ดแวร์", 160);
-            list.Columns.Add("ข้อมูลที่ตรวจพบ", 350);
-
-            Action addRow = () =>
-            {
-                list.Items.Clear();
-                list.Items.Add(new ListViewItem(new[] { "ชื่อเครื่อง (Hostname)", _cachedSpecs.Hostname }));
-                list.Items.Add(new ListViewItem(new[] { "ยี่ห้อ / รุ่น (Model)", _cachedSpecs.Brand + " " + _cachedSpecs.Model }));
-                list.Items.Add(new ListViewItem(new[] { "ประเภทอุปกรณ์", _cachedSpecs.DeviceTypeCode }));
-                list.Items.Add(new ListViewItem(new[] { "ซีเรียลนัมเบอร์ (Serial)", _cachedSpecs.SerialNumber }));
-                list.Items.Add(new ListViewItem(new[] { "รหัสฮาร์ดแวร์ (HWID)", _cachedSpecs.HardwareId }));
-                list.Items.Add(new ListViewItem(new[] { "หน่วยประมวลผล (CPU)", _cachedSpecs.CpuModel + " (" + _cachedSpecs.CpuSpeed + ")" }));
-                list.Items.Add(new ListViewItem(new[] { "หน่วยความจำ (RAM)", _cachedSpecs.RamCapacity + " GB " + _cachedSpecs.RamType + " (" + _cachedSpecs.RamBus + " [" + _cachedSpecs.RamSlots + "])" }));
-                list.Items.Add(new ListViewItem(new[] { "พื้นที่จัดเก็บหลัก (Storage)", _cachedSpecs.StorageType + " " + _cachedSpecs.StorageCapacity }));
-                if (!string.IsNullOrEmpty(_cachedSpecs.StorageSecond))
-                    list.Items.Add(new ListViewItem(new[] { "พื้นที่จัดเก็บเสริม (Secondary)", _cachedSpecs.StorageSecond }));
-                list.Items.Add(new ListViewItem(new[] { "ระบบปฏิบัติการ (OS)", _cachedSpecs.OsName + " (" + _cachedSpecs.OsLicense + ")" }));
-                list.Items.Add(new ListViewItem(new[] { "การ์ดแสดงผล (GPU)", _cachedSpecs.GpuModel }));
-                list.Items.Add(new ListViewItem(new[] { "IP Address / MAC", _cachedSpecs.IpAddress + " (" + _cachedSpecs.MacAddress + ")" }));
-                list.Items.Add(new ListViewItem(new[] { "หน้าจอแสดงผล (Monitor)", _cachedSpecs.MonitorSize }));
-                list.Items.Add(new ListViewItem(new[] { "เซิร์ฟเวอร์เชื่อมต่อ", _config.ServerUrl }));
-            };
-            addRow();
-            form.Controls.Add(list);
-
-            var btnSubmit = new Button
-            {
-                Text = "📥 ส่งข้อมูลขึ้นระบบเดี๋ยวนี้",
-                Location = new Point(16, 432),
-                Size = new Size(180, 34),
-                BackColor = Color.FromArgb(46, 204, 113),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold)
-            };
-            btnSubmit.Click += (s, e) =>
-            {
-                TriggerManualScan();
-                MessageBox.Show("กำลังส่งข้อมูลสเปกเครื่องเข้าสู่ระบบ IT...", "THC IT Agent", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            };
-            form.Controls.Add(btnSubmit);
-
-            var btnRefresh = new Button
-            {
-                Text = "🔄 รีเฟรชสเปก",
-                Location = new Point(204, 432),
-                Size = new Size(110, 34),
-                BackColor = Color.FromArgb(240, 240, 240),
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9F)
-            };
-            btnRefresh.Click += (s, e) =>
-            {
-                _cachedSpecs = HardwareSpecs.Collect();
-                addRow();
-            };
-            form.Controls.Add(btnRefresh);
-
-            var btnClose = new Button
-            {
-                Text = "ปิดหน้าต่าง",
-                Location = new Point(438, 432),
-                Size = new Size(110, 34),
-                BackColor = Color.FromArgb(240, 240, 240),
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9F)
-            };
-            btnClose.Click += (s, e) => form.Close();
-            form.Controls.Add(btnClose);
-
-            form.ShowDialog();
+                Program.LogDebug("ShowDeviceSpecs exception: " + ex.Message);
+            }
         }
 
-        private void ShowServerSettings()
+        public void ShowServerSettings()
+        {
+            ShowServerSettingsDialog(_config, () =>
+            {
+                if (_notifyIcon != null)
+                {
+                    _notifyIcon.ShowBalloonTip(2000, "บันทึกการตั้งค่าแล้ว", "กำลังเชื่อมต่อกับเซิร์ฟเวอร์: " + _config.ServerUrl, ToolTipIcon.Info);
+                }
+                TriggerManualScan();
+            });
+        }
+
+        public static void ShowServerSettingsDialog(AppConfig config, Action onSaved = null)
         {
             var form = new Form
             {
@@ -1577,7 +1505,7 @@ namespace ThcItAgent
 
             var txtUrl = new TextBox
             {
-                Text = _config.ServerUrl,
+                Text = config.ServerUrl,
                 Location = new Point(20, 44),
                 Size = new Size(440, 26),
                 Font = new Font("Segoe UI", 10F)
@@ -1672,10 +1600,10 @@ namespace ThcItAgent
             };
             btnSave.Click += (s, e) =>
             {
-                _config.ServerUrl = txtUrl.Text.Trim().TrimEnd('/');
-                _config.Save();
+                config.ServerUrl = txtUrl.Text.Trim().TrimEnd('/');
+                config.Save();
                 form.Close();
-                _notifyIcon.ShowBalloonTip(2000, "บันทึกการตั้งค่าแล้ว", "กำลังเชื่อมต่อกับเซิร์ฟเวอร์: " + _config.ServerUrl, ToolTipIcon.Info);
+                if (onSaved != null) onSaved();
             };
             form.Controls.Add(btnSave);
 
@@ -1711,7 +1639,7 @@ namespace ThcItAgent
             return !string.Equals(remoteVer.Trim(), currentVer.Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
-        private void ExecuteSelfUpdate(bool isRemote, Dictionary<string, object> cmdParams = null)
+        public void ExecuteSelfUpdate(bool isRemote, Dictionary<string, object> cmdParams = null)
         {
             try
             {
@@ -2376,45 +2304,903 @@ namespace ThcItAgent
         }
     }
 
+    public class RoundedCardPanel : Panel
+    {
+        public int CornerRadius { get; set; }
+        public Color BorderColor { get; set; }
+        public Color CardBackColor { get; set; }
+
+        public RoundedCardPanel()
+        {
+            this.DoubleBuffered = true;
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            CornerRadius = 12;
+            BorderColor = Color.FromArgb(226, 232, 240);
+            CardBackColor = Color.White;
+            this.BackColor = Color.Transparent;
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+            Rectangle rect = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
+            using (GraphicsPath path = CreateRoundedRectanglePath(rect, CornerRadius))
+            {
+                using (SolidBrush brush = new SolidBrush(CardBackColor))
+                {
+                    e.Graphics.FillPath(brush, path);
+                }
+                using (Pen pen = new Pen(BorderColor, 1.2f))
+                {
+                    e.Graphics.DrawPath(pen, path);
+                }
+            }
+        }
+
+        public static GraphicsPath CreateRoundedRectanglePath(Rectangle rect, int radius)
+        {
+            GraphicsPath path = new GraphicsPath();
+            int d = radius * 2;
+            if (d > rect.Width) d = rect.Width;
+            if (d > rect.Height) d = rect.Height;
+
+            path.AddArc(rect.X, rect.Y, d, d, 180, 90);
+            path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
+            path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);
+            path.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+    }
+
+    public class MetricProgressBar : Control
+    {
+        public int Value { get; set; }
+
+        public MetricProgressBar()
+        {
+            this.DoubleBuffered = true;
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
+            this.Height = 10;
+            this.Value = 0;
+            this.BackColor = Color.Transparent;
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+            int barY = (this.Height - 6) / 2;
+            int barW = this.Width;
+            Rectangle trackRect = new Rectangle(0, barY, barW, 6);
+
+            using (GraphicsPath trackPath = RoundedCardPanel.CreateRoundedRectanglePath(trackRect, 3))
+            using (SolidBrush trackBrush = new SolidBrush(Color.FromArgb(226, 232, 240)))
+            {
+                e.Graphics.FillPath(trackBrush, trackPath);
+            }
+
+            int fillW = (int)((this.Width * Math.Max(0, Math.Min(100, Value))) / 100.0);
+            if (fillW > 3)
+            {
+                Rectangle fillRect = new Rectangle(0, barY, fillW, 6);
+                Color barColor = Color.FromArgb(13, 148, 136); // Teal
+                if (Value >= 90) barColor = Color.FromArgb(225, 29, 72); // Rose
+                else if (Value >= 75) barColor = Color.FromArgb(217, 119, 6); // Amber
+
+                using (GraphicsPath fillPath = RoundedCardPanel.CreateRoundedRectanglePath(fillRect, 3))
+                using (SolidBrush fillBrush = new SolidBrush(barColor))
+                {
+                    e.Graphics.FillPath(fillBrush, fillPath);
+                }
+            }
+        }
+    }
+
+    public class DeviceDashboardForm : Form
+    {
+        private readonly TrayContext _context;
+        private HardwareSpecs _specs;
+        private readonly AppConfig _config;
+
+        private Label _lblStatusPill;
+        private Label _lblLastCollected;
+        private MetricProgressBar _barRam;
+        private MetricProgressBar _barDisk;
+        private Label _lblRamText;
+        private Label _lblDiskText;
+        private Label _lblServerEndpoint;
+        private Button _btnSyncNow;
+        private Button _btnCopyAll;
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        private class MEMORYSTATUSEX
+        {
+            public uint dwLength;
+            public uint dwMemoryLoad;
+            public ulong ullTotalPhys;
+            public ulong ullAvailPhys;
+            public ulong ullTotalPageFile;
+            public ulong ullAvailPageFile;
+            public ulong ullTotalVirtual;
+            public ulong ullAvailVirtual;
+            public ulong ullAvailExtendedVirtual;
+            public MEMORYSTATUSEX() { this.dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX)); }
+        }
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GlobalMemoryStatusEx([In, Out] MEMORYSTATUSEX lpBuffer);
+
+        public DeviceDashboardForm(TrayContext context, HardwareSpecs specs, AppConfig config)
+        {
+            _context = context;
+            _specs = specs ?? HardwareSpecs.Collect();
+            _config = config;
+
+            InitializeForm();
+            RefreshLiveMetrics();
+            StartServerPingTest();
+        }
+
+        private void InitializeForm()
+        {
+            this.Text = "💻 THC IT Agent - โรงพยาบาลทุ่งหัวช้าง (Hardware Dashboard)";
+            this.Size = new Size(980, 680);
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = true;
+            this.ShowInTaskbar = true;
+            this.BackColor = Color.FromArgb(248, 250, 252);
+            this.Font = new Font("Segoe UI", 9F);
+            this.DoubleBuffered = true;
+
+            // 1. Top Header
+            var pnlHead = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 80,
+                BackColor = Color.FromArgb(15, 23, 42)
+            };
+            pnlHead.Paint += (s, e) =>
+            {
+                using (var lgb = new LinearGradientBrush(new Rectangle(0, 0, pnlHead.Width, pnlHead.Height),
+                    Color.FromArgb(15, 23, 42), Color.FromArgb(15, 118, 110), 0f))
+                {
+                    e.Graphics.FillRectangle(lgb, 0, 0, pnlHead.Width, pnlHead.Height);
+                }
+
+                // Medical Emblem
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var brEmblem = new SolidBrush(Color.FromArgb(13, 148, 136)))
+                {
+                    e.Graphics.FillEllipse(brEmblem, 18, 18, 44, 44);
+                }
+                using (var penRing = new Pen(Color.FromArgb(45, 212, 191), 2f))
+                {
+                    e.Graphics.DrawEllipse(penRing, 18, 18, 44, 44);
+                }
+                using (var brCross = new SolidBrush(Color.White))
+                {
+                    e.Graphics.FillRectangle(brCross, 36, 26, 8, 28);
+                    e.Graphics.FillRectangle(brCross, 26, 36, 28, 8);
+                }
+            };
+
+            var lblTitle = new Label
+            {
+                Text = "THC IT Agent",
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 15F, FontStyle.Bold),
+                Location = new Point(74, 15),
+                AutoSize = true
+            };
+            pnlHead.Controls.Add(lblTitle);
+
+            var lblSub = new Label
+            {
+                Text = "โรงพยาบาลทุ่งหัวช้าง • กลุ่มงานสุขภาพดิจิทัล (Enterprise Edition v" + Program.CurrentVersion + ")",
+                ForeColor = Color.FromArgb(204, 251, 241),
+                Font = new Font("Segoe UI", 9F),
+                Location = new Point(76, 44),
+                AutoSize = true
+            };
+            pnlHead.Controls.Add(lblSub);
+
+            _lblStatusPill = new Label
+            {
+                Text = "● ตรวจสอบการเชื่อมต่อ...",
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(203, 213, 225),
+                BackColor = Color.FromArgb(30, 41, 59),
+                Location = new Point(680, 20),
+                AutoSize = true,
+                Padding = new Padding(8, 4, 8, 4)
+            };
+            pnlHead.Controls.Add(_lblStatusPill);
+
+            _lblServerEndpoint = new Label
+            {
+                Text = "🌐 " + _config.ServerUrl,
+                Font = new Font("Segoe UI", 8F),
+                ForeColor = Color.FromArgb(148, 163, 184),
+                Location = new Point(682, 48),
+                AutoSize = true,
+                Cursor = Cursors.Hand
+            };
+            _lblServerEndpoint.Click += (s, e) =>
+            {
+                TrayContext.ShowServerSettingsDialog(_config, () =>
+                {
+                    _lblServerEndpoint.Text = "🌐 " + _config.ServerUrl;
+                    StartServerPingTest();
+                });
+            };
+            pnlHead.Controls.Add(_lblServerEndpoint);
+
+            this.Controls.Add(pnlHead);
+
+            // 2. Cards Panel
+            var pnlCards = new Panel
+            {
+                Location = new Point(16, 92),
+                Size = new Size(932, 495),
+                BackColor = Color.Transparent
+            };
+            this.Controls.Add(pnlCards);
+
+            // ---------------- CARD 1: Identity & OS ----------------
+            var card1 = new RoundedCardPanel
+            {
+                Location = new Point(0, 0),
+                Size = new Size(300, 490)
+            };
+            BuildCardHeader(card1, "🏢 ข้อมูลเครื่องและระบบ", "Machine Identification & OS");
+
+            int y1 = 56;
+            AddSpecRow(card1, "ชื่อเครื่อง (Hostname):", _specs.Hostname, ref y1, true);
+            AddSpecRow(card1, "ยี่ห้อและรุ่น (Brand / Model):", (_specs.Brand + " " + _specs.Model).Trim(), ref y1, true);
+            AddSpecRow(card1, "ประเภทอุปกรณ์ (Device Type):", _specs.DeviceTypeCode + " (" + GetDeviceTypeLabel(_specs.DeviceTypeCode) + ")", ref y1, false);
+            AddSpecRow(card1, "ซีเรียลนัมเบอร์ (Serial Number):", _specs.SerialNumber, ref y1, true);
+            string hwidDisplay = _specs.HardwareId.Length > 22 ? _specs.HardwareId.Substring(0, 22) + "..." : _specs.HardwareId;
+            AddSpecRow(card1, "รหัสฮาร์ดแวร์ประจำเครื่อง (HWID):", hwidDisplay, _specs.HardwareId, ref y1, true);
+            AddSpecRow(card1, "ระบบปฏิบัติการ (Operating System):", _specs.OsName, _specs.OsName + " (" + _specs.OsLicense + ")", ref y1, true, _specs.OsLicense);
+
+            pnlCards.Controls.Add(card1);
+
+            // ---------------- CARD 2: Hardware Specs ----------------
+            var card2 = new RoundedCardPanel
+            {
+                Location = new Point(316, 0),
+                Size = new Size(300, 490)
+            };
+            BuildCardHeader(card2, "⚡ สเปกฮาร์ดแวร์หลัก", "Processor, Memory & Storage");
+
+            int y2 = 56;
+            AddSpecRow(card2, "หน่วยประมวลผล (Processor - CPU):", _specs.CpuModel, ref y2, false, _specs.CpuSpeed + " • " + _specs.CpuCores + "C / " + _specs.CpuThreads + "T");
+
+            // RAM with Progress
+            var lblRamTitle = new Label { Text = "หน่วยความจำ (RAM Memory):", Font = new Font("Segoe UI", 8.2F), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(14, y2), AutoSize = true };
+            card2.Controls.Add(lblRamTitle);
+            y2 += 18;
+            var lblRamVal = new Label { Text = _specs.RamCapacity + " GB " + _specs.RamType + " (" + _specs.RamBus + " [" + _specs.RamSlots + "])", Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = Color.FromArgb(15, 23, 42), Location = new Point(14, y2), Size = new Size(270, 18) };
+            card2.Controls.Add(lblRamVal);
+            y2 += 20;
+
+            _barRam = new MetricProgressBar { Location = new Point(14, y2), Width = 270 };
+            card2.Controls.Add(_barRam);
+            y2 += 12;
+            _lblRamText = new Label { Text = "กำลังตรวจสอบ RAM...", Font = new Font("Segoe UI", 8F, FontStyle.Bold), ForeColor = Color.FromArgb(13, 148, 136), Location = new Point(14, y2), AutoSize = true };
+            card2.Controls.Add(_lblRamText);
+            y2 += 22;
+
+            // Storage with Progress
+            var lblDiskTitle = new Label { Text = "พื้นที่จัดเก็บหลัก (Primary Drive):", Font = new Font("Segoe UI", 8.2F), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(14, y2), AutoSize = true };
+            card2.Controls.Add(lblDiskTitle);
+            y2 += 18;
+            var lblDiskVal = new Label { Text = _specs.StorageType + " " + _specs.StorageCapacity, Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = Color.FromArgb(15, 23, 42), Location = new Point(14, y2), Size = new Size(270, 18) };
+            card2.Controls.Add(lblDiskVal);
+            y2 += 20;
+
+            _barDisk = new MetricProgressBar { Location = new Point(14, y2), Width = 270 };
+            card2.Controls.Add(_barDisk);
+            y2 += 12;
+            _lblDiskText = new Label { Text = "กำลังตรวจสอบไดรฟ์ระบบ...", Font = new Font("Segoe UI", 8F, FontStyle.Bold), ForeColor = Color.FromArgb(16, 185, 129), Location = new Point(14, y2), AutoSize = true };
+            card2.Controls.Add(_lblDiskText);
+            y2 += 24;
+
+            string secDisk = string.IsNullOrEmpty(_specs.StorageSecond) ? "ไม่มี (Single Drive)" : _specs.StorageSecond;
+            AddSpecRow(card2, "พื้นที่จัดเก็บเสริม (Secondary Drive):", secDisk, ref y2, false);
+            AddSpecRow(card2, "การ์ดแสดงผล (GPU Graphics):", _specs.GpuModel, ref y2, false);
+            AddSpecRow(card2, "หน้าจอแสดงผล (Display Monitor):", _specs.MonitorSize, ref y2, false);
+
+            pnlCards.Controls.Add(card2);
+
+            // ---------------- CARD 3: Network & System ----------------
+            var card3 = new RoundedCardPanel
+            {
+                Location = new Point(632, 0),
+                Size = new Size(300, 490)
+            };
+            BuildCardHeader(card3, "🌐 เครือข่ายและระบบ", "Connectivity & IT Audit Status");
+
+            int y3 = 56;
+            AddSpecRow(card3, "IP Address (IPv4):", _specs.IpAddress, ref y3, true);
+            AddSpecRow(card3, "MAC Address (Hardware MAC):", _specs.MacAddress, ref y3, true);
+            AddSpecRow(card3, "เซิร์ฟเวอร์หลัก (Server URL):", _config.ServerUrl, ref y3, true);
+            AddSpecRow(card3, "รอบส่งข้อมูล (Heartbeat Interval):", "60 วินาที (สแตนด์บายรับคำสั่ง)", ref y3, false);
+
+            var lblLastTitle = new Label { Text = "ตรวจเช็กล่าสุด (Last Collected):", Font = new Font("Segoe UI", 8.2F), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(14, y3), AutoSize = true };
+            card3.Controls.Add(lblLastTitle);
+            y3 += 18;
+            _lblLastCollected = new Label { Text = _specs.CollectedAt.ToString("dd/MM/yyyy HH:mm:ss น."), Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = Color.FromArgb(15, 23, 42), Location = new Point(14, y3), Size = new Size(270, 18) };
+            card3.Controls.Add(_lblLastCollected);
+            y3 += 36;
+
+            AddSpecRow(card3, "สถานะโปรแกรม (Agent Service):", "🟢 สแตนด์บายใน System Tray", ref y3, false, "เริ่มพร้อม Windows: " + (_config.AutoStart ? "เปิดใช้งาน (Active)" : "ปิดไว้"));
+
+            pnlCards.Controls.Add(card3);
+
+            // 3. Bottom Footer Action Bar
+            var pnlFooter = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 66,
+                BackColor = Color.White
+            };
+            pnlFooter.Paint += (s, e) =>
+            {
+                using (var penLine = new Pen(Color.FromArgb(226, 232, 240), 1f))
+                {
+                    e.Graphics.DrawLine(penLine, 0, 0, pnlFooter.Width, 0);
+                }
+            };
+
+            int btnY = 12;
+
+            _btnSyncNow = new Button
+            {
+                Text = "🚀 ส่งสเปกเดี๋ยวนี้ (Scan & Sync)",
+                Location = new Point(16, btnY),
+                Size = new Size(210, 42),
+                BackColor = Color.FromArgb(13, 148, 136),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            _btnSyncNow.FlatAppearance.BorderSize = 0;
+            _btnSyncNow.Click += (s, e) =>
+            {
+                _btnSyncNow.Enabled = false;
+                _btnSyncNow.Text = "⏳ กำลังอ่านและส่งข้อมูล...";
+                new Thread(() =>
+                {
+                    try
+                    {
+                        if (_context != null)
+                        {
+                            _context.TriggerManualScan();
+                        }
+                        else
+                        {
+                            _specs = HardwareSpecs.Collect();
+                            var payload = _specs.ToPayload(null);
+                            var js = new JavaScriptSerializer();
+                            string jsonReq = js.Serialize(payload);
+                            TrayContext.HttpPostRaw(_config.ServerUrl.TrimEnd('/') + "/api/hardware-audit/submit", jsonReq, 12000);
+                        }
+                    }
+                    catch { }
+
+                    Thread.Sleep(1500);
+                    if (this.IsHandleCreated)
+                    {
+                        this.BeginInvoke((MethodInvoker)delegate
+                        {
+                            _specs = HardwareSpecs.Collect();
+                            if (_context != null) _context.CachedSpecs = _specs;
+                            _lblLastCollected.Text = _specs.CollectedAt.ToString("dd/MM/yyyy HH:mm:ss น.");
+                            RefreshLiveMetrics();
+                            _btnSyncNow.Text = "✓ ส่งข้อมูลสำเร็จ!";
+                            _btnSyncNow.BackColor = Color.FromArgb(16, 185, 129);
+                            var t = new System.Windows.Forms.Timer { Interval = 2500 };
+                            t.Tick += (ts, te) =>
+                            {
+                                _btnSyncNow.Text = "🚀 ส่งสเปกเดี๋ยวนี้ (Scan & Sync)";
+                                _btnSyncNow.BackColor = Color.FromArgb(13, 148, 136);
+                                _btnSyncNow.Enabled = true;
+                                t.Stop();
+                                t.Dispose();
+                            };
+                            t.Start();
+                        });
+                    }
+                }) { IsBackground = true }.Start();
+            };
+            pnlFooter.Controls.Add(_btnSyncNow);
+
+            _btnCopyAll = new Button
+            {
+                Text = "📋 คัดลอกสเปกทั้งหมด",
+                Location = new Point(236, btnY),
+                Size = new Size(160, 42),
+                BackColor = Color.FromArgb(51, 65, 85),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            _btnCopyAll.FlatAppearance.BorderSize = 0;
+            _btnCopyAll.Click += (s, e) =>
+            {
+                CopyFullSpecsToClipboard();
+            };
+            pnlFooter.Controls.Add(_btnCopyAll);
+
+            var btnSettings = new Button
+            {
+                Text = "⚙️ ตั้งค่าเซิร์ฟเวอร์",
+                Location = new Point(406, btnY),
+                Size = new Size(135, 42),
+                BackColor = Color.FromArgb(248, 250, 252),
+                ForeColor = Color.FromArgb(30, 41, 59),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9F),
+                Cursor = Cursors.Hand
+            };
+            btnSettings.FlatAppearance.BorderColor = Color.FromArgb(203, 213, 225);
+            btnSettings.Click += (s, e) =>
+            {
+                TrayContext.ShowServerSettingsDialog(_config, () =>
+                {
+                    _lblServerEndpoint.Text = "🌐 " + _config.ServerUrl;
+                    StartServerPingTest();
+                });
+            };
+            pnlFooter.Controls.Add(btnSettings);
+
+            var btnUpdates = new Button
+            {
+                Text = "🔄 เช็คอัปเดต",
+                Location = new Point(551, btnY),
+                Size = new Size(120, 42),
+                BackColor = Color.FromArgb(248, 250, 252),
+                ForeColor = Color.FromArgb(30, 41, 59),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9F),
+                Cursor = Cursors.Hand
+            };
+            btnUpdates.FlatAppearance.BorderColor = Color.FromArgb(203, 213, 225);
+            btnUpdates.Click += (s, e) =>
+            {
+                if (_context != null)
+                {
+                    new Thread(() => { _context.ExecuteSelfUpdate(false, null); }) { IsBackground = true }.Start();
+                }
+                else
+                {
+                    new Thread(() =>
+                    {
+                        try
+                        {
+                            string manifestUrl = _config.ServerUrl.TrimEnd('/') + "/agent/manifest.json";
+                            var req = (HttpWebRequest)WebRequest.Create(manifestUrl);
+                            req.Timeout = 5000;
+                            string json;
+                            using (var resp = (HttpWebResponse)req.GetResponse())
+                            using (var reader = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                            {
+                                json = reader.ReadToEnd();
+                            }
+                            var js = new JavaScriptSerializer();
+                            var dict = js.Deserialize<Dictionary<string, object>>(json);
+                            string remoteVer = (dict != null && dict.ContainsKey("version") && dict["version"] != null) ? dict["version"].ToString() : "";
+                            if (!string.IsNullOrEmpty(remoteVer) && remoteVer != Program.CurrentVersion)
+                            {
+                                MessageBox.Show("พบเวอร์ชันใหม่: v" + remoteVer + " (เวอร์ชันปัจจุบัน: v" + Program.CurrentVersion + ")\nกรุณาดาวน์โหลดหรือรันตัวติดตั้งเพื่ออัปเดต", "อัปเดต Agent", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                            else
+                            {
+                                MessageBox.Show("THC IT Agent เป็นเวอร์ชันล่าสุดแล้ว (v" + Program.CurrentVersion + ")", "ตรวจสอบการอัปเดต", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("ไม่สามารถตรวจสอบอัปเดตได้: " + ex.Message, "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }) { IsBackground = true }.Start();
+                }
+            };
+            pnlFooter.Controls.Add(btnUpdates);
+
+            var btnOpenWeb = new Button
+            {
+                Text = "🌐 เปิดเว็บไอที",
+                Location = new Point(681, btnY),
+                Size = new Size(120, 42),
+                BackColor = Color.FromArgb(248, 250, 252),
+                ForeColor = Color.FromArgb(30, 41, 59),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9F),
+                Cursor = Cursors.Hand
+            };
+            btnOpenWeb.FlatAppearance.BorderColor = Color.FromArgb(203, 213, 225);
+            btnOpenWeb.Click += (s, e) =>
+            {
+                try { Process.Start(_config.ServerUrl.TrimEnd('/') + "/hardware-audits"); } catch { }
+            };
+            pnlFooter.Controls.Add(btnOpenWeb);
+
+            var btnClose = new Button
+            {
+                Text = "ปิดหน้าต่าง",
+                Location = new Point(842, btnY),
+                Size = new Size(95, 42),
+                BackColor = Color.FromArgb(241, 245, 249),
+                ForeColor = Color.FromArgb(71, 85, 105),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9F),
+                Cursor = Cursors.Hand
+            };
+            btnClose.FlatAppearance.BorderColor = Color.FromArgb(203, 213, 225);
+            btnClose.Click += (s, e) => this.Close();
+            pnlFooter.Controls.Add(btnClose);
+
+            this.Controls.Add(pnlFooter);
+        }
+
+        private static void BuildCardHeader(Panel card, string title, string subtitle)
+        {
+            var lblTitle = new Label
+            {
+                Text = title,
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(15, 23, 42),
+                Location = new Point(14, 12),
+                AutoSize = true
+            };
+            card.Controls.Add(lblTitle);
+
+            var lblSub = new Label
+            {
+                Text = subtitle,
+                Font = new Font("Segoe UI", 8F),
+                ForeColor = Color.FromArgb(148, 163, 184),
+                Location = new Point(15, 31),
+                AutoSize = true
+            };
+            card.Controls.Add(lblSub);
+
+            var line = new Panel
+            {
+                Location = new Point(14, 48),
+                Size = new Size(272, 1),
+                BackColor = Color.FromArgb(241, 245, 249)
+            };
+            card.Controls.Add(line);
+        }
+
+        private static void AddSpecRow(Panel card, string label, string value, ref int y, bool withCopy, string subDetail = null)
+        {
+            AddSpecRow(card, label, value, value, ref y, withCopy, subDetail);
+        }
+
+        private static void AddSpecRow(Panel card, string label, string displayValue, string fullCopyValue, ref int y, bool withCopy, string subDetail = null)
+        {
+            var lblTitle = new Label
+            {
+                Text = label,
+                Font = new Font("Segoe UI", 8.2F),
+                ForeColor = Color.FromArgb(100, 116, 139),
+                Location = new Point(14, y),
+                AutoSize = true
+            };
+            card.Controls.Add(lblTitle);
+
+            if (withCopy)
+            {
+                var btn = new Button
+                {
+                    Text = "คัดลอก",
+                    Location = new Point(228, y - 2),
+                    Size = new Size(58, 22),
+                    BackColor = Color.FromArgb(241, 245, 249),
+                    ForeColor = Color.FromArgb(71, 85, 105),
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 7.5F),
+                    Cursor = Cursors.Hand
+                };
+                btn.FlatAppearance.BorderColor = Color.FromArgb(226, 232, 240);
+                string textToCopy = fullCopyValue;
+                btn.Click += (s, e) =>
+                {
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(textToCopy))
+                        {
+                            Clipboard.SetText(textToCopy);
+                            btn.Text = "✓ แล้ว";
+                            btn.BackColor = Color.FromArgb(220, 252, 231);
+                            btn.ForeColor = Color.FromArgb(21, 128, 61);
+                            var timer = new System.Windows.Forms.Timer { Interval = 1400 };
+                            timer.Tick += (ts, te) =>
+                            {
+                                btn.Text = "คัดลอก";
+                                btn.BackColor = Color.FromArgb(241, 245, 249);
+                                btn.ForeColor = Color.FromArgb(71, 85, 105);
+                                timer.Stop();
+                                timer.Dispose();
+                            };
+                            timer.Start();
+                        }
+                    }
+                    catch { }
+                };
+                card.Controls.Add(btn);
+            }
+
+            y += 18;
+            var lblVal = new Label
+            {
+                Text = displayValue,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(15, 23, 42),
+                Location = new Point(14, y),
+                Size = new Size(270, 18)
+            };
+            card.Controls.Add(lblVal);
+            y += 18;
+
+            if (!string.IsNullOrEmpty(subDetail))
+            {
+                var lblDetail = new Label
+                {
+                    Text = subDetail,
+                    Font = new Font("Segoe UI", 8F),
+                    ForeColor = Color.FromArgb(100, 116, 139),
+                    Location = new Point(14, y),
+                    Size = new Size(270, 16)
+                };
+                card.Controls.Add(lblDetail);
+                y += 18;
+            }
+
+            y += 14;
+        }
+
+        private static string GetDeviceTypeLabel(string code)
+        {
+            if (string.IsNullOrEmpty(code)) return "คอมพิวเตอร์";
+            switch (code.ToUpperInvariant())
+            {
+                case "PC": return "คอมพิวเตอร์ตั้งโต๊ะ";
+                case "NOTEBOOK":
+                case "NB":
+                case "LAPTOP": return "โน้ตบุ๊กพกพา";
+                case "AIO": return "ออลอินวัน (All-in-One)";
+                case "SERVER": return "เซิร์ฟเวอร์";
+                default: return "อุปกรณ์คอมพิวเตอร์";
+            }
+        }
+
+        private void CopyFullSpecsToClipboard()
+        {
+            try
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("============================================================");
+                sb.AppendLine("🏢 ข้อมูลสเปกเครื่อง - โรงพยาบาลทุ่งหัวช้าง");
+                sb.AppendLine("============================================================");
+                sb.AppendLine("• ชื่อเครื่อง (Hostname): " + _specs.Hostname);
+                sb.AppendLine("• ยี่ห้อ / รุ่น (Model): " + _specs.Brand + " " + _specs.Model);
+                sb.AppendLine("• ประเภทอุปกรณ์: " + _specs.DeviceTypeCode + " (" + GetDeviceTypeLabel(_specs.DeviceTypeCode) + ")");
+                sb.AppendLine("• ซีเรียลนัมเบอร์: " + _specs.SerialNumber);
+                sb.AppendLine("• รหัสฮาร์ดแวร์ (HWID): " + _specs.HardwareId);
+                sb.AppendLine("• ระบบปฏิบัติการ (OS): " + _specs.OsName + " (" + _specs.OsLicense + ")");
+                sb.AppendLine("• หน่วยประมวลผล (CPU): " + _specs.CpuModel + " (" + _specs.CpuSpeed + " • " + _specs.CpuCores + "C/" + _specs.CpuThreads + "T)");
+                sb.AppendLine("• หน่วยความจำ (RAM): " + _specs.RamCapacity + " GB " + _specs.RamType + " (" + _specs.RamBus + " [" + _specs.RamSlots + "])");
+                sb.AppendLine("• พื้นที่จัดเก็บหลัก: " + _specs.StorageType + " " + _specs.StorageCapacity);
+                if (!string.IsNullOrEmpty(_specs.StorageSecond))
+                    sb.AppendLine("• พื้นที่จัดเก็บเสริม: " + _specs.StorageSecond);
+                sb.AppendLine("• การ์ดแสดงผล (GPU): " + _specs.GpuModel);
+                sb.AppendLine("• หน้าจอแสดงผล: " + _specs.MonitorSize);
+                sb.AppendLine("• IP Address: " + _specs.IpAddress);
+                sb.AppendLine("• MAC Address: " + _specs.MacAddress);
+                sb.AppendLine("• เซิร์ฟเวอร์ระบบไอที: " + _config.ServerUrl);
+                sb.AppendLine("• วันที่บันทึกข้อมูล: " + _specs.CollectedAt.ToString("yyyy-MM-dd HH:mm:ss"));
+                sb.AppendLine("============================================================");
+                sb.AppendLine("(รายงานโดย THC IT Agent v" + Program.CurrentVersion + ")");
+
+                Clipboard.SetText(sb.ToString());
+                _btnCopyAll.Text = "✓ คัดลอกสำเร็จ!";
+                _btnCopyAll.BackColor = Color.FromArgb(16, 185, 129);
+                var t = new System.Windows.Forms.Timer { Interval = 1800 };
+                t.Tick += (s, e) =>
+                {
+                    _btnCopyAll.Text = "📋 คัดลอกสเปกทั้งหมด";
+                    _btnCopyAll.BackColor = Color.FromArgb(51, 65, 85);
+                    t.Stop();
+                    t.Dispose();
+                };
+                t.Start();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("ไม่สามารถคัดลอกได้: " + ex.Message, "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void RefreshLiveMetrics()
+        {
+            try
+            {
+                string ramDetail;
+                int ramPct = GetLiveMemoryUsage(out ramDetail);
+                _barRam.Value = ramPct;
+                _lblRamText.Text = "ใช้ไป " + ramDetail;
+                _barRam.Invalidate();
+
+                string diskDetail;
+                int diskPct = GetLiveDiskUsage(out diskDetail);
+                _barDisk.Value = diskPct;
+                _lblDiskText.Text = "ไดรฟ์ระบบ " + diskDetail;
+                _barDisk.Invalidate();
+            }
+            catch { }
+        }
+
+        private static int GetLiveMemoryUsage(out string memoryDetail)
+        {
+            memoryDetail = "";
+            try
+            {
+                var memStatus = new MEMORYSTATUSEX();
+                if (GlobalMemoryStatusEx(memStatus))
+                {
+                    int pct = (int)memStatus.dwMemoryLoad;
+                    double totalGb = (double)memStatus.ullTotalPhys / (1024 * 1024 * 1024);
+                    double availGb = (double)memStatus.ullAvailPhys / (1024 * 1024 * 1024);
+                    double usedGb = totalGb - availGb;
+                    memoryDetail = string.Format("{0}% ({1:0.0} / {2:0.0} GB)", pct, usedGb, totalGb);
+                    return pct;
+                }
+            }
+            catch { }
+            return 0;
+        }
+
+        private static int GetLiveDiskUsage(out string diskDetail)
+        {
+            diskDetail = "";
+            try
+            {
+                DriveInfo sysDrive = new DriveInfo(Path.GetPathRoot(Environment.SystemDirectory));
+                if (sysDrive.IsReady)
+                {
+                    long total = sysDrive.TotalSize;
+                    long free = sysDrive.AvailableFreeSpace;
+                    long used = total - free;
+                    int pct = (int)((used * 100) / total);
+                    double totalGb = (double)total / (1024 * 1024 * 1024);
+                    double usedGb = (double)used / (1024 * 1024 * 1024);
+                    diskDetail = string.Format("{0}% ({1:0.0} / {2:0.0} GB)", pct, usedGb, totalGb);
+                    return pct;
+                }
+            }
+            catch { }
+            return 0;
+        }
+
+        private void StartServerPingTest()
+        {
+            new Thread(() =>
+            {
+                var sw = Stopwatch.StartNew();
+                try
+                {
+                    string url = _config.ServerUrl.TrimEnd('/') + "/api/hardware-audit/agent-command";
+                    string resp = TrayContext.HttpPostRaw(url, "{\"hostname\":\"PING\",\"mode\":\"ping\"}", 4000);
+                    sw.Stop();
+                    if (!string.IsNullOrEmpty(resp))
+                    {
+                        if (this.IsHandleCreated)
+                        {
+                            this.BeginInvoke((MethodInvoker)delegate
+                            {
+                                _lblStatusPill.Text = "● ออนไลน์ปกติ (" + sw.ElapsedMilliseconds + " ms)";
+                                _lblStatusPill.BackColor = Color.FromArgb(6, 78, 59);
+                                _lblStatusPill.ForeColor = Color.FromArgb(52, 211, 153);
+                            });
+                        }
+                    }
+                }
+                catch
+                {
+                    sw.Stop();
+                    if (this.IsHandleCreated)
+                    {
+                        this.BeginInvoke((MethodInvoker)delegate
+                        {
+                            _lblStatusPill.Text = "● ออฟไลน์ (กำลังรอต่อใหม่)";
+                            _lblStatusPill.BackColor = Color.FromArgb(127, 29, 29);
+                            _lblStatusPill.ForeColor = Color.FromArgb(254, 202, 202);
+                        });
+                    }
+                }
+            }) { IsBackground = true }.Start();
+        }
+    }
+
     public class SetupWizardForm : Form
     {
         public bool ProceedWithPortable { get; private set; }
         private TextBox _txtServer;
+        private Label _lblPingStatus;
         private CheckBox _chkAutoStart;
         private CheckBox _chkDesktopShortcut;
 
         public SetupWizardForm(string currentExe, string standardExe)
         {
             this.Text = "🚀 ติดตั้ง THC IT Agent - โรงพยาบาลทุ่งหัวช้าง";
-            this.Size = new Size(560, 480);
+            this.Size = new Size(580, 520);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.BackColor = Color.White;
             this.Font = new Font("Segoe UI", 9F);
+            this.DoubleBuffered = true;
 
             // Top Header Panel
             var pnlHead = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 75,
-                BackColor = Color.FromArgb(15, 118, 110)
+                Height = 80,
+                BackColor = Color.FromArgb(15, 23, 42)
             };
+            pnlHead.Paint += (s, e) =>
+            {
+                using (var lgb = new LinearGradientBrush(new Rectangle(0, 0, pnlHead.Width, pnlHead.Height),
+                    Color.FromArgb(15, 23, 42), Color.FromArgb(15, 118, 110), 0f))
+                {
+                    e.Graphics.FillRectangle(lgb, 0, 0, pnlHead.Width, pnlHead.Height);
+                }
+
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var brEmblem = new SolidBrush(Color.FromArgb(13, 148, 136)))
+                {
+                    e.Graphics.FillEllipse(brEmblem, 18, 18, 44, 44);
+                }
+                using (var penRing = new Pen(Color.FromArgb(45, 212, 191), 2f))
+                {
+                    e.Graphics.DrawEllipse(penRing, 18, 18, 44, 44);
+                }
+                using (var brCross = new SolidBrush(Color.White))
+                {
+                    e.Graphics.FillRectangle(brCross, 36, 26, 8, 28);
+                    e.Graphics.FillRectangle(brCross, 26, 36, 28, 8);
+                }
+            };
+
             var lblTitle = new Label
             {
                 Text = "โรงพยาบาลทุ่งหัวช้าง - ระบบติดตามและรายงานสเปก",
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 12F, FontStyle.Bold),
-                Location = new Point(18, 14),
+                Location = new Point(74, 16),
                 AutoSize = true
             };
             var lblSub = new Label
             {
-                Text = "ตัวติดตั้ง THC IT Agent v2.11.0 (Enterprise Standalone Setup)",
+                Text = "ตัวติดตั้ง THC IT Agent v" + Program.CurrentVersion + " (Enterprise Standalone Setup)",
                 ForeColor = Color.FromArgb(204, 251, 241),
                 Font = new Font("Segoe UI", 9F),
-                Location = new Point(19, 40),
+                Location = new Point(76, 42),
                 AutoSize = true
             };
             pnlHead.Controls.Add(lblTitle);
@@ -2422,25 +3208,25 @@ namespace ThcItAgent
             this.Controls.Add(pnlHead);
 
             // Body content
-            int top = 90;
+            int top = 96;
             var lblIntro = new Label
             {
                 Text = "ยินดีต้อนรับสู่ตัวติดตั้ง THC IT Agent!\n" +
                        "โปรแกรมนี้จะสแตนด์บายในถาดระบบ (System Tray) เพื่อรายงานข้อมูลฮาร์ดแวร์เมื่อฝ่ายไอทีสั่งดึงข้อมูล\n" +
                        "ปลอดภัย 100%, ตรวจสอบสเปกแม่นยำ และกินทรัพยากรเครื่องน้อยมาก",
-                Location = new Point(20, top),
-                Size = new Size(505, 52),
+                Location = new Point(24, top),
+                Size = new Size(520, 52),
                 ForeColor = Color.FromArgb(51, 65, 85)
             };
             this.Controls.Add(lblIntro);
-            top += 62;
+            top += 58;
 
             // Server URL Group
             var lblServer = new Label
             {
                 Text = "ที่อยู่เซิร์ฟเวอร์ระบบไอที (Server URL):",
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                Location = new Point(20, top),
+                Location = new Point(24, top),
                 AutoSize = true
             };
             this.Controls.Add(lblServer);
@@ -2449,25 +3235,92 @@ namespace ThcItAgent
             _txtServer = new TextBox
             {
                 Text = "https://thchospital.moph.go.th/it-system",
-                Location = new Point(20, top),
-                Size = new Size(505, 26),
+                Location = new Point(24, top),
+                Size = new Size(516, 26),
                 Font = new Font("Segoe UI", 10F)
             };
             this.Controls.Add(_txtServer);
             top += 34;
 
             // Presets
-            var btnMophHttps = new Button { Text = "🌐 MOPH Cloud (HTTPS)", Location = new Point(20, top), Size = new Size(160, 26), Font = new Font("Segoe UI", 8F) };
+            var btnMophHttps = new Button { Text = "🌐 MOPH Cloud (HTTPS)", Location = new Point(24, top), Size = new Size(160, 26), Font = new Font("Segoe UI", 8F) };
             btnMophHttps.Click += (s, e) => _txtServer.Text = "https://thchospital.moph.go.th/it-system";
             this.Controls.Add(btnMophHttps);
 
-            var btnMophHttp = new Button { Text = "🌐 MOPH Cloud (HTTP)", Location = new Point(186, top), Size = new Size(150, 26), Font = new Font("Segoe UI", 8F) };
+            var btnMophHttp = new Button { Text = "🌐 MOPH Cloud (HTTP)", Location = new Point(190, top), Size = new Size(150, 26), Font = new Font("Segoe UI", 8F) };
             btnMophHttp.Click += (s, e) => _txtServer.Text = "http://thchospital.moph.go.th/it-system";
             this.Controls.Add(btnMophHttp);
 
-            var btnLan = new Button { Text = "🏢 รพ. LAN (:8000)", Location = new Point(342, top), Size = new Size(130, 26), Font = new Font("Segoe UI", 8F) };
+            var btnLan = new Button { Text = "🏢 รพ. LAN (:8000)", Location = new Point(346, top), Size = new Size(130, 26), Font = new Font("Segoe UI", 8F) };
             btnLan.Click += (s, e) => _txtServer.Text = "http://192.168.2.89:8000";
             this.Controls.Add(btnLan);
+            top += 36;
+
+            // Test Connection button
+            var btnTestPing = new Button
+            {
+                Text = "🔍 ทดสอบการเชื่อมต่อเซิร์ฟเวอร์",
+                Location = new Point(24, top),
+                Size = new Size(190, 28),
+                BackColor = Color.FromArgb(241, 245, 249),
+                ForeColor = Color.FromArgb(30, 41, 59),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btnTestPing.FlatAppearance.BorderColor = Color.FromArgb(203, 213, 225);
+
+            _lblPingStatus = new Label
+            {
+                Text = "ยังไม่ได้ทดสอบ",
+                Location = new Point(222, top + 5),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 8.5F),
+                ForeColor = Color.Gray
+            };
+            this.Controls.Add(_lblPingStatus);
+
+            btnTestPing.Click += (s, e) =>
+            {
+                btnTestPing.Enabled = false;
+                _lblPingStatus.Text = "กำลังทดสอบ...";
+                _lblPingStatus.ForeColor = Color.FromArgb(13, 148, 136);
+                new Thread(() =>
+                {
+                    var sw = Stopwatch.StartNew();
+                    try
+                    {
+                        string target = _txtServer.Text.Trim().TrimEnd('/');
+                        string testUrl = target + "/api/hardware-audit/agent-command";
+                        var req = (HttpWebRequest)WebRequest.Create(testUrl);
+                        req.Method = "POST";
+                        req.ContentType = "application/json; charset=utf-8";
+                        req.Timeout = 4000;
+                        byte[] bytes = Encoding.UTF8.GetBytes("{\"hostname\":\"TEST\",\"mode\":\"ping\"}");
+                        req.ContentLength = bytes.Length;
+                        using (var stream = req.GetRequestStream()) { stream.Write(bytes, 0, bytes.Length); }
+                        using (var resp = (HttpWebResponse)req.GetResponse()) { }
+                        sw.Stop();
+                        this.BeginInvoke((MethodInvoker)delegate
+                        {
+                            _lblPingStatus.Text = "🟢 เชื่อมต่อสำเร็จ (" + sw.ElapsedMilliseconds + " ms)";
+                            _lblPingStatus.ForeColor = Color.FromArgb(16, 185, 129);
+                            btnTestPing.Enabled = true;
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        sw.Stop();
+                        this.BeginInvoke((MethodInvoker)delegate
+                        {
+                            _lblPingStatus.Text = "🔴 ไม่สามารถเชื่อมต่อได้: " + ex.Message;
+                            _lblPingStatus.ForeColor = Color.FromArgb(225, 29, 72);
+                            btnTestPing.Enabled = true;
+                        });
+                    }
+                }) { IsBackground = true }.Start();
+            };
+            this.Controls.Add(btnTestPing);
             top += 36;
 
             // Checkboxes
@@ -2475,7 +3328,7 @@ namespace ThcItAgent
             {
                 Text = "เริ่มทำงานอัตโนมัติเมื่อเปิดเครื่อง (Start with Windows - แนะนำ)",
                 Checked = true,
-                Location = new Point(22, top),
+                Location = new Point(26, top),
                 AutoSize = true,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                 ForeColor = Color.FromArgb(15, 118, 110)
@@ -2487,14 +3340,14 @@ namespace ThcItAgent
             {
                 Text = "สร้างไอคอนทางลัดบนหน้าจอเดสก์ท็อป (Desktop Shortcut)",
                 Checked = true,
-                Location = new Point(22, top),
+                Location = new Point(26, top),
                 AutoSize = true
             };
             this.Controls.Add(_chkDesktopShortcut);
-            top += 36;
+            top += 34;
 
             // Divider line
-            var pnlLine = new Panel { Location = new Point(20, top), Size = new Size(505, 1), BackColor = Color.FromArgb(226, 232, 240) };
+            var pnlLine = new Panel { Location = new Point(24, top), Size = new Size(516, 1), BackColor = Color.FromArgb(226, 232, 240) };
             this.Controls.Add(pnlLine);
             top += 16;
 
@@ -2502,8 +3355,8 @@ namespace ThcItAgent
             var btnInstall = new Button
             {
                 Text = "🚀 ติดตั้งลงในเครื่องทันที (Install)",
-                Location = new Point(20, top),
-                Size = new Size(240, 42),
+                Location = new Point(24, top),
+                Size = new Size(240, 44),
                 BackColor = Color.FromArgb(16, 185, 129),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -2533,8 +3386,8 @@ namespace ThcItAgent
             var btnPortable = new Button
             {
                 Text = "รันชั่วคราวครั้งเดียว (Portable)",
-                Location = new Point(268, top),
-                Size = new Size(160, 42),
+                Location = new Point(274, top),
+                Size = new Size(160, 44),
                 BackColor = Color.FromArgb(241, 245, 249),
                 ForeColor = Color.FromArgb(71, 85, 105),
                 FlatStyle = FlatStyle.Flat,
@@ -2553,8 +3406,8 @@ namespace ThcItAgent
             var btnCancel = new Button
             {
                 Text = "ยกเลิก",
-                Location = new Point(436, top),
-                Size = new Size(88, 42),
+                Location = new Point(444, top),
+                Size = new Size(96, 44),
                 BackColor = Color.FromArgb(241, 245, 249),
                 ForeColor = Color.FromArgb(100, 116, 139),
                 FlatStyle = FlatStyle.Flat,
