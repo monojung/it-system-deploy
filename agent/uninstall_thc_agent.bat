@@ -11,7 +11,7 @@ if /i "%~1"=="-Silent" set "IS_SILENT=1"
 if "%IS_SILENT%"=="0" (
     echo ==========================================================================
     echo   ถอนการติดตั้ง THC Hardware Audit Agent - โรงพยาบาลทุ่งหัวช้าง
-    echo   (Thung Hua Chang Hospital IT Platform - Agent Uninstaller v2.11.0)
+    echo   (Thung Hua Chang Hospital IT Platform - Agent Uninstaller v2.12.0)
     echo ==========================================================================
     echo.
     echo ระบบกำลังดำเนินการถอนการติดตั้งโปรแกรมและล้างการตั้งค่าทั้งหมดออกจากเครื่องนี้...
@@ -37,6 +37,8 @@ reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "THC_IT_Agent
 reg delete "HKLM\Software\Microsoft\Windows\CurrentVersion\Run" /v "THC_IT_Agent" /f >nul 2>nul
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\THC_IT_Agent" /f >nul 2>nul
 reg delete "HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall\THC_IT_Agent" /f >nul 2>nul
+reg delete "HKCU\Software\THC-IT-Agent" /f >nul 2>nul
+reg delete "HKLM\Software\THC-IT-Agent" /f >nul 2>nul
 
 :: 4. ลบ Scheduled Tasks ^& Shortcuts
 if "%IS_SILENT%"=="0" echo [4/5] ลบงานตารางเวลาและทางลัดบน Desktop...

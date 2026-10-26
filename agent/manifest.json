@@ -1,11 +1,11 @@
 ﻿{
     "size_bytes":  72192,
-    "md5":  "32CBDDE6E7EBAC54C1F1D639E92D4FFD",
+    "md5":  "22FB15A4CF83D04B8C50C90176C3B0CC",
     "organization":  "Thung Hua Chang Hospital (รพ.ทุ่งหัวช้าง)",
     "app_name":  "THC IT Agent",
     "version":  "2.12.0",
     "heartbeat_interval_sec":  60,
     "download_url":  "/agent/THC_IT_Agent.exe",
-    "sha256":  "A59DEBFC60720A35D7D5832B9CC32A2A05A56697F3F1563D76879B769EF2786F",
-    "published_at":  "2026-10-26 09:40:07"
+    "sha256":  "3BD4BDB8AA69753E744362E46D69F31E3C63C5BEF035614AEAF3FF8BA9BC112B",
+    "published_at":  "2026-10-26 10:09:21"
 }

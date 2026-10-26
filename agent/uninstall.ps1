@@ -1,7 +1,7 @@
 # ==============================================================================
 # uninstall.ps1
 # Thung Hua Chang Hospital - THC IT Agent Enterprise Uninstaller
-# Version: 2.11.0 (Clean Purge & Farewell Beacon Engine)
+# Version: 2.12.0 (Clean Purge & Farewell Beacon Engine)
 # ==============================================================================
 
 [CmdletBinding()]
@@ -24,7 +24,7 @@ if (-not $Silent) {
     Write-Host ''
     Write-Host '==============================================================================' -ForegroundColor Red
     Write-Host '   โรงพยาบาลทุ่งหัวช้าง - ระบบถอนการติดตั้ง THC IT Agent' -ForegroundColor Yellow
-    Write-Host '   THUNG HUA CHANG HOSPITAL - AGENT UNINSTALLER v2.11.0' -ForegroundColor Gray
+    Write-Host '   THUNG HUA CHANG HOSPITAL - AGENT UNINSTALLER v2.12.0' -ForegroundColor Gray
     Write-Host '==============================================================================' -ForegroundColor Red
     Write-Host ''
 }
@@ -44,7 +44,7 @@ if (Test-Path $ConfigFile) {
             $jsonPayload = $bodyObj | ConvertTo-Json -Compress
             $wc = New-Object System.Net.WebClient
             $wc.Headers.Add("Content-Type", "application/json; charset=utf-8")
-            $wc.Headers.Add("User-Agent", "THC-Hospital-IT-Agent-Uninstaller/2.11.0")
+            $wc.Headers.Add("User-Agent", "THC-Hospital-IT-Agent-Uninstaller/2.12.0")
             [void]$wc.UploadString($pingUrl, "POST", $jsonPayload)
         }
     } catch {}
@@ -65,6 +65,8 @@ Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" 
 Remove-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "THC_IT_Agent" -ErrorAction SilentlyContinue
 Remove-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\THC_IT_Agent" -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\THC_IT_Agent" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "HKCU:\Software\THC-IT-Agent" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "HKLM:\Software\THC-IT-Agent" -Recurse -Force -ErrorAction SilentlyContinue
 
 # 5. Clean Desktop and Startup Shortcuts
 $shortcuts = @(

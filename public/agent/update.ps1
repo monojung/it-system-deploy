@@ -1,7 +1,7 @@
-﻿# ==============================================================================
+# ==============================================================================
 # update.ps1
 # Thung Hua Chang Hospital - THC IT Agent Enterprise Updater
-# Version: 2.11.0 (Atomic Binary Replacement & Validation Engine)
+# Version: 2.12.0 (Atomic Binary Replacement & Validation Engine)
 # ==============================================================================
 
 [CmdletBinding()]
@@ -41,7 +41,7 @@ if (-not $Silent) {
     Write-Host ''
     Write-Host '==============================================================================' -ForegroundColor Cyan
     Write-Host '   โรงพยาบาลทุ่งหัวช้าง - ระบบอัปเดต THC IT Agent ล่าสุด' -ForegroundColor Yellow
-    Write-Host '   THUNG HUA CHANG HOSPITAL - AGENT AUTO-UPDATER v2.11.0' -ForegroundColor Gray
+    Write-Host '   THUNG HUA CHANG HOSPITAL - AGENT AUTO-UPDATER v2.12.0' -ForegroundColor Gray
     Write-Host '==============================================================================' -ForegroundColor Cyan
     Write-Host ''
 }
@@ -102,6 +102,12 @@ Start-Sleep -Milliseconds 1500
 if (Test-Path $oldExe) { Remove-Item -Force $oldExe -ErrorAction SilentlyContinue }
 if (Test-Path $targetExe) { Move-Item -Path $targetExe -Destination $oldExe -Force }
 Move-Item -Path $newExe -Destination $targetExe -Force
+
+# Update Registry version
+try {
+    Set-ItemProperty -Path "HKCU:\Software\THC-IT-Agent" -Name "Version" -Value "2.12.0" -Force -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path "HKCU:\Software\THC-IT-Agent" -Name "LastUpdate" -Value (Get-Date -Format "yyyy-MM-dd HH:mm:ss") -Force -ErrorAction SilentlyContinue
+} catch {}
 
 # Start new version
 Log-Message "เริ่มทำงานเวอร์ชันใหม่..." "INFO" Green

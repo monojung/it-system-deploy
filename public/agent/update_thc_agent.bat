@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-title อัปเดต THC IT Agent v2.11.0 - โรงพยาบาลทุ่งหัวช้าง
+title อัปเดต THC IT Agent v2.12.0 - โรงพยาบาลทุ่งหัวช้าง
 color 0a
 
 set "INSTALL_DIR=C:\ProgramData\THC-IT-Agent"
@@ -75,7 +75,6 @@ set "OLD_EXE=%INSTALL_DIR%\THC_IT_Agent.exe.old"
 if "%IS_SILENT%"=="0" echo [1/3] กำลังดาวน์โหลดไฟล์เวอร์ชันใหม่...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "[Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor [Net.SecurityProtocolType]::Tls; " ^
-    "[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; " ^
     "(New-Object Net.WebClient).DownloadFile('%SERVER_URL%/agent/THC_IT_Agent.exe', '%NEW_EXE%')" 2>nul
 
 if not exist "%NEW_EXE%" (
