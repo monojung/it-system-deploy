@@ -82,14 +82,21 @@ Route::get('/agent/manifest.json', function () {
     $md5 = file_exists($exePath) ? hash_file('md5', $exePath) : '';
     $size = file_exists($exePath) ? filesize($exePath) : 0;
 
+    $manifestPath = public_path('agent/manifest.json');
+    if (!file_exists($manifestPath)) {
+        $manifestPath = base_path('agent/manifest.json');
+    }
+    $diskManifest = file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : [];
+    $version = $diskManifest['version'] ?? '2.12.0';
+
     return response()->json([
-        'version' => '2.11.0',
-        'app_name' => 'THC IT Agent',
-        'organization' => 'Thung Hua Chang Hospital (รพ.ทุ่งหัวช้าง)',
-        'sha256' => strtoupper($sha256),
-        'md5' => strtoupper($md5),
-        'size_bytes' => $size,
-        'heartbeat_interval_sec' => 60,
+        'version' => $version,
+        'app_name' => $diskManifest['app_name'] ?? 'THC IT Agent',
+        'organization' => $diskManifest['organization'] ?? 'Thung Hua Chang Hospital (รพ.ทุ่งหัวช้าง)',
+        'sha256' => strtoupper($sha256 ?: ($diskManifest['sha256'] ?? '')),
+        'md5' => strtoupper($md5 ?: ($diskManifest['md5'] ?? '')),
+        'size_bytes' => $size ?: ($diskManifest['size_bytes'] ?? 0),
+        'heartbeat_interval_sec' => $diskManifest['heartbeat_interval_sec'] ?? 60,
         'download_url' => url('/agent/THC_IT_Agent.exe'),
         'installer_url' => url('/agent/install_thc_agent.bat'),
         'powershell_url' => url('/agent/install.ps1'),
@@ -116,7 +123,6 @@ Route::get('/agent/{filename}', function ($filename) {
             $content = file_get_contents($path);
 
             $currentSubmitUrl = url('/api/hardware-audit/submit');
-            $currentAgentUrl = url('/agent/thc_audit_agent.ps1');
             $currentAgentExeUrl = url('/agent/THC_IT_Agent.exe');
             $currentBaseUrl = url('/');
 

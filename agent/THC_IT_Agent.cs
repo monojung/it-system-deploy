@@ -20,7 +20,7 @@ namespace ThcItAgent
 {
     static class Program
     {
-        public const string CurrentVersion = "2.11.0";
+        public const string CurrentVersion = "2.12.0";
         private const string AppGuid = "THC-IT-Agent-f91aa586-7788-9900-thung-hua-chang";
         private static Mutex _mutex;
 
@@ -190,26 +190,54 @@ namespace ThcItAgent
                 return;
             }
 
-            // Interactive First-Run / Setup Wizard check:
-            // If user double-clicked THC_IT_Agent.exe outside C:\ProgramData\THC-IT-Agent\ (e.g. from Downloads/Desktop)
+            // Intelligent First-Run & Installation State Detection:
             string curExe = Assembly.GetExecutingAssembly().Location;
             string stdExe = InstallerHelper.GetStandardExePath();
             bool isStandardLocation = curExe.Equals(stdExe, StringComparison.OrdinalIgnoreCase);
+            bool isAlreadyInstalled = InstallerHelper.IsInstalled();
 
-            if (!isStandardLocation && !isSilent && string.IsNullOrEmpty(updatedFrom))
+            // Self-healing: if already installed on machine, ensure autostart registry points to standard exe
+            if (isAlreadyInstalled)
             {
-                using (var wizard = new SetupWizardForm(curExe, stdExe))
+                try { AppConfig.SetAutoStart(true); } catch { }
+            }
+
+            if (!isStandardLocation)
+            {
+                // If running outside standard location (e.g. Downloads/Desktop):
+                // If already installed, hand off to standard installed binary and exit immediately!
+                if (isAlreadyInstalled && string.IsNullOrEmpty(updatedFrom) && !isInstall)
                 {
-                    var dlg = wizard.ShowDialog();
-                    if (dlg == DialogResult.OK)
+                    LogDebug("Agent is already installed at " + stdExe + ". Starting installed instance if needed and exiting temporary runner.");
+                    try
                     {
-                        // Installed successfully and started installed process
-                        return;
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = stdExe,
+                            WorkingDirectory = InstallerHelper.StandardInstallDir,
+                            UseShellExecute = true
+                        });
                     }
-                    if (!wizard.ProceedWithPortable)
+                    catch { }
+                    return; // Clean exit, NEVER prompt setup wizard again!
+                }
+
+                // If NOT installed yet, show Setup Wizard
+                if (!isSilent && string.IsNullOrEmpty(updatedFrom))
+                {
+                    using (var wizard = new SetupWizardForm(curExe, stdExe))
                     {
-                        // User canceled setup
-                        return;
+                        var dlg = wizard.ShowDialog();
+                        if (dlg == DialogResult.OK)
+                        {
+                            // Installed successfully and started standard process
+                            return;
+                        }
+                        if (!wizard.ProceedWithPortable)
+                        {
+                            // User canceled setup
+                            return;
+                        }
                     }
                 }
             }
@@ -254,7 +282,8 @@ namespace ThcItAgent
             if (!createdNew)
             {
                 LogDebug("Mutex createdNew is false! Exiting process.");
-                if (!isSilent)
+                // Only show popup if user manually double-clicked outside standard install and not silent
+                if (!isSilent && !isStandardLocation && (args == null || args.Length == 0))
                 {
                     MessageBox.Show(
                         "โปรแกรม THC IT Agent กำลังทำงานอยู่ใน System Tray (มุมขวาล่างข้างนาฬิกา) แล้ว",
@@ -393,8 +422,9 @@ namespace ThcItAgent
                     {
                         if (enable)
                         {
-                            string exePath = Assembly.GetExecutingAssembly().Location;
-                            key.SetValue("THC_IT_Agent", "\"" + exePath + "\"");
+                            string stdExe = InstallerHelper.GetStandardExePath();
+                            string targetExe = File.Exists(stdExe) ? stdExe : Assembly.GetExecutingAssembly().Location;
+                            key.SetValue("THC_IT_Agent", "\"" + targetExe + "\"");
                         }
                         else
                         {
@@ -402,6 +432,14 @@ namespace ThcItAgent
                         }
                     }
                 }
+
+                // Clean up duplicate Startup folder shortcut to prevent double-starts on Windows boot
+                try
+                {
+                    string startupLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "THC IT Agent.lnk");
+                    if (File.Exists(startupLnk)) File.Delete(startupLnk);
+                }
+                catch { }
             }
             catch { }
         }
@@ -888,8 +926,8 @@ namespace ThcItAgent
                 { "mac_address", MacAddress },
                 { "monitor_size", MonitorSize },
                 { "monitor_info", MonitorSize },
-                { "client_agent_version", "2.11.0-Standalone" },
-                { "agent_version", "2.11.0-Standalone" }
+                { "client_agent_version", Program.CurrentVersion + "-TrayExe" },
+                { "agent_version", Program.CurrentVersion + "-TrayExe" }
             };
 
             if (commandId.HasValue && commandId.Value > 0)
@@ -1656,6 +1694,23 @@ namespace ThcItAgent
             form.ShowDialog();
         }
 
+        private static bool IsNewerVersion(string remoteVer, string currentVer)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(remoteVer) || string.IsNullOrEmpty(currentVer)) return false;
+                string cr = remoteVer.Trim().TrimStart('v', 'V');
+                string cc = currentVer.Trim().TrimStart('v', 'V');
+                Version rv, cv;
+                if (Version.TryParse(cr, out rv) && Version.TryParse(cc, out cv))
+                {
+                    return rv > cv;
+                }
+            }
+            catch { }
+            return !string.Equals(remoteVer.Trim(), currentVer.Trim(), StringComparison.OrdinalIgnoreCase);
+        }
+
         private void ExecuteSelfUpdate(bool isRemote, Dictionary<string, object> cmdParams = null)
         {
             try
@@ -1732,11 +1787,16 @@ namespace ThcItAgent
                 // 2. Interactive confirmation (if triggered by user from tray menu)
                 if (!isRemote)
                 {
-                    string prompt = "ต้องการตรวจสอบและอัปเดตโปรแกรม THC IT Agent เป็นเวอร์ชันล่าสุดจากเซิร์ฟเวอร์หรือไม่?\n\n" +
-                                   "• เวอร์ชันปัจจุบัน: v" + Program.CurrentVersion + "\n" +
-                                   "• เวอร์ชันบนเซิร์ฟเวอร์: " + (remoteVersion != null ? "v" + remoteVersion : "ตรวจสอบจากเซิร์ฟเวอร์");
-
-                    if (!string.IsNullOrEmpty(remoteVersion) && remoteVersion.Equals(Program.CurrentVersion, StringComparison.OrdinalIgnoreCase))
+                    string prompt;
+                    bool hasNewer = !string.IsNullOrEmpty(remoteVersion) && IsNewerVersion(remoteVersion, Program.CurrentVersion);
+                    if (hasNewer)
+                    {
+                        prompt = "ตรวจพบโปรแกรม THC IT Agent เวอร์ชันใหม่บนเซิร์ฟเวอร์!\n\n" +
+                                 "• เวอร์ชันปัจจุบัน: v" + Program.CurrentVersion + "\n" +
+                                 "• เวอร์ชันล่าสุด: v" + remoteVersion + "\n\n" +
+                                 "ต้องการดาวน์โหลดและอัปเดตเป็นเวอร์ชันล่าสุดทันทีหรือไม่?";
+                    }
+                    else
                     {
                         prompt = "โปรแกรม THC IT Agent เป็นเวอร์ชันล่าสุดแล้ว (v" + Program.CurrentVersion + ")\n\n" +
                                  "ต้องการดาวน์โหลดและติดตั้งทับใหม่ทั้งหมด (Force Reinstall) หรือไม่?";
@@ -1840,78 +1900,43 @@ namespace ThcItAgent
                     }
                 }
 
-                // 4. In-Process Atomic Binary Swap or Fallback Helper Script
+                // 4. Out-of-Process Atomic Binary Swap via Resilient PowerShell Handoff
                 int currentPid = Process.GetCurrentProcess().Id;
-                string childArgs = "/update-post \"" + Program.CurrentVersion + "\" /wait-pid " + currentPid + " /silent";
-                bool inProcessSwapOk = false;
+                string logPath = Path.Combine(currentDir, "update.log").Replace("'", "''");
+                string targetExeEsc = currentExe.Replace("'", "''");
+                string newExeEsc = newExe.Replace("'", "''");
+                string oldExeEsc = oldExe.Replace("'", "''");
+                string dirEsc = currentDir.Replace("'", "''");
 
-                try
-                {
-                    if (File.Exists(oldExe)) try { File.Delete(oldExe); } catch { }
-                    File.Move(currentExe, oldExe);
-                    File.Move(newExe, currentExe);
-                    inProcessSwapOk = true;
-                }
-                catch
-                {
-                    inProcessSwapOk = false;
-                }
+                string psCmd = 
+                    "$ErrorActionPreference = 'SilentlyContinue'; " +
+                    "Add-Content -Path '" + logPath + "' -Value ('[' + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + '] [PID " + currentPid + "] Auto-updater initiated.'); " +
+                    "$p = Get-Process -Id " + currentPid + " -ErrorAction SilentlyContinue; " +
+                    "if ($p) { $p.WaitForExit(7000) } " +
+                    "Stop-Process -Id " + currentPid + " -Force -ErrorAction SilentlyContinue; " +
+                    "Start-Sleep -Milliseconds 600; " +
+                    "if (Test-Path '" + newExeEsc + "') { " +
+                    "  if (Test-Path '" + oldExeEsc + "') { Remove-Item -Force '" + oldExeEsc + "' -ErrorAction SilentlyContinue } " +
+                    "  if (Test-Path '" + targetExeEsc + "') { Move-Item -Path '" + targetExeEsc + "' -Destination '" + oldExeEsc + "' -Force -ErrorAction SilentlyContinue } " +
+                    "  Move-Item -Path '" + newExeEsc + "' -Destination '" + targetExeEsc + "' -Force -ErrorAction SilentlyContinue; " +
+                    "  if (Test-Path '" + targetExeEsc + "') { " +
+                    "    Add-Content -Path '" + logPath + "' -Value ('[' + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + '] Swap completed. Starting new agent version...'); " +
+                    "    Start-Process -FilePath '" + targetExeEsc + "' -ArgumentList '/update-post \"" + Program.CurrentVersion + "\" /silent' -WorkingDirectory '" + dirEsc + "'; " +
+                    "  } else { " +
+                    "    Add-Content -Path '" + logPath + "' -Value ('[' + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + '] Swap failed, rolling back to previous version...'); " +
+                    "    if (Test-Path '" + oldExeEsc + "') { Move-Item -Path '" + oldExeEsc + "' -Destination '" + targetExeEsc + "' -Force; Start-Process -FilePath '" + targetExeEsc + "' -WorkingDirectory '" + dirEsc + "'; } " +
+                    "  } " +
+                    "}";
 
-                if (inProcessSwapOk)
+                Process.Start(new ProcessStartInfo
                 {
-                    // Spawn new process
-                    try
-                    {
-                        Process.Start(new ProcessStartInfo
-                        {
-                            FileName = currentExe,
-                            WorkingDirectory = currentDir,
-                            UseShellExecute = true,
-                            Arguments = childArgs
-                        });
-                    }
-                    catch (Exception startEx)
-                    {
-                        // Rollback immediately if spawn failed
-                        try
-                        {
-                            if (File.Exists(currentExe)) File.Delete(currentExe);
-                            if (File.Exists(oldExe)) File.Move(oldExe, currentExe);
-                        }
-                        catch { }
-                        throw new Exception("ไม่สามารถเริ่มโปรเซสเวอร์ชันใหม่ได้ (Rollback สำเร็จ): " + startEx.Message);
-                    }
-                }
-                else
-                {
-                    // Fallback: File locking prevented direct rename. Use helper batch script to perform swap after process exits
-                    string batScript = Path.Combine(currentDir, "update_handoff_" + currentPid + ".bat");
-                    string batContent =
-                        "@echo off\r\n" +
-                        "chcp 65001 >nul\r\n" +
-                        ":WAIT_PID\r\n" +
-                        "taskkill /f /pid " + currentPid + " >nul 2>&1\r\n" +
-                        "timeout /t 1 /nobreak >nul\r\n" +
-                        "tasklist /fi \"PID eq " + currentPid + "\" 2>nul | findstr /i \"" + currentPid + "\" >nul\r\n" +
-                        "if not errorlevel 1 goto WAIT_PID\r\n" +
-                        "if exist \"" + oldExe + "\" del /f /q \"" + oldExe + "\" >nul 2>&1\r\n" +
-                        "if exist \"" + currentExe + "\" move /y \"" + currentExe + "\" \"" + oldExe + "\" >nul 2>&1\r\n" +
-                        "move /y \"" + newExe + "\" \"" + currentExe + "\" >nul 2>&1\r\n" +
-                        "start \"\" \"" + currentExe + "\" /update-post \"" + Program.CurrentVersion + "\" /silent\r\n" +
-                        "del /f /q \"%~f0\" >nul 2>&1\r\n";
-
-                    File.WriteAllText(batScript, batContent, Encoding.Default);
-
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = "cmd.exe",
-                        Arguments = "/c \"" + batScript + "\"",
-                        WorkingDirectory = currentDir,
-                        CreateNoWindow = true,
-                        WindowStyle = ProcessWindowStyle.Hidden,
-                        UseShellExecute = false
-                    });
-                }
+                    FileName = "powershell.exe",
+                    Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"" + psCmd + "\"",
+                    WorkingDirectory = currentDir,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    UseShellExecute = false
+                });
 
                 // 5. Clean Exit & Mutex Release Handover
                 // Crucial: Release Mutex and exit immediately so child process gets Mutex ownership and stays alive!
@@ -2026,10 +2051,29 @@ namespace ThcItAgent
     {
         public const string StandardInstallDir = @"C:\ProgramData\THC-IT-Agent";
         public const string UninstallRegKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\THC_IT_Agent";
+        public const string AppRegKey = @"Software\THC-IT-Agent";
 
         public static string GetStandardExePath()
         {
             return Path.Combine(StandardInstallDir, "THC_IT_Agent.exe");
+        }
+
+        public static bool IsInstalled()
+        {
+            try
+            {
+                string stdExe = GetStandardExePath();
+                if (!File.Exists(stdExe)) return false;
+
+                string cfg = Path.Combine(StandardInstallDir, "config.json");
+                if (!File.Exists(cfg)) return false;
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public static string ComputeSha256(string filePath)
@@ -2180,10 +2224,31 @@ namespace ThcItAgent
                 AppConfig.SetAutoStart(true);
                 RegisterWindowsUninstall(StandardInstallDir, targetExe, Program.CurrentVersion);
 
+                try
+                {
+                    using (var k = Registry.CurrentUser.CreateSubKey(AppRegKey))
+                    {
+                        if (k != null)
+                        {
+                            k.SetValue("Installed", 1, RegistryValueKind.DWord);
+                            k.SetValue("InstallPath", StandardInstallDir);
+                            k.SetValue("Version", Program.CurrentVersion);
+                            k.SetValue("InstallDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                        }
+                    }
+                }
+                catch { }
+
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-                string startup = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
                 CreateShortcut(Path.Combine(desktop, "THC IT Agent.lnk"), targetExe, "THC IT Agent - รพ.ทุ่งหัวช้าง");
-                CreateShortcut(Path.Combine(startup, "THC IT Agent.lnk"), targetExe, "THC IT Agent - รพ.ทุ่งหัวช้าง");
+
+                // Clean up any old duplicate Startup folder shortcut
+                try
+                {
+                    string startupLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "THC IT Agent.lnk");
+                    if (File.Exists(startupLnk)) File.Delete(startupLnk);
+                }
+                catch { }
 
                 if (!currentExe.Equals(targetExe, StringComparison.OrdinalIgnoreCase))
                 {
@@ -2240,6 +2305,7 @@ namespace ThcItAgent
                 // 2. Disable AutoStart & Remove Windows Uninstall entry
                 AppConfig.SetAutoStart(false);
                 UnregisterWindowsUninstall();
+                try { Registry.CurrentUser.DeleteSubKeyTree(AppRegKey, false); } catch { }
 
                 // 3. Delete Desktop & Startup Shortcuts
                 string desktop = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "THC IT Agent.lnk");

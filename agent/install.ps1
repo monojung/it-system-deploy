@@ -1,7 +1,7 @@
 # ==============================================================================
 # install.ps1
 # Thung Hua Chang Hospital - THC IT Agent Enterprise Installer
-# Version: 2.11.0 (Hardened Security Edition - Hash Verified & Zero Dropper)
+# Version: 2.12.0 (Hardened Security Edition - Hash Verified & Zero Dropper)
 # ==============================================================================
 
 [CmdletBinding()]
@@ -31,7 +31,7 @@ if (-not $Silent) {
     Write-Host ''
     Write-Host '==============================================================================' -ForegroundColor Cyan
     Write-Host '   โรงพยาบาลทุ่งหัวช้าง - ระบบติดตั้ง THC IT Agent ประจำเครื่อง' -ForegroundColor Yellow
-    Write-Host '   THUNG HUA CHANG HOSPITAL - ENTERPRISE AGENT INSTALLER v2.11.0' -ForegroundColor Gray
+    Write-Host '   THUNG HUA CHANG HOSPITAL - ENTERPRISE AGENT INSTALLER v2.12.0' -ForegroundColor Gray
     Write-Host '==============================================================================' -ForegroundColor Cyan
     Write-Host ''
 }
@@ -126,6 +126,17 @@ $config = @{
 Log-Message "ตั้งค่าการเปิดอัตโนมัติพร้อม Windows และสร้างทางลัด..." "INFO" Gray
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "THC_IT_Agent" -Value "`"$targetExe`"" -Force
 
+# Mark installed state in Registry
+try {
+    if (-not (Test-Path "HKCU:\Software\THC-IT-Agent")) {
+        New-Item -Path "HKCU:\Software\THC-IT-Agent" -Force | Out-Null
+    }
+    Set-ItemProperty -Path "HKCU:\Software\THC-IT-Agent" -Name "Installed" -Value 1 -Force
+    Set-ItemProperty -Path "HKCU:\Software\THC-IT-Agent" -Name "InstallPath" -Value $InstallDir -Force
+    Set-ItemProperty -Path "HKCU:\Software\THC-IT-Agent" -Name "Version" -Value "2.12.0" -Force
+    Set-ItemProperty -Path "HKCU:\Software\THC-IT-Agent" -Name "InstallDate" -Value (Get-Date -Format "yyyy-MM-dd HH:mm:ss") -Force
+} catch {}
+
 try {
     $ws = New-Object -ComObject WScript.Shell
     $desktopPath = [Environment]::GetFolderPath('DesktopDirectory')
@@ -137,11 +148,10 @@ try {
     $d.Description = "THC IT Agent - รพ.ทุ่งหัวช้าง"
     $d.Save()
 
-    $s = $ws.CreateShortcut("$startupPath\THC IT Agent.lnk")
-    $s.TargetPath = $targetExe
-    $s.WorkingDirectory = $InstallDir
-    $s.Description = "THC IT Agent - รพ.ทุ่งหัวช้าง"
-    $s.Save()
+    # Clean up duplicate shortcut in Startup folder to prevent double-execution at Windows login
+    if (Test-Path "$startupPath\THC IT Agent.lnk") {
+        Remove-Item "$startupPath\THC IT Agent.lnk" -Force -ErrorAction SilentlyContinue
+    }
 } catch {}
 
 # Copy uninstaller and updater scripts alongside

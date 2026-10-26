@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-title ติดตั้ง THC IT Agent v2.11.0 - โรงพยาบาลทุ่งหัวช้าง
+title ติดตั้ง THC IT Agent v2.12.0 - โรงพยาบาลทุ่งหัวช้าง
 color 0b
 
 set "IS_SILENT=0"
@@ -16,7 +16,7 @@ if not "%~1"=="" if "%IS_SILENT%"=="0" set "SERVER_URL=%~1"
 
 if "%IS_SILENT%"=="0" (
     echo ==========================================================================
-    echo   โรงพยาบาลทุ่งหัวช้าง - ระบบติดตั้ง THC IT Agent v2.11.0 (Production)
+    echo   โรงพยาบาลทุ่งหัวช้าง - ระบบติดตั้ง THC IT Agent v2.12.0 (Production)
     echo   THC Hardware Audit Agent - Enterprise System Tray Service
     echo   เชื่อมต่อเซิร์ฟเวอร์แบบ Real-time รายงานสเปก ปลอดภัย ไม่ติด Blocklist
     echo ==========================================================================
@@ -56,8 +56,11 @@ if exist "%~dp0update_thc_agent.bat" copy /y "%~dp0update_thc_agent.bat" "%INSTA
 
 if "%IS_SILENT%"=="0" echo [3/3] ตั้งค่าเริ่มทำงานอัตโนมัติพร้อม Windows...
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "THC_IT_Agent" /t REG_SZ /d "\"%INSTALL_DIR%\THC_IT_Agent.exe\"" /f >nul 2>nul
+reg add "HKCU\Software\THC-IT-Agent" /v "Installed" /t REG_DWORD /d 1 /f >nul 2>nul
+reg add "HKCU\Software\THC-IT-Agent" /v "InstallPath" /t REG_SZ /d "%INSTALL_DIR%" /f >nul 2>nul
+reg add "HKCU\Software\THC-IT-Agent" /v "Version" /t REG_SZ /d "2.12.0" /f >nul 2>nul
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\THC IT Agent.lnk'); $s.TargetPath = '%INSTALL_DIR%\THC_IT_Agent.exe'; $s.Description = 'THC IT Agent - รพ.ทุ่งหัวช้าง'; $s.Save(); $s2 = $ws.CreateShortcut([Environment]::GetFolderPath('Startup') + '\THC IT Agent.lnk'); $s2.TargetPath = '%INSTALL_DIR%\THC_IT_Agent.exe'; $s2.Save();" 2>nul
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\THC IT Agent.lnk'); $s.TargetPath = '%INSTALL_DIR%\THC_IT_Agent.exe'; $s.Description = 'THC IT Agent - รพ.ทุ่งหัวช้าง'; $s.Save(); $startupLnk = [Environment]::GetFolderPath('Startup') + '\THC IT Agent.lnk'; if (Test-Path $startupLnk) { Remove-Item $startupLnk -Force -ErrorAction SilentlyContinue }" 2>nul
 
 start "" "%INSTALL_DIR%\THC_IT_Agent.exe"
 

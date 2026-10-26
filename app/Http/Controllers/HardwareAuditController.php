@@ -1688,7 +1688,7 @@ class HardwareAuditController extends Controller
             $mdesIssues[] = "ระบบปฏิบัติการ ({$audit->os_name}) สิ้นสุดระยะเวลาสนับสนุนความปลอดภัยแล้ว (End-of-Life)";
         }
 
-        $rescanCommand = 'irm "' . url('/agent/thc_audit_agent.ps1') . '" | iex';
+        $rescanCommand = 'irm "' . url('/agent/install.ps1') . '" | iex';
 
         // Extract brand and model from raw_payload or asset if not directly set
         $brand = $audit->brand ?: ($audit->raw_payload['system']['Manufacturer'] ?? ($audit->asset?->brand ?? null));
@@ -2786,6 +2786,13 @@ class HardwareAuditController extends Controller
         }
         $agentSha = file_exists($agentExe) ? strtoupper(hash_file('sha256', $agentExe)) : '1857427CA8E8F3FDB5B1805229B091E10357BA452CA217D1B22F611F7A8C179C';
 
+        $manifestPath = public_path('agent/manifest.json');
+        if (!file_exists($manifestPath)) {
+            $manifestPath = base_path('agent/manifest.json');
+        }
+        $diskManifest = file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : [];
+        $targetVersion = $diskManifest['version'] ?? '2.12.0';
+
         if (!empty($batchItems) && is_array($batchItems)) {
             $count = 0;
             $batchId = 'UPDATE-' . date('Ymd-His') . '-' . Str::random(4);
@@ -2802,7 +2809,7 @@ class HardwareAuditController extends Controller
                         'status' => 'pending',
                         'requested_by' => $user->id,
                         'parameters' => [
-                            'target_version' => '2.11.0',
+                            'target_version' => $targetVersion,
                             'download_url' => url('/agent/THC_IT_Agent.exe'),
                             'manifest_url' => url('/agent/manifest.json'),
                             'sha256' => $agentSha,
@@ -2813,7 +2820,7 @@ class HardwareAuditController extends Controller
             }
             return response()->json([
                 'success' => true,
-                'message' => "ส่งคำสั่งอัปเดต Agent v2.11.0 ไปยัง {$count} เครื่องเรียบร้อยแล้ว (รอเครื่องลูกข่ายดึงคำสั่ง)",
+                'message' => "ส่งคำสั่งอัปเดต Agent v{$targetVersion} ไปยัง {$count} เครื่องเรียบร้อยแล้ว (รอเครื่องลูกข่ายดึงคำสั่ง)",
                 'count' => $count,
                 'queued_count' => $count,
                 'batch_id' => $batchId,
@@ -2832,7 +2839,7 @@ class HardwareAuditController extends Controller
             'status' => 'pending',
             'requested_by' => $user->id,
             'parameters' => [
-                'target_version' => '2.11.0',
+                'target_version' => $targetVersion,
                 'download_url' => url('/agent/THC_IT_Agent.exe'),
                 'manifest_url' => url('/agent/manifest.json'),
                 'sha256' => $agentSha,
@@ -2841,7 +2848,7 @@ class HardwareAuditController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "ส่งคำสั่งอัปเดต Agent v2.11.0 ไปยังเครื่อง {$hostname} เรียบร้อยแล้ว",
+            'message' => "ส่งคำสั่งอัปเดต Agent v{$targetVersion} ไปยังเครื่อง {$hostname} เรียบร้อยแล้ว",
             'command_id' => $cmd->id,
         ]);
     }

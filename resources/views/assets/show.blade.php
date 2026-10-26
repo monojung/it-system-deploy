@@ -1047,7 +1047,7 @@
     });
 
     function copyAssetAgentCmd(assetCode) {
-        const cmd = `powershell -ExecutionPolicy Bypass -NoProfile -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & ([scriptblock]::Create((irm 'https://thchospital.moph.go.th/it-system/agent/thc_audit_agent.ps1'))) -AssetCode '${assetCode}'"`;
+        const cmd = `powershell -ExecutionPolicy Bypass -NoProfile -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & ([scriptblock]::Create((irm '{{ url('/agent/install.ps1') }}'))) -AssetCode '${assetCode}'"`;
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(cmd).then(() => {
                 alert('คัดลอกคำสั่งสแกนครุภัณฑ์ ' + assetCode + ' เรียบร้อยแล้ว!\nสามารถนำไปคลิกขวา Paste วางใน PowerShell (Run as Administrator) บนเครื่องเป้าหมายได้ทันที');

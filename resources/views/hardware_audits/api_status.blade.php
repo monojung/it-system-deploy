@@ -331,7 +331,7 @@
                 <i class="bi bi-terminal-fill" style="color: #38bdf8;"></i> คำสั่ง PowerShell One-Liner (สั่งรันตรวจนับและส่งสเปคจากเครื่องลูกข่าย):
             </div>
             <div class="code-box">
-                <code class="code-content" id="psCmd">[Net.ServicePointManager]::SecurityProtocol = 3072; $w = New-Object Net.WebClient; $w.Encoding = [Text.Encoding]::UTF8; iex ($w.DownloadString('{{ url('/agent/thc_audit_agent.ps1') }}'))</code>
+                <code class="code-content" id="psCmd">[Net.ServicePointManager]::SecurityProtocol = 3072; $w = New-Object Net.WebClient; $w.Encoding = [Text.Encoding]::UTF8; iex ($w.DownloadString('{{ url('/agent/install.ps1') }}'))</code>
                 <button type="button" class="copy-btn" onclick="copyText('psCmd')">
                     <i class="bi bi-clipboard"></i> คัดลอก
                 </button>

@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-title อัปเดต THC IT Agent v2.11.0 - โรงพยาบาลทุ่งหัวช้าง
+title อัปเดต THC IT Agent v2.12.0 - โรงพยาบาลทุ่งหัวช้าง
 color 0a
 
 set "INSTALL_DIR=C:\ProgramData\THC-IT-Agent"
