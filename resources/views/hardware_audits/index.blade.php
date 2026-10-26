@@ -296,10 +296,10 @@
                 </div>
                 <div class="ha-tool-group-buttons">
                     <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-sm ha-tool-btn ha-tool-btn-download"
-                       title="ดาวน์โหลดโปรแกรม Standalone Agent v2.11.0 (68 KB มี Setup Wizard ในตัว)">
+                       title="ดาวน์โหลดโปรแกรม Standalone Agent v2.12.0 มี GUI Dashboard ในตัว">
                         <i class="bi bi-download text-primary"></i>
                         <span>โหลด Agent (.exe)</span>
-                        <span class="ha-tool-pill bg-primary text-white">v2.11.0</span>
+                        <span class="ha-tool-pill bg-primary text-white">v2.12.0</span>
                     </a>
 
                     <a href="{{ route('hardware-audits.print-report', ['fiscal_year' => $fiscalYear]) }}" target="_blank" 
@@ -327,70 +327,63 @@
     <!-- MAIN INTERACTIVE SECTION WITH MODERN TABS -->
     <div class="card ha-main-card" style="border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 30px;">
         
-        <!-- MODERN TAB BAR (RESPONSIVE TOUCH SCROLL) -->
-        <div class="ha-tabs-bar">
+        <!-- MODERN SEGMENTED TABS BAR -->
+        <div class="ha-tabs-bar" role="tablist" aria-label="หมวดหมู่การตรวจสอบอุปกรณ์">
             {{-- TAB 1: PENDING QUEUE --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'pending']) }}" 
                class="tab-nav-btn {{ $tab === 'pending' ? 'active' : '' }}"
-               style="border: 1px solid {{ $tab === 'pending' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'pending' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'pending' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'pending' ? '#0f766e' : '#64748b' }};">
-                <i class="bi bi-inbox-fill" style="color: {{ $tab === 'pending' ? '#0f766e' : '#94a3b8' }};"></i>
-                <span class="d-none d-md-inline">คิวรอตรวจสอบและอนุมัติ</span>
-                <span class="d-inline d-md-none">รออนุมัติ</span>
+               title="รายการรอตรวจสอบและอนุมัติ">
+                <i class="bi bi-inbox-fill"></i>
+                <span class="tab-label">รอตรวจสอบ</span>
                 @if($pendingCount > 0)
-                    <span class="badge" style="background: #f59e0b; color: #ffffff; font-size: 11px; padding: 2px 7px; border-radius: 99px; font-weight: 700;">{{ $pendingCount }}</span>
+                    <span class="ha-tab-badge badge-pending">{{ $pendingCount }}</span>
                 @endif
             </a>
 
             {{-- TAB 2: AGENT FLEET --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'agents']) }}" 
                class="tab-nav-btn {{ $tab === 'agents' ? 'active' : '' }}"
-               style="border: 1px solid {{ $tab === 'agents' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'agents' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'agents' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'agents' ? '#0f766e' : '#64748b' }};">
-                <i class="bi bi-display-fill" style="color: {{ $tab === 'agents' ? '#0f766e' : '#94a3b8' }};"></i>
-                <span class="d-none d-md-inline">เครื่องที่ติดตั้ง Agent</span>
-                <span class="d-inline d-md-none">Agent Fleet</span>
-                <span class="badge" style="background: {{ $agentOnlineCount > 0 ? '#10b981' : '#64748b' }}; color: #ffffff; font-size: 11px; padding: 2px 7px; border-radius: 99px; font-weight: 700;">
+               title="เครื่องคอมพิวเตอร์ที่ติดตั้ง Agent">
+                <i class="bi bi-display-fill"></i>
+                <span class="tab-label">เครื่อง Agent</span>
+                <span class="ha-tab-badge {{ $agentOnlineCount > 0 ? 'badge-agent' : 'badge-slate' }}">
                     <span id="tabAgentOnlineCount">{{ $agentOnlineCount }}</span>/{{ $agentTotalCount }}
                 </span>
             </a>
 
             {{-- TAB 3: 3D DEPARTMENT MAP DIAGRAM --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'map3d']) }}" 
-               class="tab-nav-btn {{ $tab === 'map3d' ? 'active' : '' }}"
-               style="border: 1px solid {{ $tab === 'map3d' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'map3d' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'map3d' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'map3d' ? '#0f766e' : '#64748b' }};">
-                <i class="bi bi-box-fill" style="color: {{ $tab === 'map3d' ? '#0f766e' : '#f59e0b' }};"></i>
-                <span class="d-none d-md-inline">แผนผัง 3D แต่ละแผนก</span>
-                <span class="d-inline d-md-none">ผัง 3D</span>
-                <span class="badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; font-size: 10px; padding: 2px 7px; border-radius: 99px; font-weight: 700;">
-                    3D Interactive
-                </span>
+               class="tab-nav-btn tab-map3d {{ $tab === 'map3d' ? 'active' : '' }}"
+               title="แผนผัง 3D แสดงตำแหน่งคอมพิวเตอร์ในแต่ละแผนก">
+                <i class="bi bi-box-fill"></i>
+                <span class="tab-label">ผัง 3D แผนก</span>
+                <span class="ha-tab-badge badge-3d">3D</span>
             </a>
 
             {{-- TAB 4: DEPARTMENT TRACKER --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'departments']) }}" 
                class="tab-nav-btn {{ $tab === 'departments' ? 'active' : '' }}"
-               style="border: 1px solid {{ $tab === 'departments' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'departments' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'departments' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'departments' ? '#0f766e' : '#64748b' }};">
-                <i class="bi bi-diagram-3-fill" style="color: {{ $tab === 'departments' ? '#0f766e' : '#94a3b8' }};"></i>
-                <span class="d-none d-md-inline">ติดตามความคืบหน้ารายแผนก</span>
-                <span class="d-inline d-md-none">รายแผนก</span>
-                <span class="badge bg-light text-dark border d-none d-sm-inline" style="font-size: 11px;">{{ count($departments) }} แผนก</span>
+               title="ติดตามความคืบหน้ารายแผนก">
+                <i class="bi bi-diagram-3-fill"></i>
+                <span class="tab-label">สรุปรายแผนก</span>
+                <span class="ha-tab-badge badge-count">{{ count($departments) }}</span>
             </a>
 
             {{-- TAB 5: ANNUAL REPORT & CHARTS --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'report']) }}" 
                class="tab-nav-btn {{ $tab === 'report' ? 'active' : '' }}"
-               style="border: 1px solid {{ $tab === 'report' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'report' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'report' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'report' ? '#0f766e' : '#64748b' }};">
-                <i class="bi bi-bar-chart-line-fill" style="color: {{ $tab === 'report' ? '#0f766e' : '#94a3b8' }};"></i>
-                <span class="d-none d-md-inline">รายงานสถิติ & วิเคราะห์สเปค (Charts)</span>
-                <span class="d-inline d-md-none">สถิติ & กราฟ</span>
+               title="รายงานสถิติและการวิเคราะห์สเปค">
+                <i class="bi bi-bar-chart-line-fill"></i>
+                <span class="tab-label">สถิติ & กราฟ</span>
             </a>
 
             {{-- TAB 6: AGENT DEPLOYMENT HUB --}}
             <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'deploy']) }}" 
                class="tab-nav-btn {{ $tab === 'deploy' ? 'active' : '' }}"
-               style="border: 1px solid {{ $tab === 'deploy' ? '#e2e8f0' : 'transparent' }}; border-bottom: {{ $tab === 'deploy' ? '2px solid #ffffff' : 'none' }}; margin-bottom: -1px; background: {{ $tab === 'deploy' ? '#ffffff' : 'transparent' }}; color: {{ $tab === 'deploy' ? '#0f766e' : '#64748b' }};">
-                <i class="bi bi-terminal-fill" style="color: {{ $tab === 'deploy' ? '#0f766e' : '#94a3b8' }};"></i>
-                <span class="d-none d-md-inline">ตัวติดตั้ง Agent & การกระจายสคริปต์</span>
-                <span class="d-inline d-md-none">ตัวติดตั้ง Agent</span>
+               title="ตัวติดตั้ง Agent และคำแนะนำการกระจายสคริปต์">
+                <i class="bi bi-terminal-fill"></i>
+                <span class="tab-label">ติดตั้ง Agent</span>
+                <span class="ha-tab-badge badge-version">v2.12.0</span>
             </a>
         </div>
 
@@ -3226,12 +3219,13 @@
     margin-top: 6px;
 }
 
-/* 4. MODERN TABS BAR */
+/* 4. MODERN SEGMENTED TABS BAR */
 .ha-tabs-bar {
     display: flex;
+    align-items: center;
     gap: 6px;
-    padding: 12px 18px 0 18px;
-    background: #f8fafc;
+    padding: 8px 10px;
+    background: #f1f5f9;
     border-bottom: 1px solid #e2e8f0;
     overflow-x: auto;
     overflow-y: hidden;
@@ -3243,31 +3237,109 @@
     display: none;
 }
 .tab-nav-btn {
-    padding: 12px 18px;
-    font-size: 13.5px;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 10px 12px;
+    font-size: 13px;
     font-weight: 600;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    border-radius: 12px 12px 0 0;
-    transition: all 0.15s ease;
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
+    justify-content: center;
+    gap: 7px;
+    border-radius: 10px;
+    color: #475569;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
     min-height: 44px;
+    user-select: none;
+    box-sizing: border-box;
+}
+.tab-nav-btn i {
+    font-size: 15px;
+    color: #64748b;
+    transition: all 0.18s ease;
+    flex-shrink: 0;
+}
+.tab-nav-btn .tab-label {
+    white-space: nowrap;
+    letter-spacing: -0.1px;
 }
 .tab-nav-btn:hover {
-    color: #0f766e !important;
-    background: rgba(255, 255, 255, 0.7) !important;
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.65);
+    border-color: rgba(226, 232, 240, 0.8);
+}
+.tab-nav-btn:hover i {
+    color: #0f766e;
+    transform: scale(1.08);
 }
 .tab-nav-btn.active {
     background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    border-bottom: 2px solid #ffffff !important;
-    margin-bottom: -1px;
     color: #0f766e !important;
     font-weight: 700 !important;
-    box-shadow: 0 -2px 6px rgba(0,0,0,0.03);
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.08), 0 1px 3px -1px rgba(15, 23, 42, 0.05);
+}
+.tab-nav-btn.active i {
+    color: #0d9488 !important;
+}
+.tab-nav-btn.tab-map3d i {
+    color: #f59e0b;
+}
+.tab-nav-btn.tab-map3d.active i {
+    color: #d97706 !important;
+}
+
+/* TAB MICRO-BADGES */
+.ha-tab-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.2px;
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+.badge-pending {
+    background: #f59e0b;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(245, 158, 11, 0.35);
+}
+.badge-agent {
+    background: #10b981;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+}
+.badge-slate {
+    background: #64748b;
+    color: #ffffff;
+}
+.badge-3d {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #ffffff;
+    font-size: 10px;
+    padding: 2px 6px;
+    box-shadow: 0 1px 3px rgba(217, 119, 6, 0.35);
+}
+.badge-count {
+    background: #e2e8f0;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    font-size: 10.5px;
+}
+.badge-version {
+    background: #ccfbf1;
+    color: #0f766e;
+    border: 1px solid #99f6e4;
+    font-size: 10.5px;
+    font-weight: 600;
 }
 
 /* 5. TAB 1: PENDING QUEUE TOOLBAR */
@@ -3526,6 +3598,16 @@
 
 /* TABLET (768px to 991px) */
 @media (max-width: 991px) {
+    .ha-tabs-bar {
+        padding: 6px 8px;
+        gap: 6px;
+    }
+    .tab-nav-btn {
+        flex: 0 0 auto !important;
+        padding: 8px 14px !important;
+        font-size: 13px !important;
+        min-height: 40px !important;
+    }
     .ha-stat-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -3631,13 +3713,23 @@
 
     /* Tabs Bar Mobile */
     .ha-tabs-bar {
-        padding: 8px 10px 0 10px;
-        gap: 4px;
+        padding: 6px;
+        gap: 5px;
     }
     .tab-nav-btn {
-        padding: 10px 12px !important;
+        flex: 0 0 auto !important;
+        padding: 7px 11px !important;
         font-size: 12px !important;
-        min-height: 40px !important;
+        min-height: 38px !important;
+        gap: 5px !important;
+        border-radius: 8px !important;
+    }
+    .tab-nav-btn i {
+        font-size: 13.5px !important;
+    }
+    .ha-tab-badge {
+        font-size: 10px !important;
+        padding: 1px 5px !important;
     }
 
     /* Tab Panes */
