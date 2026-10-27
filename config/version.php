@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.13.0'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (REST API Suite & Standalone Hardware Scanner v2.13.0)',
+    'version' => env('APP_VERSION', '2.13.1'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Pure C# Enterprise Agent & Streamlined Command Center)',
     'release_date' => '2026-10-27',
-    'build' => '20261027.1',
+    'build' => '20261027.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,17 @@ return [
     |
     */
     'changelog' => [
+        '2.13.1' => [
+            'date' => '2026-10-27',
+            'badge' => 'Pure C# Enterprise Agent & Streamlined Command Center v2.13.1',
+            'badge_color' => '#10b981',
+            'title' => 'คืนค่าระบบ Enterprise C# Agent v2.12.0 เต็มรูปแบบ, ยกระดับ IT Command Center ลดทอนความซ้ำซ้อนของเมนู และปรับระบบนำทางให้กระชับแม่นยำ',
+            'highlights' => [
+                'แปลงกลับมาใช้ Pure C# Enterprise Agent: ใช้งาน THC_IT_Agent.exe (GUI Tray, Live Ping, On-Demand Pull, Auto-Update) เสถียรและปลอดภัย',
+                'กำจัดเมนูซ้ำซ้อนใน /hardware-audits: ตัดปุ่มผัง 3D ที่ซ้ำกัน 4 จุดเหลือเฉพาะใน Tab Bar, ตัดปุ่มพิมพ์รายงาน/ส่งออก CSV ที่ซ้ำกับ Topbar, และนำปุ่มภายนอกออกจาก Tab Bar เพื่อความกระชับสะอาดตา',
+                'ศูนย์รวมเครื่องมือไอที (IT Command Center): ปรับกลุ่มคำสั่งระยะไกล (Remote Scan All, Pull Online Fleet, Remote Update) และเครื่องมือติดตั้ง Agent ให้ชัดเจนและทำงานได้ทันที',
+            ],
+        ],
         '2.13.0' => [
             'date' => '2026-10-27',
             'badge' => 'REST API Suite & Standalone Hardware Scanner v2.13.0',

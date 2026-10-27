@@ -6,14 +6,6 @@
 
 @section('topbar-actions')
     <div class="ha-topbar-actions">
-        <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'map3d']) }}"
-            class="topbar-btn ha-topbar-btn-map"
-            title="เปิดแผนผัง 3 มิติแสดงตำแหน่งคอมพิวเตอร์และสถานะการตรวจนับแต่ละแผนก (3D Department Map Diagram)">
-            <i class="bi bi-box-fill text-warning"></i>
-            <span class="d-none d-sm-inline">แผนผัง 3D แต่ละแผนก</span>
-            <span class="badge"
-                style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; font-size: 10px; padding: 2px 6px; border-radius: 99px;">3D</span>
-        </a>
         <button type="button" class="topbar-btn ha-topbar-btn-scan" onclick="triggerScanAllConfirm()"
             title="ส่งคำสั่งไปยัง Agent ทุกเครื่องให้ทำการสแกนสเปคใหม่เดี๋ยวนี้ (Remote Scan All)">
             <i class="bi bi-broadcast-pin text-info"></i>
@@ -59,30 +51,20 @@
                                 </span>
                             </div>
                             <p class="ha-hero-desc">
-                                ศูนย์มอนิเตอร์ฮาร์ดแวร์ ตรวจสอบความถูกต้องของสเปคเครื่องจริงผ่าน REST API
+                                ศูนย์มอนิเตอร์ฮาร์ดแวร์ ตรวจจับสเปคอัตโนมัติจาก Agent ประจำเครื่อง
                                 และประเมินความสอดคล้องตามเกณฑ์กระทรวงดีอี (MDES)
                             </p>
                         </div>
                     </div>
 
-                    <!-- Right Action Bar: REST API Center, 3D Map, & Fiscal Year Selector -->
+                    <!-- Right Action Bar: Download Standalone Agent & Fiscal Year Form Selector -->
                     <div class="ha-hero-actions">
-                        <!-- REST API Center Hero Button -->
-                        <a href="{{ route('hardware-audits.api-center') }}"
-                            class="btn btn-sm ha-hero-btn-scan"
-                            title="เข้าสู่ศูนย์กลาง REST API และระบบตรวจนับสเปคคอมพิวเตอร์ผ่านเว็บ">
-                            <i class="bi bi-lightning-charge-fill text-warning"></i>
-                            <span>REST API & Web Scan</span>
-                            <span class="ha-hero-count-pill bg-success text-white">v3.0</span>
-                        </a>
-
-                        <!-- 3D Map Hero Button -->
-                        <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'map3d']) }}"
-                            class="btn btn-sm ha-hero-btn-map"
-                            title="เปิดแผนผัง 3 มิติแสดงสถานะคอมพิวเตอร์ประจำแต่ละแผนก (3D Department Map Diagram)">
-                            <i class="bi bi-box-fill text-warning"></i>
-                            <span>แผนผัง 3D แผนก</span>
-                            <span class="badge bg-warning text-dark">3D</span>
+                        <!-- Download Standalone Agent .exe Hero Button -->
+                        <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-sm ha-hero-btn-download"
+                            title="ดาวน์โหลดโปรแกรม THC IT Agent (Standalone .exe พร้อม GUI Dashboard มี System Tray)">
+                            <i class="bi bi-download text-primary"></i>
+                            <span>โหลด Agent (.exe)</span>
+                            <span class="badge bg-success text-white">v2.12.0</span>
                         </a>
 
                         <!-- Fiscal Year Form Selector -->
@@ -241,83 +223,55 @@
             </div>
 
             <div class="ha-toolkit-body">
-                <!-- Group 1: REST API & Web Audit -->
+                <!-- Group 1: Remote Commands -->
                 <div class="ha-tool-group">
                     <div class="ha-tool-group-label">
-                        <i class="bi bi-lightning-charge-fill text-warning me-1"></i> ระบบ REST API & ตรวจสเปก (API & Web Audit)
+                        <i class="bi bi-broadcast-pin text-info me-1"></i> คำสั่งระยะไกล (Remote Commands)
                     </div>
                     <div class="ha-tool-group-buttons">
-                        <a href="{{ route('hardware-audits.api-center') }}" class="btn btn-sm ha-tool-btn ha-tool-btn-primary"
-                            title="เข้าสู่ศูนย์กลาง REST API และระบบตรวจนับสเปคคอมพิวเตอร์ผ่านเว็บ">
-                            <i class="bi bi-hdd-network-fill text-teal" style="color: #2dd4bf;"></i>
-                            <span>REST API Center</span>
-                            <span class="ha-tool-pill bg-success text-white">v3.0</span>
-                        </a>
+                        <button type="button" class="btn btn-sm ha-tool-btn ha-tool-btn-primary" onclick="triggerScanAllConfirm()"
+                            title="ส่งสัญญาณ Remote Scan ไปยัง Agent ทุกเครื่องเพื่อดึงสเปกฮาร์ดแวร์ล่าสุด">
+                            <i class="bi bi-cloud-arrow-down-fill text-warning"></i>
+                            <span>สั่งสแกนทุกเครื่อง</span>
+                            <span class="ha-tool-pill">{{ $agentInstalledCount ?? 0 }}</span>
+                        </button>
 
-                        <a href="{{ route('hardware-audits.api-center') }}#tab-webscan" class="btn btn-sm ha-tool-btn ha-tool-btn-success"
-                            title="ตรวจนับสเปคคอมพิวเตอร์ผ่านเว็บเบราว์เซอร์ทันทีใน 1 คลิก ไม่ต้องลงโปรแกรม">
-                            <i class="bi bi-globe2 text-white"></i>
-                            <span>ตรวจสเปกผ่านเว็บ (Web Scan)</span>
-                        </a>
+                        <button type="button" class="btn btn-sm ha-tool-btn ha-tool-btn-success" onclick="triggerAllOnlineFleetScan()"
+                            title="ส่งคำสั่งดึงข้อมูลเฉพาะเครื่องที่กำลังออนไลน์ขณะนี้">
+                            <i class="bi bi-broadcast text-success"></i>
+                            <span>ดึงเครื่องออนไลน์</span>
+                            <span class="ha-tool-pill bg-success text-white">{{ $agentOnlineCount ?? 0 }}</span>
+                        </button>
 
-                        <a href="{{ url('/api/hardware-audits/schema') }}" target="_blank" class="btn btn-sm ha-tool-btn ha-tool-btn-secondary"
-                            title="ดูโครงสร้างข้อมูลฟิลด์สเปคฮาร์ดแวร์แบบละเอียด (JSON Data Dictionary)">
-                            <i class="bi bi-filetype-json text-info"></i>
-                            <span>Data Schema</span>
-                        </a>
+                        @if(($agentOutdatedCount ?? 0) > 0)
+                            <button type="button" class="btn btn-sm ha-tool-btn ha-tool-btn-warning" onclick="triggerUpdateAllOutdatedFleet()"
+                                title="ส่งคำสั่งอัปเดต Agent เครื่องเก่าทั้งหมดเป็นเวอร์ชัน v2.12.0 อัตโนมัติ">
+                                <i class="bi bi-arrow-repeat text-white"></i>
+                                <span>อัปเดตเครื่องเก่า</span>
+                                <span class="ha-tool-pill bg-warning text-dark">{{ $agentOutdatedCount }}</span>
+                            </button>
+                        @endif
                     </div>
                 </div>
 
-                <!-- Group 2: Visualization & 3D Diagram -->
+                <!-- Group 2: Agent Deployment & Telemetry -->
                 <div class="ha-tool-group">
                     <div class="ha-tool-group-label">
-                        <i class="bi bi-box-fill text-warning me-1"></i> แผนผัง & ผังองค์กร (Diagrams)
+                        <i class="bi bi-cpu-fill text-primary me-1"></i> ติดตั้ง & ควบคุม Agent (Agent & Telemetry)
                     </div>
                     <div class="ha-tool-group-buttons">
-                        <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'map3d']) }}"
-                            class="btn btn-sm ha-tool-btn ha-tool-btn-map {{ $tab === 'map3d' ? 'active' : '' }}"
-                            title="เปิดแผนผัง 3 มิติแสดงตำแหน่งคอมพิวเตอร์และสถานะการตรวจนับแต่ละแผนก (3D Department Map Diagram)">
-                            <i class="bi bi-box-fill text-warning"></i>
-                            <span>แผนผัง 3D แต่ละแผนก</span>
-                            <span class="ha-tool-pill bg-warning text-dark">3D</span>
-                        </a>
-
-                        <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'departments']) }}"
-                            class="btn btn-sm ha-tool-btn ha-tool-btn-secondary {{ $tab === 'departments' ? 'active' : '' }}"
-                            title="ติดตามความคืบหน้าการสำรวจแยกตามแผนก/หน่วยงาน">
-                            <i class="bi bi-diagram-3-fill text-primary"></i>
-                            <span>ติดตามรายแผนก</span>
-                            <span class="ha-tool-pill">{{ count($departments) }}</span>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Group 3: Downloads, Reports & Integrations -->
-                <div class="ha-tool-group">
-                    <div class="ha-tool-group-label">
-                        <i class="bi bi-printer-fill text-secondary me-1"></i> รายงาน & ติดตั้ง (Reports & Deploy)
-                    </div>
-                    <div class="ha-tool-group-buttons">
-
-                        <a href="{{ route('hardware-audits.print-report', ['fiscal_year' => $fiscalYear]) }}"
-                            target="_blank" class="btn btn-sm ha-tool-btn ha-tool-btn-secondary"
-                            title="พิมพ์รายงานสรุปผลการสำรวจประจำปี A4">
-                            <i class="bi bi-printer text-primary"></i>
-                            <span>พิมพ์รายงาน A4</span>
-                        </a>
-
-                        <a href="{{ route('hardware-audits.export-csv', ['fiscal_year' => $fiscalYear]) }}"
-                            class="btn btn-sm ha-tool-btn ha-tool-btn-secondary"
-                            title="ส่งออกข้อมูลผลการตรวจนับเป็นไฟล์ Excel/CSV">
-                            <i class="bi bi-file-earmark-excel text-success"></i>
-                            <span>ส่งออก CSV</span>
+                        <a href="{{ url('/agent/THC_IT_Agent.exe') }}" download class="btn btn-sm ha-tool-btn ha-tool-btn-download"
+                            title="ดาวน์โหลดโปรแกรม Standalone Agent v2.12.0 มี GUI Dashboard ในตัว">
+                            <i class="bi bi-download text-primary"></i>
+                            <span>โหลด Agent (.exe)</span>
+                            <span class="ha-tool-pill bg-primary text-white">v2.12.0</span>
                         </a>
 
                         <a href="{{ url('/api/hardware-audit/submit') }}" target="_blank"
                             class="btn btn-sm ha-tool-btn ha-tool-btn-api"
                             title="ตรวจสอบสถานะ Telemetry API & Webhook Service">
                             <i class="bi bi-activity text-info"></i>
-                            <span>สถานะ API</span>
+                            <span>สถานะ API & Agent</span>
                         </a>
                     </div>
                 </div>
@@ -342,11 +296,11 @@
 
                 {{-- TAB 2: HARDWARE FLEET --}}
                 <a href="{{ route('hardware-audits.index', ['fiscal_year' => $fiscalYear, 'tab' => 'agents']) }}"
-                    class="tab-nav-btn {{ $tab === 'agents' ? 'active' : '' }}" title="เครื่องคอมพิวเตอร์ที่ตรวจนับสเปกแล้ว">
+                    class="tab-nav-btn {{ $tab === 'agents' ? 'active' : '' }}" title="เครื่องคอมพิวเตอร์ที่ติดตั้ง Agent">
                     <i class="bi bi-display-fill"></i>
-                    <span class="tab-label">สเปกคอมพิวเตอร์</span>
-                    <span class="ha-tab-badge badge-count">
-                        {{ $agentTotalCount }} เครื่อง
+                    <span class="tab-label">เครื่อง Agent</span>
+                    <span class="ha-tab-badge {{ $agentOnlineCount > 0 ? 'badge-agent' : 'badge-slate' }}">
+                        <span id="tabAgentOnlineCount">{{ $agentOnlineCount }}</span>/{{ $agentTotalCount }}
                     </span>
                 </a>
 
@@ -372,15 +326,6 @@
                     class="tab-nav-btn {{ $tab === 'report' ? 'active' : '' }}" title="รายงานสถิติและการวิเคราะห์สเปค">
                     <i class="bi bi-bar-chart-line-fill"></i>
                     <span class="tab-label">สถิติ & กราฟ</span>
-                </a>
-
-                {{-- TAB 6: REST API & WEB AUDIT HUB --}}
-                <a href="{{ route('hardware-audits.api-center') }}"
-                    class="tab-nav-btn"
-                    title="ศูนย์กลาง REST API และระบบตรวจนับสเปคคอมพิวเตอร์ผ่านเว็บ">
-                    <i class="bi bi-lightning-charge-fill text-warning"></i>
-                    <span class="tab-label">REST API & Web Scan</span>
-                    <span class="ha-tab-badge badge-version">v3.0</span>
                 </a>
             </div>
 
