@@ -94,6 +94,45 @@ if (!$gitDir) {
     } catch (Exception $e) {
         $messages[] = 'Scan note: ' . $e->getMessage();
     }
+
+    // 3. Scan for and remove 0-byte corrupt loose objects in .git/objects/
+    $objectsDir = $gitDir . DIRECTORY_SEPARATOR . 'objects';
+    $corruptObjects = [];
+    $specificSha = isset($_GET['sha']) ? preg_replace('/[^0-9a-fA-F]/', '', (string)$_GET['sha']) : '';
+
+    if (is_dir($objectsDir)) {
+        // Delete specific corrupt SHA object if passed via URL
+        if ($specificSha && strlen($specificSha) === 40) {
+            $p = substr($specificSha, 0, 2);
+            $s = substr($specificSha, 2);
+            $targetObj = $objectsDir . DIRECTORY_SEPARATOR . $p . DIRECTORY_SEPARATOR . $s;
+            if (file_exists($targetObj)) {
+                if (@unlink($targetObj)) {
+                    $corruptObjects[] = "objects/{$p}/{$s} (SHA1: {$specificSha})";
+                }
+            }
+        }
+
+        try {
+            $objIterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($objectsDir, FilesystemIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::CHILD_FIRST
+            );
+            foreach ($objIterator as $item) {
+                if ($item->isFile() && $item->getSize() === 0) {
+                    $realPath = $item->getRealPath();
+                    if ($realPath && file_exists($realPath)) {
+                        $rel = str_replace($gitDir . DIRECTORY_SEPARATOR, '', $realPath);
+                        if (@unlink($realPath)) {
+                            $corruptObjects[] = $rel . " (0-byte corrupt object)";
+                        }
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            $messages[] = 'Objects scan note: ' . $e->getMessage();
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -137,6 +176,14 @@ if (!$gitDir) {
         }
     } else {
         echo '<span class="success">✔ ตรวจสอบแล้ว: ไม่พบไฟล์ล็อกตกค้างในระบบ (Git Repository พร้อมทำงานตามปกติ)</span>' . "\n";
+    }
+
+    if (!empty($corruptObjects)) {
+        echo "\n" . '<span class="success">✔ ตรวจพบและลบ Git Object ที่เสียหาย/ขนาด 0 bytes สำเร็จ ' . count($corruptObjects) . " ไฟล์:</span>\n";
+        foreach ($corruptObjects as $co) {
+            echo "   - .git/" . htmlspecialchars($co) . "\n";
+        }
+        echo "<span class=\"success\">💡 ระบบลบไฟล์ Object ที่เสียหายออกแล้ว เมื่อสั่ง Fetch ใหม่ Git จะดาวน์โหลดไฟล์ที่สมบูรณ์มาแทนที่อัตโนมัติ</span>\n";
     }
 
     if (!empty($messages)) {

@@ -95,9 +95,28 @@ if (!$hasErrors) {
                 }
             }
         } catch (Exception $e) {}
+
+        // Scan and clean 0-byte corrupted Git loose objects (.git/objects/)
+        $objectsDir = $gitDir . DIRECTORY_SEPARATOR . 'objects';
+        $corruptObjCount = 0;
+        if (is_dir($objectsDir)) {
+            try {
+                $objIt = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($objectsDir, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+                foreach ($objIt as $f) {
+                    if ($f->isFile() && $f->getSize() === 0) {
+                        if (@unlink($f->getRealPath())) {
+                            $corruptObjCount++;
+                        }
+                    }
+                }
+            } catch (Exception $e) {}
+        }
     }
     if ($unlockedCount > 0) {
         $logs[] = "✔ ล้างไฟล์ล็อก Git ตกค้างสำเร็จแล้ว ({$unlockedCount} ไฟล์)";
+    }
+    if ($corruptObjCount > 0) {
+        $logs[] = "✔ ล้างไฟล์ Git Object ที่เสียหาย/ขนาด 0 bytes สำเร็จแล้ว ({$corruptObjCount} ไฟล์)";
     }
 
     $commands = [

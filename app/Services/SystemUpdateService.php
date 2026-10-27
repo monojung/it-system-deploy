@@ -605,7 +605,8 @@ class SystemUpdateService
         // 2. GitHub native repository zipball archive for branch (full source archive)
         $candidates = [
             "https://raw.githubusercontent.com/{$owner}/{$repo}/{$targetBranch}/update-patch.zip?t=" . time(),
-            "https://github.com/{$owner}/{$repo}/archive/refs/heads/{targetBranch}.zip",
+            "https://github.com/{$owner}/{$repo}/raw/{$targetBranch}/update-patch.zip",
+            "https://github.com/{$owner}/{$repo}/archive/refs/heads/{$targetBranch}.zip",
         ];
 
         $tempZipPath = storage_path('app/temp-update-package.zip');
@@ -1280,8 +1281,89 @@ class SystemUpdateService
     }
 
     /**
+     * Check if an error output string indicates a corrupt or missing Git object
+     */
+    public function isCorruptGitObjectError(string $error): bool
+    {
+        $lower = strtolower($error);
+        return str_contains($lower, 'unable to read sha1 file') ||
+               str_contains($lower, 'invalid object') ||
+               str_contains($lower, 'corrupt loose object') ||
+               str_contains($lower, 'error: object file') ||
+               str_contains($lower, 'has bad header') ||
+               str_contains($lower, 'error: unable to unpack');
+    }
+
+    /**
+     * Scan and remove zero-byte or corrupted loose Git objects from .git/objects
+     * and optionally delete specific corrupt SHA1 objects referenced in error messages.
+     *
+     * @param string|null $errorText Error text containing potential SHA1 hashes
+     * @param string|null $basePath Base repository path
+     * @return array List of cleared object files
+     */
+    public function repairCorruptGitObjects(?string $errorText = null, ?string $basePath = null): array
+    {
+        $base = $basePath ?: base_path();
+        $gitDir = $base . DIRECTORY_SEPARATOR . '.git';
+        $objectsDir = $gitDir . DIRECTORY_SEPARATOR . 'objects';
+        $cleared = [];
+
+        if (!File::isDirectory($objectsDir)) {
+            return $cleared;
+        }
+
+        // 1. Delete specific object files referenced in error message (e.g. c6a01b761d3aa519054d0d9c76a4cf8bb98a8396)
+        if ($errorText) {
+            if (preg_match_all('/\b([0-9a-f]{40})\b/i', $errorText, $matches)) {
+                $uniqueShas = array_unique($matches[1]);
+                foreach ($uniqueShas as $sha) {
+                    $prefix = substr($sha, 0, 2);
+                    $suffix = substr($sha, 2);
+                    $objPath = $objectsDir . DIRECTORY_SEPARATOR . $prefix . DIRECTORY_SEPARATOR . $suffix;
+                    if (file_exists($objPath)) {
+                        if (@unlink($objPath)) {
+                            $cleared[] = ".git/objects/{$prefix}/{$suffix}";
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Scan recursively for any 0-byte corrupt loose objects in .git/objects/??/*
+        try {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($objectsDir, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::CHILD_FIRST
+            );
+
+            foreach ($iterator as $item) {
+                if ($item->isFile() && $item->getSize() === 0) {
+                    $filePath = $item->getRealPath();
+                    if ($filePath && file_exists($filePath)) {
+                        if (@unlink($filePath)) {
+                            $rel = str_replace($base . DIRECTORY_SEPARATOR, '', $filePath);
+                            if (!in_array($rel, $cleared, true)) {
+                                $cleared[] = $rel;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('SystemUpdateService::repairCorruptGitObjects scan exception: ' . $e->getMessage());
+        }
+
+        if (!empty($cleared)) {
+            Log::info('SystemUpdateService::repairCorruptGitObjects cleared corrupt objects: ' . implode(', ', $cleared));
+        }
+
+        return $cleared;
+    }
+
+    /**
      * Purge all stale Git lock files (.git/*.lock, index.lock, HEAD.lock, refs, logs)
-     * to guarantee uninterrupted updates.
+     * and zero-byte corrupt objects to guarantee uninterrupted updates.
      *
      * @param string|null $basePath
      * @return array List of removed lock file paths
@@ -1341,6 +1423,14 @@ class SystemUpdateService
             Log::warning('SystemUpdateService::clearGitLocks scan exception: ' . $e->getMessage());
         }
 
+        // 3. Proactively purge any 0-byte corrupted Git loose objects
+        $corruptObjects = $this->repairCorruptGitObjects(null, $base);
+        foreach ($corruptObjects as $co) {
+            if (!in_array($co, $cleared, true)) {
+                $cleared[] = $co;
+            }
+        }
+
         if (!empty($cleared)) {
             Log::info('SystemUpdateService::clearGitLocks cleared: ' . implode(', ', $cleared));
         }
@@ -1396,6 +1486,23 @@ class SystemUpdateService
                 usleep(250000); // 250ms pause for file handles to release
 
                 // Retry command once with autoRetryOnLock disabled to prevent infinite loop
+                return $this->runProcess($command, $timeout, false);
+            }
+
+            // Automatic recovery for corrupt Git objects (unable to read sha1 file, invalid object, corrupt loose object)
+            if ($autoRetryOnLock && $this->isCorruptGitObjectError($errorText)) {
+                Log::warning("Corrupt Git object detected during [" . implode(' ', $command) . "]: {$errorText}. Repairing corrupt objects and re-fetching...");
+                $this->repairCorruptGitObjects($errorText);
+                usleep(250000);
+
+                // Fetch fresh objects to replace the purged corrupt object
+                try {
+                    $remoteName = $this->ensureUpdateRemote();
+                    $this->runProcess(['git', 'fetch', $remoteName, 'main'], 60, false);
+                } catch (\Throwable $fEx) {
+                    // ignore
+                }
+
                 return $this->runProcess($command, $timeout, false);
             }
 
