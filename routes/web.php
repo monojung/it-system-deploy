@@ -62,117 +62,18 @@ Route::get('/auth/pending-approval', [AuthController::class, 'showPendingApprova
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Public Hardware Audit API Endpoint (for embedded client PowerShell Agent & Browser Status Check)
-Route::match(['get', 'post'], '/api/hardware-audit/submit', [HardwareAuditController::class, 'submit'])->name('hardware-audit.submit');
-Route::match(['get', 'post'], '/hardware-audit/submit', [HardwareAuditController::class, 'submit']);
+// Public Hardware Audit REST API Endpoints (Direct submission & status)
+Route::match(['get', 'post'], '/api/hardware-audit/submit', [\App\Http\Controllers\Api\HardwareAuditApiController::class, 'submit'])->name('hardware-audit.submit');
+Route::match(['get', 'post'], '/hardware-audit/submit', [\App\Http\Controllers\Api\HardwareAuditApiController::class, 'submit']);
 Route::match(['get', 'post'], '/api/hardware-audit/agent-command', [HardwareAuditController::class, 'pollCommand'])->name('hardware-audit.agent-command');
 Route::match(['get', 'post'], '/hardware-audit/agent-command', [HardwareAuditController::class, 'pollCommand']);
 Route::match(['get', 'post'], '/api/hardware-audit/agent-ping', [HardwareAuditController::class, 'pollCommand'])->name('hardware-audit.agent-ping');
 Route::match(['get', 'post'], '/hardware-audit/agent-ping', [HardwareAuditController::class, 'pollCommand']);
 Route::post('/api/hardware-audit/agent-command/{id}/complete', [HardwareAuditController::class, 'completeCommand'])->name('hardware-audit.agent-command.complete');
 Route::post('/hardware-audit/agent-command/{id}/complete', [HardwareAuditController::class, 'completeCommand']);
+Route::get('/hardware-audits/api-center', [HardwareAuditController::class, 'apiCenter'])->name('hardware-audits.api-center');
+Route::get('/api/hardware-audits/docs', [HardwareAuditController::class, 'apiCenter'])->name('hardware-audits.api-docs');
 
-// Public Agent Version & Hash Manifest (for secure hash verification & automated updates)
-Route::get('/agent/manifest.json', function () {
-    $exePath = public_path('agent/THC_IT_Agent.exe');
-    if (!file_exists($exePath)) {
-        $exePath = base_path('agent/THC_IT_Agent.exe');
-    }
-    $sha256 = file_exists($exePath) ? hash_file('sha256', $exePath) : '';
-    $md5 = file_exists($exePath) ? hash_file('md5', $exePath) : '';
-    $size = file_exists($exePath) ? filesize($exePath) : 0;
-
-    $manifestPath = public_path('agent/manifest.json');
-    if (!file_exists($manifestPath)) {
-        $manifestPath = base_path('agent/manifest.json');
-    }
-    $diskManifest = file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : [];
-    $version = $diskManifest['version'] ?? '2.12.0';
-
-    return response()->json([
-        'version' => $version,
-        'app_name' => $diskManifest['app_name'] ?? 'THC IT Agent',
-        'organization' => $diskManifest['organization'] ?? 'Thung Hua Chang Hospital (รพ.ทุ่งหัวช้าง)',
-        'sha256' => strtoupper($sha256 ?: ($diskManifest['sha256'] ?? '')),
-        'md5' => strtoupper($md5 ?: ($diskManifest['md5'] ?? '')),
-        'size_bytes' => $size ?: ($diskManifest['size_bytes'] ?? 0),
-        'heartbeat_interval_sec' => $diskManifest['heartbeat_interval_sec'] ?? 60,
-        'download_url' => url('/agent/THC_IT_Agent.exe'),
-        'installer_url' => url('/agent/install_thc_agent.bat'),
-        'powershell_url' => url('/agent/install.ps1'),
-        'server_url' => url('/'),
-        'submit_url' => url('/api/hardware-audit/submit'),
-        'ping_url' => url('/api/hardware-audit/agent-command'),
-        'published_at' => file_exists($exePath) ? date('Y-m-d H:i:s', filemtime($exePath)) : date('Y-m-d H:i:s'),
-    ], 200, [
-        'Access-Control-Allow-Origin' => '*',
-        'Cache-Control' => 'no-cache, must-revalidate',
-    ]);
-})->name('agent.manifest');
-
-// Public Client Scripts & Agents Endpoints (Serve PowerShell & Batch files with text/plain for irm / download)
-Route::get('/agent/{filename}', function ($filename) {
-    $filename = basename($filename);
-    $candidates = [
-        public_path('agent/' . $filename),
-        base_path('agent/' . $filename),
-        base_path('public/agent/' . $filename),
-    ];
-    foreach ($candidates as $path) {
-        if (file_exists($path)) {
-            $content = file_get_contents($path);
-
-            $currentSubmitUrl = url('/api/hardware-audit/submit');
-            $currentAgentExeUrl = url('/agent/THC_IT_Agent.exe');
-            $currentBaseUrl = url('/');
-
-            if (str_ends_with($filename, '.ps1')) {
-                // Dynamically inject the active server's submit URL as top priority
-                $content = preg_replace(
-                    '/\$ServerUrl\s*=\s*["\'][^"\']+["\']/',
-                    "\$ServerUrl = \"{$currentSubmitUrl}\"",
-                    $content
-                );
-                return response($content, 200, [
-                    'Content-Type' => 'text/plain; charset=utf-8',
-                    'Cache-Control' => 'no-cache, must-revalidate',
-                ]);
-            }
-
-            if (str_ends_with($filename, '.bat')) {
-                // Dynamically inject active server URL and active agent download URL into installer
-                $content = preg_replace(
-                    '/set\s+"SERVER_URL=[^"]*"/',
-                    "set \"SERVER_URL={$currentBaseUrl}\"",
-                    $content
-                );
-                $content = str_replace(
-                    "'https://thchospital.moph.go.th/it-system/agent/THC_IT_Agent.exe'",
-                    "'{$currentAgentExeUrl}', 'https://thchospital.moph.go.th/it-system/agent/THC_IT_Agent.exe'",
-                    $content
-                );
-                return response($content, 200, [
-                    'Content-Type' => 'application/x-bat',
-                    'Cache-Control' => 'no-cache, must-revalidate',
-                ]);
-            }
-
-            if (str_ends_with($filename, '.exe')) {
-                return response()->file($path, [
-                    'Content-Type' => 'application/vnd.microsoft.portable-executable',
-                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-                    'Cache-Control' => 'no-cache, must-revalidate',
-                ]);
-            }
-
-            return response($content, 200, [
-                'Content-Type' => 'text/plain; charset=utf-8',
-                'Cache-Control' => 'no-cache, must-revalidate',
-            ]);
-        }
-    }
-    abort(404, 'Agent script not found');
-})->where('filename', '[A-Za-z0-9_\-\.]+')->name('agent.download');
 
 Route::get('/scripts/{filename}', function ($filename) {
     $filename = basename($filename);

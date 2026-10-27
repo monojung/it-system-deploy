@@ -112,43 +112,40 @@ class HardwareAuditController extends Controller
      */
     public function submit(Request $request)
     {
-        // Handle GET Request (Health check, API status, and browser direct access)
-        if ($request->isMethod('get')) {
-            $fiscalYear = $this->getCurrentFiscalYear();
-            $auditedCount = HardwareAudit::where('fiscal_year', $fiscalYear)->count();
+        return (new \App\Http\Controllers\Api\HardwareAuditApiController())->submit($request);
+    }
 
-            $statusData = [
-                'status' => 'online',
-                'service' => 'THC Client Hardware Audit Telemetry API',
-                'hospital' => 'โรงพยาบาลทุ่งหัวช้าง (Thung Hua Chang Hospital)',
-                'endpoint' => url('/api/hardware-audit/submit'),
-                'version' => '2.11.0',
-                'current_fiscal_year' => $fiscalYear,
-                'supported_methods' => ['POST', 'GET'],
-                'payload_format' => 'application/json',
-                'stats' => [
-                    'current_fiscal_year_audits' => $auditedCount,
-                ],
-                'message' => 'ระบบ API ตรวจนับและติดตามสเปคคอมพิวเตอร์พร้อมใช้งาน (กรุณาส่งข้อมูลฮาร์ดแวร์ผ่าน HTTP POST ด้วยรูปแบบ application/json)',
-                'timestamp' => now()->toIso8601String(),
-            ];
+    /**
+     * Interactive REST API Center & Web Audit Hub
+     */
+    public function apiCenter(Request $request)
+    {
+        $fiscalYear = $this->getCurrentFiscalYear();
+        $auditedCount = HardwareAudit::where('fiscal_year', $fiscalYear)->count();
+        $totalAssets = Asset::where('status', 'active')->count();
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $deviceTypes = DeviceType::orderBy('name')->get();
+        $agentFleet = $this->getAgentFleet();
+        $onlineCount = collect($agentFleet)->where('is_online', true)->count();
+        $recentCommands = AgentCommand::with(['targetAudit', 'targetAsset'])
+            ->latest()
+            ->take(8)
+            ->get();
 
-            // If requested via JSON, API client, cURL, or explicitly ?format=json
-            if ($request->wantsJson() || $request->input('format') === 'json' || !$request->acceptsHtml()) {
-                return response()->json($statusData, 200, [
-                    'Content-Type' => 'application/json; charset=utf-8',
-                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-            }
+        return view('hardware_audits.api_center', compact(
+            'fiscalYear',
+            'auditedCount',
+            'totalAssets',
+            'departments',
+            'deviceTypes',
+            'agentFleet',
+            'onlineCount',
+            'recentCommands'
+        ));
+    }
 
-            // If accessed directly in a web browser, render the status interface
-            return response()->view('hardware_audits.api_status', [
-                'statusData' => $statusData,
-                'fiscalYear' => $fiscalYear,
-                'auditedCount' => $auditedCount,
-            ], 200, [
-                'Content-Type' => 'text/html; charset=utf-8',
-            ]);
-        }
+    protected function unusedLegacySubmit(Request $request)
+    {
 
         // Normalize incoming agent payload aliases and types before validation
         if (!$request->filled('client_agent_version') && $request->filled('agent_version')) {

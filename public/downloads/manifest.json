@@ -1,0 +1,41 @@
+{
+  "project": "THC Hardware Scanner & Remote Audit Hub",
+  "version": "3.0.0",
+  "release_date": "2026-10-27",
+  "cybersecurity_compliance": {
+    "zero_inbound_ports": true,
+    "listening_sockets": "None (Outbound HTTPS polling only)",
+    "remote_code_execution": "Disabled (Immutable typed command set: scan, uninstall)",
+    "wmi_access": "Strictly Read-Only (Win32_Processor, Win32_ComputerSystem, Win32_OperatingSystem, Win32_DiskDrive, Win32_PhysicalMemory)",
+    "authentication": "Bearer/X-API-Token Header",
+    "privilege_level": "Standard User or Managed Service (Runs with scheduled task privileges for full hardware serial access)"
+  },
+  "operational_model": "Admin On-Demand Pull. Clients remain in silent low-overhead standby heartbeat; hardware scan is dispatched only when the system administrator clicks pull from the web console.",
+  "files": [
+    {
+      "name": "THC_Hardware_Scanner.exe",
+      "type": "Standalone WinForms & Daemon Executable (.NET Framework 4.5+)",
+      "sha256": "F7AE241D43DBDB359C4DF3ADBAFC8C6BEC4F3F25CE88E1377A4F2FE484689B06",
+      "download_path": "/downloads/THC_Hardware_Scanner.exe",
+      "arguments": {
+        "/service": "Run as background standby daemon polling for admin scan commands",
+        "/install": "Install automatically to Program Files and create scheduled task",
+        "/uninstall": "Cleanly remove service and scheduled task",
+        "/auto": "Execute single hardware scan, send telemetry to API, and exit immediately",
+        "/server:<url>": "Override default API server URL"
+      }
+    },
+    {
+      "name": "install_scanner.bat",
+      "type": "1-Click Administrator Installation Script",
+      "sha256": "6D53779D348B2C6A30092470690CA230FCD8EF154D515720B66B7D455072A63B",
+      "download_path": "/downloads/install_scanner.bat"
+    },
+    {
+      "name": "uninstall_scanner.bat",
+      "type": "Clean Uninstallation Script",
+      "sha256": "4F5A8435F195A4B83C5116C73DB5A8B0BDD624E9C629EAFEFD82C8DA5104A50B",
+      "download_path": "/downloads/uninstall_scanner.bat"
+    }
+  ]
+}

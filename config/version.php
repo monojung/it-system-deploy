@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.12.0'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Pure C# Enterprise Agent v2.12.0, Zero-Reinstall Boot Engine)',
-    'release_date' => '2026-10-26',
-    'build' => '20261026.2',
+    'version' => env('APP_VERSION', '2.13.0'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (REST API Suite & Standalone Hardware Scanner v2.13.0)',
+    'release_date' => '2026-10-27',
+    'build' => '20261027.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,19 @@ return [
     |
     */
     'changelog' => [
+        '2.13.0' => [
+            'date' => '2026-10-27',
+            'badge' => 'REST API Suite & Standalone Hardware Scanner v2.13.0',
+            'badge_color' => '#0284c7',
+            'title' => 'ศูนย์กลางสถาปัตยกรรม REST API เต็มรูปแบบ (REST API Suite & API Center), เครื่องมือสแกนสเปก Standalone Hardware Scanner โฉมใหม่, สคริปต์สแกนอัตโนมัติ On-Demand และยกเลิกระบบ Agent ฝังเครื่องแบบเก่าเบ็ดเสร็จ',
+            'highlights' => [
+                'ศูนย์กลาง REST API (Hardware Audit REST API Suite): รองรับมาตรฐาน RESTful API ครบวงจร (GET, POST, PUT, DELETE, PATCH, Batch Approve/Delete, Stats, Schema) สำหรับบูรณาการเชื่อมต่อระบบอื่นและเครื่องมือสแกนภายนอก',
+                'หน้า Interactive API Center & Docs (/hardware-audits/api-center): หน้าแดชบอร์ดศูนย์กลางควบคุม API ทดสอบยิง Request สดผ่านเบราว์เซอร์ พร้อมคู่มือโค้ดตัวอย่าง cURL, PowerShell, C# และ Python',
+                'Standalone Hardware Scanner v2.13.0: ปรับเปลี่ยนจาก Background Resident Service เป็นแบบ On-Demand Standalone Executable (.NET C#) ขนาดกะทัดรัด (37 KB) ไม่ฝังตัวในเครื่อง ไม่ใช้แรมค้าง สแกนและส่งผลทันที',
+                'สคริปต์สแกนอัตโนมัติ (scan_spec.bat / scan_spec.ps1): รองรับการสั่งสแกนผ่านเครือข่าย หรือรันผ่าน Flash Drive / Network Share โดยไม่ต้องติดตั้งซอฟต์แวร์ลงเครื่อง',
+                'ลบระบบ Background Agent แบบเก่าทั้งหมด: ปลดภาระเครื่องลูกข่าย 100% ไม่มีการตรวจจับจาก Antivirus หรือปัญหารันซ้ำตอนเปิดเครื่อง',
+            ],
+        ],
         '2.12.0' => [
             'date' => '2026-10-26',
             'badge' => 'Pure C# Enterprise Agent v2.12.0, Zero-Reinstall Boot Engine',

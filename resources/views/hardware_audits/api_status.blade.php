@@ -328,10 +328,10 @@
             </div>
 
             <div class="section-title">
-                <i class="bi bi-terminal-fill" style="color: #38bdf8;"></i> คำสั่ง PowerShell One-Liner (สั่งรันตรวจนับและส่งสเปคจากเครื่องลูกข่าย):
+                <i class="bi bi-terminal-fill" style="color: #38bdf8;"></i> คำสั่ง PowerShell One-Liner (รันตรวจนับสเปค WMI โดยไม่ต้องติดตั้งโปรแกรม):
             </div>
             <div class="code-box">
-                <code class="code-content" id="psCmd">[Net.ServicePointManager]::SecurityProtocol = 3072; $w = New-Object Net.WebClient; $w.Encoding = [Text.Encoding]::UTF8; iex ($w.DownloadString('{{ url('/agent/install.ps1') }}'))</code>
+                <code class="code-content" id="psCmd">powershell -NoProfile -ExecutionPolicy Bypass -Command "irm '{{ url('/scripts/scan_spec.ps1') }}' | iex"</code>
                 <button type="button" class="copy-btn" onclick="copyText('psCmd')">
                     <i class="bi bi-clipboard"></i> คัดลอก
                 </button>
@@ -341,7 +341,7 @@
                 <i class="bi bi-code-square" style="color: #f59e0b;"></i> ตัวอย่างคำสั่ง cURL POST สำหรับทดสอบส่งข้อมูลเข้า API:
             </div>
             <div class="code-box">
-                <code class="code-content" id="curlCmd">curl -X POST "{{ url('/api/hardware-audit/submit') }}" \
+                <code class="code-content" id="curlCmd">curl -X POST "{{ url('/api/hardware-audits') }}" \
   -H "Content-Type: application/json; charset=utf-8" \
   -d '{"hostname":"PC-DEMO","brand":"Lenovo","model":"ThinkCentre","cpu_model":"Intel Core i5","ram_capacity":16}'</code>
                 <button type="button" class="copy-btn" onclick="copyText('curlCmd')">
@@ -350,14 +350,14 @@
             </div>
 
             <div class="button-group">
-                <a href="{{ route('hardware-audits.index') }}" class="btn btn-primary">
-                    <i class="bi bi-speedometer2"></i> เข้าสู่หน้าจัดการตรวจนับ (Hardware Audit Dashboard)
+                <a href="{{ route('hardware-audits.api-center') }}" class="btn btn-primary">
+                    <i class="bi bi-speedometer2"></i> เข้าสู่หน้า REST API Center & Web Audit
                 </a>
-                <a href="{{ url('/api/hardware-audit/submit?format=json') }}" class="btn btn-outline" target="_blank">
-                    <i class="bi bi-filetype-json"></i> ดูผลลัพธ์แบบ JSONดิบ (?format=json)
+                <a href="{{ route('hardware-audits.index') }}" class="btn btn-outline">
+                    <i class="bi bi-list-check"></i> หน้ารายการตรวจนับทั้งหมด
                 </a>
-                <a href="{{ url('/agent/THC_IT_Agent.exe') }}" class="btn btn-outline" download>
-                    <i class="bi bi-download"></i> ดาวน์โหลด Standalone Agent v2.11.0 (.exe)
+                <a href="{{ url('/api/hardware-audits/schema') }}" class="btn btn-outline" target="_blank">
+                    <i class="bi bi-filetype-json"></i> ดู JSON Schema ดิบ
                 </a>
             </div>
 
@@ -365,7 +365,7 @@
 
         <div class="footer-note">
             <i class="bi bi-shield-lock-fill"></i>
-            <span>THC Hospital Telemetry Agent Platform v2.11.0 • Standalone System Tray Protected</span>
+            <span>THC Hospital Hardware Audit Platform v3.0 • REST API Architecture</span>
         </div>
     </div>
 
