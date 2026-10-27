@@ -179,14 +179,24 @@ class HardwareAuditApiController extends Controller
                 ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             }
 
-            // If accessed directly in a web browser, render the status interface
-            return response()->view('hardware_audits.api_status', [
-                'statusData' => $statusData,
-                'fiscalYear' => $fiscalYear,
-                'auditedCount' => $auditedCount,
-            ], 200, [
-                'Content-Type' => 'text/html; charset=utf-8',
-            ]);
+            // If accessed directly in a web browser, render the status interface (with safe fallback)
+            if (view()->exists('hardware_audits.api_status')) {
+                return response()->view('hardware_audits.api_status', [
+                    'statusData' => $statusData,
+                    'fiscalYear' => $fiscalYear,
+                    'auditedCount' => $auditedCount,
+                ], 200, [
+                    'Content-Type' => 'text/html; charset=utf-8',
+                ]);
+            }
+
+            if (view()->exists('hardware_audits.api_center')) {
+                return redirect()->route('hardware-audits.api-center');
+            }
+
+            return response()->json($statusData, 200, [
+                'Content-Type' => 'application/json; charset=utf-8',
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         }
 
         $this->normalizePayload($request);
