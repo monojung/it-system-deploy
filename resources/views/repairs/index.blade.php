@@ -182,9 +182,15 @@
                             <a href="{{ route('repairs.show', $repair) }}" class="btn btn-secondary btn-sm" title="ดูรายละเอียด">
                                 <i class="bi bi-eye"></i>
                             </a>
+                            @if($repair->status === 'external')
+                            <a href="{{ route('repairs.print', ['repair' => $repair, 'type' => 'external']) }}" target="_blank" class="btn btn-sm" style="background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe;" title="พิมพ์ใบขออนุมัติส่งซ่อมภายนอก (เสนอ ผอ.)">
+                                <i class="bi bi-printer-fill"></i>
+                            </a>
+                            @else
                             <a href="{{ route('repairs.print', $repair) }}" target="_blank" class="btn btn-secondary btn-sm" title="พิมพ์ใบสั่งซ่อม">
                                 <i class="bi bi-printer"></i>
                             </a>
+                            @endif
                         </td>
                     </tr>
                     @empty

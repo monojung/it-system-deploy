@@ -236,7 +236,8 @@ class RepairController extends Controller
         $repair->update($request->only([
             'title', 'description', 'department_id', 'urgency',
             'requester_name', 'requester_phone', 'asset_id',
-            'other_device_info', 'location_detail'
+            'other_device_info', 'location_detail',
+            'cause', 'solution', 'external_repair_detail'
         ]));
 
         RepairLog::create([
@@ -293,6 +294,12 @@ class RepairController extends Controller
         if ($newStatus === 'external') {
             if ($request->filled('external_repair_detail')) {
                 $updateData['external_repair_detail'] = $request->external_repair_detail;
+            }
+            if ($request->filled('cause')) {
+                $updateData['cause'] = $request->cause;
+            }
+            if ($request->filled('solution')) {
+                $updateData['solution'] = $request->solution;
             }
             if ($repair->asset_id) {
                 Asset::where('id', $repair->asset_id)->update(['status' => 'repairing']);
@@ -437,9 +444,13 @@ class RepairController extends Controller
         return back()->with('success', 'ขอบพระคุณสำหรับการประเมินความพึงพอใจ');
     }
 
-    public function print(Repair $repair)
+    public function print(Request $request, Repair $repair)
     {
         $repair->load(['department', 'asset.deviceType', 'technician', 'requester', 'parts.sparePart', 'logs']);
-        return view('repairs.print', compact('repair'));
+        $printType = $request->query('type');
+        if (!$printType) {
+            $printType = $repair->status === 'external' ? 'external' : 'standard';
+        }
+        return view('repairs.print', compact('repair', 'printType'));
     }
 }

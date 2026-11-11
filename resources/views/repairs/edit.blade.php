@@ -91,6 +91,27 @@
                     </div>
                 </div>
 
+                @if(auth()->user()->isAdmin() || auth()->user()->isTechnician() || $repair->status === 'external' || $repair->external_repair_detail)
+                <div style="margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--border);">
+                    <h3 style="font-size: 14.5px; font-weight: 700; color: #4b5563; margin-bottom: 12px;">
+                        <i class="bi bi-tools"></i> บันทึกผลการตรวจสภาพและการส่งซ่อมภายนอก (สำหรับเจ้าหน้าที่ IT)
+                    </h3>
+                    <div class="form-group">
+                        <label class="form-label" for="cause">สาเหตุของปัญหา / ผลการตรวจสภาพ</label>
+                        <input type="text" id="cause" name="cause" class="form-control" value="{{ old('cause', $repair->cause) }}" placeholder="เช่น เมนบอร์ดช็อต ชิปประมวลผลเสีย เกินขีดความสามารถซ่อมเอง">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="solution">วิธีการแก้ไข / แผนดำเนินการ</label>
+                        <textarea id="solution" name="solution" class="form-control" rows="2" placeholder="เช่น ส่งเคลมศูนย์บริการ หรือเปลี่ยนอะไหล่...">{{ old('solution', $repair->solution) }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="external_repair_detail">ร้านค้า / ศูนย์บริการภายนอกที่ส่งซ่อม</label>
+                        <input type="text" id="external_repair_detail" name="external_repair_detail" class="form-control" value="{{ old('external_repair_detail', $repair->external_repair_detail) }}" placeholder="เช่น ศูนย์บริการ Dell เชียงใหม่, ร้านแอดไวซ์ สาขาลำพูน">
+                        <span class="form-text" style="color: #6b21a8;">ข้อมูลนี้จะถูกนำไปพิมพ์ลงในแบบเสนอขออนุมัติส่งซ่อมภายนอก (เสนอหัวหน้ารับทราบ และ ผอ. เซ็นอนุมัติ)</span>
+                    </div>
+                </div>
+                @endif
+
                 <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border);">
                     <a href="{{ route('repairs.show', $repair) }}" class="btn btn-secondary">
                         ยกเลิก

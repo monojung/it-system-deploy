@@ -28,10 +28,31 @@
             </a>
             @endif
         @endif
-        <a href="{{ route('repairs.print', $repair) }}" target="_blank" class="btn btn-secondary">
-            <i class="bi bi-printer"></i>
-            <span>พิมพ์ใบงานซ่อม</span>
-        </a>
+
+        @if($repair->status === 'external')
+            <a href="{{ route('repairs.print', ['repair' => $repair, 'type' => 'external']) }}" target="_blank" class="btn btn-warning" style="background: #7e22ce; border-color: #6b21a8; color: #fff; font-weight: 600;">
+                <i class="bi bi-printer-fill"></i>
+                <span>พิมพ์ใบขออนุมัติส่งซ่อมภายนอก (เสนอ ผอ.)</span>
+            </a>
+            <a href="{{ route('repairs.print', ['repair' => $repair, 'type' => 'memo']) }}" target="_blank" class="btn btn-outline-primary" style="color: #7e22ce; border-color: #7e22ce;">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>บันทึกข้อความขอส่งซ่อม</span>
+            </a>
+            <a href="{{ route('repairs.print', ['repair' => $repair, 'type' => 'standard']) }}" target="_blank" class="btn btn-secondary btn-sm" title="พิมพ์ใบงานซ่อมมาตรฐาน">
+                <i class="bi bi-printer"></i>
+                <span>ใบงานซ่อมทั่วไป</span>
+            </a>
+        @else
+            <a href="{{ route('repairs.print', $repair) }}" target="_blank" class="btn btn-secondary">
+                <i class="bi bi-printer"></i>
+                <span>พิมพ์ใบงานซ่อม</span>
+            </a>
+            <a href="{{ route('repairs.print', ['repair' => $repair, 'type' => 'external']) }}" target="_blank" class="btn btn-outline-secondary" title="พิมพ์ใบเสนอขออนุมัติส่งซ่อมภายนอก">
+                <i class="bi bi-box-arrow-up-right"></i>
+                <span>พิมพ์ใบขออนุมัติส่งซ่อมภายนอก</span>
+            </a>
+        @endif
+
         @if(auth()->user()->isAdmin() || auth()->user()->isTechnician() || ($repair->status === 'pending' && $repair->requester_id === auth()->id()))
         <a href="{{ route('repairs.edit', $repair) }}" class="btn btn-secondary">
             <i class="bi bi-pencil"></i>
@@ -280,11 +301,28 @@
                     </div>
                     @endif
 
-                    @if($repair->external_repair_detail)
-                    <div>
-                        <span style="font-weight: 600; font-size: 13.5px; color: #6b21a8;">ข้อมูลการส่งซ่อมภายนอก:</span>
-                        <div style="padding: 10px 14px; background: #f3e8ff; border-radius: 6px; font-size: 13.5px; margin-top: 4px; border: 1px solid #d8b4fe; color: #581c87;">
-                            {{ $repair->external_repair_detail }}
+                    @if($repair->external_repair_detail || $repair->status === 'external')
+                    <div style="background: #faf5ff; border: 1.5px solid #d8b4fe; border-radius: 8px; padding: 14px 16px; margin-top: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <span style="font-weight: 700; font-size: 14px; color: #6b21a8; display: flex; align-items: center; gap: 6px;">
+                                    <i class="bi bi-box-arrow-up-right"></i> ข้อมูลการส่งซ่อมภายนอก (External Repair)
+                                </span>
+                                <div style="margin-top: 6px; font-size: 13.5px; color: #374151;">
+                                    <strong>ศูนย์บริการ/ร้านค้า:</strong> {{ $repair->external_repair_detail ?: 'ยังไม่ได้ระบุร้านค้า' }}
+                                </div>
+                                <div style="margin-top: 6px; font-size: 12.5px; color: #6b21a8; background: #f3e8ff; padding: 6px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="bi bi-shield-check"></i> <span>ระเบียบงานส่งซ่อมภายนอก: ต้องปริ้นเอกสารเสนอ <strong>หัวหน้ารับทราบ</strong> และ <strong>ผอ. เซ็นอนุมัติ</strong></span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <a href="{{ route('repairs.print', ['repair' => $repair, 'type' => 'external']) }}" target="_blank" class="btn btn-sm btn-primary" style="background: #7e22ce; border-color: #6b21a8;">
+                                    <i class="bi bi-printer-fill"></i> พิมพ์ใบขออนุมัติส่งซ่อม (เสนอ ผอ.)
+                                </a>
+                                <a href="{{ route('repairs.print', ['repair' => $repair, 'type' => 'memo']) }}" target="_blank" class="btn btn-sm btn-outline-primary" style="color: #7e22ce; border-color: #7e22ce;">
+                                    <i class="bi bi-file-earmark-text"></i> บันทึกข้อความ
+                                </a>
+                            </div>
                         </div>
                     </div>
                     @endif
@@ -498,22 +536,25 @@
                         </select>
                     </div>
 
-                    <div id="cause_solution_box" style="{{ in_array($repair->status, ['completed', 'waiting_parts', 'in_progress']) ? '' : 'display: none;' }}">
+                    <div id="cause_solution_box" style="{{ in_array($repair->status, ['completed', 'waiting_parts', 'in_progress', 'external']) ? '' : 'display: none;' }}">
                         <div class="form-group">
-                            <label class="form-label" for="cause">สาเหตุของปัญหา</label>
-                            <input type="text" id="cause" name="cause" class="form-control" value="{{ old('cause', $repair->cause) }}" placeholder="เช่น พาวเวอร์ซัพพลายไหม้, หมึกหมด, แรมหลวม">
+                            <label class="form-label" for="cause">สาเหตุของปัญหา / เหตุผลความจำเป็นในการส่งซ่อม</label>
+                            <input type="text" id="cause" name="cause" class="form-control" value="{{ old('cause', $repair->cause) }}" placeholder="เช่น เมนบอร์ดช็อต/เสีย, ชิ้นส่วนเกินขีดความสามารถซ่อมแซมเอง">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label" for="solution">วิธีการแก้ไขปัญหา</label>
-                            <textarea id="solution" name="solution" class="form-control" rows="2" placeholder="เช่น เปลี่ยนตลับหมึกและทำความสะอาดลูกยาง...">{{ old('solution', $repair->solution) }}</textarea>
+                            <label class="form-label" for="solution">วิธีการแก้ไข / แผนการดำเนินการ</label>
+                            <textarea id="solution" name="solution" class="form-control" rows="2" placeholder="เช่น ส่งเคลมศูนย์บริการ หรือเปลี่ยนอะไหล่เฉพาะทาง...">{{ old('solution', $repair->solution) }}</textarea>
                         </div>
                     </div>
 
                     <div id="external_box" style="{{ $repair->status == 'external' ? '' : 'display: none;' }}">
                         <div class="form-group">
-                            <label class="form-label" for="external_repair_detail">รายละเอียดร้าน/ศูนย์บริการภายนอก</label>
-                            <input type="text" id="external_repair_detail" name="external_repair_detail" class="form-control" value="{{ old('external_repair_detail', $repair->external_repair_detail) }}" placeholder="เช่น ส่งศูนย์ Dell เคลมเมนบอร์ด">
+                            <label class="form-label required" for="external_repair_detail">ร้านค้า / ศูนย์บริการภายนอกที่ส่งซ่อม</label>
+                            <input type="text" id="external_repair_detail" name="external_repair_detail" class="form-control" value="{{ old('external_repair_detail', $repair->external_repair_detail) }}" placeholder="เช่น ศูนย์บริการ Dell เชียงใหม่, ร้านแอดไวซ์ สาขาลำพูน">
+                        </div>
+                        <div style="font-size: 12px; color: #6b21a8; margin-top: -6px; margin-bottom: 12px; background: #faf5ff; padding: 7px 11px; border-radius: 6px; border: 1px solid #e9d5ff; line-height: 1.4;">
+                            <i class="bi bi-info-circle-fill"></i> <strong>ส่งซ่อมภายนอก:</strong> ต้องปริ้นเอกสารเสนอ <strong>หัวหน้ารับทราบ</strong> และ <strong>ผอ. เซ็นอนุมัติ</strong> ก่อนส่งมอบเครื่อง
                         </div>
                     </div>
 
@@ -618,7 +659,7 @@
         const causeBox = document.getElementById('cause_solution_box');
         const extBox = document.getElementById('external_box');
 
-        if (st === 'completed' || st === 'waiting_parts' || st === 'in_progress') {
+        if (st === 'completed' || st === 'waiting_parts' || st === 'in_progress' || st === 'external') {
             causeBox.style.display = 'block';
         } else {
             causeBox.style.display = 'none';
