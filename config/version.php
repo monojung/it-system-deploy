@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.13.2'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (External Repair Approval & Multi-tier Sign-off)',
-    'release_date' => '2026-11-11',
-    'build' => '20261112.1',
+    'version' => env('APP_VERSION', '2.13.3'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (External Repair Request 2x2 Signatures)',
+    'release_date' => '2026-11-12',
+    'build' => '20261112.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,17 @@ return [
     |
     */
     'changelog' => [
+        '2.13.3' => [
+            'date' => '2026-11-12',
+            'badge' => 'External Repair 2x2 Sign-off Layout v2.13.3',
+            'badge_color' => '#7e22ce',
+            'title' => 'ปรับปรุงการจัดวางจุดลงนามแบบ 2 แถว (2x2) ในแบบเสนอขออนุมัติส่งซ่อมบำรุงภายนอก พร้อมขยายพื้นที่สำหรับเซ็นลายมือชื่อ',
+            'highlights' => [
+                'จัดวางช่องลงนามแบบ 2 แถว: แถวที่ 1 (1. ผู้แจ้งซ่อม/ตรวจรับ และ 2. ช่างผู้ตรวจสภาพ/ผู้เสนอ), แถวที่ 2 (3. หัวหน้ากลุ่มงานรับทราบ และ 4. ผอ. เซ็นอนุมัติ)',
+                'ขยายพื้นที่ลงนาม: เพิ่มระยะเว้นว่าง (Signature Space) และเพิ่มความกว้างการ์ดลงนามให้กว้างขวาง เซ็นลายมือชื่อด้วยปากกาได้สะดวกชัดเจน',
+                'รักษาความพอดีใน 1 หน้า A4: ออกแบบความสูงและช่องไฟให้สั่งพิมพ์กระดาษ A4 หน้าเดียวได้สมบูรณ์',
+            ],
+        ],
         '2.13.2' => [
             'date' => '2026-11-12',
             'badge' => 'External Repair Approval & Sign-off v2.13.2',

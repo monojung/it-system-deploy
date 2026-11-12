@@ -357,25 +357,25 @@
             color: #1e293b;
         }
 
-        /* 4-Party Signatures Grid for External Repair */
-        .signatures-grid-4 {
+        /* 4-Party Signatures Grid for External Repair (2 Columns x 2 Rows) */
+        .signatures-grid-4, .signatures-grid-2x2 {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-top: 14px;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
         }
 
         .sig-card {
             border: 1.5px solid #cbd5e1;
             border-radius: 6px;
-            padding: 8px 6px;
+            padding: 10px 12px;
             background: #ffffff;
             text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            min-height: 125px;
-            font-size: 11px;
+            min-height: 148px;
+            font-size: 11.5px;
         }
 
         .sig-card-purple {
@@ -387,10 +387,10 @@
             font-weight: 700;
             color: #1e293b;
             border-bottom: 1px dashed #cbd5e1;
-            padding-bottom: 4px;
+            padding-bottom: 5px;
             margin-bottom: 6px;
-            font-size: 11px;
-            line-height: 1.25;
+            font-size: 11.5px;
+            line-height: 1.3;
         }
 
         .sig-header-purple {
@@ -399,22 +399,27 @@
         }
 
         .sig-body {
-            font-size: 10.5px;
+            font-size: 11px;
             color: #475569;
             text-align: left;
-            margin-bottom: 8px;
-            line-height: 1.35;
+            margin-bottom: 6px;
+            line-height: 1.4;
             padding: 0 4px;
         }
 
+        .sig-space {
+            height: 38px;
+        }
+
         .sig-line {
-            width: 88%;
+            width: 78%;
+            max-width: 250px;
             border-bottom: 1.5px dotted #64748b;
             margin: 0 auto 4px auto;
         }
 
         .sig-name {
-            font-size: 10.5px;
+            font-size: 11px;
             color: #0f172a;
             font-weight: 600;
             line-height: 1.25;
@@ -612,14 +617,18 @@
                 margin-bottom: 6px !important;
             }
 
-            .signatures-grid-4 {
-                gap: 6px !important;
-                margin-top: 10px !important;
+            .signatures-grid-4, .signatures-grid-2x2 {
+                gap: 8px !important;
+                margin-top: 8px !important;
             }
 
             .sig-card {
-                min-height: 110px !important;
-                padding: 6px 4px !important;
+                min-height: 125px !important;
+                padding: 6px 10px !important;
+            }
+
+            .sig-space {
+                height: 30px !important;
             }
 
             .doc-footer {
@@ -795,20 +804,38 @@
                 @endif
             </div>
 
-            <!-- Section 5: การเสนอขออนุมัติและลงนาม 4 ฝ่าย -->
+            <!-- Section 5: การเสนอขออนุมัติและลงนาม 4 ฝ่าย (จัดเรียง 2 แถว) -->
             <div class="section-title section-title-purple">
                 <span>5. การเสนอความเห็นและลงนามอนุมัติ (เสนอ หัวหน้ารับทราบ / ผอ. เซ็นอนุมัติ)</span>
             </div>
-            <div class="signatures-grid-4">
-                <!-- ฝ่ายที่ 1: ช่างเทคนิคผู้ตรวจสภาพ / ผู้เสนอขออนุมัติ -->
+            <div class="signatures-grid-2x2">
+                <!-- แถวที่ 1 - ฝั่งซ้าย: 1. ผู้แจ้งซ่อม / ตรวจรับ -->
                 <div class="sig-card">
                     <div>
-                        <div class="sig-header">1. ช่างผู้ตรวจสภาพ / ผู้เสนอ</div>
+                        <div class="sig-header">1. ผู้แจ้งซ่อม / ตรวจรับ</div>
+                        <div class="sig-body">
+                            รับทราบการส่งซ่อมภายนอก / ตรวจรับอุปกรณ์คืนในสภาพเรียบร้อย
+                        </div>
+                    </div>
+                    <div>
+                        <div class="sig-space"></div>
+                        <div class="sig-line"></div>
+                        <div class="sig-name">({{ $repair->requester_name }})</div>
+                        <div class="sig-pos">ผู้แจ้งซ่อม ({{ $repair->department?->name }})</div>
+                        <div class="sig-date">วันที่ ...... / ...... / ..........</div>
+                    </div>
+                </div>
+
+                <!-- แถวที่ 1 - ฝั่งขวา: 2. ช่างผู้ตรวจสภาพ / ผู้เสนอ -->
+                <div class="sig-card">
+                    <div>
+                        <div class="sig-header">2. ช่างผู้ตรวจสภาพ / ผู้เสนอ</div>
                         <div class="sig-body">
                             ตรวจสภาพแล้วพบว่าไม่สามารถซ่อมแซมเองได้ เห็นควรเสนอขออนุมัติส่งซ่อมบำรุงภายนอก
                         </div>
                     </div>
                     <div>
+                        <div class="sig-space"></div>
                         <div class="sig-line"></div>
                         <div class="sig-name">({{ $repair->technician?->name ?? '..........................................................' }})</div>
                         <div class="sig-pos">{{ $repair->technician?->position ?? 'เจ้าหน้าที่เทคโนโลยีสารสนเทศ' }}</div>
@@ -816,17 +843,18 @@
                     </div>
                 </div>
 
-                <!-- ฝ่ายที่ 2: หัวหน้ากลุ่มงานสุขภาพดิจิทัล (รับทราบ / เสนอ ผอ.) -->
+                <!-- แถวที่ 2 - ฝั่งซ้าย: 3. หัวหน้ากลุ่มงาน -->
                 <div class="sig-card">
                     <div>
-                        <div class="sig-header">2. หัวหน้ากลุ่มงาน (รับทราบ)</div>
+                        <div class="sig-header">3. หัวหน้ากลุ่มงาน (รับทราบ)</div>
                         <div class="sig-body">
                             เรียน ผู้อำนวยการโรงพยาบาล<br>
                             <span class="chkbox">&#9744;</span> รับทราบ และเห็นควรเสนอขออนุมัติ<br>
-                            <span class="chkbox">&#9744;</span> อื่นๆ ........................................
+                            <span class="chkbox">&#9744;</span> อื่นๆ ....................................................................
                         </div>
                     </div>
                     <div>
+                        <div class="sig-space"></div>
                         <div class="sig-line"></div>
                         <div class="sig-name">({{ setting('it_head_name', 'หัวหน้ากลุ่มงานสุขภาพดิจิทัล') }})</div>
                         <div class="sig-pos">หัวหน้า{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}</div>
@@ -834,36 +862,21 @@
                     </div>
                 </div>
 
-                <!-- ฝ่ายที่ 3: ผู้อำนวยการโรงพยาบาล (ผอ. เซ็นอนุมัติ) -->
+                <!-- แถวที่ 2 - ฝั่งขวา: 4. คำสั่งการ (ผอ. เซ็นอนุมัติ) -->
                 <div class="sig-card sig-card-purple">
                     <div>
-                        <div class="sig-header sig-header-purple">3. คำสั่งการ (ผอ. เซ็นอนุมัติ)</div>
+                        <div class="sig-header sig-header-purple">4. คำสั่งการ (ผอ. เซ็นอนุมัติ)</div>
                         <div class="sig-body">
                             คำสั่งการผู้อำนวยการโรงพยาบาล<br>
                             <span class="chkbox">&#9744;</span> <strong>อนุมัติ</strong> ให้ส่งซ่อมภายนอกตามเสนอ<br>
-                            <span class="chkbox">&#9744;</span> ไม่อนุมัติ เนื่องจาก ........................
+                            <span class="chkbox">&#9744;</span> ไม่อนุมัติ เนื่องจาก ........................................................
                         </div>
                     </div>
                     <div>
+                        <div class="sig-space"></div>
                         <div class="sig-line"></div>
                         <div class="sig-name">({{ setting('director_name', 'ผู้อำนวยการโรงพยาบาลทุ่งหัวช้าง') }})</div>
                         <div class="sig-pos">ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</div>
-                        <div class="sig-date">วันที่ ...... / ...... / ..........</div>
-                    </div>
-                </div>
-
-                <!-- ฝ่ายที่ 4: ผู้แจ้งซ่อม / ตรวจรับเครื่องคืน -->
-                <div class="sig-card">
-                    <div>
-                        <div class="sig-header">4. ผู้แจ้งซ่อม / ตรวจรับ</div>
-                        <div class="sig-body">
-                            รับทราบการส่งซ่อมภายนอก / ตรวจรับอุปกรณ์คืนในสภาพเรียบร้อย
-                        </div>
-                    </div>
-                    <div>
-                        <div class="sig-line"></div>
-                        <div class="sig-name">({{ $repair->requester_name }})</div>
-                        <div class="sig-pos">ผู้แจ้งซ่อม ({{ $repair->department?->name }})</div>
                         <div class="sig-date">วันที่ ...... / ...... / ..........</div>
                     </div>
                 </div>
