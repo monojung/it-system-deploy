@@ -68,7 +68,7 @@ class AgentCommand extends Model
     /**
      * Mark command as processing by client
      */
-    public function markAsDispatched(string $ip = null): self
+    public function markAsDispatched(?string $ip = null): self
     {
         $this->status = 'processing';
         $this->dispatched_at = now();
@@ -82,7 +82,7 @@ class AgentCommand extends Model
     /**
      * Mark command as successfully executed
      */
-    public function markAsCompleted(string $summary = null, string $ip = null): self
+    public function markAsCompleted(?string $summary = null, ?string $ip = null): self
     {
         $this->status = 'completed';
         $this->executed_at = now();

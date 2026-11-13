@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.13.3'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (External Repair Request 2x2 Signatures)',
-    'release_date' => '2026-11-12',
-    'build' => '20261112.2',
+    'version' => env('APP_VERSION', '2.14.0'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Laravel 11 & PHP 8.5 Upgrade)',
+    'release_date' => '2026-11-13',
+    'build' => '20261113.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,19 @@ return [
     |
     */
     'changelog' => [
+        '2.14.0' => [
+            'date' => '2026-11-13',
+            'badge' => 'Laravel 11 & PHP 8.5 Compatibility v2.14.0',
+            'badge_color' => '#059669',
+            'title' => 'อัปเกรดโครงสร้างระบบสู่ Laravel 11.x และรองรับ PHP 8.5 สมบูรณ์แบบ',
+            'highlights' => [
+                'อัปเกรดแกนหลักสู่ Laravel Framework 11.57.1: ปรับโครงสร้างระบบและโมดูลทั้งหมดให้เข้ากับมาตรฐาน Laravel 11',
+                'รองรับ PHP 8.5 และ PHP 8.2+: เพิ่ม symfony/polyfill-php85 และปรับปรุง type hints ให้รองรับมาตรฐาน PHP 8.4/8.5 ทั้งหมด',
+                'อัปเกรด Carbon 3 และ Symfony 7: เพิ่มประสิทธิภาพการประมวลผลวันที่ เวลา และคอมโพเนนต์เบื้องหลัง',
+                'ปรับปรุง Bootstrap Cache Resiliency: รองรับการทำงานได้ราบรื่นทั้งบน Windows Dev และ Cloud/Linux Production Hosting',
+                'ผ่านการทดสอบ Automated Test Suite ครบถ้วน: 211 tests (1,369 assertions) ทำงานได้ถูกต้องสมบูรณ์',
+            ],
+        ],
         '2.13.3' => [
             'date' => '2026-11-12',
             'badge' => 'External Repair 2x2 Sign-off Layout v2.13.3',
