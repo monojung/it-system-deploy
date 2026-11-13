@@ -59,7 +59,7 @@ class SimpleMessage
     /**
      * The action URL.
      *
-     * @var string
+     * @var string|null
      */
     public $actionUrl;
 
@@ -236,10 +236,10 @@ class SimpleMessage
         }
 
         if (is_array($line)) {
-            return implode(' ', array_map('trim', $line));
+            return implode(' ', array_map(trim(...), $line));
         }
 
-        return trim(implode(' ', array_map('trim', preg_split('/\\r\\n|\\r|\\n/', $line ?? ''))));
+        return trim(implode(' ', array_map(trim(...), preg_split('/\\r\\n|\\r|\\n/', $line ?? ''))));
     }
 
     /**

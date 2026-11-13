@@ -2,18 +2,25 @@
 
 namespace Illuminate\Support\Traits;
 
+use Carbon\CarbonInterval;
+use Carbon\Unit;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Date;
-use Illuminate\Support\Str;
+use Illuminate\Support\Number;
+use Illuminate\Support\Stringable;
+use Ramsey\Uuid\Uuid;
 use stdClass;
+use Symfony\Component\Uid\Ulid;
+
+use function Illuminate\Support\enum_value;
 
 trait InteractsWithData
 {
     /**
      * Retrieve all data from the instance.
      *
-     * @param  array|mixed|null  $keys
+     * @param  mixed  $keys
      * @return array
      */
     abstract public function all($keys = null);
@@ -50,13 +57,7 @@ trait InteractsWithData
 
         $data = $this->all();
 
-        foreach ($keys as $value) {
-            if (! Arr::has($data, $value)) {
-                return false;
-            }
-        }
-
-        return true;
+        return array_all($keys, fn ($value) => Arr::has($data, $value));
     }
 
     /**
@@ -77,10 +78,13 @@ trait InteractsWithData
     /**
      * Apply the callback if the instance contains the given key.
      *
+     * @template TReturn
+     * @template TReturnDefault = never
+     *
      * @param  string  $key
-     * @param  callable  $callback
-     * @param  callable|null  $default
-     * @return $this|mixed
+     * @param  callable(mixed): TReturn  $callback
+     * @param  (callable(): TReturnDefault)|null  $default
+     * @return $this|TReturn|TReturnDefault
      */
     public function whenHas($key, callable $callback, ?callable $default = null)
     {
@@ -105,13 +109,7 @@ trait InteractsWithData
     {
         $keys = is_array($key) ? $key : func_get_args();
 
-        foreach ($keys as $value) {
-            if ($this->isEmptyString($value)) {
-                return false;
-            }
-        }
-
-        return true;
+        return array_all($keys, fn ($value) => ! $this->isEmptyString($value));
     }
 
     /**
@@ -124,13 +122,7 @@ trait InteractsWithData
     {
         $keys = is_array($key) ? $key : func_get_args();
 
-        foreach ($keys as $value) {
-            if (! $this->isEmptyString($value)) {
-                return false;
-            }
-        }
-
-        return true;
+        return array_all($keys, fn ($value) => $this->isEmptyString($value));
     }
 
     /**
@@ -143,27 +135,54 @@ trait InteractsWithData
     {
         $keys = is_array($keys) ? $keys : func_get_args();
 
-        foreach ($keys as $key) {
-            if ($this->filled($key)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($keys, fn ($key) => $this->filled($key));
     }
 
     /**
      * Apply the callback if the instance contains a non-empty value for the given key.
      *
+     * @template TReturn
+     * @template TReturnDefault = never
+     *
      * @param  string  $key
-     * @param  callable  $callback
-     * @param  callable|null  $default
-     * @return $this|mixed
+     * @param  callable(mixed): TReturn  $callback
+     * @param  (callable(): TReturnDefault)|null  $default
+     * @return $this|TReturn|TReturnDefault
      */
     public function whenFilled($key, callable $callback, ?callable $default = null)
     {
         if ($this->filled($key)) {
             return $callback(data_get($this->all(), $key)) ?: $this;
+        }
+
+        if ($default) {
+            return $default();
+        }
+
+        return $this;
+    }
+
+    /**
+     * Apply the callback if the instance contains a valid enum value for the given key.
+     *
+     * @template TEnum of \BackedEnum
+     * @template TReturn
+     * @template TReturnDefault = never
+     *
+     * @param  string  $key
+     * @param  class-string<TEnum>  $enumClass
+     * @param  callable(TEnum):TReturn  $callback
+     * @param  (callable(): TReturnDefault)|null  $default
+     * @return $this|TReturn|TReturnDefault
+     */
+    public function whenEnum($key, string $enumClass, callable $callback, ?callable $default = null)
+    {
+        if ($this->filled($key) && $this->isBackedEnum($enumClass)) {
+            $value = $enumClass::tryFrom(data_get($this->all(), $key));
+
+            if ($value !== null) {
+                return $callback($value) ?: $this;
+            }
         }
 
         if ($default) {
@@ -189,10 +208,13 @@ trait InteractsWithData
     /**
      * Apply the callback if the instance is missing the given key.
      *
+     * @template TReturn
+     * @template TReturnDefault = never
+     *
      * @param  string  $key
-     * @param  callable  $callback
-     * @param  callable|null  $default
-     * @return $this|mixed
+     * @param  callable(mixed): TReturn  $callback
+     * @param  (callable(): TReturnDefault)|null  $default
+     * @return $this|TReturn|TReturnDefault
      */
     public function whenMissing($key, callable $callback, ?callable $default = null)
     {
@@ -225,61 +247,118 @@ trait InteractsWithData
      *
      * @param  string  $key
      * @param  mixed  $default
+     * @param  bool  $strict
      * @return \Illuminate\Support\Stringable
      */
-    public function str($key, $default = null)
+    public function str($key, $default = null, $strict = false)
     {
-        return $this->string($key, $default);
+        return $this->string($key, $default, $strict);
     }
 
     /**
      * Retrieve data from the instance as a Stringable instance.
      *
+     * When strict, values that are not strings, numbers, or Stringable objects return the default.
+     *
      * @param  string  $key
      * @param  mixed  $default
+     * @param  bool  $strict
      * @return \Illuminate\Support\Stringable
      */
-    public function string($key, $default = null)
+    public function string($key, $default = null, $strict = false)
     {
-        return Str::of($this->data($key, $default));
+        $value = $this->data($key, $default);
+
+        if ($strict && ! is_string($value) && ! is_int($value) && ! is_float($value) && ! $value instanceof \Stringable) {
+            $value = value($default);
+        }
+
+        return new Stringable($value);
     }
 
     /**
      * Retrieve data as a boolean value.
      *
      * Returns true when value is "1", "true", "on", and "yes". Otherwise, returns false.
+     * When strict, values other than "1", "true", "on", "yes", "0", "false", "off", and "no" return the default.
      *
      * @param  string|null  $key
      * @param  bool  $default
+     * @param  bool  $strict
      * @return bool
      */
-    public function boolean($key = null, $default = false)
+    public function boolean($key = null, $default = false, $strict = false)
     {
+        if ($strict) {
+            return $this->isNotFilled($key)
+                ? value($default)
+                : filter_var($this->data($key), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? value($default);
+        }
+
         return filter_var($this->data($key, $default), FILTER_VALIDATE_BOOLEAN);
     }
 
     /**
      * Retrieve data as an integer value.
      *
+     * When strict, values that are not valid integers return the default.
+     *
      * @param  string  $key
      * @param  int  $default
+     * @param  bool  $strict
      * @return int
      */
-    public function integer($key, $default = 0)
+    public function integer($key, $default = 0, $strict = false)
     {
-        return intval($this->data($key, $default));
+        $value = $this->data($key, $default);
+
+        // FILTER_VALIDATE_INT returns 1 for true, but false for false, so we need to check for a bool first
+        if ($strict && (is_bool($value) || filter_var($value, FILTER_VALIDATE_INT) === false)) {
+            return value($default);
+        }
+
+        return (int) $value;
     }
 
     /**
      * Retrieve data as a float value.
      *
+     * When strict, values that are not valid numbers return the default.
+     *
      * @param  string  $key
      * @param  float  $default
+     * @param  bool  $strict
      * @return float
      */
-    public function float($key, $default = 0.0)
+    public function float($key, $default = 0.0, $strict = false)
     {
-        return floatval($this->data($key, $default));
+        $value = $this->data($key, $default);
+
+        if ($strict && (is_bool($value) || filter_var($value, FILTER_VALIDATE_FLOAT) === false)) {
+            return value($default);
+        }
+
+        return (float) $value;
+    }
+
+    /**
+     * Retrieve data clamped between min and max values.
+     *
+     * @param  string  $key
+     * @param  int|float  $min
+     * @param  int|float  $max
+     * @param  int|float  $default
+     * @return float|int
+     */
+    public function clamp($key, $min, $max, $default = 0)
+    {
+        $value = $this->data($key, $default);
+
+        if (! is_numeric($value)) {
+            $value = $default;
+        }
+
+        return Number::clamp($value, $min, $max);
     }
 
     /**
@@ -287,13 +366,15 @@ trait InteractsWithData
      *
      * @param  string  $key
      * @param  string|null  $format
-     * @param  string|null  $tz
+     * @param  \UnitEnum|string|null  $tz
      * @return \Illuminate\Support\Carbon|null
      *
      * @throws \Carbon\Exceptions\InvalidFormatException
      */
     public function date($key, $format = null, $tz = null)
     {
+        $tz = enum_value($tz);
+
         if ($this->isNotFilled($key)) {
             return null;
         }
@@ -306,21 +387,81 @@ trait InteractsWithData
     }
 
     /**
-     * Retrieve data from the instance as an enum.
-     *
-     * @template TEnum of \BackedEnum
+     * Retrieve data from the instance as a CarbonInterval instance.
      *
      * @param  string  $key
-     * @param  class-string<TEnum>  $enumClass
-     * @return TEnum|null
+     * @param  \Carbon\Unit|string|null  $unit
+     * @return \Carbon\CarbonInterval|null
      */
-    public function enum($key, $enumClass)
+    public function interval($key, $unit = null)
     {
-        if ($this->isNotFilled($key) || ! $this->isBackedEnum($enumClass)) {
+        if ($this->isNotFilled($key)) {
             return null;
         }
 
-        return $enumClass::tryFrom($this->data($key));
+        $value = $this->data($key);
+
+        if (is_null($unit)) {
+            return CarbonInterval::make($value);
+        }
+
+        $unit = $unit instanceof Unit ? $unit : Unit::fromName($unit);
+
+        return CarbonInterval::fromString(number_format((float) $value, 10, '.', '').' '.$unit->name);
+    }
+
+    /**
+     * Retrieve data from the instance as a UUID instance.
+     *
+     * @param  string  $key
+     * @return \Ramsey\Uuid\UuidInterface|null
+     *
+     * @throws \Ramsey\Uuid\Exception\InvalidUuidStringException
+     */
+    public function uuid($key)
+    {
+        if ($this->isNotFilled($key)) {
+            return null;
+        }
+
+        return Uuid::fromString($this->data($key));
+    }
+
+    /**
+     * Retrieve data from the instance as a ULID instance.
+     *
+     * @param  string  $key
+     * @return \Symfony\Component\Uid\Ulid|null
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function ulid($key)
+    {
+        if ($this->isNotFilled($key)) {
+            return null;
+        }
+
+        return new Ulid($this->data($key));
+    }
+
+    /**
+     * Retrieve data from the instance as an enum.
+     *
+     * @template TEnum of \BackedEnum
+     * @template TDefault of TEnum|null
+     *
+     * @param  string  $key
+     * @param  class-string<TEnum>  $enumClass
+     * @param  TDefault  $default
+     * @return TEnum|TDefault
+     */
+    public function enum($key, $enumClass, $default = null)
+    {
+        if ($this->isNotFilled($key) || ! $this->isBackedEnum($enumClass)) {
+            return value($default);
+        }
+
+        return $enumClass::tryFrom($this->data($key)) ?: value($default);
     }
 
     /**
@@ -338,9 +479,10 @@ trait InteractsWithData
             return [];
         }
 
-        return $this->collect($key)->map(function ($value) use ($enumClass) {
-            return $enumClass::tryFrom($value);
-        })->filter()->all();
+        return $this->collect($key)
+            ->map(fn ($value) => $enumClass::tryFrom($value))
+            ->filter()
+            ->all();
     }
 
     /**
@@ -351,7 +493,7 @@ trait InteractsWithData
      */
     protected function isBackedEnum($enumClass)
     {
-        return enum_exists($enumClass) && method_exists($enumClass, 'tryFrom');
+        return is_a($enumClass, \BackedEnum::class, true);
     }
 
     /**
@@ -362,7 +504,9 @@ trait InteractsWithData
      */
     public function array($key = null)
     {
-        return (array) (is_array($key) ? $this->only($key) : $this->data($key));
+        $value = is_array($key) ? $this->only($key) : $this->data($key);
+
+        return is_object($value) ? Arr::from($value) : (array) $value;
     }
 
     /**
@@ -379,7 +523,7 @@ trait InteractsWithData
     /**
      * Get a subset containing the provided keys with values from the instance data.
      *
-     * @param  array|mixed  $keys
+     * @param  mixed  $keys
      * @return array
      */
     public function only($keys)
@@ -404,7 +548,7 @@ trait InteractsWithData
     /**
      * Get all of the data except for a specified array of items.
      *
-     * @param  array|mixed  $keys
+     * @param  mixed  $keys
      * @return array
      */
     public function except($keys)

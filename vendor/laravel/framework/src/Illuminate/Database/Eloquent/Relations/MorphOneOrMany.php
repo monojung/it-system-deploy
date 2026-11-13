@@ -23,9 +23,9 @@ abstract class MorphOneOrMany extends HasOneOrMany
     protected $morphType;
 
     /**
-     * The class name of the parent model.
+     * The morph class of the parent model.
      *
-     * @var string
+     * @var class-string<TDeclaringModel>|string
      */
     protected $morphClass;
 
@@ -37,7 +37,6 @@ abstract class MorphOneOrMany extends HasOneOrMany
      * @param  string  $type
      * @param  string  $id
      * @param  string  $localKey
-     * @return void
      */
     public function __construct(Builder $query, Model $parent, $type, $id, $localKey)
     {
@@ -78,6 +77,8 @@ abstract class MorphOneOrMany extends HasOneOrMany
      */
     public function forceCreate(array $attributes = [])
     {
+        $attributes = array_merge($this->getQuery()->pendingAttributes, $attributes);
+
         $attributes[$this->getForeignKeyName()] = $this->getParentKey();
         $attributes[$this->getMorphType()] = $this->morphClass;
 
@@ -117,7 +118,7 @@ abstract class MorphOneOrMany extends HasOneOrMany
      */
     public function upsert(array $values, $uniqueBy, $update = null)
     {
-        if (! empty($values) && ! is_array(reset($values))) {
+        if (! empty($values) && ! is_array(array_first($values))) {
             $values = [$values];
         }
 
@@ -157,9 +158,9 @@ abstract class MorphOneOrMany extends HasOneOrMany
     }
 
     /**
-     * Get the class name of the parent model.
+     * Get the morph class of the parent model.
      *
-     * @return string
+     * @return class-string<TDeclaringModel>|string
      */
     public function getMorphClass()
     {

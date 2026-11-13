@@ -9,6 +9,9 @@ use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Events\JobReleasedAfterException;
+use Illuminate\Queue\Events\WorkerQueuePaused;
+use Illuminate\Queue\Events\WorkerQueueResumed;
+use Illuminate\Queue\Events\WorkerStopping;
 use Illuminate\Queue\Worker;
 use Illuminate\Queue\WorkerOptions;
 use Illuminate\Support\Carbon;
@@ -43,11 +46,11 @@ class WorkCommand extends Command
                             {--max-jobs=0 : The number of jobs to process before stopping}
                             {--max-time=0 : The maximum number of seconds the worker should run}
                             {--force : Force the worker to run even in maintenance mode}
-                            {--memory=128 : The memory limit in megabytes}
-                            {--sleep=3 : Number of seconds to sleep when no job is available}
-                            {--rest=0 : Number of seconds to rest between jobs}
+                            {--memory=128 : The memory limit in megabytes, or as a percentage of the PHP memory limit}
+                            {--sleep=3 : The number of seconds to sleep when no job is available}
+                            {--rest=0 : The number of seconds to rest between jobs}
                             {--timeout=60 : The number of seconds a child process can run}
-                            {--tries=1 : Number of times to attempt a job before logging it failed}
+                            {--tries=1 : The number of times to attempt a job before logging it failed}
                             {--json : Output the queue worker information as JSON}';
 
     /**
@@ -90,7 +93,6 @@ class WorkCommand extends Command
      *
      * @param  \Illuminate\Queue\Worker  $worker
      * @param  \Illuminate\Contracts\Cache\Repository  $cache
-     * @return void
      */
     public function __construct(Worker $worker, Cache $cache)
     {
@@ -117,7 +119,7 @@ class WorkCommand extends Command
         $this->listenForEvents();
 
         $connection = $this->argument('connection')
-                        ?: $this->laravel['config']['queue.default'];
+            ?: $this->laravel['config']['queue.default'];
 
         // We need to get the right queue for the connection which is set in the queue
         // configuration file for the application. We will pull it based on the set
@@ -171,7 +173,7 @@ class WorkCommand extends Command
             $this->option('max-jobs'),
             $this->option('max-time'),
             $this->option('rest'),
-            $this->option('stop-when-empty-for')
+            $this->option('stop-when-empty-for'),
         );
     }
 
@@ -204,6 +206,18 @@ class WorkCommand extends Command
             $this->logFailedJob($event);
         });
 
+        $this->laravel['events']->listen(WorkerQueuePaused::class, function ($event) {
+            $this->writeQueueStatus($event->connectionName, $event->queue, 'paused');
+        });
+
+        $this->laravel['events']->listen(WorkerQueueResumed::class, function ($event) {
+            $this->writeQueueStatus($event->connectionName, $event->queue, 'resumed');
+        });
+
+        $this->laravel['events']->listen(WorkerStopping::class, function ($event) {
+            $this->writeStopReason($event);
+        });
+
         static::$hasRegisteredListeners = true;
     }
 
@@ -212,14 +226,89 @@ class WorkCommand extends Command
      *
      * @param  Job  $job
      * @param  string  $status
-     * @param  Throwable|null  $exception
+     * @param  \Throwable|null  $exception
      * @return void
      */
     protected function writeOutput(Job $job, $status, ?Throwable $exception = null)
     {
+        if ($this->output->isQuiet() || $this->output->isSilent()) {
+            return;
+        }
+
         $this->outputUsingJson()
             ? $this->writeOutputAsJson($job, $status, $exception)
             : $this->writeOutputForCli($job, $status);
+    }
+
+    /**
+     * Write the status output for a paused or resumed queue.
+     *
+     * @param  string  $connection
+     * @param  string  $queue
+     * @param  string  $status
+     * @return void
+     */
+    protected function writeQueueStatus($connection, $queue, $status)
+    {
+        if ($this->output->isQuiet() || $this->output->isSilent()) {
+            return;
+        }
+
+        if ($this->outputUsingJson()) {
+            $this->output->writeln(json_encode([
+                'level' => 'warning',
+                'connection' => $connection,
+                'queue' => $queue,
+                'status' => $status,
+                'timestamp' => $this->now()->format('Y-m-d\TH:i:s.uP'),
+            ]));
+
+            return;
+        }
+
+        $this->output->writeln(sprintf(
+            '  <fg=gray>%s</> Queue <fg=blue>%s</> %s',
+            $this->now()->format('Y-m-d H:i:s'),
+            $queue,
+            $status === 'paused'
+                ? '<fg=yellow;options=bold>PAUSED</>'
+                : '<fg=green;options=bold>RESUMED</>',
+        ));
+    }
+
+    /**
+     * Write the status output for a queue worker that is stopping.
+     *
+     * @param  \Illuminate\Queue\Events\WorkerStopping  $event
+     * @return void
+     */
+    protected function writeStopReason(WorkerStopping $event)
+    {
+        if ($this->output->isQuiet() || $this->output->isSilent() || is_null($event->reason)) {
+            return;
+        }
+
+        if ($this->outputUsingJson()) {
+            $this->output->writeln(json_encode([
+                'level' => $event->status === 0 ? 'info' : 'warning',
+                'connection' => $event->connectionName,
+                'queue' => $event->queue,
+                'status' => 'stopped',
+                'reason' => $event->reason->value,
+                'exit_code' => $event->status,
+                'jobs_processed' => $event->jobsProcessed,
+                'memory' => is_null($event->memoryUsage) ? null : round($event->memoryUsage, 1),
+                'timestamp' => $this->now()->format('Y-m-d\TH:i:s.uP'),
+            ]));
+
+            return;
+        }
+
+        $this->output->writeln(sprintf(
+            '  <fg=gray>%s</> Worker <fg=yellow;options=bold>STOPPED</> <fg=gray>%s</>',
+            $this->now()->format('Y-m-d H:i:s'),
+            $event->reason->description(),
+        ));
     }
 
     /**
@@ -231,20 +320,22 @@ class WorkCommand extends Command
      */
     protected function writeOutputForCli(Job $job, $status)
     {
-        $this->output->write(sprintf(
-            '  <fg=gray>%s</> %s%s',
+        $isVerbose = $this->output->isVerbose();
+
+        $this->output->write(rtrim(sprintf(
+            '  <fg=gray>%s</> %s %s',
             $this->now()->format('Y-m-d H:i:s'),
             $job->resolveName(),
-            $this->output->isVerbose()
-                ? sprintf(' <fg=gray>%s</>', $job->getJobId())
+            $isVerbose
+                ? sprintf('<fg=gray>%s</> <fg=blue>%s</> <fg=blue>%s</>', $job->getJobId(), $job->getConnectionName(), $job->getQueue())
                 : ''
-        ));
+        )));
 
-        if ($status == 'starting') {
+        if ($status === 'starting') {
             $this->latestStartedAt = microtime(true);
 
             $dots = max(terminal()->width() - mb_strlen($job->resolveName()) - (
-                $this->output->isVerbose() ? (mb_strlen($job->getJobId()) + 1) : 0
+                $isVerbose ? mb_strlen($job->getJobId()) + mb_strlen($job->getConnectionName()) + mb_strlen($job->getQueue()) + 2 : 0
             ) - 33, 0);
 
             $this->output->write(' '.str_repeat('<fg=gray>.</>', $dots));
@@ -253,19 +344,23 @@ class WorkCommand extends Command
         }
 
         $runTime = $this->runTimeForHumans($this->latestStartedAt);
+        $memory = $isVerbose ? round(memory_get_usage(true) / 1024 / 1024, 1).'MB' : '';
+
+        [$result, $color] = match (true) {
+            $status === 'success' && $job->isReleased() => ['RELEASED', 'yellow'],
+            $status === 'success' => ['DONE', 'green'],
+            $status === 'released_after_exception' => ['FAIL', 'yellow'],
+            default => ['FAIL', 'red'],
+        };
 
         $dots = max(terminal()->width() - mb_strlen($job->resolveName()) - (
-            $this->output->isVerbose() ? (mb_strlen($job->getJobId()) + 1) : 0
-        ) - mb_strlen($runTime) - 31, 0);
+            $isVerbose ? mb_strlen($job->getJobId()) + mb_strlen($job->getConnectionName()) + mb_strlen($job->getQueue()) + mb_strlen($memory) + 3 : 0
+        ) - mb_strlen($runTime) - mb_strlen($result) - 27, 0);
 
         $this->output->write(' '.str_repeat('<fg=gray>.</>', $dots));
-        $this->output->write(" <fg=gray>$runTime</>");
+        $this->output->write(" <fg=gray>{$runTime}".($memory ? " {$memory}" : '').'</>');
 
-        $this->output->writeln(match ($status) {
-            'success' => ' <fg=green;options=bold>DONE</>',
-            'released_after_exception' => ' <fg=yellow;options=bold>FAIL</>',
-            default => ' <fg=red;options=bold>FAIL</>',
-        });
+        $this->output->writeln(" <fg={$color};options=bold>{$result}</>");
     }
 
     /**
@@ -273,7 +368,7 @@ class WorkCommand extends Command
      *
      * @param  \Illuminate\Contracts\Queue\Job  $job
      * @param  string  $status
-     * @param  Throwable|null  $exception
+     * @param  \Throwable|null  $exception
      * @return void
      */
     protected function writeOutputAsJson(Job $job, $status, ?Throwable $exception = null)

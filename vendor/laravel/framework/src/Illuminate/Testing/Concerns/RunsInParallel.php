@@ -7,6 +7,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Testing\ParallelConsoleOutput;
+use PHPUnit\Event\Facade as EventFacade;
 use PHPUnit\TextUI\Configuration\PhpHandler;
 use RuntimeException;
 use Symfony\Component\Console\Output\ConsoleOutput;
@@ -54,7 +55,6 @@ trait RunsInParallel
      *
      * @param  \ParaTest\Runners\PHPUnit\Options|\ParaTest\Options  $options
      * @param  \Symfony\Component\Console\Output\OutputInterface  $output
-     * @return void
      */
     public function __construct($options, OutputInterface $output)
     {
@@ -108,7 +108,7 @@ trait RunsInParallel
             ? $this->options->configuration
             : $this->options->configuration();
 
-        (new PhpHandler())->handle($configuration->php());
+        (new PhpHandler(EventFacade::emitter()))->handle($configuration->php());
 
         $this->forEachProcess(function () {
             ParallelTesting::callSetUpProcessCallbacks();

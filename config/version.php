@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.14.0'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Laravel 11 & PHP 8.5 Upgrade)',
+    'version' => env('APP_VERSION', '2.15.0'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Laravel 13 & PHP 8.5 Architecture Upgrade)',
     'release_date' => '2026-11-13',
-    'build' => '20261113.1',
+    'build' => '20261113.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,19 @@ return [
     |
     */
     'changelog' => [
+        '2.15.0' => [
+            'date' => '2026-11-13',
+            'badge' => 'Laravel 13 & PHP 8.5 Upgrade v2.15.0',
+            'badge_color' => '#dc2626',
+            'title' => 'อัปเกรดโครงสร้างระบบสู่ Laravel 13.x (v13.42.0) รองรับ PHP 8.5 เต็มรูปแบบ',
+            'highlights' => [
+                'อัปเกรดแกนหลักสู่ Laravel Framework 13.42.0: อัปเกรดโครงสร้างสถาปัตยกรรมระบบสู่เวอร์ชันล่าสุดของ Laravel',
+                'รองรับ PHP 8.5 และ PHP 8.3+: ติดตั้งแพ็กเกจ symfony/polyfill-php84, symfony/polyfill-php85 และ symfony/polyfill-php86',
+                'อัปเกรด Laravel Tinker v3.1.0 และ Laravel Socialite v5.32.0: รองรับ illuminate 13 เต็มประสิทธิภาพ',
+                'ปรับจูนความเข้ากันได้ร่วมกับ PHPUnit 11.5.57: รองรับการรัน Automated Test ได้ทั้งสภาพแวดล้อมเครื่องพัฒนาและโฮสติ้งเซิร์ฟเวอร์',
+                'ผ่านการทดสอบ Automated Test Suite ครบถ้วน: 211 tests (1,372 assertions) ผ่าน 100%',
+            ],
+        ],
         '2.14.0' => [
             'date' => '2026-11-13',
             'badge' => 'Laravel 11 & PHP 8.5 Compatibility v2.14.0',

@@ -19,7 +19,7 @@ class BeanstalkdJob extends Job implements JobContract
     /**
      * The Pheanstalk job instance.
      *
-     * @var \Pheanstalk\Job
+     * @var \Pheanstalk\Contract\JobIdInterface
      */
     protected $job;
 
@@ -31,7 +31,6 @@ class BeanstalkdJob extends Job implements JobContract
      * @param  \Pheanstalk\Contract\JobIdInterface  $job
      * @param  string  $connectionName
      * @param  string  $queue
-     * @return void
      */
     public function __construct(Container $container, $pheanstalk, JobIdInterface $job, $connectionName, $queue)
     {
@@ -96,7 +95,7 @@ class BeanstalkdJob extends Job implements JobContract
     /**
      * Get the job identifier.
      *
-     * @return int
+     * @return string
      */
     public function getJobId()
     {

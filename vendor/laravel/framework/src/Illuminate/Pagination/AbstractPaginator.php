@@ -3,11 +3,13 @@
 namespace Illuminate\Pagination;
 
 use Closure;
+use Illuminate\Contracts\Support\CanBeEscapedWhenCastToString;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Illuminate\Support\Traits\Tappable;
+use Illuminate\Support\Traits\TransformsToResourceCollection;
 use Stringable;
 use Traversable;
 
@@ -18,9 +20,9 @@ use Traversable;
  *
  * @mixin \Illuminate\Support\Collection<TKey, TValue>
  */
-abstract class AbstractPaginator implements Htmlable, Stringable
+abstract class AbstractPaginator implements CanBeEscapedWhenCastToString, Htmlable, Stringable
 {
-    use ForwardsCalls, Tappable;
+    use ForwardsCalls, Tappable, TransformsToResourceCollection;
 
     /**
      * All of the items being paginated.
@@ -72,6 +74,13 @@ abstract class AbstractPaginator implements Htmlable, Stringable
     protected $pageName = 'page';
 
     /**
+     * Indicates that the paginator's string representation should be escaped when __toString is invoked.
+     *
+     * @var bool
+     */
+    protected $escapeWhenCastingToString = false;
+
+    /**
      * The number of links to display on each side of current page link.
      *
      * @var int
@@ -88,21 +97,21 @@ abstract class AbstractPaginator implements Htmlable, Stringable
     /**
      * The current path resolver callback.
      *
-     * @var \Closure
+     * @var \Closure|null
      */
     protected static $currentPathResolver;
 
     /**
      * The current page resolver callback.
      *
-     * @var \Closure
+     * @var \Closure|null
      */
     protected static $currentPageResolver;
 
     /**
      * The query string resolver callback.
      *
-     * @var \Closure
+     * @var \Closure|null
      */
     protected static $queryStringResolver;
 
@@ -195,7 +204,7 @@ abstract class AbstractPaginator implements Htmlable, Stringable
      * Get / set the URL fragment to be appended to URLs.
      *
      * @param  string|null  $fragment
-     * @return $this|string|null
+     * @return ($fragment is null ? string|null : $this)
      */
     public function fragment($fragment = null)
     {
@@ -344,8 +353,12 @@ abstract class AbstractPaginator implements Htmlable, Stringable
     /**
      * Transform each item in the slice of items using a callback.
      *
-     * @param  callable  $callback
+     * @template TMapValue
+     *
+     * @param  callable(TValue, TKey): TMapValue  $callback
      * @return $this
+     *
+     * @phpstan-this-out static<TKey, TMapValue>
      */
     public function through(callable $callback)
     {
@@ -531,7 +544,7 @@ abstract class AbstractPaginator implements Htmlable, Stringable
      * Resolve the query string or return the default value.
      *
      * @param  string|array|null  $default
-     * @return string
+     * @return string|array|null
      */
     public static function resolveQueryString($default = null)
     {
@@ -624,8 +637,8 @@ abstract class AbstractPaginator implements Htmlable, Stringable
      */
     public static function useBootstrapThree()
     {
-        static::defaultView('pagination::default');
-        static::defaultSimpleView('pagination::simple-default');
+        static::defaultView('pagination::bootstrap-3');
+        static::defaultSimpleView('pagination::simple-bootstrap-3');
     }
 
     /**
@@ -797,6 +810,21 @@ abstract class AbstractPaginator implements Htmlable, Stringable
      */
     public function __toString()
     {
-        return (string) $this->render();
+        return $this->escapeWhenCastingToString
+            ? e((string) $this->render())
+            : (string) $this->render();
+    }
+
+    /**
+     * Indicate that the paginator's string representation should be escaped when __toString is invoked.
+     *
+     * @param  bool  $escape
+     * @return $this
+     */
+    public function escapeWhenCastingToString($escape = true)
+    {
+        $this->escapeWhenCastingToString = $escape;
+
+        return $this;
     }
 }

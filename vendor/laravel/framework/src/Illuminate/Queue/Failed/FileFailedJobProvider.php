@@ -26,7 +26,7 @@ class FileFailedJobProvider implements CountableFailedJobProvider, FailedJobProv
     /**
      * The lock provider resolver.
      *
-     * @var \Closure
+     * @var \Closure|null
      */
     protected $lockProviderResolver;
 
@@ -36,7 +36,6 @@ class FileFailedJobProvider implements CountableFailedJobProvider, FailedJobProv
      * @param  string  $path
      * @param  int  $limit
      * @param  \Closure|null  $lockProviderResolver
-     * @return void
      */
     public function __construct($path, $limit = 100, ?Closure $lockProviderResolver = null)
     {
@@ -52,7 +51,7 @@ class FileFailedJobProvider implements CountableFailedJobProvider, FailedJobProv
      * @param  string  $queue
      * @param  string  $payload
      * @param  \Throwable  $exception
-     * @return int|null
+     * @return string|int|null
      */
     public function log($connection, $queue, $payload, $exception)
     {
@@ -83,7 +82,7 @@ class FileFailedJobProvider implements CountableFailedJobProvider, FailedJobProv
      * Get the IDs of all of the failed jobs.
      *
      * @param  string|null  $queue
-     * @return array
+     * @return list<string|int>
      */
     public function ids($queue = null)
     {
@@ -96,7 +95,7 @@ class FileFailedJobProvider implements CountableFailedJobProvider, FailedJobProv
     /**
      * Get a list of all of the failed jobs.
      *
-     * @return array
+     * @return list<object>
      */
     public function all()
     {
@@ -134,14 +133,24 @@ class FileFailedJobProvider implements CountableFailedJobProvider, FailedJobProv
     }
 
     /**
-     * Flush all of the failed jobs from storage.
+     * Flush the failed jobs from storage.
      *
      * @param  int|null  $hours
+     * @param  string|null  $queue
      * @return void
      */
-    public function flush($hours = null)
+    public function flush($hours = null, $queue = null)
     {
-        $this->prune(Date::now()->subHours($hours ?: 0));
+        $before = Date::now()->subHours($hours ?: 0)->getTimestamp();
+
+        $this->lock(function () use ($before, $queue) {
+            $this->write((new Collection($this->read()))
+                ->reject(fn ($job) => $job->failed_at_timestamp <= $before
+                    && (is_null($queue) || $job->queue === $queue))
+                ->values()
+                ->all()
+            );
+        });
     }
 
     /**
@@ -155,9 +164,11 @@ class FileFailedJobProvider implements CountableFailedJobProvider, FailedJobProv
         return $this->lock(function () use ($before) {
             $jobs = $this->read();
 
-            $this->write($prunedJobs = (new Collection($jobs))->reject(function ($job) use ($before) {
-                return $job->failed_at_timestamp <= $before->getTimestamp();
-            })->values()->all());
+            $this->write($prunedJobs = (new Collection($jobs))
+                ->reject(fn ($job) => $job->failed_at_timestamp <= $before->getTimestamp())
+                ->values()
+                ->all()
+            );
 
             return count($jobs) - count($prunedJobs);
         });
@@ -166,8 +177,10 @@ class FileFailedJobProvider implements CountableFailedJobProvider, FailedJobProv
     /**
      * Execute the given callback while holding a lock.
      *
-     * @param  \Closure  $callback
-     * @return mixed
+     * @template TReturn
+     *
+     * @param  (\Closure(): TReturn)  $callback
+     * @return TReturn
      */
     protected function lock(Closure $callback)
     {

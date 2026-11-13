@@ -17,7 +17,7 @@ use PHPUnit\Framework\Assert as PHPUnit;
 
 class NotificationFake implements Fake, NotificationDispatcher, NotificationFactory
 {
-    use Macroable, ReflectsClosures;
+    use Macroable, MatchesProperties, ReflectsClosures;
 
     /**
      * All of the notifications that have been sent.
@@ -59,7 +59,7 @@ class NotificationFake implements Fake, NotificationDispatcher, NotificationFact
      *
      * @param  mixed  $notifiable
      * @param  string|\Closure  $notification
-     * @param  callable|null  $callback
+     * @param  callable|array<string, mixed>|null  $callback
      * @return void
      *
      * @throws \Exception
@@ -87,7 +87,7 @@ class NotificationFake implements Fake, NotificationDispatcher, NotificationFact
         }
 
         PHPUnit::assertTrue(
-            $this->sent($notifiable, $notification, $callback)->count() > 0,
+            $this->sent($notifiable, $notification, $callback)->isNotEmpty(),
             "The expected [{$notification}] notification was not sent."
         );
     }
@@ -102,6 +102,17 @@ class NotificationFake implements Fake, NotificationDispatcher, NotificationFact
     public function assertSentOnDemandTimes($notification, $times = 1)
     {
         $this->assertSentToTimes(new AnonymousNotifiable, $notification, $times);
+    }
+
+    /**
+     * Assert if a notification was sent on-demand exactly once.
+     *
+     * @param  string  $notification
+     * @return void
+     */
+    public function assertSentOnDemandOnce($notification)
+    {
+        $this->assertSentOnDemandTimes($notification, 1);
     }
 
     /**
@@ -123,11 +134,23 @@ class NotificationFake implements Fake, NotificationDispatcher, NotificationFact
     }
 
     /**
+     * Assert if a notification was sent exactly once.
+     *
+     * @param  mixed  $notifiable
+     * @param  string  $notification
+     * @return void
+     */
+    public function assertSentToOnce($notifiable, $notification)
+    {
+        $this->assertSentToTimes($notifiable, $notification, 1);
+    }
+
+    /**
      * Determine if a notification was sent based on a truth-test callback.
      *
      * @param  mixed  $notifiable
      * @param  string|\Closure  $notification
-     * @param  callable|null  $callback
+     * @param  callable|array<string, mixed>|null  $callback
      * @return void
      *
      * @throws \Exception
@@ -195,7 +218,7 @@ class NotificationFake implements Fake, NotificationDispatcher, NotificationFact
         }
 
         PHPUnit::assertEmpty(
-            $this->notifications[get_class($notifiable)][$notifiable->getKey()] ?? [],
+            $this->notifications[get_class($notifiable)][$notifiable->getKey() ?? ''] ?? [],
             'Notifications were sent unexpectedly.',
         );
     }
@@ -215,7 +238,11 @@ class NotificationFake implements Fake, NotificationDispatcher, NotificationFact
 
         PHPUnit::assertSame(
             $expectedCount, $actualCount,
-            "Expected [{$notification}] to be sent {$expectedCount} times, but was sent {$actualCount} times."
+            sprintf(
+                "Expected [{$notification}] to be sent {$expectedCount} %s, but was sent {$actualCount} %s.",
+                Str::plural('time', $expectedCount),
+                Str::plural('time', $actualCount)
+            )
         );
     }
 
@@ -240,7 +267,7 @@ class NotificationFake implements Fake, NotificationDispatcher, NotificationFact
      *
      * @param  mixed  $notifiable
      * @param  string  $notification
-     * @param  callable|null  $callback
+     * @param  callable|array<string, mixed>|null  $callback
      * @return \Illuminate\Support\Collection
      */
     public function sent($notifiable, $notification, $callback = null)
@@ -249,7 +276,7 @@ class NotificationFake implements Fake, NotificationDispatcher, NotificationFact
             return new Collection;
         }
 
-        $callback = $callback ?: fn () => true;
+        $callback = $this->resolveTruthTest($callback) ?: fn () => true;
 
         $notifications = new Collection($this->notificationsFor($notifiable, $notification));
 
@@ -279,13 +306,13 @@ class NotificationFake implements Fake, NotificationDispatcher, NotificationFact
      */
     protected function notificationsFor($notifiable, $notification)
     {
-        return $this->notifications[get_class($notifiable)][$notifiable->getKey()][$notification] ?? [];
+        return $this->notifications[get_class($notifiable)][(string) $notifiable->getKey()][$notification] ?? [];
     }
 
     /**
      * Send the given notification to the given notifiable entities.
      *
-     * @param  \Illuminate\Support\Collection|array|mixed  $notifiables
+     * @param  \Illuminate\Support\Collection|mixed  $notifiables
      * @param  mixed  $notification
      * @return void
      */
@@ -297,7 +324,7 @@ class NotificationFake implements Fake, NotificationDispatcher, NotificationFact
     /**
      * Send the given notification immediately.
      *
-     * @param  \Illuminate\Support\Collection|array|mixed  $notifiables
+     * @param  \Illuminate\Support\Collection|mixed  $notifiables
      * @param  mixed  $notification
      * @param  array|null  $channels
      * @return void
@@ -310,7 +337,7 @@ class NotificationFake implements Fake, NotificationDispatcher, NotificationFact
 
         foreach ($notifiables as $notifiable) {
             if (! $notification->id) {
-                $notification->id = Str::uuid()->toString();
+                $notification->id = (string) Str::uuid();
             }
 
             $notifiableChannels = $channels ?: $notification->via($notifiable);
@@ -326,7 +353,7 @@ class NotificationFake implements Fake, NotificationDispatcher, NotificationFact
                 continue;
             }
 
-            $this->notifications[get_class($notifiable)][$notifiable->getKey()][get_class($notification)][] = [
+            $this->notifications[get_class($notifiable)][(string) $notifiable->getKey()][get_class($notification)][] = [
                 'notification' => $this->serializeAndRestore && $notification instanceof ShouldQueue
                     ? $this->serializeAndRestoreNotification($notification)
                     : $notification,

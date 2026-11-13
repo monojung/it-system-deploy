@@ -39,8 +39,6 @@ class AnonymousEvent implements ShouldBroadcast
 
     /**
      * Create a new anonymous broadcastable event instance.
-     *
-     * @return void
      */
     public function __construct(protected Channel|array|string $channels)
     {
@@ -134,7 +132,7 @@ class AnonymousEvent implements ShouldBroadcast
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|\Illuminate\Broadcasting\Channel[]|string[]|string
+     * @return \Illuminate\Broadcasting\Channel|\Illuminate\Broadcasting\Channel[]|string[]
      */
     public function broadcastOn(): Channel|array
     {

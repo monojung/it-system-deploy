@@ -21,7 +21,7 @@ class PendingMail
     /**
      * The locale of the message.
      *
-     * @var string
+     * @var string|null
      */
     protected $locale;
 
@@ -50,7 +50,6 @@ class PendingMail
      * Create a new mailable mailer instance.
      *
      * @param  \Illuminate\Contracts\Mail\Mailer  $mailer
-     * @return void
      */
     public function __construct(MailerContract $mailer)
     {
@@ -60,7 +59,7 @@ class PendingMail
     /**
      * Set the locale of the message.
      *
-     * @param  string  $locale
+     * @param  string|null  $locale
      * @return $this
      */
     public function locale($locale)
@@ -162,7 +161,7 @@ class PendingMail
      * Populate the mailable with the addresses.
      *
      * @param  \Illuminate\Contracts\Mail\Mailable  $mailable
-     * @return \Illuminate\Mail\Mailable
+     * @return \Illuminate\Contracts\Mail\Mailable
      */
     protected function fill(MailableContract $mailable)
     {

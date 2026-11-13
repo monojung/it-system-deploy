@@ -41,14 +41,14 @@ class DynamoBatchRepository implements BatchRepository
     /**
      * The time-to-live value for batch records.
      *
-     * @var int
+     * @var int|null
      */
     protected $ttl;
 
     /**
      * The name of the time-to-live attribute for batch records.
      *
-     * @var string
+     * @var string|null
      */
     protected $ttlAttribute;
 
@@ -119,7 +119,7 @@ class DynamoBatchRepository implements BatchRepository
      */
     public function find(string $batchId)
     {
-        if ($batchId === '') {
+        if (trim($batchId) === '') {
             return null;
         }
 
@@ -377,8 +377,10 @@ class DynamoBatchRepository implements BatchRepository
     /**
      * Execute the given Closure within a storage specific transaction.
      *
-     * @param  \Closure  $callback
-     * @return mixed
+     * @template TReturn
+     *
+     * @param  (\Closure(): TReturn)  $callback
+     * @return TReturn
      */
     public function transaction(Closure $callback)
     {

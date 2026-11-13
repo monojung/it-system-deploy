@@ -60,9 +60,13 @@ class TrimStrings extends TransformsRequest
      */
     protected function transform($key, $value)
     {
+        if (! is_string($value)) {
+            return $value;
+        }
+
         $except = array_merge($this->except, static::$neverTrim);
 
-        if ($this->shouldSkip($key, $except) || ! is_string($value)) {
+        if ($this->shouldSkip($key, $except)) {
             return $value;
         }
 
@@ -78,7 +82,7 @@ class TrimStrings extends TransformsRequest
      */
     protected function shouldSkip($key, $except)
     {
-        return in_array($key, $except, true);
+        return Str::is($except, $key);
     }
 
     /**

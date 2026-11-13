@@ -40,7 +40,6 @@ class ArgonHasher extends AbstractHasher implements HasherContract
      * Create a new hasher instance.
      *
      * @param  array  $options
-     * @return void
      */
     public function __construct(array $options = [])
     {
@@ -77,7 +76,7 @@ class ArgonHasher extends AbstractHasher implements HasherContract
     /**
      * Get the algorithm that should be used for hashing.
      *
-     * @return int
+     * @return string
      */
     protected function algorithm()
     {
@@ -88,7 +87,7 @@ class ArgonHasher extends AbstractHasher implements HasherContract
      * Check the given plain value against a hash.
      *
      * @param  string  $value
-     * @param  string  $hashedValue
+     * @param  string|null  $hashedValue
      * @param  array  $options
      * @return bool
      *
@@ -96,7 +95,7 @@ class ArgonHasher extends AbstractHasher implements HasherContract
      */
     public function check(#[\SensitiveParameter] $value, $hashedValue, array $options = [])
     {
-        if (is_null($hashedValue) || strlen($hashedValue) === 0) {
+        if (is_null($hashedValue) || (string) $hashedValue === '') {
             return false;
         }
 

@@ -7,17 +7,20 @@ use Illuminate\Contracts\Routing\UrlRoutable;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Stringable as SupportStringable;
 use Illuminate\Support\Traits\Conditionable;
 use Illuminate\Support\Traits\Dumpable;
+use Illuminate\Support\Traits\Macroable;
 use Illuminate\Support\Traits\Tappable;
+use JsonSerializable;
 use League\Uri\Contracts\UriInterface;
 use League\Uri\Uri as LeagueUri;
 use SensitiveParameter;
 use Stringable;
 
-class Uri implements Htmlable, Responsable, Stringable
+class Uri implements Htmlable, JsonSerializable, Responsable, Stringable
 {
-    use Conditionable, Dumpable, Tappable;
+    use Conditionable, Dumpable, Macroable, Tappable;
 
     /**
      * The URI instance.
@@ -99,6 +102,29 @@ class Uri implements Htmlable, Responsable, Stringable
     }
 
     /**
+     * Get a URI instance for a controller action.
+     *
+     * @param  string|array  $action
+     * @param  mixed  $parameters
+     * @param  bool  $absolute
+     * @return static
+     *
+     * @throws \InvalidArgumentException
+     */
+    public static function action($action, $parameters = [], $absolute = true): static
+    {
+        return new static(call_user_func(static::$urlGeneratorResolver)->action($action, $parameters, $absolute));
+    }
+
+    /**
+     * Get the URI's authority.
+     */
+    public function authority(): ?string
+    {
+        return $this->uri->getAuthority();
+    }
+
+    /**
      * Get the URI's scheme.
      */
     public function scheme(): ?string
@@ -141,15 +167,41 @@ class Uri implements Htmlable, Responsable, Stringable
     }
 
     /**
+     * Get the URI's origin.
+     *
+     * Opaque origins, such as those of relative or "mailto:" URIs, are returned as null.
+     */
+    public function origin(): ?string
+    {
+        $uri = $this->uri instanceof LeagueUri ? $this->uri : LeagueUri::new($this->value());
+
+        return $uri->getOrigin();
+    }
+
+    /**
      * Get the URI's path.
      *
      * Empty or missing paths are returned as a single "/".
+     *
+     * @return non-empty-string
      */
-    public function path(): ?string
+    public function path(): string
     {
         $path = trim((string) $this->uri->getPath(), '/');
 
         return $path === '' ? '/' : $path;
+    }
+
+    /**
+     * Get the URI's path segments.
+     *
+     * Empty or missing paths are returned as an empty collection.
+     */
+    public function pathSegments(): Collection
+    {
+        $path = $this->path();
+
+        return $path === '/' ? new Collection : new Collection(explode('/', $path));
     }
 
     /**
@@ -223,7 +275,7 @@ class Uri implements Htmlable, Responsable, Stringable
             $mergedQuery = $this->query()->all();
 
             foreach ($query as $key => $value) {
-                data_set($mergedQuery, $key, $value);
+                Arr::set($mergedQuery, $key, $value);
             }
 
             $newQuery = $mergedQuery;
@@ -231,11 +283,11 @@ class Uri implements Htmlable, Responsable, Stringable
             $newQuery = [];
 
             foreach ($query as $key => $value) {
-                data_set($newQuery, $key, $value);
+                Arr::set($newQuery, $key, $value);
             }
         }
 
-        return new static($this->uri->withQuery(Arr::query($newQuery)));
+        return new static($this->uri->withQuery(Arr::query($newQuery) ?: null));
     }
 
     /**
@@ -296,6 +348,14 @@ class Uri implements Htmlable, Responsable, Stringable
     }
 
     /**
+     * Remove the fragment from the URI.
+     */
+    public function withoutFragment(): static
+    {
+        return new static($this->uri->withFragment(null));
+    }
+
+    /**
      * Create a redirect HTTP response for the given URI.
      */
     public function redirect(int $status = 302, array $headers = []): RedirectResponse
@@ -304,7 +364,17 @@ class Uri implements Htmlable, Responsable, Stringable
     }
 
     /**
-     * Create an HTTP response that represents the object.
+     * Get the URI as a Stringable instance.
+     *
+     * @return \Illuminate\Support\Stringable
+     */
+    public function toStringable()
+    {
+        return new SupportStringable($this->value());
+    }
+
+    /**
+     * Create an HTTP response that represents the URI object.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Symfony\Component\HttpFoundation\Response
@@ -315,7 +385,7 @@ class Uri implements Htmlable, Responsable, Stringable
     }
 
     /**
-     * Get content as a string of HTML.
+     * Get the URI as a string of HTML.
      *
      * @return string
      */
@@ -333,7 +403,7 @@ class Uri implements Htmlable, Responsable, Stringable
             return $this->value();
         }
 
-        return Str::replace(Str::after($this->value(), '?'), $this->query()->decode(), $this->value());
+        return Str::replace($this->query()->value(), $this->query()->decode(), $this->value());
     }
 
     /**
@@ -341,7 +411,15 @@ class Uri implements Htmlable, Responsable, Stringable
      */
     public function value(): string
     {
-        return (string) $this;
+        return $this->toString();
+    }
+
+    /**
+     * Get the string representation of the URI.
+     */
+    public function toString(): string
+    {
+        return $this->uri->toString();
     }
 
     /**
@@ -350,6 +428,14 @@ class Uri implements Htmlable, Responsable, Stringable
     public function isEmpty(): bool
     {
         return trim($this->value()) === '';
+    }
+
+    /**
+     * Determine if the URI is not an empty string.
+     */
+    public function isNotEmpty(): bool
+    {
+        return ! $this->isEmpty();
     }
 
     /**
@@ -382,10 +468,20 @@ class Uri implements Htmlable, Responsable, Stringable
     }
 
     /**
+     * Convert the object into a value that is JSON serializable.
+     *
+     * @return string
+     */
+    public function jsonSerialize(): string
+    {
+        return $this->value();
+    }
+
+    /**
      * Get the string representation of the URI.
      */
     public function __toString(): string
     {
-        return $this->uri->toString();
+        return $this->toString();
     }
 }

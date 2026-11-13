@@ -10,6 +10,11 @@ use IteratorAggregate;
 use Stringable;
 use Traversable;
 
+/**
+ * @template-covariant TValue = mixed
+ *
+ * @mixin TValue
+ */
 class InvokableComponentVariable implements DeferringDisplayableValue, IteratorAggregate, Stringable
 {
     /**
@@ -22,8 +27,7 @@ class InvokableComponentVariable implements DeferringDisplayableValue, IteratorA
     /**
      * Create a new variable instance.
      *
-     * @param  \Closure  $callable
-     * @return void
+     * @param  \Closure(): TValue  $callable
      */
     public function __construct(Closure $callable)
     {
@@ -78,7 +82,7 @@ class InvokableComponentVariable implements DeferringDisplayableValue, IteratorA
     /**
      * Resolve the variable.
      *
-     * @return mixed
+     * @return TValue
      */
     public function __invoke()
     {

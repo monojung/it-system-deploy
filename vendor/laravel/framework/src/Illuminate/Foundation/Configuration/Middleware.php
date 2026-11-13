@@ -8,9 +8,9 @@ use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
 use Illuminate\Foundation\Http\Middleware\TrimStrings;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Middleware\TrustHosts;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Routing\Middleware\ValidateSignature;
@@ -212,14 +212,44 @@ class Middleware
      * Specify a middleware that should be replaced with another middleware.
      *
      * @param  string  $search
-     * @param  string  $replace
+     * @param  array|string  $replace
      * @return $this
      */
-    public function replace(string $search, string $replace)
+    public function replace(string $search, array|string $replace)
     {
         $this->replacements[$search] = $replace;
 
         return $this;
+    }
+
+    /**
+     * Insert middleware before the given middleware in the global middleware stack.
+     *
+     * @param  string  $search
+     * @param  array|string  $middleware
+     * @return $this
+     */
+    public function insertBefore(string $search, array|string $middleware)
+    {
+        return $this->replace($search, array_merge(
+            Arr::wrap($middleware),
+            Arr::wrap($this->replacements[$search] ?? $search)
+        ));
+    }
+
+    /**
+     * Insert middleware after the given middleware in the global middleware stack.
+     *
+     * @param  string  $search
+     * @param  array|string  $middleware
+     * @return $this
+     */
+    public function insertAfter(string $search, array|string $middleware)
+    {
+        return $this->replace($search, array_merge(
+            Arr::wrap($this->replacements[$search] ?? $search),
+            Arr::wrap($middleware)
+        ));
     }
 
     /**
@@ -305,14 +335,46 @@ class Middleware
      *
      * @param  string  $group
      * @param  string  $search
-     * @param  string  $replace
+     * @param  array|string  $replace
      * @return $this
      */
-    public function replaceInGroup(string $group, string $search, string $replace)
+    public function replaceInGroup(string $group, string $search, array|string $replace)
     {
         $this->groupReplacements[$group][$search] = $replace;
 
         return $this;
+    }
+
+    /**
+     * Insert middleware before the given middleware in the specified group.
+     *
+     * @param  string  $group
+     * @param  string  $search
+     * @param  array|string  $middleware
+     * @return $this
+     */
+    public function insertBeforeInGroup(string $group, string $search, array|string $middleware)
+    {
+        return $this->replaceInGroup($group, $search, array_merge(
+            Arr::wrap($middleware),
+            Arr::wrap($this->groupReplacements[$group][$search] ?? $search)
+        ));
+    }
+
+    /**
+     * Insert middleware after the given middleware in the specified group.
+     *
+     * @param  string  $group
+     * @param  string  $search
+     * @param  array|string  $middleware
+     * @return $this
+     */
+    public function insertAfterInGroup(string $group, string $search, array|string $middleware)
+    {
+        return $this->replaceInGroup($group, $search, array_merge(
+            Arr::wrap($this->groupReplacements[$group][$search] ?? $search),
+            Arr::wrap($middleware)
+        ));
     }
 
     /**
@@ -451,6 +513,7 @@ class Middleware
     public function getGlobalMiddleware()
     {
         $middleware = $this->global ?: array_values(array_filter([
+            \Illuminate\Http\Middleware\ValidatePathEncoding::class,
             \Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks::class,
             $this->trustHosts ? \Illuminate\Http\Middleware\TrustHosts::class : null,
             \Illuminate\Http\Middleware\TrustProxies::class,
@@ -461,9 +524,9 @@ class Middleware
             \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         ]));
 
-        $middleware = array_map(function ($middleware) {
+        $middleware = Arr::flatten(array_map(function ($middleware) {
             return $this->replacements[$middleware] ?? $middleware;
-        }, $middleware);
+        }, $middleware));
 
         return array_values(array_filter(
             array_diff(
@@ -486,7 +549,7 @@ class Middleware
                 \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
                 \Illuminate\Session\Middleware\StartSession::class,
                 \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-                \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+                \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
                 \Illuminate\Routing\Middleware\SubstituteBindings::class,
                 $this->authenticatedSessions ? 'auth.session' : null,
             ])),
@@ -501,11 +564,9 @@ class Middleware
         $middleware = array_merge($middleware, $this->groups);
 
         foreach ($middleware as $group => $groupedMiddleware) {
-            foreach ($groupedMiddleware as $index => $groupMiddleware) {
-                if (isset($this->groupReplacements[$group][$groupMiddleware])) {
-                    $middleware[$group][$index] = $this->groupReplacements[$group][$groupMiddleware];
-                }
-            }
+            $middleware[$group] = Arr::flatten(array_map(function ($groupMiddleware) use ($group) {
+                return $this->groupReplacements[$group][$groupMiddleware] ?? $groupMiddleware;
+            }, $groupedMiddleware));
         }
 
         foreach ($this->groupRemovals as $group => $removals) {
@@ -532,11 +593,15 @@ class Middleware
     /**
      * Configure where guests are redirected by the "auth" middleware.
      *
-     * @param  callable|string  $redirect
+     * @param  callable|string|null  $redirect
      * @return $this
      */
-    public function redirectGuestsTo(callable|string $redirect)
+    public function redirectGuestsTo(callable|string|null $redirect)
     {
+        if (is_null($redirect)) {
+            $redirect = fn () => null;
+        }
+
         return $this->redirectTo(guests: $redirect);
     }
 
@@ -554,8 +619,8 @@ class Middleware
     /**
      * Configure where users are redirected by the authentication and guest middleware.
      *
-     * @param  callable|string  $guests
-     * @param  callable|string  $users
+     * @param  callable|string|null  $guests
+     * @param  callable|string|null  $users
      * @return $this
      */
     public function redirectTo(callable|string|null $guests = null, callable|string|null $users = null)
@@ -590,16 +655,36 @@ class Middleware
     }
 
     /**
+     * Configure the request forgery prevention middleware.
+     *
+     * @param  array  $except
+     * @param  bool  $originOnly
+     * @param  bool  $allowSameSite
+     * @return $this
+     */
+    public function preventRequestForgery(array $except = [], bool $originOnly = false, bool $allowSameSite = false)
+    {
+        if (! empty($except)) {
+            PreventRequestForgery::except($except);
+        }
+
+        PreventRequestForgery::useOriginOnly($originOnly);
+        PreventRequestForgery::allowSameSite($allowSameSite);
+
+        return $this;
+    }
+
+    /**
      * Configure the CSRF token validation middleware.
+     *
+     * @deprecated Use preventRequestForgery() instead.
      *
      * @param  array  $except
      * @return $this
      */
     public function validateCsrfTokens(array $except = [])
     {
-        ValidateCsrfToken::except($except);
-
-        return $this;
+        return $this->preventRequestForgery($except);
     }
 
     /**

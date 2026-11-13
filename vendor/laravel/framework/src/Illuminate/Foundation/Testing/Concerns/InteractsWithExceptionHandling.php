@@ -198,18 +198,35 @@ trait InteractsWithExceptionHandling
         );
 
         if (isset($expectedMessage)) {
-            if (! isset($actualMessage)) {
-                Assert::fail(
-                    sprintf(
-                        'Failed asserting that exception of type "%s" with message "%s" was thrown.',
-                        $expectedClass,
-                        $expectedMessage
-                    )
-                );
-            } else {
-                Assert::assertStringContainsString($expectedMessage, $actualMessage);
-            }
+            Assert::assertStringContainsString($expectedMessage, $actualMessage);
         }
+
+        return $this;
+    }
+
+    /**
+     * Assert that the given callback does not throw an exception.
+     *
+     * @param  \Closure  $test
+     * @return $this
+     */
+    protected function assertDoesntThrow(Closure $test)
+    {
+        try {
+            $test();
+
+            $thrown = false;
+        } catch (Throwable $exception) {
+            $thrown = true;
+
+            $exceptionClass = get_class($exception);
+            $exceptionMessage = $exception->getMessage();
+        }
+
+        Assert::assertFalse(
+            $thrown,
+            sprintf('Unexpected exception of type %s with message %s was thrown.', $exceptionClass ?? null, $exceptionMessage ?? null)
+        );
 
         return $this;
     }
