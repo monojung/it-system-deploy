@@ -939,7 +939,7 @@
                 <div class="memo-top-row">
                     <div class="memo-garuda-wrap">
                         <!-- Official Royal Thai Government Garuda Emblem (ตราครุฑหนังสือราชการ) -->
-                        <img src="{{ asset('images/krut.svg') }}" alt="ตราครุฑหนังสือราชการ" class="memo-garuda-img" onerror="this.onerror=null; this.src='{{ asset('images/krut_color.svg') }}';">
+                        <img src="{{ asset('images/krut_official.png') }}" alt="ตราครุฑหนังสือราชการ" class="memo-garuda-img" onerror="this.onerror=null; this.src='{{ asset('images/krut.png') }}';">
                     </div>
                     <div class="memo-title">บันทึกข้อความ</div>
                 </div>

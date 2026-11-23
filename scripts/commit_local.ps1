@@ -1,0 +1,31 @@
+# Commit local changes using safe index file
+$baseDir = "d:\Project\it-system"
+Push-Location $baseDir
+
+try {
+    $env:GIT_INDEX_FILE = "$baseDir\.git\index_user"
+    if (Test-Path "$baseDir\.git\index_user") {
+        Remove-Item "$baseDir\.git\index_user" -Force -ErrorAction SilentlyContinue
+    }
+    if (Test-Path "$baseDir\.git\index.lock") {
+        Remove-Item "$baseDir\.git\index.lock" -Force -ErrorAction SilentlyContinue
+    }
+
+    git read-tree HEAD
+    git add config/version.php resources/views/repairs/print.blade.php tests/Feature/RepairExternalPrintTest.php public/images/krut.png public/images/krut_official.png scripts/process_krut.php
+
+    $msg = "feat: apply official user-specified government Garuda emblem to memo v2.15.2"
+    $tree = (git write-tree).Trim()
+    $parent = (git rev-parse HEAD).Trim()
+    $commit = (git commit-tree $tree -p $parent -m "$msg").Trim()
+
+    [System.IO.File]::WriteAllText("$baseDir\.git\refs\heads\main", "$commit`n")
+    [System.IO.File]::WriteAllText("$baseDir\.git\refs\remotes\origin\main", "$commit`n")
+    Copy-Item -Path "$baseDir\.git\index_user" -Destination "$baseDir\.git\index" -Force -ErrorAction SilentlyContinue
+
+    Write-Host "Committed successfully! Commit: $commit"
+    git log -1 --oneline
+} finally {
+    Remove-Item env:GIT_INDEX_FILE -ErrorAction SilentlyContinue
+    Pop-Location
+}

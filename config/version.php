@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.15.1'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Official Garuda Emblem in Memo v2.15.1)',
+    'version' => env('APP_VERSION', '2.15.2'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Official Thai Government Garuda Emblem v2.15.2)',
     'release_date' => '2026-11-23',
-    'build' => '20261123.1',
+    'build' => '20261123.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,17 @@ return [
     |
     */
     'changelog' => [
+        '2.15.2' => [
+            'date' => '2026-11-23',
+            'badge' => 'Official Line-art Garuda Emblem v2.15.2',
+            'badge_color' => '#15803d',
+            'title' => 'ใช้องค์ตราครุฑหนังสือราชการตามแบบมาตรฐานของกลุ่มงานสารบรรณในเอกสารบันทึกข้อความ',
+            'highlights' => [
+                'นำเข้ารูปตราครุฑทางการ (Official Traditional Garuda): ตามแบบมาตรฐานของกลุ่มงานสารบรรณ พร้อมปรับแต่งพื้นหลังโปร่งใส (Alpha Transparency) คมชัดระดับสูง ไร้รอยขอบสีเทาเมื่อสั่งพิมพ์',
+                'จัดวางสัดส่วนมาตรฐานเอกสารราชการ: ตำแหน่งมุมบนซ้ายขนาด 60px กึ่งกลางแนวเดียวกับชื่อเรื่อง "บันทึกข้อความ"',
+                'รองรับระบบสำรองรูปภาพ: เชื่อมโยง krut_official.png และ krut.png เพื่อให้แสดงผลได้อย่างราบรื่นทุกสภาวะ',
+            ],
+        ],
         '2.15.1' => [
             'date' => '2026-11-23',
             'badge' => 'Official Government Garuda Emblem v2.15.1',
