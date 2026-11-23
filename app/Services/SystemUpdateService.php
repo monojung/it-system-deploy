@@ -1471,6 +1471,21 @@ class SystemUpdateService
             }
         }
 
+        if (!function_exists('proc_open')) {
+            if (function_exists('exec')) {
+                $cmdString = implode(' ', array_map('escapeshellarg', $command));
+                $outputLines = [];
+                $returnVar = 0;
+                exec("cd " . escapeshellarg(base_path()) . " && {$cmdString} 2>&1", $outputLines, $returnVar);
+                if ($returnVar !== 0) {
+                    throw new Exception("Command [" . implode(' ', $command) . "] failed: " . implode("\n", $outputLines));
+                }
+                return implode("\n", $outputLines);
+            }
+
+            throw new Exception("ฟังก์ชัน proc_open ถูกปิดใช้งานใน php.ini บนเซิร์ฟเวอร์โฮสติ้ง (disable_functions) กรุณาเปิดใช้งาน proc_open ในการตั้งค่า PHP หรือใช้การอัปเดตผ่านไฟล์ update-patch.zip แทน");
+        }
+
         $process = new Process($command, base_path(), $this->getProcessEnv());
         $process->setTimeout($timeout);
         $process->run();

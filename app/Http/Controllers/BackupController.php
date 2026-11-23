@@ -277,7 +277,7 @@ class BackupController extends Controller
         $mysqldumpPath = env('MYSQLDUMP_PATH', 'E:/xampp/mysql/bin/mysqldump.exe');
 
         // Check if mysqldump CLI exists
-        if (File::exists($mysqldumpPath)) {
+        if (File::exists($mysqldumpPath) && function_exists('exec')) {
             $tableArgs = '';
             if ($scope === 'it_tables') {
                 $tables = DB::select("SHOW TABLES LIKE 'it_%'");
@@ -379,7 +379,7 @@ class BackupController extends Controller
 
         $mysqlPath = env('MYSQL_PATH', 'E:/xampp/mysql/bin/mysql.exe');
 
-        if (File::exists($mysqlPath)) {
+        if (File::exists($mysqlPath) && function_exists('exec')) {
             $cmd = "\"{$mysqlPath}\" --host={$host} --port={$port} --user={$username} --password={$password} --default-character-set=utf8mb4 {$database} < \"{$sqlFilePath}\" 2>&1";
             exec($cmd, $output, $returnVar);
             if ($returnVar === 0) {

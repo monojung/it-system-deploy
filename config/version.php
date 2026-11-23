@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.15.0'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Laravel 13 & PHP 8.5 Architecture Upgrade)',
-    'release_date' => '2026-11-13',
-    'build' => '20261113.2',
+    'version' => env('APP_VERSION', '2.15.1'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Official Garuda Emblem in Memo v2.15.1)',
+    'release_date' => '2026-11-23',
+    'build' => '20261123.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,17 @@ return [
     |
     */
     'changelog' => [
+        '2.15.1' => [
+            'date' => '2026-11-23',
+            'badge' => 'Official Government Garuda Emblem v2.15.1',
+            'badge_color' => '#b91c1c',
+            'title' => 'เพิ่มตราครุฑหนังสือราชการคมชัดมาตรฐานในแบบบันทึกข้อความขออนุมัติส่งซ่อมภายนอก',
+            'highlights' => [
+                'นำเข้าตราครุฑพ่าห์ราชการแท้ (SVG Vector): แสดงผลคมชัด 300+ DPI ทุกขนาดเมื่อสั่งพิมพ์กระดาษ A4 หรือบันทึกเป็น PDF',
+                'จัดวางตามระเบียบงานสารบรรณ: ตราครุฑอยู่มุมบนซ้ายขนาดมาตรฐาน พร้อมหัวเรื่อง "บันทึกข้อความ" กึ่งกลางหน้ากระดาษ',
+                'เพิ่มระบบตรวจจับฟังก์ชันระบบ (proc_open/exec safety): ป้องกันข้อผิดพลาด Process เมื่อรันบนโฮสติ้งที่มีการปิดฟังก์ชันความปลอดภัย',
+            ],
+        ],
         '2.15.0' => [
             'date' => '2026-11-13',
             'badge' => 'Laravel 13 & PHP 8.5 Upgrade v2.15.0',

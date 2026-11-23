@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="pageTitle">{{ ($printType === 'external' ? 'ใบขออนุมัติส่งซ่อมภายนอก - ' : ($printType === 'memo' ? 'บันทึกข้อความขออนุมัติส่งซ่อม - ' : 'ใบสั่งซ่อมบำรุง - ')) . $repair->ticket_number }}</title>
+    <title id="pageTitle">
+        {{ ($printType === 'external' ? 'ใบขออนุมัติส่งซ่อมภายนอก - ' : ($printType === 'memo' ? 'บันทึกข้อความขออนุมัติส่งซ่อม - ' : 'ใบสั่งซ่อมบำรุง - ')) . $repair->ticket_number }}
+    </title>
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}?v=2">
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
         * {
             box-sizing: border-box;
@@ -35,7 +39,7 @@
             background: #ffffff;
             padding: 12px 18px;
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
             border: 1px solid #e2e8f0;
         }
 
@@ -84,19 +88,19 @@
         .tab-btn.active {
             background: #ffffff;
             color: #0f766e;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
         }
 
         .tab-btn.active-external {
             background: #7e22ce !important;
             color: #ffffff !important;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
         }
 
         .tab-btn.active-memo {
             background: #0369a1 !important;
             color: #ffffff !important;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
         }
 
         .btn-print {
@@ -112,7 +116,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .btn-print:hover {
@@ -126,7 +130,7 @@
             background: #ffffff;
             padding: 32px 36px;
             border: 1px solid #cbd5e1;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
             border-radius: 4px;
             min-height: 297mm;
             position: relative;
@@ -345,7 +349,8 @@
             font-size: 12px;
         }
 
-        table.data-table th, table.data-table td {
+        table.data-table th,
+        table.data-table td {
             border: 1px solid #94a3b8;
             padding: 6px 8px;
             text-align: left;
@@ -358,7 +363,8 @@
         }
 
         /* 4-Party Signatures Grid for External Repair (2 Columns x 2 Rows) */
-        .signatures-grid-4, .signatures-grid-2x2 {
+        .signatures-grid-4,
+        .signatures-grid-2x2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
@@ -492,8 +498,16 @@
             position: absolute;
             left: 0;
             top: 0;
-            width: 60px;
+            width: 70px;
             text-align: left;
+        }
+
+        .memo-garuda-img {
+            width: 60px;
+            height: auto;
+            max-height: 68px;
+            display: block;
+            object-fit: contain;
         }
 
         .memo-title {
@@ -612,12 +626,14 @@
                 margin-bottom: 6px !important;
             }
 
-            .desc-box, .highlight-box {
+            .desc-box,
+            .highlight-box {
                 padding: 6px 10px !important;
                 margin-bottom: 6px !important;
             }
 
-            .signatures-grid-4, .signatures-grid-2x2 {
+            .signatures-grid-4,
+            .signatures-grid-2x2 {
                 gap: 8px !important;
                 margin-top: 8px !important;
             }
@@ -638,6 +654,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <!-- SCREEN-ONLY CONTROL BAR -->
@@ -649,13 +666,17 @@
 
             <!-- Form Switcher Tabs -->
             <div class="tab-group" role="tablist">
-                <button type="button" id="tab-external" class="tab-btn {{ $printType === 'external' ? 'active-external' : '' }}" onclick="switchDocType('external')">
+                <button type="button" id="tab-external"
+                    class="tab-btn {{ $printType === 'external' ? 'active-external' : '' }}"
+                    onclick="switchDocType('external')">
                     📋 ใบขออนุมัติส่งซ่อมภายนอก (เสนอ หัวหน้า / ผอ.)
                 </button>
-                <button type="button" id="tab-memo" class="tab-btn {{ $printType === 'memo' ? 'active-memo' : '' }}" onclick="switchDocType('memo')">
+                <button type="button" id="tab-memo" class="tab-btn {{ $printType === 'memo' ? 'active-memo' : '' }}"
+                    onclick="switchDocType('memo')">
                     📑 บันทึกข้อความขอส่งซ่อม (แบบราชการ)
                 </button>
-                <button type="button" id="tab-standard" class="tab-btn {{ $printType === 'standard' ? 'active' : '' }}" onclick="switchDocType('standard')">
+                <button type="button" id="tab-standard" class="tab-btn {{ $printType === 'standard' ? 'active' : '' }}"
+                    onclick="switchDocType('standard')">
                     📄 ใบงานซ่อมบำรุงทั่วไป (Standard Job Ticket)
                 </button>
             </div>
@@ -678,12 +699,14 @@
             <!-- Header -->
             <div class="header header-external">
                 <div class="header-left">
-                    <img src="{{ asset('images/logo.png') }}?v=2" alt="Hospital Logo" class="logo-box-img" onerror="this.style.display='none'; document.getElementById('logoFallback1').style.display='flex';">
+                    <img src="{{ asset('images/logo.png') }}?v=2" alt="Hospital Logo" class="logo-box-img"
+                        onerror="this.style.display='none'; document.getElementById('logoFallback1').style.display='flex';">
                     <div id="logoFallback1" class="logo-box logo-box-purple" style="display: none;">IT</div>
                     <div class="header-title">
                         <h1 style="color: #581c87;">ใบสั่งซ่อมบำรุงระบบสารสนเทศ (Service Job Ticket)</h1>
                         <h2 style="color: #7e22ce;">แบบเสนอขออนุมัติส่งซ่อมบำรุงภายนอก (External Repair Request)</h2>
-                        <h3>{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }} &bull; {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}</h3>
+                        <h3>{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }} &bull;
+                            {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}</h3>
                     </div>
                 </div>
                 <div class="header-right">
@@ -700,9 +723,11 @@
             <!-- Banner info -->
             <div class="proposal-banner">
                 <div>
-                    <strong><i class="bi bi-file-earmark-check"></i> เอกสารเสนอขออนุมัติส่งซ่อมบำรุงภายนอกโรงพยาบาล</strong>
+                    <strong><i class="bi bi-file-earmark-check"></i>
+                        เอกสารเสนอขออนุมัติส่งซ่อมบำรุงภายนอกโรงพยาบาล</strong>
                     <div style="font-size: 11.5px; color: #6b21a8; margin-top: 1px;">
-                        เสนอหัวหน้ากลุ่มงานสุขภาพดิจิทัล เพื่อโปรดพิจารณารับทราบ และเสนอผู้อำนวยการโรงพยาบาลเพื่อโปรดพิจารณาอนุมัติ
+                        เสนอหัวหน้ากลุ่มงานสุขภาพดิจิทัล เพื่อโปรดพิจารณารับทราบ
+                        และเสนอผู้อำนวยการโรงพยาบาลเพื่อโปรดพิจารณาอนุมัติ
                     </div>
                 </div>
                 <div style="text-align: right; font-size: 11.5px; color: #581c87;">
@@ -713,7 +738,8 @@
             <!-- Section 1: ข้อมูลผู้ขอรับบริการและสถานที่ -->
             <div class="section-title section-title-purple">
                 <span>1. ข้อมูลผู้แจ้งและหน่วยงานที่ขอรับบริการ</span>
-                <span style="font-size: 11px; font-weight: normal; color: #64748b;">แจ้งเมื่อ: {{ thai_date($repair->created_at, 'short_time') }}</span>
+                <span style="font-size: 11px; font-weight: normal; color: #64748b;">แจ้งเมื่อ:
+                    {{ thai_date($repair->created_at, 'short_time') }}</span>
             </div>
             <div class="info-grid">
                 <div class="info-item">
@@ -741,7 +767,9 @@
             <div class="info-grid">
                 <div class="info-item">
                     <div class="info-label">หมายเลขครุภัณฑ์:</div>
-                    <div class="info-val"><strong style="color: #0f766e;">{{ $repair->asset?->asset_code ?? 'ไม่มีรหัสครุภัณฑ์ (อุปกรณ์ทั่วไป)' }}</strong></div>
+                    <div class="info-val"><strong
+                            style="color: #0f766e;">{{ $repair->asset?->asset_code ?? 'ไม่มีรหัสครุภัณฑ์ (อุปกรณ์ทั่วไป)' }}</strong>
+                    </div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Serial Number (S/N):</div>
@@ -753,7 +781,8 @@
                 </div>
                 <div class="info-item">
                     <div class="info-label">ยี่ห้อ / รุ่น:</div>
-                    <div class="info-val">{{ $repair->asset ? $repair->asset->brand . ' ' . $repair->asset->model : '-' }}</div>
+                    <div class="info-val">
+                        {{ $repair->asset ? $repair->asset->brand . ' ' . $repair->asset->model : '-' }}</div>
                 </div>
             </div>
 
@@ -773,10 +802,12 @@
             <div class="highlight-box">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; margin-bottom: 6px;">
                     <div>
-                        <strong>ช่างเทคนิคผู้ตรวจสภาพ:</strong> {{ $repair->technician?->name ?? 'เจ้าหน้าที่กลุ่มงานสุขภาพดิจิทัล' }}
+                        <strong>ช่างเทคนิคผู้ตรวจสภาพ:</strong>
+                        {{ $repair->technician?->name ?? 'เจ้าหน้าที่กลุ่มงานสุขภาพดิจิทัล' }}
                     </div>
                     <div>
-                        <strong>วันที่ตรวจรับเรื่อง:</strong> {{ $repair->received_at ? thai_date($repair->received_at, 'short_time') : thai_date($repair->created_at, 'short_time') }}
+                        <strong>วันที่ตรวจรับเรื่อง:</strong>
+                        {{ $repair->received_at ? thai_date($repair->received_at, 'short_time') : thai_date($repair->created_at, 'short_time') }}
                     </div>
                 </div>
                 <div>
@@ -785,12 +816,14 @@
                 </div>
                 <div style="margin-top: 4px;">
                     <strong>เหตุผลความจำเป็นในการส่งซ่อมภายนอก:</strong>
-                    <span>เกินขีดความสามารถของเจ้าหน้าที่ในการซ่อมแซมเองภายในโรงพยาบาล จำเป็นต้องอาศัยเครื่องมือเฉพาะทาง อะไหล่ตรงรุ่น หรือส่งซ่อม/เคลม ณ ศูนย์บริการตัวแทนจำหน่ายภายนอก</span>
+                    <span>เกินขีดความสามารถของเจ้าหน้าที่ในการซ่อมแซมเองภายในโรงพยาบาล จำเป็นต้องอาศัยเครื่องมือเฉพาะทาง
+                        อะไหล่ตรงรุ่น หรือส่งซ่อม/เคลม ณ ศูนย์บริการตัวแทนจำหน่ายภายนอก</span>
                 </div>
                 <div style="margin-top: 4px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 8px;">
                     <div>
                         <strong>ร้านค้า / ศูนย์บริการภายนอกที่ส่งซ่อม:</strong>
-                        <span style="color: #6b21a8; font-weight: bold;">{{ $repair->external_repair_detail ?: 'ศูนย์บริการตัวแทนจำหน่าย / ร้านซ่อมภายนอกที่ได้มาตรฐาน' }}</span>
+                        <span
+                            style="color: #6b21a8; font-weight: bold;">{{ $repair->external_repair_detail ?: 'ศูนย์บริการตัวแทนจำหน่าย / ร้านซ่อมภายนอกที่ได้มาตรฐาน' }}</span>
                     </div>
                     <div>
                         <strong>ประมาณการค่าใช้จ่าย:</strong>
@@ -798,9 +831,9 @@
                     </div>
                 </div>
                 @if($repair->solution)
-                <div style="margin-top: 4px;">
-                    <strong>แนวทาง/แผนการดำเนินการ:</strong> {{ $repair->solution }}
-                </div>
+                    <div style="margin-top: 4px;">
+                        <strong>แนวทาง/แผนการดำเนินการ:</strong> {{ $repair->solution }}
+                    </div>
                 @endif
             </div>
 
@@ -837,8 +870,11 @@
                     <div>
                         <div class="sig-space"></div>
                         <div class="sig-line"></div>
-                        <div class="sig-name">({{ $repair->technician?->name ?? '..........................................................' }})</div>
-                        <div class="sig-pos">{{ $repair->technician?->position ?? 'เจ้าหน้าที่เทคโนโลยีสารสนเทศ' }}</div>
+                        <div class="sig-name">
+                            ({{ $repair->technician?->name ?? '..........................................................' }})
+                        </div>
+                        <div class="sig-pos">{{ $repair->technician?->position ?? 'เจ้าหน้าที่เทคโนโลยีสารสนเทศ' }}
+                        </div>
                         <div class="sig-date">วันที่ ...... / ...... / ..........</div>
                     </div>
                 </div>
@@ -850,7 +886,8 @@
                         <div class="sig-body">
                             เรียน ผู้อำนวยการโรงพยาบาล<br>
                             <span class="chkbox">&#9744;</span> รับทราบ และเห็นควรเสนอขออนุมัติ<br>
-                            <span class="chkbox">&#9744;</span> อื่นๆ ....................................................................
+                            <span class="chkbox">&#9744;</span> อื่นๆ
+                            ....................................................................
                         </div>
                     </div>
                     <div>
@@ -869,7 +906,8 @@
                         <div class="sig-body">
                             คำสั่งการผู้อำนวยการโรงพยาบาล<br>
                             <span class="chkbox">&#9744;</span> <strong>อนุมัติ</strong> ให้ส่งซ่อมภายนอกตามเสนอ<br>
-                            <span class="chkbox">&#9744;</span> ไม่อนุมัติ เนื่องจาก ........................................................
+                            <span class="chkbox">&#9744;</span> ไม่อนุมัติ เนื่องจาก
+                            ........................................................
                         </div>
                     </div>
                     <div>
@@ -884,8 +922,10 @@
 
             <!-- Footer -->
             <div class="doc-footer">
-                <div>ระบบบริหารจัดการสารสนเทศและงานซ่อมบำรุง {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }} (เอกสารควบคุมภายใน)</div>
-                <div>พิมพ์เมื่อ {{ thai_date(now(), 'short_time') }} &bull; เอกสารเสนอขออนุมัติส่งซ่อมภายนอก หน้า 1/1</div>
+                <div>ระบบบริหารจัดการสารสนเทศและงานซ่อมบำรุง {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}
+                    (เอกสารควบคุมภายใน)</div>
+                <div>พิมพ์เมื่อ {{ thai_date(now(), 'short_time') }} &bull; เอกสารเสนอขออนุมัติส่งซ่อมภายนอก หน้า 1/1
+                </div>
             </div>
         </div>
 
@@ -898,10 +938,8 @@
                 <!-- Garuda Top Header -->
                 <div class="memo-top-row">
                     <div class="memo-garuda-wrap">
-                        <!-- Crisp Official Garuda Vector Silhouette -->
-                        <svg width="60" height="65" viewBox="0 0 100 108" fill="#a00000">
-                            <path d="M50 0 C48 8, 44 14, 40 18 C36 14, 32 10, 24 10 C20 18, 22 28, 26 36 C18 36, 8 38, 0 46 C10 48, 20 48, 28 46 C24 54, 20 64, 20 74 C28 72, 36 68, 42 62 C40 72, 40 84, 42 96 C46 92, 50 88, 50 82 C50 88, 54 92, 58 96 C60 84, 60 72, 58 62 C64 68, 72 72, 80 74 C80 64, 76 54, 72 46 C80 48, 90 48, 100 46 C92 38, 82 36, 74 36 C78 28, 80 18, 76 10 C68 10, 64 14, 60 18 C56 14, 52 8, 50 0 Z M50 20 C54 26, 54 34, 50 40 C46 34, 46 26, 50 20 Z"/>
-                        </svg>
+                        <!-- Official Royal Thai Government Garuda Emblem (ตราครุฑหนังสือราชการ) -->
+                        <img src="{{ asset('images/krut.svg') }}" alt="ตราครุฑหนังสือราชการ" class="memo-garuda-img" onerror="this.onerror=null; this.src='{{ asset('images/krut_color.svg') }}';">
                     </div>
                     <div class="memo-title">บันทึกข้อความ</div>
                 </div>
@@ -910,15 +948,18 @@
                 <table class="memo-header-table">
                     <tr>
                         <td style="width: 58%;">
-                            <strong>ส่วนราชการ:</strong> {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }} {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }} โทร. {{ setting('hospital_phone', '053-595055') }}
+                            <strong>ส่วนราชการ:</strong> {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}
+                            {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }} โทร.
+                            {{ setting('hospital_phone', '053-595055') }}
                         </td>
                         <td style="width: 42%; text-align: left;">
-                            <strong>ที่:</strong> สธ ................................................................
+                            <strong>ที่:</strong> ลพ ................................................................
                         </td>
                     </tr>
                     <tr>
                         <td>
-                            <strong>เรื่อง:</strong> ขออนุมัติส่งซ่อมบำรุงพัสดุ/ครุภัณฑ์คอมพิวเตอร์ภายนอกโรงพยาบาล (ใบแจ้งซ่อมเลขที่ {{ $repair->ticket_number }})
+                            <strong>เรื่อง:</strong> ขออนุมัติส่งซ่อมบำรุงพัสดุ/ครุภัณฑ์คอมพิวเตอร์ภายนอกโรงพยาบาล
+                            (ใบแจ้งซ่อมเลขที่ {{ $repair->ticket_number }})
                         </td>
                         <td>
                             <strong>วันที่:</strong> {{ thai_date($repair->created_at, 'full') }}
@@ -926,7 +967,8 @@
                     </tr>
                     <tr>
                         <td colspan="2" style="padding-top: 6px;">
-                            <strong>เรียน:</strong> ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }} (ผ่าน หัวหน้า{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }})
+                            <strong>เรียน:</strong> ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}
+                            (ผ่าน หัวหน้า{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }})
                         </td>
                     </tr>
                 </table>
@@ -936,21 +978,33 @@
                 <!-- Memo Body Paragraphs -->
                 <div class="memo-body">
                     <div class="memo-indent">
-                        ด้วย <strong>{{ $repair->department?->name ?? 'หน่วยงาน' }}</strong> โดย <strong>{{ $repair->requester_name }}</strong> ได้ส่งคำขอแจ้งซ่อมบำรุงพัสดุ/ครุภัณฑ์คอมพิวเตอร์ หมายเลขใบแจ้งซ่อม <strong>{{ $repair->ticket_number }}</strong> รายการ <strong>{{ $repair->asset?->name ?? ($repair->other_device_info ?? 'อุปกรณ์คอมพิวเตอร์') }}</strong>
-                        @if($repair->asset?->asset_code) หมายเลขครุภัณฑ์: <strong>{{ $repair->asset->asset_code }}</strong> @endif
-                        @if($repair->asset?->serial_number) หมายเลขเครื่อง (S/N): <strong>{{ $repair->asset->serial_number }}</strong> @endif
-                        เนื่องจากมีปัญหา/อาการชำรุดเสียหายคือ <strong>{{ $repair->title }}</strong> ({{ $repair->description }}) นั้น
+                        ด้วย <strong>{{ $repair->department?->name ?? 'หน่วยงาน' }}</strong> โดย
+                        <strong>{{ $repair->requester_name }}</strong> ได้ส่งคำขอแจ้งซ่อมบำรุงพัสดุ/ครุภัณฑ์คอมพิวเตอร์
+                        หมายเลขใบแจ้งซ่อม <strong>{{ $repair->ticket_number }}</strong> รายการ
+                        <strong>{{ $repair->asset?->name ?? ($repair->other_device_info ?? 'อุปกรณ์คอมพิวเตอร์') }}</strong>
+                        @if($repair->asset?->asset_code) หมายเลขครุภัณฑ์:
+                        <strong>{{ $repair->asset->asset_code }}</strong> @endif
+                        @if($repair->asset?->serial_number) หมายเลขเครื่อง (S/N):
+                        <strong>{{ $repair->asset->serial_number }}</strong> @endif
+                        เนื่องจากมีปัญหา/อาการชำรุดเสียหายคือ <strong>{{ $repair->title }}</strong>
+                        ({{ $repair->description }}) นั้น
                     </div>
 
                     <div class="memo-indent">
-                        งานเทคโนโลยีสารสนเทศ {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }} ได้ดำเนินการตรวจสภาพอุปกรณ์ดังกล่าวในเบื้องต้นแล้ว ปรากฏผลการตรวจสภาพพบว่า <strong>{{ $repair->cause ?: 'ชิ้นส่วนอุปกรณ์และระบบฮาร์ดแวร์หลักชำรุดเสียหาย ขัดข้อง เกินขีดความสามารถของเจ้าหน้าที่ในการซ่อมแซมได้เองภายในโรงพยาบาล' }}</strong> จึงมีความจำเป็นต้องส่งซ่อมบำรุง ณ ร้านค้า/ศูนย์บริการภายนอกที่มีเครื่องมือเฉพาะทาง ได้แก่ <strong>{{ $repair->external_repair_detail ?: 'ศูนย์บริการตัวแทนจำหน่าย/ร้านค้าผู้ชำนาญการภายนอก' }}</strong>
+                        งานเทคโนโลยีสารสนเทศ {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}
+                        ได้ดำเนินการตรวจสภาพอุปกรณ์ดังกล่าวในเบื้องต้นแล้ว ปรากฏผลการตรวจสภาพพบว่า
+                        <strong>{{ $repair->cause ?: 'ชิ้นส่วนอุปกรณ์และระบบฮาร์ดแวร์หลักชำรุดเสียหาย ขัดข้อง เกินขีดความสามารถของเจ้าหน้าที่ในการซ่อมแซมได้เองภายในโรงพยาบาล' }}</strong>
+                        จึงมีความจำเป็นต้องส่งซ่อมบำรุง ณ ร้านค้า/ศูนย์บริการภายนอกที่มีเครื่องมือเฉพาะทาง ได้แก่
+                        <strong>{{ $repair->external_repair_detail ?: 'ศูนย์บริการตัวแทนจำหน่าย/ร้านค้าผู้ชำนาญการภายนอก' }}</strong>
                         @if($repair->total_cost > 0)
-                            โดยมีประมาณการค่าใช้จ่ายเบื้องต้นจำนวน <strong>{{ number_format($repair->total_cost, 2) }} บาท</strong>
+                            โดยมีประมาณการค่าใช้จ่ายเบื้องต้นจำนวน <strong>{{ number_format($repair->total_cost, 2) }}
+                                บาท</strong>
                         @endif
                     </div>
 
                     <div class="memo-indent">
-                        เพื่อให้พัสดุและอุปกรณ์ดังกล่าวสามารถนำกลับมาใช้งานในการให้บริการทางการแพทย์และการปฏิบัติงานราชการได้อย่างต่อเนื่องและมีประสิทธิภาพ จึงเรียนมาเพื่อโปรดพิจารณา:
+                        เพื่อให้พัสดุและอุปกรณ์ดังกล่าวสามารถนำกลับมาใช้งานในการให้บริการทางการแพทย์และการปฏิบัติงานราชการได้อย่างต่อเนื่องและมีประสิทธิภาพ
+                        จึงเรียนมาเพื่อโปรดพิจารณา:
                     </div>
 
                     <div style="margin-left: 60px; line-height: 1.6; margin-bottom: 10px;">
@@ -961,10 +1015,16 @@
 
                 <!-- Memo Signature 1: Officer -->
                 <div class="memo-sign-officer">
-                    <div style="margin-bottom: 24px;">(ลงชื่อ).................................................................... ผู้รายงาน/เสนอ</div>
-                    <div>( {{ $repair->technician?->name ?? '....................................................................' }} )</div>
-                    <div style="font-size: 12.5px; color: #444; margin-top: 2px;">ตำแหน่ง: {{ $repair->technician?->position ?? 'เจ้าหน้าที่เทคโนโลยีสารสนเทศ' }}</div>
-                    <div style="font-size: 12.5px; color: #444; margin-top: 2px;">วันที่ ...... / ...... / ..........</div>
+                    <div style="margin-bottom: 24px;">
+                        (ลงชื่อ).................................................................... ผู้รายงาน/เสนอ
+                    </div>
+                    <div>(
+                        {{ $repair->technician?->name ?? '....................................................................' }}
+                        )</div>
+                    <div style="font-size: 12.5px; color: #444; margin-top: 2px;">ตำแหน่ง:
+                        {{ $repair->technician?->position ?? 'เจ้าหน้าที่เทคโนโลยีสารสนเทศ' }}</div>
+                    <div style="font-size: 12.5px; color: #444; margin-top: 2px;">วันที่ ...... / ...... / ..........
+                    </div>
                 </div>
 
                 <!-- Memo Bottom Approvals: Head & Director -->
@@ -975,28 +1035,38 @@
                         <div>เรียน ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</div>
                         <div style="margin: 4px 0;">
                             <span class="chkbox">&#9744;</span> รับทราบ และเห็นควรเสนอขออนุมัติส่งซ่อมภายนอกตามเสนอ<br>
-                            <span class="chkbox">&#9744;</span> อื่นๆ ...................................................................................
+                            <span class="chkbox">&#9744;</span> อื่นๆ
+                            ...................................................................................
                         </div>
                         <div style="text-align: center; margin-top: 22px;">
                             <div>(ลงชื่อ)....................................................................</div>
-                            <div style="margin-top: 2px; font-weight: bold;">( {{ setting('it_head_name', 'หัวหน้ากลุ่มงานสุขภาพดิจิทัล') }} )</div>
-                            <div style="font-size: 11.5px; color: #555; margin-top: 1px;">หัวหน้า{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}</div>
-                            <div style="font-size: 11.5px; color: #555; margin-top: 1px;">วันที่ ...... / ...... / ..........</div>
+                            <div style="margin-top: 2px; font-weight: bold;">(
+                                {{ setting('it_head_name', 'หัวหน้ากลุ่มงานสุขภาพดิจิทัล') }} )</div>
+                            <div style="font-size: 11.5px; color: #555; margin-top: 1px;">
+                                หัวหน้า{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}</div>
+                            <div style="font-size: 11.5px; color: #555; margin-top: 1px;">วันที่ ...... / ...... /
+                                ..........</div>
                         </div>
                     </div>
 
                     <!-- Director Approval Box -->
                     <div class="memo-approval-box" style="border-width: 1.5px; background: #fafafa;">
-                        <div class="memo-approval-title" style="color: #0f172a;">คำสั่งการ / การอนุมัติ (ผอ. เซ็นอนุมัติ)</div>
+                        <div class="memo-approval-title" style="color: #0f172a;">คำสั่งการ / การอนุมัติ (ผอ.
+                            เซ็นอนุมัติ)</div>
                         <div style="margin: 6px 0;">
-                            <span class="chkbox">&#9744;</span> <strong>อนุมัติ</strong> ให้ดำเนินการส่งซ่อมภายนอกตามเสนอ<br>
-                            <span class="chkbox">&#9744;</span> ไม่อนุมัติ เนื่องจาก ..............................................................
+                            <span class="chkbox">&#9744;</span> <strong>อนุมัติ</strong>
+                            ให้ดำเนินการส่งซ่อมภายนอกตามเสนอ<br>
+                            <span class="chkbox">&#9744;</span> ไม่อนุมัติ เนื่องจาก
+                            ..............................................................
                         </div>
                         <div style="text-align: center; margin-top: 26px;">
                             <div>(ลงชื่อ)....................................................................</div>
-                            <div style="margin-top: 2px; font-weight: bold;">( {{ setting('director_name', 'ผู้อำนวยการโรงพยาบาลทุ่งหัวช้าง') }} )</div>
-                            <div style="font-size: 11.5px; color: #555; margin-top: 1px;">ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</div>
-                            <div style="font-size: 11.5px; color: #555; margin-top: 1px;">วันที่ ...... / ...... / ..........</div>
+                            <div style="margin-top: 2px; font-weight: bold;">(
+                                {{ setting('director_name', 'ผู้อำนวยการโรงพยาบาลทุ่งหัวช้าง') }} )</div>
+                            <div style="font-size: 11.5px; color: #555; margin-top: 1px;">
+                                ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</div>
+                            <div style="font-size: 11.5px; color: #555; margin-top: 1px;">วันที่ ...... / ...... /
+                                ..........</div>
                         </div>
                     </div>
                 </div>
@@ -1017,11 +1087,13 @@
             <!-- Header -->
             <div class="header">
                 <div class="header-left">
-                    <img src="{{ asset('images/logo.png') }}?v=2" alt="Hospital Logo" class="logo-box-img" onerror="this.style.display='none'; document.getElementById('logoFallback2').style.display='flex';">
+                    <img src="{{ asset('images/logo.png') }}?v=2" alt="Hospital Logo" class="logo-box-img"
+                        onerror="this.style.display='none'; document.getElementById('logoFallback2').style.display='flex';">
                     <div id="logoFallback2" class="logo-box" style="display: none;">IT</div>
                     <div class="header-title">
                         <h1>ใบสั่งซ่อมบำรุงระบบสารสนเทศ (Service Job Ticket)</h1>
-                        <h2>{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }} {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</h2>
+                        <h2>{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}
+                            {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</h2>
                     </div>
                 </div>
                 <div class="header-right">
@@ -1065,7 +1137,8 @@
             <div class="info-grid">
                 <div class="info-item">
                     <div class="info-label">รหัสครุภัณฑ์:</div>
-                    <div class="info-val"><strong>{{ $repair->asset?->asset_code ?? 'ไม่มีรหัสครุภัณฑ์' }}</strong></div>
+                    <div class="info-val"><strong>{{ $repair->asset?->asset_code ?? 'ไม่มีรหัสครุภัณฑ์' }}</strong>
+                    </div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Serial Number:</div>
@@ -1077,7 +1150,8 @@
                 </div>
                 <div class="info-item">
                     <div class="info-label">ยี่ห้อ / รุ่น:</div>
-                    <div class="info-val">{{ $repair->asset ? $repair->asset->brand . ' ' . $repair->asset->model : '-' }}</div>
+                    <div class="info-val">
+                        {{ $repair->asset ? $repair->asset->brand . ' ' . $repair->asset->model : '-' }}</div>
                 </div>
             </div>
 
@@ -1091,11 +1165,12 @@
             <!-- Technician Action & Resolution -->
             <div class="section-title">การตรวจสภาพและผลการดำเนินงานของช่างเทคนิค</div>
             <div class="desc-box">
-                <strong>ช่างผู้รับผิดชอบ:</strong> {{ $repair->technician?->name ?? '........................................................' }}<br>
+                <strong>ช่างผู้รับผิดชอบ:</strong>
+                {{ $repair->technician?->name ?? '........................................................' }}<br>
                 <strong>สาเหตุของปัญหา:</strong> {{ $repair->cause ?? '-' }}<br>
                 <strong>วิธีการแก้ไข:</strong> {{ $repair->solution ?? '-' }}
                 @if($repair->external_repair_detail)
-                <br><strong style="color: #7e22ce;">ส่งซ่อมภายนอก:</strong> {{ $repair->external_repair_detail }}
+                    <br><strong style="color: #7e22ce;">ส่งซ่อมภายนอก:</strong> {{ $repair->external_repair_detail }}
                 @endif
             </div>
 
@@ -1113,21 +1188,23 @@
                 </thead>
                 <tbody>
                     @forelse($repair->parts as $idx => $part)
-                    <tr>
-                        <td style="text-align: center;">{{ $idx + 1 }}</td>
-                        <td>{{ $part->sparePart?->part_code }} - {{ $part->sparePart?->name }}</td>
-                        <td style="text-align: center;">{{ $part->quantity }} {{ $part->sparePart?->unit }}</td>
-                        <td style="text-align: right;">{{ number_format($part->unit_price, 2) }}</td>
-                        <td style="text-align: right;">{{ number_format($part->total_price, 2) }}</td>
-                    </tr>
+                        <tr>
+                            <td style="text-align: center;">{{ $idx + 1 }}</td>
+                            <td>{{ $part->sparePart?->part_code }} - {{ $part->sparePart?->name }}</td>
+                            <td style="text-align: center;">{{ $part->quantity }} {{ $part->sparePart?->unit }}</td>
+                            <td style="text-align: right;">{{ number_format($part->unit_price, 2) }}</td>
+                            <td style="text-align: right;">{{ number_format($part->total_price, 2) }}</td>
+                        </tr>
                     @empty
-                    <tr>
-                        <td colspan="5" style="text-align: center; color: #666;">- ไม่มีการใช้อะไหล่หรือวัสดุสิ้นเปลือง -</td>
-                    </tr>
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #666;">- ไม่มีการใช้อะไหล่หรือวัสดุสิ้นเปลือง
+                                -</td>
+                        </tr>
                     @endforelse
                     <tr>
                         <td colspan="4" style="text-align: right; font-weight: bold;">รวมค่าใช้จ่ายทั้งสิ้น:</td>
-                        <td style="text-align: right; font-weight: bold;">{{ number_format($repair->total_cost, 2) }} บาท</td>
+                        <td style="text-align: right; font-weight: bold;">{{ number_format($repair->total_cost, 2) }}
+                            บาท</td>
                     </tr>
                 </tbody>
             </table>
@@ -1135,21 +1212,27 @@
             <!-- Standard 2-party Signatures -->
             <div class="sign-grid-2">
                 <div>
-                    <div>ลงชื่อ..........................................................ผู้แจ้งซ่อม/ผู้รับเครื่องคืน</div>
+                    <div>ลงชื่อ..........................................................ผู้แจ้งซ่อม/ผู้รับเครื่องคืน
+                    </div>
                     <div style="margin-top: 4px; font-weight: 600;">( {{ $repair->requester_name }} )</div>
-                    <div style="margin-top: 2px; font-size: 11.5px; color: #666;">วันที่ ......../......../............</div>
+                    <div style="margin-top: 2px; font-size: 11.5px; color: #666;">วันที่ ......../......../............
+                    </div>
                 </div>
 
                 <div>
                     <div>ลงชื่อ..........................................................ช่างผู้ดำเนินการ</div>
-                    <div style="margin-top: 4px; font-weight: 600;">( {{ $repair->technician?->name ?? '..........................................................' }} )</div>
-                    <div style="margin-top: 2px; font-size: 11.5px; color: #666;">วันที่ ......../......../............</div>
+                    <div style="margin-top: 4px; font-weight: 600;">(
+                        {{ $repair->technician?->name ?? '..........................................................' }}
+                        )</div>
+                    <div style="margin-top: 2px; font-size: 11.5px; color: #666;">วันที่ ......../......../............
+                    </div>
                 </div>
             </div>
 
             <!-- Footer -->
             <div class="doc-footer">
-                <div>ระบบบริหารจัดการสารสนเทศและงานซ่อมบำรุง {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</div>
+                <div>ระบบบริหารจัดการสารสนเทศและงานซ่อมบำรุง {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}
+                </div>
                 <div>พิมพ์เมื่อ {{ thai_date(now(), 'short_time') }} &bull; ใบงานซ่อมมาตรฐาน หน้า 1/1</div>
             </div>
         </div>
@@ -1194,4 +1277,5 @@
         }
     </script>
 </body>
+
 </html>
