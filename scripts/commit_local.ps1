@@ -14,7 +14,7 @@ try {
     git read-tree HEAD
     git add -A
 
-    $msg = "fix: configure vite emptyOutDir false and update deploy build assets v2.15.2"
+    $msg = "feat: switch memo template to THsarabun๙ font and Thai numerals v2.15.3"
     $tree = (git write-tree).Trim()
     $parent = (git rev-parse HEAD).Trim()
     $commit = (git commit-tree $tree -p $parent -m "$msg").Trim()

@@ -107,6 +107,18 @@ if (!function_exists('thai_date')) {
     }
 }
 
+if (!function_exists('thai_num')) {
+    /**
+     * Convert Arabic numerals to Thai numerals (0-9 -> ๐-๙)
+     */
+    function thai_num(mixed $number): string
+    {
+        $arabic = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        $thai   = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
+        return str_replace($arabic, $thai, (string)$number);
+    }
+}
+
 if (!function_exists('app_version')) {
     /**
      * Get the current application version string

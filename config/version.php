@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.15.2'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Official Thai Government Garuda Emblem v2.15.2)',
+    'version' => env('APP_VERSION', '2.15.3'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (THsarabun๙ Memo Font v2.15.3)',
     'release_date' => '2026-11-23',
-    'build' => '20261123.2',
+    'build' => '20261123.3',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,17 @@ return [
     |
     */
     'changelog' => [
+        '2.15.3' => [
+            'date' => '2026-11-23',
+            'badge' => 'THsarabun๙ Official Memo Font v2.15.3',
+            'badge_color' => '#0369a1',
+            'title' => 'บันทึกข้อความเปลี่ยนเป็นใช้ฟอนต์ THsarabun๙ ตามแบบมาตรฐานงานสารบรรณราชการ',
+            'highlights' => [
+                'เปลี่ยนฟอนต์บันทึกข้อความ: กำหนดฟอนต์ THsarabun๙ (TH Sarabun ๙ / IT๙) ในเอกสารบันทึกข้อความ ครอบคลุมการแสดงผลทั้งเครื่องที่ติดตั้งฟอนต์และเว็บฟอนต์มาตรฐาน',
+                'รองรับเลขไทยงานสารบรรณ (Thai Numerals): ปรับเปลี่ยนตัวเลขในบันทึกข้อความเป็นตัวเลขไทย ๐-๙ ตามแบบฟอร์มหนังสือราชการ',
+                'ปรับขนาดตัวอักษรตามระเบียบสารบรรณ: หัวข้อ "บันทึกข้อความ" ขนาด 29pt ตัวหนา และข้อความเนื้อหา 15-16pt อ่านง่าย ชัดเจน ถูกต้องตามระเบียบ',
+            ],
+        ],
         '2.15.2' => [
             'date' => '2026-11-23',
             'badge' => 'Official Line-art Garuda Emblem v2.15.2',

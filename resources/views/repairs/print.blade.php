@@ -15,6 +15,71 @@
             box-sizing: border-box;
         }
 
+        /* -------------------------------------------------------------
+           Official Thai Government Font Definitions (THsarabun๙ / TH Sarabun ๙)
+           ------------------------------------------------------------- */
+        @font-face {
+            font-family: 'THsarabun๙';
+            font-style: normal;
+            font-weight: 400;
+            src: local('THsarabun๙'),
+                 local('TH Sarabun ๙'),
+                 local('THSarabunIT๙'),
+                 local('TH Sarabun IT๙'),
+                 local('THSarabunIT9'),
+                 local('TH Sarabun IT9'),
+                 local('TH Sarabun New'),
+                 local('THSarabunNew'),
+                 local('TH Sarabun PSK'),
+                 local('Sarabun');
+        }
+
+        @font-face {
+            font-family: 'THsarabun๙';
+            font-style: normal;
+            font-weight: 700;
+            src: local('THsarabun๙ Bold'),
+                 local('TH Sarabun ๙ Bold'),
+                 local('THSarabunIT๙ Bold'),
+                 local('TH Sarabun IT๙ Bold'),
+                 local('THSarabunIT9 Bold'),
+                 local('TH Sarabun IT9 Bold'),
+                 local('TH Sarabun New Bold'),
+                 local('THSarabunNew Bold'),
+                 local('TH Sarabun PSK Bold'),
+                 local('Sarabun Bold');
+        }
+
+        @font-face {
+            font-family: 'THsarabun๙';
+            font-style: italic;
+            font-weight: 400;
+            src: local('THsarabun๙ Italic'),
+                 local('TH Sarabun ๙ Italic'),
+                 local('THSarabunIT๙ Italic'),
+                 local('TH Sarabun IT๙ Italic'),
+                 local('THSarabunIT9 Italic'),
+                 local('TH Sarabun New Italic'),
+                 local('THSarabunNew Italic'),
+                 local('TH Sarabun PSK Italic'),
+                 local('Sarabun Italic');
+        }
+
+        @font-face {
+            font-family: 'THsarabun๙';
+            font-style: italic;
+            font-weight: 700;
+            src: local('THsarabun๙ BoldItalic'),
+                 local('TH Sarabun ๙ BoldItalic'),
+                 local('THSarabunIT๙ BoldItalic'),
+                 local('TH Sarabun IT๙ BoldItalic'),
+                 local('THSarabunIT9 BoldItalic'),
+                 local('TH Sarabun New BoldItalic'),
+                 local('THSarabunNew BoldItalic'),
+                 local('TH Sarabun PSK BoldItalic'),
+                 local('Sarabun BoldItalic');
+        }
+
         body {
             font-family: 'Sarabun', sans-serif;
             margin: 0;
@@ -478,13 +543,20 @@
         }
 
         /* ============================================================
-           VIEW 2: Official Memo (บันทึกข้อความ) Specific Styles
+           VIEW 2: Official Memo (บันทึกข้อความ) Specific Styles (THsarabun๙)
            ============================================================ */
+        #doc-memo,
+        #doc-memo *,
+        .memo-container,
+        .memo-container * {
+            font-family: 'THsarabun๙', 'TH Sarabun ๙', 'THSarabunIT๙', 'TH Sarabun IT๙', 'THSarabunIT9', 'TH Sarabun New', 'THSarabunNew', 'TH Sarabun PSK', 'Sarabun', sans-serif !important;
+        }
+
         .memo-container {
             padding: 10px 15px;
             color: #000;
-            font-size: 14px;
-            line-height: 1.6;
+            font-size: 16px;
+            line-height: 1.5;
         }
 
         .memo-top-row {
@@ -513,7 +585,7 @@
         .memo-title {
             width: 100%;
             text-align: center;
-            font-size: 26px;
+            font-size: 29px;
             font-weight: 700;
             letter-spacing: 1px;
             padding-top: 10px;
@@ -529,15 +601,16 @@
         .memo-header-table td {
             padding: 3px 0;
             vertical-align: top;
-            font-size: 14px;
+            font-size: 16px;
+            line-height: 1.5;
             border: none;
         }
 
         .memo-body {
             text-align: justify;
             text-justify: inter-cluster;
-            line-height: 1.65;
-            font-size: 13.5px;
+            line-height: 1.6;
+            font-size: 16px;
             margin-top: 14px;
         }
 
@@ -550,6 +623,7 @@
             margin-top: 24px;
             margin-left: 55%;
             text-align: center;
+            font-size: 16px;
         }
 
         .memo-approval-grid {
@@ -565,7 +639,7 @@
             border: 1px solid #777;
             border-radius: 4px;
             padding: 10px 12px;
-            font-size: 12.5px;
+            font-size: 14px;
             line-height: 1.45;
             background: #fff;
         }
@@ -574,7 +648,7 @@
             font-weight: 700;
             text-decoration: underline;
             margin-bottom: 6px;
-            font-size: 13px;
+            font-size: 15px;
         }
 
         /* Strict Print Rules for A4 Single Page */
@@ -706,7 +780,8 @@
                         <h1 style="color: #581c87;">ใบสั่งซ่อมบำรุงระบบสารสนเทศ (Service Job Ticket)</h1>
                         <h2 style="color: #7e22ce;">แบบเสนอขออนุมัติส่งซ่อมบำรุงภายนอก (External Repair Request)</h2>
                         <h3>{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }} &bull;
-                            {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}</h3>
+                            {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}
+                        </h3>
                     </div>
                 </div>
                 <div class="header-right">
@@ -782,7 +857,8 @@
                 <div class="info-item">
                     <div class="info-label">ยี่ห้อ / รุ่น:</div>
                     <div class="info-val">
-                        {{ $repair->asset ? $repair->asset->brand . ' ' . $repair->asset->model : '-' }}</div>
+                        {{ $repair->asset ? $repair->asset->brand . ' ' . $repair->asset->model : '-' }}
+                    </div>
                 </div>
             </div>
 
@@ -939,7 +1015,9 @@
                 <div class="memo-top-row">
                     <div class="memo-garuda-wrap">
                         <!-- Official Royal Thai Government Garuda Emblem (ตราครุฑหนังสือราชการ) -->
-                        <img src="{{ asset('images/krut_official.png') }}" alt="ตราครุฑหนังสือราชการ" class="memo-garuda-img" onerror="this.onerror=null; this.src='{{ asset('images/krut.png') }}';">
+                        <img src="{{ asset('images/krut_official.png') }}" alt="ตราครุฑหนังสือราชการ"
+                            class="memo-garuda-img"
+                            onerror="this.onerror=null; this.src='{{ asset('images/krut.png') }}';">
                     </div>
                     <div class="memo-title">บันทึกข้อความ</div>
                 </div>
@@ -950,20 +1028,24 @@
                         <td style="width: 58%;">
                             <strong>ส่วนราชการ:</strong> {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}
                             {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }} โทร.
-                            {{ setting('hospital_phone', '053-595055') }}
+                            {{ thai_num(setting('hospital_phone', '053-595055')) }}
                         </td>
+
+                    </tr>
+                    <tr>
                         <td style="width: 42%; text-align: left;">
                             <strong>ที่:</strong> ลพ ................................................................
+                        </td>
+                        <td>
+                            <strong>วันที่:</strong> {{ thai_num(thai_date($repair->created_at, 'full')) }}
                         </td>
                     </tr>
                     <tr>
                         <td>
                             <strong>เรื่อง:</strong> ขออนุมัติส่งซ่อมบำรุงพัสดุ/ครุภัณฑ์คอมพิวเตอร์ภายนอกโรงพยาบาล
-                            (ใบแจ้งซ่อมเลขที่ {{ $repair->ticket_number }})
+                            (ใบแจ้งซ่อมเลขที่ {{ thai_num($repair->ticket_number) }})
                         </td>
-                        <td>
-                            <strong>วันที่:</strong> {{ thai_date($repair->created_at, 'full') }}
-                        </td>
+
                     </tr>
                     <tr>
                         <td colspan="2" style="padding-top: 6px;">
@@ -980,12 +1062,12 @@
                     <div class="memo-indent">
                         ด้วย <strong>{{ $repair->department?->name ?? 'หน่วยงาน' }}</strong> โดย
                         <strong>{{ $repair->requester_name }}</strong> ได้ส่งคำขอแจ้งซ่อมบำรุงพัสดุ/ครุภัณฑ์คอมพิวเตอร์
-                        หมายเลขใบแจ้งซ่อม <strong>{{ $repair->ticket_number }}</strong> รายการ
+                        หมายเลขใบแจ้งซ่อม <strong>{{ thai_num($repair->ticket_number) }}</strong> รายการ
                         <strong>{{ $repair->asset?->name ?? ($repair->other_device_info ?? 'อุปกรณ์คอมพิวเตอร์') }}</strong>
                         @if($repair->asset?->asset_code) หมายเลขครุภัณฑ์:
-                        <strong>{{ $repair->asset->asset_code }}</strong> @endif
+                        <strong>{{ thai_num($repair->asset->asset_code) }}</strong> @endif
                         @if($repair->asset?->serial_number) หมายเลขเครื่อง (S/N):
-                        <strong>{{ $repair->asset->serial_number }}</strong> @endif
+                        <strong>{{ thai_num($repair->asset->serial_number) }}</strong> @endif
                         เนื่องจากมีปัญหา/อาการชำรุดเสียหายคือ <strong>{{ $repair->title }}</strong>
                         ({{ $repair->description }}) นั้น
                     </div>
@@ -997,7 +1079,7 @@
                         จึงมีความจำเป็นต้องส่งซ่อมบำรุง ณ ร้านค้า/ศูนย์บริการภายนอกที่มีเครื่องมือเฉพาะทาง ได้แก่
                         <strong>{{ $repair->external_repair_detail ?: 'ศูนย์บริการตัวแทนจำหน่าย/ร้านค้าผู้ชำนาญการภายนอก' }}</strong>
                         @if($repair->total_cost > 0)
-                            โดยมีประมาณการค่าใช้จ่ายเบื้องต้นจำนวน <strong>{{ number_format($repair->total_cost, 2) }}
+                            โดยมีประมาณการค่าใช้จ่ายเบื้องต้นจำนวน <strong>{{ thai_num(number_format($repair->total_cost, 2)) }}
                                 บาท</strong>
                         @endif
                     </div>
@@ -1008,8 +1090,8 @@
                     </div>
 
                     <div style="margin-left: 60px; line-height: 1.6; margin-bottom: 10px;">
-                        1. รับทราบรายงานผลการตรวจสภาพและความจำเป็นในการส่งซ่อมบำรุงภายนอก<br>
-                        2. อนุมัติให้ดำเนินการส่งซ่อมบำรุงพัสดุดังกล่าว ณ ร้านค้า/ศูนย์บริการภายนอกตามเสนอ
+                        ๑. รับทราบรายงานผลการตรวจสภาพและความจำเป็นในการส่งซ่อมบำรุงภายนอก<br>
+                        ๒. อนุมัติให้ดำเนินการส่งซ่อมบำรุงพัสดุดังกล่าว ณ ร้านค้า/ศูนย์บริการภายนอกตามเสนอ
                     </div>
                 </div>
 
@@ -1020,9 +1102,11 @@
                     </div>
                     <div>(
                         {{ $repair->technician?->name ?? '....................................................................' }}
-                        )</div>
+                        )
+                    </div>
                     <div style="font-size: 12.5px; color: #444; margin-top: 2px;">ตำแหน่ง:
-                        {{ $repair->technician?->position ?? 'เจ้าหน้าที่เทคโนโลยีสารสนเทศ' }}</div>
+                        {{ $repair->technician?->position ?? 'เจ้าหน้าที่เทคโนโลยีสารสนเทศ' }}
+                    </div>
                     <div style="font-size: 12.5px; color: #444; margin-top: 2px;">วันที่ ...... / ...... / ..........
                     </div>
                 </div>
@@ -1041,7 +1125,8 @@
                         <div style="text-align: center; margin-top: 22px;">
                             <div>(ลงชื่อ)....................................................................</div>
                             <div style="margin-top: 2px; font-weight: bold;">(
-                                {{ setting('it_head_name', 'หัวหน้ากลุ่มงานสุขภาพดิจิทัล') }} )</div>
+                                {{ setting('it_head_name', 'หัวหน้ากลุ่มงานสุขภาพดิจิทัล') }} )
+                            </div>
                             <div style="font-size: 11.5px; color: #555; margin-top: 1px;">
                                 หัวหน้า{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}</div>
                             <div style="font-size: 11.5px; color: #555; margin-top: 1px;">วันที่ ...... / ...... /
@@ -1062,7 +1147,8 @@
                         <div style="text-align: center; margin-top: 26px;">
                             <div>(ลงชื่อ)....................................................................</div>
                             <div style="margin-top: 2px; font-weight: bold;">(
-                                {{ setting('director_name', 'ผู้อำนวยการโรงพยาบาลทุ่งหัวช้าง') }} )</div>
+                                {{ setting('director_name', 'ผู้อำนวยการโรงพยาบาลทุ่งหัวช้าง') }} )
+                            </div>
                             <div style="font-size: 11.5px; color: #555; margin-top: 1px;">
                                 ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</div>
                             <div style="font-size: 11.5px; color: #555; margin-top: 1px;">วันที่ ...... / ...... /
@@ -1093,7 +1179,8 @@
                     <div class="header-title">
                         <h1>ใบสั่งซ่อมบำรุงระบบสารสนเทศ (Service Job Ticket)</h1>
                         <h2>{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}
-                            {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</h2>
+                            {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}
+                        </h2>
                     </div>
                 </div>
                 <div class="header-right">
@@ -1151,7 +1238,8 @@
                 <div class="info-item">
                     <div class="info-label">ยี่ห้อ / รุ่น:</div>
                     <div class="info-val">
-                        {{ $repair->asset ? $repair->asset->brand . ' ' . $repair->asset->model : '-' }}</div>
+                        {{ $repair->asset ? $repair->asset->brand . ' ' . $repair->asset->model : '-' }}
+                    </div>
                 </div>
             </div>
 
@@ -1223,7 +1311,8 @@
                     <div>ลงชื่อ..........................................................ช่างผู้ดำเนินการ</div>
                     <div style="margin-top: 4px; font-weight: 600;">(
                         {{ $repair->technician?->name ?? '..........................................................' }}
-                        )</div>
+                        )
+                    </div>
                     <div style="margin-top: 2px; font-size: 11.5px; color: #666;">วันที่ ......../......../............
                     </div>
                 </div>
