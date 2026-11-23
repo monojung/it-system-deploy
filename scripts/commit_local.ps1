@@ -12,9 +12,9 @@ try {
     }
 
     git read-tree HEAD
-    git add config/version.php resources/views/repairs/print.blade.php tests/Feature/RepairExternalPrintTest.php public/images/krut.png public/images/krut_official.png scripts/process_krut.php
+    git add -A
 
-    $msg = "feat: apply official user-specified government Garuda emblem to memo v2.15.2"
+    $msg = "fix: configure vite emptyOutDir false and update deploy build assets v2.15.2"
     $tree = (git write-tree).Trim()
     $parent = (git rev-parse HEAD).Trim()
     $commit = (git commit-tree $tree -p $parent -m "$msg").Trim()
