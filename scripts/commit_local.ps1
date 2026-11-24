@@ -1,3 +1,7 @@
+param(
+    [string]$Message = "feat: polish official memo signature blocks and layout v2.15.6"
+)
+
 # Commit local changes using safe index file
 $baseDir = "d:\Project\it-system"
 Push-Location $baseDir
@@ -14,7 +18,7 @@ try {
     git read-tree HEAD
     git add -A
 
-    $msg = "feat: apply 1.5in left margin for official government memo filing v2.15.5"
+    $msg = $Message
     $tree = (git write-tree).Trim()
     $parent = (git rev-parse HEAD).Trim()
     $commit = (git commit-tree $tree -p $parent -m "$msg").Trim()

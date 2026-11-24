@@ -193,7 +193,7 @@
             max-width: 860px;
             margin: 0 auto;
             background: #ffffff;
-            padding: 28px 28px 28px 1.5in;
+            padding: 0.5in 1in 28px 1in;
             border: 1px solid #cbd5e1;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
             border-radius: 4px;
@@ -623,7 +623,7 @@
         .memo-body {
             text-align: justify;
             text-justify: inter-cluster;
-            line-height: 1.45;
+            line-height: 1.2;
             font-size: 16pt;
             margin-top: 10px;
             color: #000;
@@ -669,10 +669,16 @@
             font-size: 14.5pt;
         }
 
+        .memo-approval-option {
+            white-space: nowrap !important;
+            font-size: 11.5pt !important;
+            letter-spacing: -0.2px;
+        }
+
         /* Strict Print Rules for A4 Single Page (1.5in left margin for official filing) */
         @page {
             size: A4 portrait;
-            margin: 12mm 15mm 12mm 1.5in;
+            margin: 0.5in 1in 2cm 1in;
         }
 
         @media print {
@@ -764,7 +770,7 @@
 
             #doc-memo .memo-header-table td {
                 font-size: 16pt !important;
-                line-height: 1.35 !important;
+                line-height: 1.20 !important;
             }
 
             #doc-memo .memo-header-table strong {
@@ -779,7 +785,7 @@
 
             #doc-memo .memo-body {
                 font-size: 16pt !important;
-                line-height: 1.45 !important;
+                line-height: 1.2 !important;
             }
 
             #doc-memo .memo-indent {
@@ -803,6 +809,12 @@
                 font-size: 14pt !important;
                 font-weight: 700 !important;
                 margin-bottom: 3px !important;
+            }
+
+            #doc-memo .memo-approval-option {
+                white-space: nowrap !important;
+                font-size: 11.5pt !important;
+                letter-spacing: -0.2px !important;
             }
 
             #doc-memo .memo-sign-officer {
@@ -1016,7 +1028,7 @@
                         <div class="sig-line"></div>
                         <div class="sig-name">({{ $repair->requester_name }})</div>
                         <div class="sig-pos">ผู้แจ้งซ่อม ({{ $repair->department?->name }})</div>
-                        <div class="sig-date">วันที่ ...... / ...... / ..........</div>
+
                     </div>
                 </div>
 
@@ -1036,7 +1048,7 @@
                         </div>
                         <div class="sig-pos">{{ $repair->technician?->position ?? 'เจ้าหน้าที่เทคโนโลยีสารสนเทศ' }}
                         </div>
-                        <div class="sig-date">วันที่ ...... / ...... / ..........</div>
+
                     </div>
                 </div>
 
@@ -1056,7 +1068,7 @@
                         <div class="sig-line"></div>
                         <div class="sig-name">({{ setting('it_head_name', 'หัวหน้ากลุ่มงานสุขภาพดิจิทัล') }})</div>
                         <div class="sig-pos">หัวหน้า{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}</div>
-                        <div class="sig-date">วันที่ ...... / ...... / ..........</div>
+
                     </div>
                 </div>
 
@@ -1076,7 +1088,7 @@
                         <div class="sig-line"></div>
                         <div class="sig-name">({{ setting('director_name', 'ผู้อำนวยการโรงพยาบาลทุ่งหัวช้าง') }})</div>
                         <div class="sig-pos">ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</div>
-                        <div class="sig-date">วันที่ ...... / ...... / ..........</div>
+
                     </div>
                 </div>
             </div>
@@ -1118,10 +1130,10 @@
                     </tr>
                     <tr>
                         <td style="width: 50%; text-align: left;">
-                            <strong>ที่:</strong> ลพ ................................................................
+                            <strong>ที่:</strong> ลพ 003.303.8/..............................
                         </td>
                         <td style="width: 50%; text-align: left;">
-                            <strong>วันที่:</strong> {{ thai_num(thai_date($repair->created_at, 'full')) }}
+                            <strong>วันที่:</strong> ................................................................
                         </td>
                     </tr>
                     <tr>
@@ -1176,24 +1188,24 @@
                         เพื่อให้อุปกรณ์ดังกล่าวสามารถนำกลับมาใช้งานในการให้บริการทางการแพทย์และการปฏิบัติงานราชการได้อย่างต่อเนื่องและมีประสิทธิภาพ
                         จึงเรียนมาเพื่อโปรดพิจารณา
                     </div>
+                    <div>
+
+                    </div>
 
 
                 </div>
 
                 <!-- Memo Signature 1: Officer -->
                 <div class="memo-sign-officer">
-                    <div style="margin-bottom: 24px;">
-                        (ลงชื่อ).................................................................... ผู้รายงาน/เสนอ
-                    </div>
+                    <div style="height: 60px;"></div>
                     <div>(
                         {{ $repair->technician?->name ?? '....................................................................' }}
                         )
                     </div>
-                    <div style="font-size: 12.5px; color: #444; margin-top: 2px;">ตำแหน่ง:
+                    <div style="margin-top: 2px;">ตำแหน่ง:
                         {{ $repair->technician?->position ?? 'เจ้าหน้าที่เทคโนโลยีสารสนเทศ' }}
                     </div>
-                    <div style="font-size: 12.5px; color: #444; margin-top: 2px;">วันที่ ...... / ...... / ..........
-                    </div>
+
                 </div>
 
                 <!-- Memo Bottom Approvals: Head & Director -->
@@ -1203,19 +1215,22 @@
                         <div class="memo-approval-title">ความเห็นของหัวหน้ากลุ่มงาน (รับทราบ)</div>
                         <div>เรียน ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</div>
                         <div style="margin: 4px 0;">
-                            <span class="chkbox">&#9744;</span> รับทราบ และเห็นควรเสนอขออนุมัติส่งซ่อมภายนอกตามเสนอ<br>
-                            <span class="chkbox">&#9744;</span> อื่นๆ
-                            ...................................................................................
+                            <div class="memo-approval-option">
+                                <span class="chkbox">&#9744;</span> รับทราบ และเห็นควรเสนอขออนุมัติส่งซ่อมภายนอกตามเสนอ
+                            </div>
+                            <div class="memo-approval-option" style="margin-top: 2px;">
+                                <span class="chkbox">&#9744;</span> อื่นๆ
+                                ...................................................................................
+                            </div>
                         </div>
-                        <div style="text-align: center; margin-top: 22px;">
-                            <div>(ลงชื่อ)....................................................................</div>
+                        <div style="text-align: center; margin-top: 10px;">
+                            <div style="height: 70px;"></div>
                             <div style="margin-top: 2px; font-weight: bold;">(
                                 {{ setting('it_head_name', 'หัวหน้ากลุ่มงานสุขภาพดิจิทัล') }} )
                             </div>
-                            <div style="font-size: 11.5px; color: #555; margin-top: 1px;">
+                            <div style="font-size: 16px; color: #000000ff; margin-top: 1px;">
                                 หัวหน้า{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}</div>
-                            <div style="font-size: 11.5px; color: #555; margin-top: 1px;">วันที่ ...... / ...... /
-                                ..........</div>
+                            <div style="font-size: 16px; color: #000000ff; margin-top: 1px;"></div>
                         </div>
                     </div>
 
@@ -1224,20 +1239,23 @@
                         <div class="memo-approval-title" style="color: #0f172a;">คำสั่งการ / การอนุมัติ (ผอ.
                             เซ็นอนุมัติ)</div>
                         <div style="margin: 6px 0;">
-                            <span class="chkbox">&#9744;</span> <strong>อนุมัติ</strong>
-                            ให้ดำเนินการส่งซ่อมภายนอกตามเสนอ<br>
-                            <span class="chkbox">&#9744;</span> ไม่อนุมัติ เนื่องจาก
-                            ..............................................................
+                            <div class="memo-approval-option">
+                                <span class="chkbox">&#9744;</span> <strong>อนุมัติ</strong>
+                                ให้ดำเนินการส่งซ่อมภายนอกตามเสนอ
+                            </div>
+                            <div class="memo-approval-option" style="margin-top: 2px;">
+                                <span class="chkbox">&#9744;</span> ไม่อนุมัติ เนื่องจาก
+                                ..............................................................
+                            </div>
                         </div>
-                        <div style="text-align: center; margin-top: 26px;">
-                            <div>(ลงชื่อ)....................................................................</div>
+                        <div style="text-align: center; margin-top: 10px;">
+                            <div style="height: 90px;"></div>
                             <div style="margin-top: 2px; font-weight: bold;">(
                                 {{ setting('director_name', 'ผู้อำนวยการโรงพยาบาลทุ่งหัวช้าง') }} )
                             </div>
-                            <div style="font-size: 11.5px; color: #555; margin-top: 1px;">
+                            <div style="font-size: 16px; color: #000000ff; margin-top: 1px;">
                                 ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</div>
-                            <div style="font-size: 11.5px; color: #555; margin-top: 1px;">วันที่ ...... / ...... /
-                                ..........</div>
+                            <div style="font-size: 16px; color: #000000ff; margin-top: 1px;"></div>
                         </div>
                     </div>
                 </div>
