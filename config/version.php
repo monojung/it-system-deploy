@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.15.3'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (THsarabun๙ Memo Font v2.15.3)',
-    'release_date' => '2026-11-23',
-    'build' => '20261123.3',
+    'version' => env('APP_VERSION', '2.15.4'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Official 16pt Memo Typography v2.15.4)',
+    'release_date' => '2026-11-24',
+    'build' => '20261124.1',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,17 @@ return [
     |
     */
     'changelog' => [
+        '2.15.4' => [
+            'date' => '2026-11-24',
+            'badge' => 'Memo Typography & Single-Line Subject v2.15.4',
+            'badge_color' => '#0d9488',
+            'title' => 'ปรับปรุงขนาดตัวอักษรบันทึกข้อความเป็น 16pt และจัดหัวเรื่องให้อยู่บรรทัดเดียวกัน',
+            'highlights' => [
+                'จัดหัวเรื่อง "เรื่อง:" ให้อยู่ในบรรทัดเดียวกัน: ขยายขอบเขตเต็มตาราง (colspan="2") ทำให้ชื่อเรื่องและเลขที่ใบแจ้งซ่อมไม่ตกบรรทัด สวยงามเป็นระเบียบ',
+                'ปรับขนาดตัวอักษรมาตรฐาน 16pt: กำหนดขนาดฟอนต์ของบันทึกข้อความเป็น 16pt ทั้งบนหน้าจอและขณะสั่งพิมพ์ (แทนขนาด px ที่ทำให้ตัวอักษรเล็กผิดปกติ) ตัวอักษรคมชัด อ่านง่าย ได้มาตรฐานเอกสารราชการ',
+                'รักษาความพอดีหน้ากระดาษ A4: จัดระยะขอบและส่วนอนุมัติต่างๆ ให้พอดี 1 หน้า A4 อย่างลงตัว ไม่ล้นขึ้นหน้า 2',
+            ],
+        ],
         '2.15.3' => [
             'date' => '2026-11-23',
             'badge' => 'THsarabun๙ Official Memo Font v2.15.3',

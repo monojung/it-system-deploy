@@ -553,31 +553,32 @@
         }
 
         .memo-container {
-            padding: 10px 15px;
+            padding: 4px 6px;
             color: #000;
-            font-size: 16px;
-            line-height: 1.5;
+            font-size: 16pt;
+            line-height: 1.45;
         }
 
         .memo-top-row {
             display: flex;
             align-items: flex-end;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             position: relative;
+            min-height: 68px;
         }
 
         .memo-garuda-wrap {
             position: absolute;
             left: 0;
             top: 0;
-            width: 70px;
+            width: 75px;
             text-align: left;
         }
 
         .memo-garuda-img {
-            width: 60px;
+            width: 65px;
             height: auto;
-            max-height: 68px;
+            max-height: 72px;
             display: block;
             object-fit: contain;
         }
@@ -585,70 +586,87 @@
         .memo-title {
             width: 100%;
             text-align: center;
-            font-size: 29px;
+            font-size: 29pt;
             font-weight: 700;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+            line-height: 1.1;
             padding-top: 10px;
         }
 
         .memo-header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 18px;
-            margin-bottom: 14px;
+            margin-top: 12px;
+            margin-bottom: 8px;
         }
 
         .memo-header-table td {
-            padding: 3px 0;
+            padding: 2px 0;
             vertical-align: top;
-            font-size: 16px;
-            line-height: 1.5;
+            font-size: 16pt;
+            line-height: 1.35;
             border: none;
+            color: #000;
+        }
+
+        .memo-header-table strong {
+            font-size: 16.5pt;
+            font-weight: 700;
+        }
+
+        .memo-subject-row {
+            white-space: nowrap;
+            font-size: 15pt !important;
+            letter-spacing: -0.2px;
         }
 
         .memo-body {
             text-align: justify;
             text-justify: inter-cluster;
-            line-height: 1.6;
-            font-size: 16px;
-            margin-top: 14px;
+            line-height: 1.45;
+            font-size: 16pt;
+            margin-top: 10px;
+            color: #000;
         }
 
         .memo-indent {
-            text-indent: 50px;
-            margin-bottom: 10px;
+            text-indent: 2cm;
+            margin-bottom: 8px;
         }
 
         .memo-sign-officer {
-            margin-top: 24px;
-            margin-left: 55%;
+            margin-top: 18px;
+            margin-left: 52%;
             text-align: center;
-            font-size: 16px;
+            font-size: 16pt;
+            line-height: 1.35;
+            color: #000;
         }
 
         .memo-approval-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-top: 24px;
-            border-top: 1px dashed #999;
-            padding-top: 14px;
+            gap: 14px;
+            margin-top: 18px;
+            border-top: 1px dashed #777;
+            padding-top: 10px;
         }
 
         .memo-approval-box {
-            border: 1px solid #777;
+            border: 1px solid #555;
             border-radius: 4px;
-            padding: 10px 12px;
-            font-size: 14px;
-            line-height: 1.45;
+            padding: 8px 10px;
+            font-size: 13.5pt;
+            line-height: 1.3;
             background: #fff;
+            color: #000;
         }
 
         .memo-approval-title {
             font-weight: 700;
             text-decoration: underline;
-            margin-bottom: 6px;
-            font-size: 15px;
+            margin-bottom: 4px;
+            font-size: 14.5pt;
         }
 
         /* Strict Print Rules for A4 Single Page */
@@ -724,6 +742,64 @@
             .doc-footer {
                 margin-top: 8px !important;
                 padding-top: 4px !important;
+            }
+
+            /* Memo Document Print Rules */
+            #doc-memo,
+            #doc-memo * {
+                font-family: 'THsarabun๙', 'TH Sarabun ๙', 'THSarabunIT๙', 'TH Sarabun IT๙', 'THSarabunIT9', 'TH Sarabun IT9', 'TH Sarabun New', 'THSarabunNew', 'TH Sarabun PSK', 'Sarabun', sans-serif !important;
+            }
+
+            #doc-memo .memo-container {
+                font-size: 16pt !important;
+                line-height: 1.45 !important;
+                padding: 0 !important;
+            }
+
+            #doc-memo .memo-title {
+                font-size: 29pt !important;
+                font-weight: 700 !important;
+                line-height: 1.1 !important;
+            }
+
+            #doc-memo .memo-header-table td {
+                font-size: 16pt !important;
+                line-height: 1.35 !important;
+            }
+
+            #doc-memo .memo-header-table strong {
+                font-size: 16.5pt !important;
+                font-weight: 700 !important;
+            }
+
+            #doc-memo .memo-subject-row {
+                white-space: nowrap !important;
+                font-size: 15pt !important;
+            }
+
+            #doc-memo .memo-body {
+                font-size: 16pt !important;
+                line-height: 1.45 !important;
+            }
+
+            #doc-memo .memo-indent {
+                text-indent: 2cm !important;
+                margin-bottom: 8px !important;
+            }
+
+            #doc-memo .memo-sign-officer {
+                font-size: 16pt !important;
+                line-height: 1.35 !important;
+            }
+
+            #doc-memo .memo-approval-box {
+                font-size: 13.5pt !important;
+                line-height: 1.3 !important;
+            }
+
+            #doc-memo .memo-approval-title {
+                font-size: 14.5pt !important;
+                font-weight: 700 !important;
             }
         }
     </style>
@@ -1025,30 +1101,28 @@
                 <!-- Memo Meta Table -->
                 <table class="memo-header-table">
                     <tr>
-                        <td style="width: 58%;">
+                        <td colspan="2">
                             <strong>ส่วนราชการ:</strong> {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}
                             {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }} โทร.
                             {{ thai_num(setting('hospital_phone', '053-595055')) }}
                         </td>
-
                     </tr>
                     <tr>
-                        <td style="width: 42%; text-align: left;">
+                        <td style="width: 50%; text-align: left;">
                             <strong>ที่:</strong> ลพ ................................................................
                         </td>
-                        <td>
+                        <td style="width: 50%; text-align: left;">
                             <strong>วันที่:</strong> {{ thai_num(thai_date($repair->created_at, 'full')) }}
                         </td>
                     </tr>
                     <tr>
-                        <td>
+                        <td colspan="2" class="memo-subject-row">
                             <strong>เรื่อง:</strong> ขออนุมัติส่งซ่อมบำรุงพัสดุ/ครุภัณฑ์คอมพิวเตอร์ภายนอกโรงพยาบาล
                             (ใบแจ้งซ่อมเลขที่ {{ thai_num($repair->ticket_number) }})
                         </td>
-
                     </tr>
                     <tr>
-                        <td colspan="2" style="padding-top: 6px;">
+                        <td colspan="2" style="padding-top: 4px;">
                             <strong>เรียน:</strong> ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}
                             (ผ่าน หัวหน้า{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }})
                         </td>

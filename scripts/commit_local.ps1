@@ -14,7 +14,7 @@ try {
     git read-tree HEAD
     git add -A
 
-    $msg = "feat: switch memo template to THsarabun๙ font and Thai numerals v2.15.3"
+    $msg = "feat: adjust memo subject to single line and set official 16pt THsarabun font v2.15.4"
     $tree = (git write-tree).Trim()
     $parent = (git rev-parse HEAD).Trim()
     $commit = (git commit-tree $tree -p $parent -m "$msg").Trim()
