@@ -188,17 +188,35 @@
             background: #0f766e;
         }
 
-        /* Paper sheet */
+        /* Paper sheet default */
         .sheet {
             max-width: 860px;
             margin: 0 auto;
             background: #ffffff;
-            padding: 0.5in 0.5in 28px 1in;
+            padding: 24px 28px;
             border: 1px solid #cbd5e1;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
             border-radius: 4px;
             min-height: 297mm;
             position: relative;
+        }
+
+        /* Screen Padding: Memo uses official government filing margins */
+        .sheet.sheet-memo,
+        body.doc-type-memo .sheet {
+            padding: 0.5in 0.5in 28px 1.5in;
+        }
+
+        /* Screen Padding: External Request uses balanced standard margins */
+        .sheet.sheet-external,
+        body.doc-type-external .sheet {
+            padding: 24px 28px;
+        }
+
+        /* Screen Padding: Standard Job Ticket uses balanced standard margins */
+        .sheet.sheet-standard,
+        body.doc-type-standard .sheet {
+            padding: 28px 32px;
         }
 
         .sheet-doc {
@@ -675,10 +693,37 @@
             letter-spacing: -0.2px;
         }
 
-        /* Strict Print Rules for A4 Single Page (1.5in left margin for official filing) */
+        /* Dynamic Named Page Print Rules (Separating Standard & External from Memo) */
+        @page memo {
+            size: A4 portrait;
+            margin: 0.5in 0.5in 12mm 1.5in; /* บันทึกข้อความ: ซ้าย 1.5in สำหรับเข้าแฟ้ม ขวา 0.5in */
+        }
+
+        @page external {
+            size: A4 portrait;
+            margin: 10mm 12mm 10mm 12mm; /* แบบขออนุมัติส่งซ่อมภายนอก: ขอบสมมาตร 10-12mm */
+        }
+
+        @page standard {
+            size: A4 portrait;
+            margin: 10mm 12mm 10mm 12mm; /* ใบงานซ่อมบำรุงทั่วไป: ขอบสมมาตร 10-12mm */
+        }
+
+        #doc-memo {
+            page: memo;
+        }
+
+        #doc-external {
+            page: external;
+        }
+
+        #doc-standard {
+            page: standard;
+        }
+
         @page {
             size: A4 portrait;
-            margin: 0.5in 0.5in 12mm 1in;
+            margin: 10mm 12mm 10mm 12mm;
         }
 
         @media print {
@@ -824,9 +869,21 @@
             }
         }
     </style>
+
+    <!-- Dynamic @page Margin per Document Type -->
+    <style id="pageMarginStyle">
+        @page {
+            size: A4 portrait;
+            @if($printType === 'memo')
+            margin: 0.5in 0.5in 12mm 1.5in; /* บันทึกข้อความ: ซ้าย 1.5in ขวา 0.5in */
+            @else
+            margin: 10mm 12mm 10mm 12mm; /* Standard & External: ขอบสมมาตร 10-12mm */
+            @endif
+        }
+    </style>
 </head>
 
-<body>
+<body class="doc-type-{{ $printType }}">
 
     <!-- SCREEN-ONLY CONTROL BAR -->
     <div class="no-print-bar">
@@ -861,7 +918,7 @@
     </div>
 
     <!-- MAIN PRINTABLE PAPER CONTAINER -->
-    <div class="sheet">
+    <div class="sheet sheet-{{ $printType }}" id="sheetContainer">
 
         <!-- =================================================================================
              DOCUMENT 1: ใบสั่งซ่อมบำรุงและขออนุมัติส่งซ่อมภายนอก (External Repair Request Ticket)
@@ -1443,6 +1500,23 @@
             const docEl = document.getElementById('doc-' + type);
             const btnEl = document.getElementById('tab-' + type);
             const titleEl = document.getElementById('pageTitle');
+            const sheetEl = document.getElementById('sheetContainer');
+            const pageMarginStyle = document.getElementById('pageMarginStyle');
+
+            // Update body & sheet classes for screen view
+            document.body.className = 'doc-type-' + type;
+            if (sheetEl) {
+                sheetEl.className = 'sheet sheet-' + type;
+            }
+
+            // Update dynamic @page margin for printing
+            if (pageMarginStyle) {
+                if (type === 'memo') {
+                    pageMarginStyle.innerHTML = '@page { size: A4 portrait; margin: 0.5in 0.5in 12mm 1.5in; }';
+                } else {
+                    pageMarginStyle.innerHTML = '@page { size: A4 portrait; margin: 10mm 12mm 10mm 12mm; }';
+                }
+            }
 
             if (docEl && btnEl) {
                 docEl.classList.add('active');

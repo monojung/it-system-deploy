@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.15.9'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Right Margin 0.5in & Single Page A4 Fit v2.15.9)',
+    'version' => env('APP_VERSION', '2.15.10'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Isolated Page Boundaries for Standard & External vs Memo v2.15.10)',
     'release_date' => '2026-11-24',
-    'build' => '20261124.6',
+    'build' => '20261124.7',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,17 @@ return [
     |
     */
     'changelog' => [
+        '2.15.10' => [
+            'date' => '2026-11-24',
+            'badge' => 'Isolated Page Boundaries v2.15.10',
+            'badge_color' => '#059669',
+            'title' => 'แยกขอบเขตกระดาษของใบงานซ่อมมาตรฐานและใบขออนุมัติส่งซ่อมภายนอกออกจากบันทึกข้อความราชการ',
+            'highlights' => [
+                'แยกขอบเขตกระดาษ Standard & External: ให้ใบงานซ่อมมาตรฐานและใบเสนอขออนุมัติส่งซ่อมภายนอกใช้ขอบกระดาษสมมาตรมาตรฐาน 10-12mm เต็มหน้าสวยงาม',
+                'คงขอบเขตบันทึกข้อความ Memo: รักษาระยะขอบซ้าย 1.5 นิ้ว (1.5in) สำหรับเจาะรูเข้าแฟ้มหนังสือราชการ และขอบขวา 0.5 นิ้วสำหรับเนื้อหา',
+                'ระบบ Dynamic Page Styles: สลับคลาสและแท็ก @page อัตโนมัติเมื่อเลือกแท็บเอกสาร ทั้งบนหน้าจอและขณะสั่งพิมพ์ A4',
+            ],
+        ],
         '2.15.9' => [
             'date' => '2026-11-24',
             'badge' => 'Right Margin 0.5in & 1-Page A4 v2.15.9',
