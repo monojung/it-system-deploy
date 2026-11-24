@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.15.7'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Official Memo Divider Line Realignment v2.15.7)',
+    'version' => env('APP_VERSION', '2.15.8'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Memo Height & Approval Styling Fine-Tuning v2.15.8)',
     'release_date' => '2026-11-24',
-    'build' => '20261124.4',
+    'build' => '20261124.5',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,16 @@ return [
     |
     */
     'changelog' => [
+        '2.15.8' => [
+            'date' => '2026-11-24',
+            'badge' => 'Memo Layout Fine-Tuning v2.15.8',
+            'badge_color' => '#059669',
+            'title' => 'ปรับความสูงช่องลงลายมือชื่อและรูปแบบกล่องคำสั่งการให้กลมกลืนในบันทึกข้อความราชการ',
+            'highlights' => [
+                'ปรับขนาดช่องลงนามผู้รายงาน: ปรับความสูงช่องว่างลงลายมือชื่อเป็น 75px เพื่อให้พอดีกับสัดส่วนหน้ากระดาษ A4 สวยงาม',
+                'ปรับสไตล์กล่องคำสั่งการ ผอ.: ปรับรูปแบบพื้นหลังและเส้นขอบให้เป็นมาตรฐานสีขาวสะอาดตากลมกลืนกับกล่องความเห็นหัวหน้ากลุ่มงาน',
+            ],
+        ],
         '2.15.7' => [
             'date' => '2026-11-24',
             'badge' => 'Official Memo Line Realignment v2.15.7',

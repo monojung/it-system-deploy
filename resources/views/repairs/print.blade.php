@@ -1198,7 +1198,7 @@
 
                 <!-- Memo Signature 1: Officer -->
                 <div class="memo-sign-officer">
-                    <div style="height: 90px;"></div>
+                    <div style="height: 75px;"></div>
                     <div>(
                         {{ $repair->technician?->name ?? '....................................................................' }}
                         )
@@ -1236,8 +1236,8 @@
                     </div>
 
                     <!-- Director Approval Box -->
-                    <div class="memo-approval-box" style="border-width: 1.5px; background: #fafafa;">
-                        <div class="memo-approval-title" style="color: #0f172a;">คำสั่งการ / การอนุมัติ (ผอ.
+                    <div class="memo-approval-box">
+                        <div class=" memo-approval-title" style="color: #0f172a;">คำสั่งการ / การอนุมัติ (ผอ.
                             เซ็นอนุมัติ)</div>
                         <div style="margin: 6px 0;">
                             <div class="memo-approval-option">
