@@ -193,7 +193,7 @@
             max-width: 860px;
             margin: 0 auto;
             background: #ffffff;
-            padding: 0.5in 1in 28px 1in;
+            padding: 0.5in 0.5in 28px 1in;
             border: 1px solid #cbd5e1;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
             border-radius: 4px;
@@ -678,7 +678,7 @@
         /* Strict Print Rules for A4 Single Page (1.5in left margin for official filing) */
         @page {
             size: A4 portrait;
-            margin: 0.5in 1in 2cm 1in;
+            margin: 0.5in 0.5in 12mm 1in;
         }
 
         @media print {
@@ -1237,7 +1237,7 @@
 
                     <!-- Director Approval Box -->
                     <div class="memo-approval-box">
-                        <div class=" memo-approval-title" style="color: #0f172a;">คำสั่งการ / การอนุมัติ (ผอ.
+                        <div class="memo-approval-title" style="color: #0f172a;">คำสั่งการ / การอนุมัติ (ผอ.
                             เซ็นอนุมัติ)</div>
                         <div style="margin: 6px 0;">
                             <div class="memo-approval-option">

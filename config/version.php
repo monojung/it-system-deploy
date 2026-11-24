@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.15.8'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Memo Height & Approval Styling Fine-Tuning v2.15.8)',
+    'version' => env('APP_VERSION', '2.15.9'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Right Margin 0.5in & Single Page A4 Fit v2.15.9)',
     'release_date' => '2026-11-24',
-    'build' => '20261124.5',
+    'build' => '20261124.6',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,16 @@ return [
     |
     */
     'changelog' => [
+        '2.15.9' => [
+            'date' => '2026-11-24',
+            'badge' => 'Right Margin 0.5in & 1-Page A4 v2.15.9',
+            'badge_color' => '#059669',
+            'title' => 'ปรับระยะขอบขวาเป็น 0.5 นิ้ว (0.5in) และปรับแต่งสัดส่วนให้ลงตัวใน 1 หน้า A4 เสมอ',
+            'highlights' => [
+                'ระยะขอบกระดาษด้านขวา 0.5 นิ้ว (0.5in): ขยายพื้นที่พิมพ์ด้านขวา ช่วยให้ข้อความและกล่องความเห็นลงตัวสวยงามยิ่งขึ้น',
+                'การจัดวางพอดี 1 หน้า A4: ปรับระยะขอบล่างและสัดส่วนกล่องลงนามให้เอกสารบันทึกข้อความและใบเสนออนุมัติจบในหน้าเดียว ไม่ล้นหน้า 2',
+            ],
+        ],
         '2.15.8' => [
             'date' => '2026-11-24',
             'badge' => 'Memo Layout Fine-Tuning v2.15.8',
