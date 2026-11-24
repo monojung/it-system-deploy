@@ -23,15 +23,15 @@
             font-style: normal;
             font-weight: 400;
             src: local('THsarabun๙'),
-                 local('TH Sarabun ๙'),
-                 local('THSarabunIT๙'),
-                 local('TH Sarabun IT๙'),
-                 local('THSarabunIT9'),
-                 local('TH Sarabun IT9'),
-                 local('TH Sarabun New'),
-                 local('THSarabunNew'),
-                 local('TH Sarabun PSK'),
-                 local('Sarabun');
+                local('TH Sarabun ๙'),
+                local('THSarabunIT๙'),
+                local('TH Sarabun IT๙'),
+                local('THSarabunIT9'),
+                local('TH Sarabun IT9'),
+                local('TH Sarabun New'),
+                local('THSarabunNew'),
+                local('TH Sarabun PSK'),
+                local('Sarabun');
         }
 
         @font-face {
@@ -39,15 +39,15 @@
             font-style: normal;
             font-weight: 700;
             src: local('THsarabun๙ Bold'),
-                 local('TH Sarabun ๙ Bold'),
-                 local('THSarabunIT๙ Bold'),
-                 local('TH Sarabun IT๙ Bold'),
-                 local('THSarabunIT9 Bold'),
-                 local('TH Sarabun IT9 Bold'),
-                 local('TH Sarabun New Bold'),
-                 local('THSarabunNew Bold'),
-                 local('TH Sarabun PSK Bold'),
-                 local('Sarabun Bold');
+                local('TH Sarabun ๙ Bold'),
+                local('THSarabunIT๙ Bold'),
+                local('TH Sarabun IT๙ Bold'),
+                local('THSarabunIT9 Bold'),
+                local('TH Sarabun IT9 Bold'),
+                local('TH Sarabun New Bold'),
+                local('THSarabunNew Bold'),
+                local('TH Sarabun PSK Bold'),
+                local('Sarabun Bold');
         }
 
         @font-face {
@@ -55,14 +55,14 @@
             font-style: italic;
             font-weight: 400;
             src: local('THsarabun๙ Italic'),
-                 local('TH Sarabun ๙ Italic'),
-                 local('THSarabunIT๙ Italic'),
-                 local('TH Sarabun IT๙ Italic'),
-                 local('THSarabunIT9 Italic'),
-                 local('TH Sarabun New Italic'),
-                 local('THSarabunNew Italic'),
-                 local('TH Sarabun PSK Italic'),
-                 local('Sarabun Italic');
+                local('TH Sarabun ๙ Italic'),
+                local('THSarabunIT๙ Italic'),
+                local('TH Sarabun IT๙ Italic'),
+                local('THSarabunIT9 Italic'),
+                local('TH Sarabun New Italic'),
+                local('THSarabunNew Italic'),
+                local('TH Sarabun PSK Italic'),
+                local('Sarabun Italic');
         }
 
         @font-face {
@@ -70,14 +70,14 @@
             font-style: italic;
             font-weight: 700;
             src: local('THsarabun๙ BoldItalic'),
-                 local('TH Sarabun ๙ BoldItalic'),
-                 local('THSarabunIT๙ BoldItalic'),
-                 local('TH Sarabun IT๙ BoldItalic'),
-                 local('THSarabunIT9 BoldItalic'),
-                 local('TH Sarabun New BoldItalic'),
-                 local('THSarabunNew BoldItalic'),
-                 local('TH Sarabun PSK BoldItalic'),
-                 local('Sarabun BoldItalic');
+                local('TH Sarabun ๙ BoldItalic'),
+                local('THSarabunIT๙ BoldItalic'),
+                local('TH Sarabun IT๙ BoldItalic'),
+                local('THSarabunIT9 BoldItalic'),
+                local('TH Sarabun New BoldItalic'),
+                local('THSarabunNew BoldItalic'),
+                local('TH Sarabun PSK BoldItalic'),
+                local('Sarabun BoldItalic');
         }
 
         body {
@@ -193,7 +193,7 @@
             max-width: 860px;
             margin: 0 auto;
             background: #ffffff;
-            padding: 32px 36px;
+            padding: 28px 28px 28px 1.5in;
             border: 1px solid #cbd5e1;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
             border-radius: 4px;
@@ -669,10 +669,10 @@
             font-size: 14.5pt;
         }
 
-        /* Strict Print Rules for A4 Single Page */
+        /* Strict Print Rules for A4 Single Page (1.5in left margin for official filing) */
         @page {
             size: A4 portrait;
-            margin: 8mm 10mm 8mm 10mm;
+            margin: 12mm 15mm 12mm 1.5in;
         }
 
         @media print {
@@ -787,19 +787,28 @@
                 margin-bottom: 8px !important;
             }
 
-            #doc-memo .memo-sign-officer {
-                font-size: 16pt !important;
-                line-height: 1.35 !important;
+            #doc-memo .memo-approval-grid {
+                gap: 10px !important;
+                margin-top: 12px !important;
+                padding-top: 6px !important;
             }
 
             #doc-memo .memo-approval-box {
-                font-size: 13.5pt !important;
-                line-height: 1.3 !important;
+                font-size: 13pt !important;
+                line-height: 1.25 !important;
+                padding: 6px 8px !important;
             }
 
             #doc-memo .memo-approval-title {
-                font-size: 14.5pt !important;
+                font-size: 14pt !important;
                 font-weight: 700 !important;
+                margin-bottom: 3px !important;
+            }
+
+            #doc-memo .memo-sign-officer {
+                font-size: 16pt !important;
+                line-height: 1.35 !important;
+                margin-top: 12px !important;
             }
         }
     </style>
@@ -1117,14 +1126,14 @@
                     </tr>
                     <tr>
                         <td colspan="2" class="memo-subject-row">
-                            <strong>เรื่อง:</strong> ขออนุมัติส่งซ่อมบำรุงพัสดุ/ครุภัณฑ์คอมพิวเตอร์ภายนอกโรงพยาบาล
+                            <strong>เรื่อง:</strong> ขออนุมัติส่งซ่อมครุภัณฑ์คอมพิวเตอร์ภายนอกโรงพยาบาล
                             (ใบแจ้งซ่อมเลขที่ {{ thai_num($repair->ticket_number) }})
                         </td>
                     </tr>
                     <tr>
                         <td colspan="2" style="padding-top: 4px;">
                             <strong>เรียน:</strong> ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}
-                            (ผ่าน หัวหน้า{{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }})
+
                         </td>
                     </tr>
                 </table>
@@ -1153,20 +1162,22 @@
                         จึงมีความจำเป็นต้องส่งซ่อมบำรุง ณ ร้านค้า/ศูนย์บริการภายนอกที่มีเครื่องมือเฉพาะทาง ได้แก่
                         <strong>{{ $repair->external_repair_detail ?: 'ศูนย์บริการตัวแทนจำหน่าย/ร้านค้าผู้ชำนาญการภายนอก' }}</strong>
                         @if($repair->total_cost > 0)
-                            โดยมีประมาณการค่าใช้จ่ายเบื้องต้นจำนวน <strong>{{ thai_num(number_format($repair->total_cost, 2)) }}
+                            โดยมีประมาณการค่าใช้จ่ายเบื้องต้นจำนวน
+                            <strong>{{ thai_num(number_format($repair->total_cost, 2)) }}
                                 บาท</strong>
                         @endif
                     </div>
 
                     <div class="memo-indent">
-                        เพื่อให้พัสดุและอุปกรณ์ดังกล่าวสามารถนำกลับมาใช้งานในการให้บริการทางการแพทย์และการปฏิบัติงานราชการได้อย่างต่อเนื่องและมีประสิทธิภาพ
-                        จึงเรียนมาเพื่อโปรดพิจารณา:
+                        ในการนี้งานเทคโนโลยีสารสนเทศ {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}
+                        ได้รับทราบรายงานผลการตรวจสภาพ
+                        ความจำเป็นในการส่งซ่อมบำรุงภายนอก และเห็นควรดำเนินการส่งซ่อมบำรุงพัสดุดังกล่าว ณ
+                        ร้านค้า/ศูนย์บริการภายนอกตามเสนอ
+                        เพื่อให้อุปกรณ์ดังกล่าวสามารถนำกลับมาใช้งานในการให้บริการทางการแพทย์และการปฏิบัติงานราชการได้อย่างต่อเนื่องและมีประสิทธิภาพ
+                        จึงเรียนมาเพื่อโปรดพิจารณา
                     </div>
 
-                    <div style="margin-left: 60px; line-height: 1.6; margin-bottom: 10px;">
-                        ๑. รับทราบรายงานผลการตรวจสภาพและความจำเป็นในการส่งซ่อมบำรุงภายนอก<br>
-                        ๒. อนุมัติให้ดำเนินการส่งซ่อมบำรุงพัสดุดังกล่าว ณ ร้านค้า/ศูนย์บริการภายนอกตามเสนอ
-                    </div>
+
                 </div>
 
                 <!-- Memo Signature 1: Officer -->

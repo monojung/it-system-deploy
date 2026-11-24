@@ -14,7 +14,7 @@ try {
     git read-tree HEAD
     git add -A
 
-    $msg = "feat: adjust memo subject to single line and set official 16pt THsarabun font v2.15.4"
+    $msg = "feat: apply 1.5in left margin for official government memo filing v2.15.5"
     $tree = (git write-tree).Trim()
     $parent = (git rev-parse HEAD).Trim()
     $commit = (git commit-tree $tree -p $parent -m "$msg").Trim()

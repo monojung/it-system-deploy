@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.15.4'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Official 16pt Memo Typography v2.15.4)',
+    'version' => env('APP_VERSION', '2.15.5'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (1.5in Left Margin Memo Filing v2.15.5)',
     'release_date' => '2026-11-24',
-    'build' => '20261124.1',
+    'build' => '20261124.2',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,16 @@ return [
     |
     */
     'changelog' => [
+        '2.15.5' => [
+            'date' => '2026-11-24',
+            'badge' => '1.5in Official Filing Margin v2.15.5',
+            'badge_color' => '#1d4ed8',
+            'title' => 'ปรับระยะขอบกระดาษด้านซ้ายเป็น 1.5 นิ้ว (1.5in) ตามระเบียบงานสารบรรณภาครัฐ',
+            'highlights' => [
+                'ระยะขอบกระดาษด้านซ้าย 1.5 นิ้ว (1.5in / 3.8cm): รองรับการเจาะรูและเข้าแฟ้มเสนอลงนามหนังสือราชการตามระเบียบสารบรรณ ทั้งในการสั่งพิมพ์และการแสดงผล',
+                'จัดสัดส่วนและระยะห่างภายใน A4: ปรับขนาดกล่องลงนามและการจัดวางย่อหน้าเพื่อให้บันทึกข้อความพอดี 1 หน้ากระดาษ A4 เสมอ ไม่ล้นหน้า 2',
+            ],
+        ],
         '2.15.4' => [
             'date' => '2026-11-24',
             'badge' => 'Memo Typography & Single-Line Subject v2.15.4',
