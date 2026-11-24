@@ -11,10 +11,10 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '2.15.6'),
-    'release_name' => 'Thung Hua Chang IT Service Platform (Official Memo Signature & Layout Polishing v2.15.6)',
+    'version' => env('APP_VERSION', '2.15.7'),
+    'release_name' => 'Thung Hua Chang IT Service Platform (Official Memo Divider Line Realignment v2.15.7)',
     'release_date' => '2026-11-24',
-    'build' => '20261124.3',
+    'build' => '20261124.4',
     'environment' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +39,16 @@ return [
     |
     */
     'changelog' => [
+        '2.15.7' => [
+            'date' => '2026-11-24',
+            'badge' => 'Official Memo Line Realignment v2.15.7',
+            'badge_color' => '#059669',
+            'title' => 'ย้ายเส้นคั่นทึบในบันทึกข้อความราชการไว้ใต้บรรทัดเรื่อง (ระหว่างเรื่องกับเรียน)',
+            'highlights' => [
+                'ย้ายเส้นคั่นหนังสือราชการ: จัดวางเส้นคั่นหนา 1.5pt ไว้ระหว่างบรรทัด "เรื่อง" กับ "เรียน" ตามรูปแบบระเบียบงานสารบรรณภาครัฐอย่างถูกต้อง',
+                'คงโครงสร้างเอกสาร 1 หน้า: รักษาระยะบรรทัดและการเว้นระยะสวยงาม ไม่ล้นหน้ากระดาษ A4',
+            ],
+        ],
         '2.15.6' => [
             'date' => '2026-11-24',
             'badge' => 'Memo Layout & Signature Polish v2.15.6',

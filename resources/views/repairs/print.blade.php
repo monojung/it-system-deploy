@@ -1123,34 +1123,36 @@
                 <table class="memo-header-table">
                     <tr>
                         <td colspan="2">
-                            <strong>ส่วนราชการ:</strong> {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}
+                            <strong>ส่วนราชการ</strong> {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}
                             {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }} โทร.
                             {{ thai_num(setting('hospital_phone', '053-595055')) }}
                         </td>
                     </tr>
                     <tr>
                         <td style="width: 50%; text-align: left;">
-                            <strong>ที่:</strong> ลพ 003.303.8/..............................
+                            <strong>ที่</strong> ลพ 003.303.8/..............................
                         </td>
                         <td style="width: 50%; text-align: left;">
-                            <strong>วันที่:</strong> ................................................................
+                            <strong>วันที่</strong> ................................................................
                         </td>
                     </tr>
                     <tr>
                         <td colspan="2" class="memo-subject-row">
-                            <strong>เรื่อง:</strong> ขออนุมัติส่งซ่อมครุภัณฑ์คอมพิวเตอร์ภายนอกโรงพยาบาล
+                            <strong>เรื่อง</strong> ขออนุมัติส่งซ่อมครุภัณฑ์คอมพิวเตอร์ภายนอกโรงพยาบาล
                             (ใบแจ้งซ่อมเลขที่ {{ thai_num($repair->ticket_number) }})
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="padding: 0;">
+                            <div style="border-bottom: 1.5px solid #000; margin-bottom: 14px;"></div>
                         </td>
                     </tr>
                     <tr>
                         <td colspan="2" style="padding-top: 4px;">
                             <strong>เรียน:</strong> ผู้อำนวยการ{{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}
-
                         </td>
                     </tr>
                 </table>
-
-                <div style="border-bottom: 1.5px solid #000; margin-bottom: 14px;"></div>
 
                 <!-- Memo Body Paragraphs -->
                 <div class="memo-body">
@@ -1184,25 +1186,24 @@
                         ในการนี้งานเทคโนโลยีสารสนเทศ {{ setting('department_name', 'กลุ่มงานสุขภาพดิจิทัล') }}
                         ได้รับทราบรายงานผลการตรวจสภาพ
                         ความจำเป็นในการส่งซ่อมบำรุงภายนอก และเห็นควรดำเนินการส่งซ่อมบำรุงพัสดุดังกล่าว ณ
-                        ร้านค้า/ศูนย์บริการภายนอกตามเสนอ
+                        ร้านค้า/ศูนย์บริการภายนอกตามที่เสนอ
                         เพื่อให้อุปกรณ์ดังกล่าวสามารถนำกลับมาใช้งานในการให้บริการทางการแพทย์และการปฏิบัติงานราชการได้อย่างต่อเนื่องและมีประสิทธิภาพ
-                        จึงเรียนมาเพื่อโปรดพิจารณา
-                    </div>
-                    <div>
 
                     </div>
+                    <div class="memo-indent">จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ </div>
+
 
 
                 </div>
 
                 <!-- Memo Signature 1: Officer -->
                 <div class="memo-sign-officer">
-                    <div style="height: 60px;"></div>
+                    <div style="height: 90px;"></div>
                     <div>(
                         {{ $repair->technician?->name ?? '....................................................................' }}
                         )
                     </div>
-                    <div style="margin-top: 2px;">ตำแหน่ง:
+                    <div style="margin-top: 2px;">ตำแหน่ง
                         {{ $repair->technician?->position ?? 'เจ้าหน้าที่เทคโนโลยีสารสนเทศ' }}
                     </div>
 
@@ -1260,11 +1261,7 @@
                     </div>
                 </div>
 
-                <!-- Footer -->
-                <div class="doc-footer" style="margin-top: 18px;">
-                    <div>ระบบบันทึกข้อความราชการ {{ setting('hospital_name_th', 'โรงพยาบาลทุ่งหัวช้าง') }}</div>
-                    <div>พิมพ์เมื่อ {{ thai_date(now(), 'short_time') }} &bull; หน้า 1/1</div>
-                </div>
+
             </div>
         </div>
 
